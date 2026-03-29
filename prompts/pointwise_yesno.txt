@@ -1,0 +1,18 @@
+You are a recommendation assistant.
+
+A user has interacted with the following items:
+{history_block}
+
+Now consider the candidate item:
+Title: {candidate_title}
+Description: {candidate_meta}
+
+Question:
+Should this item be recommended to the user?
+
+Return your answer strictly in JSON format:
+{{
+    "recommend": "yes" or "no",
+    "confidence": a number between 0 and 1,
+    "reason": "one short sentence"
+}}
