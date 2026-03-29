@@ -1,0 +1,2 @@
+HR@10_drop,NDCG@10_drop,MRR@10_drop,num_users_drop,num_samples_drop,head_exposure_ratio@10_drop,tail_exposure_ratio@10_drop,long_tail_coverage@10_drop,topk_total_items@10_drop
+0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
