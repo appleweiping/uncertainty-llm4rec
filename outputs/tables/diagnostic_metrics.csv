@@ -1,0 +1,2 @@
+num_samples,accuracy,avg_confidence,avg_correctness,brier_score,ece,mce,auroc
+9,1.0,0.3388888888888889,1.0,0.026944444444444438,0.15,0.29999999999999993,1.0
