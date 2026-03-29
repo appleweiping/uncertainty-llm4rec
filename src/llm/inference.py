@@ -1,19 +1,17 @@
 # src/llm/inference.py
 from __future__ import annotations
 
-from typing import Any
-
 from tqdm import tqdm
 
 from src.llm.parser import parse_response
 
 
 def run_pointwise_inference(
-    samples: list[dict[str, Any]],
+    samples: list[dict],
     llm_backend,
     prompt_builder,
-) -> list[dict[str, Any]]:
-    results: list[dict[str, Any]] = []
+) -> list[dict]:
+    results: list[dict] = []
 
     for sample in tqdm(samples, desc="Running pointwise inference"):
         user_id = sample["user_id"]

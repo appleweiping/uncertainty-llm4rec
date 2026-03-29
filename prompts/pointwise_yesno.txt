@@ -12,7 +12,7 @@ Should this item be recommended to the user?
 
 Return your answer strictly in JSON format:
 {{
-    "recommend": "yes" or "no",
-    "confidence": a number between 0 and 1,
-    "reason": "one short sentence"
+  "recommend": "yes" or "no",
+  "confidence": a number between 0 and 1 indicating how confident you are in this yes/no decision,
+  "reason": "one short sentence"
 }}
