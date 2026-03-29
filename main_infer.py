@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from src.data.dataset import load_samples
 from src.llm.inference import run_pointwise_inference
-from src.llm.openai_backend import OpenAIBackend
+from src.llm.claude_backend import ClaudeBackend
 from src.llm.prompt_builder import PromptBuilder
 from src.utils.io import save_jsonl
 
@@ -16,11 +16,12 @@ def main() -> None:
     samples = load_samples(sample_path)
     print(f"Loaded {len(samples)} samples from {sample_path}")
 
-    llm = OpenAIBackend(
-        model_name="gpt-4.1-mini",
+    llm = ClaudeBackend(
+        model_name="claude-haiku-4-5-20251001",
         temperature=0.0,
-        max_tokens=200,
+        max_tokens=300,
     )
+
     prompt_builder = PromptBuilder(prompt_path)
 
     predictions = run_pointwise_inference(
