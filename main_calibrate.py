@@ -1,5 +1,4 @@
 # main_calibrate.py
-
 from __future__ import annotations
 
 import argparse
@@ -23,6 +22,7 @@ from src.uncertainty.verbalized_confidence import (
     add_uncertainty_from_confidence,
     normalize_confidence_column,
 )
+from src.utils.paths import ensure_exp_dirs
 
 
 def load_jsonl(path: str | Path) -> pd.DataFrame:
@@ -64,16 +64,22 @@ def compare_metrics(raw_df: pd.DataFrame, calibrated_df: pd.DataFrame) -> pd.Dat
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--input_path",
+        "--exp_name",
         type=str,
-        default="outputs/predictions/test_raw.jsonl",
-        help="Path to raw prediction jsonl file."
+        default="clean",
+        help="Experiment name."
     )
     parser.add_argument(
-        "--output_dir",
+        "--input_path",
+        type=str,
+        default=None,
+        help="Optional explicit path to raw prediction jsonl. Defaults to outputs/{exp_name}/predictions/test_raw.jsonl"
+    )
+    parser.add_argument(
+        "--output_root",
         type=str,
         default="outputs",
-        help="Base output directory."
+        help="Root directory for all experiment outputs."
     )
     parser.add_argument(
         "--method",
@@ -96,25 +102,24 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    output_dir = Path(args.output_dir)
-    calibrated_dir = output_dir / "calibrated"
-    tables_dir = output_dir / "tables"
-    figures_dir = output_dir / "figures"
+    paths = ensure_exp_dirs(args.exp_name, args.output_root)
+    input_path = (
+        Path(args.input_path)
+        if args.input_path is not None
+        else paths.predictions_dir / "test_raw.jsonl"
+    )
 
-    calibrated_dir.mkdir(parents=True, exist_ok=True)
-    tables_dir.mkdir(parents=True, exist_ok=True)
-    figures_dir.mkdir(parents=True, exist_ok=True)
+    if not input_path.exists():
+        raise FileNotFoundError(f"Raw prediction file not found: {input_path}")
 
-    print(f"Loading predictions from: {args.input_path}")
-    raw_df = load_jsonl(args.input_path)
+    print(f"[{args.exp_name}] Loading predictions from: {input_path}")
+    raw_df = load_jsonl(input_path)
 
-    # Step 1: standardize + add is_correct
     df = prepare_prediction_dataframe(raw_df)
     df = normalize_confidence_column(df, input_col="confidence", output_col="confidence")
 
-    print(f"Loaded {len(df)} samples from raw predictions.")
+    print(f"[{args.exp_name}] Loaded {len(df)} samples from raw predictions.")
 
-    # Step 2: valid/test split at user level
     split_result = user_level_split(
         df,
         user_col="user_id",
@@ -125,39 +130,28 @@ def main() -> None:
     test_df = split_result.test_df
 
     split_meta = build_split_metadata(valid_df, test_df)
-    save_summary_dict(split_meta, tables_dir / "calibration_split_metadata.csv")
-    print("Saved calibration_split_metadata.csv")
+    save_summary_dict(split_meta, paths.tables_dir / "calibration_split_metadata.csv")
 
-    # Step 3: fit calibrator on valid
     calibrator = fit_calibrator(
         valid_df=valid_df,
         method=args.method,
         confidence_col="confidence",
         target_col="is_correct"
     )
-    print(f"Fitted {args.method} calibrator on valid split.")
+    print(f"[{args.exp_name}] Fitted {args.method} calibrator on valid split.")
 
-    # Step 4: apply on valid and test
     valid_calibrated = apply_calibrator(valid_df, calibrator, input_col="confidence", output_col="calibrated_confidence")
     valid_calibrated = add_uncertainty_from_confidence(valid_calibrated, confidence_col="calibrated_confidence", output_col="uncertainty")
 
     test_calibrated = apply_calibrator(test_df, calibrator, input_col="confidence", output_col="calibrated_confidence")
     test_calibrated = add_uncertainty_from_confidence(test_calibrated, confidence_col="calibrated_confidence", output_col="uncertainty")
 
-    # Step 5: save calibrated test file
-    save_jsonl(test_calibrated, calibrated_dir / "test_calibrated.jsonl")
-    print("Saved outputs/calibrated/test_calibrated.jsonl")
+    save_jsonl(test_calibrated, paths.calibrated_dir / "test_calibrated.jsonl")
+    save_jsonl(valid_calibrated, paths.calibrated_dir / "valid_calibrated.jsonl")
 
-    # Optional: also save valid side for debugging
-    save_jsonl(valid_calibrated, calibrated_dir / "valid_calibrated.jsonl")
-    print("Saved outputs/calibrated/valid_calibrated.jsonl")
-
-    # Step 6: metric comparison on test set
     comparison_df = compare_metrics(test_df, test_calibrated)
-    save_table(comparison_df, tables_dir / "calibration_comparison.csv")
-    print("Saved calibration_comparison.csv")
+    save_table(comparison_df, paths.tables_dir / "calibration_comparison.csv")
 
-    # Step 7: reliability bins before/after
     before_rel = get_reliability_dataframe(
         test_df["label"].to_numpy(),
         test_df["confidence"].to_numpy(),
@@ -169,26 +163,20 @@ def main() -> None:
         n_bins=10
     )
 
-    save_table(before_rel, tables_dir / "reliability_before_calibration.csv")
-    save_table(after_rel, tables_dir / "reliability_after_calibration.csv")
-    print("Saved reliability before/after tables.")
+    save_table(before_rel, paths.tables_dir / "reliability_before_calibration.csv")
+    save_table(after_rel, paths.tables_dir / "reliability_after_calibration.csv")
 
-    # Step 8: plot before/after reliability
+    
     plot_before_after_reliability(
         before_rel,
         after_rel,
-        figures_dir / "reliability_before_after.png"
+        paths.figures_dir / "reliability_before_after_calibration.png"
     )
-    print("Saved reliability_before_after.png")
 
-    print("\nDone.")
-    print("Main outputs:")
-    print(f"- {calibrated_dir / 'test_calibrated.jsonl'}")
-    print(f"- {tables_dir / 'calibration_split_metadata.csv'}")
-    print(f"- {tables_dir / 'calibration_comparison.csv'}")
-    print(f"- {tables_dir / 'reliability_before_calibration.csv'}")
-    print(f"- {tables_dir / 'reliability_after_calibration.csv'}")
-    print(f"- {figures_dir / 'reliability_before_after.png'}")
+    print(f"[{args.exp_name}] Calibration done.")
+    print(f"Calibrated files saved to: {paths.calibrated_dir}")
+    print(f"Tables saved to:          {paths.tables_dir}")
+    print(f"Figures saved to:         {paths.figures_dir}")
 
 
 if __name__ == "__main__":

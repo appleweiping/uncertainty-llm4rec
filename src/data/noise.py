@@ -1,24 +1,12 @@
 # src/data/noise.py
-
 from __future__ import annotations
-import random
+
 import copy
+import random
+from typing import Any
 
 
-def perturb_user_history(history, drop_prob=0.3):
-    """
-    随机删除用户历史中的一部分
-    """
-    if not isinstance(history, list):
-        return history
-
-    return [h for h in history if random.random() > drop_prob]
-
-
-def perturb_item_text(text: str):
-    """
-    模拟文本噪声：简化/模糊表达
-    """
+def perturb_text(text: str) -> str:
     if not isinstance(text, str):
         return text
 
@@ -27,36 +15,82 @@ def perturb_item_text(text: str):
         ("thriller", "suspense"),
         ("film", "movie"),
         ("story", "plot"),
+        ("romantic", "love-themed"),
+        ("contemporary", "modern"),
     ]
 
-    for k, v in replacements:
-        text = text.replace(k, v)
-
-    return text
-
-
-def perturb_label(label, flip_prob=0.1):
-    """
-    标签扰动（可选）
-    """
-    if random.random() < flip_prob:
-        return 1 - label
-    return label
+    out = text
+    for src, tgt in replacements:
+        out = out.replace(src, tgt)
+    return out
 
 
-def apply_noise_to_sample(sample: dict):
+def perturb_history_items(
+    history_items: list[dict[str, Any]],
+    drop_prob: float = 0.2,
+) -> list[dict[str, Any]]:
+    if not isinstance(history_items, list):
+        return history_items
+
+    kept = [item for item in history_items if random.random() > drop_prob]
+
+    if len(kept) == 0 and len(history_items) > 0:
+        kept = [copy.deepcopy(random.choice(history_items))]
+
+    return kept
+
+
+def perturb_item(item: dict[str, Any], text_noise_prob: float = 0.5) -> dict[str, Any]:
+    if not isinstance(item, dict):
+        return item
+
+    out = copy.deepcopy(item)
+    if "meta" in out and isinstance(out["meta"], str) and random.random() < text_noise_prob:
+        out["meta"] = perturb_text(out["meta"])
+    if "title" in out and isinstance(out["title"], str) and random.random() < text_noise_prob * 0.3:
+        out["title"] = out["title"]
+    return out
+
+
+def perturb_candidates(
+    candidates: list[dict[str, Any]],
+    text_noise_prob: float = 0.5,
+) -> list[dict[str, Any]]:
+    if not isinstance(candidates, list):
+        return candidates
+    return [perturb_item(item, text_noise_prob=text_noise_prob) for item in candidates]
+
+
+def apply_noise_to_sample(
+    sample: dict[str, Any],
+    history_drop_prob: float = 0.2,
+    text_noise_prob: float = 0.5,
+    label_flip_prob: float = 0.0,
+) -> dict[str, Any]:
     s = copy.deepcopy(sample)
 
-    # history noise
-    if "history" in s:
-        s["history"] = perturb_user_history(s["history"])
+    if "history_items" in s:
+        s["history_items"] = perturb_history_items(
+            s["history_items"],
+            drop_prob=history_drop_prob,
+        )
 
-    # text noise
-    if "prompt" in s:
-        s["prompt"] = perturb_item_text(s["prompt"])
+    if "target_item" in s:
+        s["target_item"] = perturb_item(
+            s["target_item"],
+            text_noise_prob=text_noise_prob,
+        )
 
-    # label noise
-    if "label" in s:
-        s["label"] = perturb_label(s["label"])
+    if "candidates" in s:
+        s["candidates"] = perturb_candidates(
+            s["candidates"],
+            text_noise_prob=text_noise_prob,
+        )
+
+    if "label" in s and random.random() < label_flip_prob:
+        try:
+            s["label"] = 1 - int(s["label"])
+        except Exception:
+            pass
 
     return s

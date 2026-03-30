@@ -1,5 +1,4 @@
 # main_eval.py
-
 from __future__ import annotations
 
 import argparse
@@ -25,6 +24,7 @@ from src.eval.calibration_metrics import (
     compute_calibration_metrics,
     get_reliability_dataframe,
 )
+from src.utils.paths import ensure_exp_dirs
 
 
 def load_jsonl(path: str | Path) -> pd.DataFrame:
@@ -45,16 +45,22 @@ def save_summary_dict(summary: dict, path: str | Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--input_path",
+        "--exp_name",
         type=str,
-        default="outputs/predictions/test_raw.jsonl",
-        help="Path to raw prediction jsonl file."
+        default="clean",
+        help="Experiment name."
     )
     parser.add_argument(
-        "--output_dir",
+        "--input_path",
+        type=str,
+        default=None,
+        help="Optional explicit path to prediction jsonl. Defaults to outputs/{exp_name}/predictions/test_raw.jsonl"
+    )
+    parser.add_argument(
+        "--output_root",
         type=str,
         default="outputs",
-        help="Base output directory."
+        help="Root directory for all experiment outputs."
     )
     parser.add_argument(
         "--n_bins",
@@ -70,82 +76,62 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    output_dir = Path(args.output_dir)
-    tables_dir = output_dir / "tables"
-    figures_dir = output_dir / "figures"
-    tables_dir.mkdir(parents=True, exist_ok=True)
-    figures_dir.mkdir(parents=True, exist_ok=True)
+    paths = ensure_exp_dirs(args.exp_name, args.output_root)
+    input_path = (
+        Path(args.input_path)
+        if args.input_path is not None
+        else paths.predictions_dir / "test_raw.jsonl"
+    )
 
-    print(f"Loading predictions from: {args.input_path}")
-    raw_df = load_jsonl(args.input_path)
+    if not input_path.exists():
+        raise FileNotFoundError(f"Prediction file not found: {input_path}")
+
+    print(f"[{args.exp_name}] Loading predictions from: {input_path}")
+    raw_df = load_jsonl(input_path)
     df = prepare_prediction_dataframe(raw_df)
 
-    print(f"Loaded {len(df)} samples.")
+    print(f"[{args.exp_name}] Loaded {len(df)} samples.")
 
-    # 1) overall calibration metrics
     metrics = compute_calibration_metrics(df, confidence_col="confidence", n_bins=args.n_bins)
-    save_summary_dict(metrics, tables_dir / "diagnostic_metrics.csv")
-    print("Saved diagnostic_metrics.csv")
+    save_summary_dict(metrics, paths.tables_dir / "diagnostic_metrics.csv")
 
-    # 2) confidence-correctness summary
     cc_summary = compute_confidence_correctness_summary(
         df,
         high_conf_threshold=args.high_conf_threshold
     )
-    save_summary_dict(cc_summary, tables_dir / "confidence_correctness_summary.csv")
-    print("Saved confidence_correctness_summary.csv")
+    save_summary_dict(cc_summary, paths.tables_dir / "confidence_correctness_summary.csv")
 
-    # 3) confidence bins accuracy
     bins_df = compute_confidence_bins_accuracy(df, n_bins=args.n_bins)
-    save_table(bins_df, tables_dir / "confidence_bins_accuracy.csv")
-    print("Saved confidence_bins_accuracy.csv")
+    save_table(bins_df, paths.tables_dir / "confidence_bins_accuracy.csv")
 
-    # 4) reliability dataframe
     reliability_df = get_reliability_dataframe(
         df["label"].to_numpy(),
         df["confidence"].to_numpy(),
         n_bins=args.n_bins
     )
-    save_table(reliability_df, tables_dir / "reliability_bins.csv")
-    print("Saved reliability_bins.csv")
+    save_table(reliability_df, paths.tables_dir / "reliability_bins.csv")
 
-    # 5) popularity stats
     pop_df = compute_popularity_group_stats(
         df,
         high_conf_threshold=args.high_conf_threshold
     )
-    save_table(pop_df, tables_dir / "popularity_group_stats.csv")
-    print("Saved popularity_group_stats.csv")
+    save_table(pop_df, paths.tables_dir / "popularity_group_stats.csv")
 
-    # 6) exposure stats
     exposure_df = compute_high_confidence_exposure(
         df,
         high_conf_threshold=args.high_conf_threshold
     )
-    save_table(exposure_df, tables_dir / "high_confidence_exposure.csv")
-    print("Saved high_confidence_exposure.csv")
+    save_table(exposure_df, paths.tables_dir / "high_confidence_exposure.csv")
 
-    # 7) figures
-    plot_confidence_histogram(df, figures_dir / "confidence_histogram_correct_vs_wrong.png")
-    plot_reliability_diagram(reliability_df, figures_dir / "reliability_diagram.png")
-    plot_popularity_avg_confidence(pop_df, figures_dir / "popularity_avg_confidence.png")
-    plot_popularity_confidence_boxplot(df, figures_dir / "popularity_confidence_boxplot.png")
-    plot_high_confidence_exposure_shift(exposure_df, figures_dir / "high_confidence_exposure_shift.png")
-    print("Saved figures to outputs/figures/")
+    plot_confidence_histogram(df, paths.figures_dir / "confidence_histogram_correct_vs_wrong.png")
+    plot_reliability_diagram(reliability_df, paths.figures_dir / "reliability_diagram.png")
+    plot_popularity_avg_confidence(pop_df, paths.figures_dir / "popularity_avg_confidence.png")
+    plot_popularity_confidence_boxplot(df, paths.figures_dir / "popularity_confidence_boxplot.png")
+    plot_high_confidence_exposure_shift(exposure_df, paths.figures_dir / "high_confidence_exposure_shift.png")
 
-    print("\nDone.")
-    print("Main outputs:")
-    print(f"- {tables_dir / 'diagnostic_metrics.csv'}")
-    print(f"- {tables_dir / 'confidence_correctness_summary.csv'}")
-    print(f"- {tables_dir / 'confidence_bins_accuracy.csv'}")
-    print(f"- {tables_dir / 'reliability_bins.csv'}")
-    print(f"- {tables_dir / 'popularity_group_stats.csv'}")
-    print(f"- {tables_dir / 'high_confidence_exposure.csv'}")
-    print(f"- {figures_dir / 'confidence_histogram_correct_vs_wrong.png'}")
-    print(f"- {figures_dir / 'reliability_diagram.png'}")
-    print(f"- {figures_dir / 'popularity_avg_confidence.png'}")
-    print(f"- {figures_dir / 'popularity_confidence_boxplot.png'}")
-    print(f"- {figures_dir / 'high_confidence_exposure_shift.png'}")
+    print(f"[{args.exp_name}] Evaluation done.")
+    print(f"Tables saved to:  {paths.tables_dir}")
+    print(f"Figures saved to: {paths.figures_dir}")
 
 
 if __name__ == "__main__":

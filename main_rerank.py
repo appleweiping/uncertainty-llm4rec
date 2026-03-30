@@ -1,5 +1,4 @@
 # main_rerank.py
-
 from __future__ import annotations
 
 import argparse
@@ -17,6 +16,7 @@ from src.methods.uncertainty_reranker import (
     add_uncertainty_aware_score,
     rank_by_rerank_score,
 )
+from src.utils.paths import ensure_exp_dirs
 
 
 def load_jsonl(path: str | Path) -> pd.DataFrame:
@@ -52,16 +52,22 @@ def build_result_row(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--input_path",
+        "--exp_name",
         type=str,
-        default="outputs/calibrated/test_calibrated.jsonl",
-        help="Path to calibrated prediction jsonl file."
+        default="clean",
+        help="Experiment name."
     )
     parser.add_argument(
-        "--output_dir",
+        "--input_path",
+        type=str,
+        default=None,
+        help="Optional explicit path to calibrated prediction jsonl. Defaults to outputs/{exp_name}/calibrated/test_calibrated.jsonl"
+    )
+    parser.add_argument(
+        "--output_root",
         type=str,
         default="outputs",
-        help="Base output directory."
+        help="Root directory for all experiment outputs."
     )
     parser.add_argument(
         "--k",
@@ -77,16 +83,19 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    output_dir = Path(args.output_dir)
-    reranked_dir = output_dir / "reranked"
-    tables_dir = output_dir / "tables"
+    paths = ensure_exp_dirs(args.exp_name, args.output_root)
+    input_path = (
+        Path(args.input_path)
+        if args.input_path is not None
+        else paths.calibrated_dir / "test_calibrated.jsonl"
+    )
 
-    reranked_dir.mkdir(parents=True, exist_ok=True)
-    tables_dir.mkdir(parents=True, exist_ok=True)
+    if not input_path.exists():
+        raise FileNotFoundError(f"Calibrated file not found: {input_path}")
 
-    print(f"Loading calibrated predictions from: {args.input_path}")
-    df = load_jsonl(args.input_path)
-    print(f"Loaded {len(df)} samples.")
+    print(f"[{args.exp_name}] Loading calibrated predictions from: {input_path}")
+    df = load_jsonl(input_path)
+    print(f"[{args.exp_name}] Loaded {len(df)} samples.")
 
     required_cols = [
         "user_id",
@@ -100,7 +109,6 @@ def main() -> None:
         if col not in df.columns:
             raise ValueError(f"Required column `{col}` not found in input file.")
 
-    # Baseline ranking
     baseline_df = add_baseline_score(
         df,
         score_col="calibrated_confidence",
@@ -112,10 +120,8 @@ def main() -> None:
         score_col="baseline_score",
         rank_col="rank"
     )
-    save_jsonl(baseline_ranked, reranked_dir / "baseline_ranked.jsonl")
-    print("Saved baseline_ranked.jsonl")
+    save_jsonl(baseline_ranked, paths.reranked_dir / "baseline_ranked.jsonl")
 
-    # Uncertainty-aware reranking
     rerank_df = add_uncertainty_aware_score(
         df,
         confidence_col="calibrated_confidence",
@@ -129,33 +135,25 @@ def main() -> None:
         score_col="rerank_score",
         rank_col="rank"
     )
-    save_jsonl(rerank_ranked, reranked_dir / "uncertainty_reranked.jsonl")
-    print("Saved uncertainty_reranked.jsonl")
+    save_jsonl(rerank_ranked, paths.reranked_dir / "uncertainty_reranked.jsonl")
 
-    # Results table
     baseline_row = build_result_row("baseline", baseline_ranked, k=args.k)
     rerank_row = build_result_row("uncertainty_aware_rerank", rerank_ranked, k=args.k)
 
     results_df = pd.concat([baseline_row, rerank_row], ignore_index=True)
-    save_table(results_df, tables_dir / "rerank_results.csv")
-    print("Saved rerank_results.csv")
+    save_table(results_df, paths.tables_dir / "rerank_results.csv")
 
-    # Exposure distribution tables
     baseline_dist = compute_topk_exposure_distribution(baseline_ranked, k=args.k)
     baseline_dist["method"] = "baseline"
     rerank_dist = compute_topk_exposure_distribution(rerank_ranked, k=args.k)
     rerank_dist["method"] = "uncertainty_aware_rerank"
 
     exposure_dist_df = pd.concat([baseline_dist, rerank_dist], ignore_index=True)
-    save_table(exposure_dist_df, tables_dir / "topk_exposure_distribution.csv")
-    print("Saved topk_exposure_distribution.csv")
+    save_table(exposure_dist_df, paths.tables_dir / "topk_exposure_distribution.csv")
 
-    print("\nDone.")
-    print("Main outputs:")
-    print(f"- {reranked_dir / 'baseline_ranked.jsonl'}")
-    print(f"- {reranked_dir / 'uncertainty_reranked.jsonl'}")
-    print(f"- {tables_dir / 'rerank_results.csv'}")
-    print(f"- {tables_dir / 'topk_exposure_distribution.csv'}")
+    print(f"[{args.exp_name}] Reranking done.")
+    print(f"Reranked files saved to: {paths.reranked_dir}")
+    print(f"Tables saved to:         {paths.tables_dir}")
 
 
 if __name__ == "__main__":

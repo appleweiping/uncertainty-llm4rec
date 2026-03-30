@@ -1,10 +1,12 @@
 # main_infer.py
-
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 import pandas as pd
+
+from src.llm.inference import run_pointwise_inference
+from src.utils.paths import default_input_path_for_exp, ensure_exp_dirs
 
 # ===== backend 兼容导入 =====
 BackendClass = None
@@ -53,8 +55,6 @@ if PromptBuilderClass is None and build_prompt_fn is None:
         "Please check whether you have PromptBuilder / build_pointwise_prompt / build_prompt."
     )
 
-from src.llm.inference import run_pointwise_inference
-
 
 def load_jsonl(path: str | Path) -> list[dict]:
     df = pd.read_json(path, lines=True)
@@ -67,36 +67,59 @@ def save_jsonl(records: list[dict], path: str | Path) -> None:
     pd.DataFrame(records).to_json(path, orient="records", lines=True, force_ascii=False)
 
 
-def get_prompt_builder():
-    """
-    兼容类式 / 函数式 prompt builder
-    """
+class FunctionPromptBuilderAdapter:
+    def __init__(self, fn, template_path: str | Path):
+        self.fn = fn
+        self.template_path = str(template_path)
+
+    def build_pointwise_prompt(self, sample: dict, candidate: dict) -> str:
+        try:
+            return self.fn(sample, candidate, template_path=self.template_path)
+        except TypeError:
+            return self.fn(sample, candidate)
+
+
+def get_prompt_builder(prompt_path: str | Path):
     if PromptBuilderClass is not None:
         try:
+            return PromptBuilderClass(template_path=str(prompt_path))
+        except TypeError:
             return PromptBuilderClass()
-        except Exception:
-            # 有些项目需要模板路径
-            try:
-                return PromptBuilderClass(template_path="prompts/pointwise_yesno.txt")
-            except Exception:
-                raise
 
-    return build_prompt_fn
+    return FunctionPromptBuilderAdapter(build_prompt_fn, template_path=prompt_path)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--input_path",
+        "--exp_name",
         type=str,
-        default="data/processed/test.jsonl",
-        help="Path to input jsonl file."
+        default="clean",
+        help="Experiment name, e.g. clean / noisy."
     )
     parser.add_argument(
-        "--output_path",
+        "--input_path",
         type=str,
-        default="outputs/predictions/test_raw.jsonl",
-        help="Path to output prediction jsonl file."
+        default=None,
+        help="Optional explicit input jsonl path. If omitted, infer from exp_name."
+    )
+    parser.add_argument(
+        "--data_root",
+        type=str,
+        default="data/processed",
+        help="Directory for processed datasets."
+    )
+    parser.add_argument(
+        "--output_root",
+        type=str,
+        default="outputs",
+        help="Root directory for all experiment outputs."
+    )
+    parser.add_argument(
+        "--prompt_path",
+        type=str,
+        default="prompts/pointwise_yesno.txt",
+        help="Prompt template path."
     )
     parser.add_argument(
         "--overwrite",
@@ -105,8 +128,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    input_path = Path(args.input_path)
-    output_path = Path(args.output_path)
+    paths = ensure_exp_dirs(args.exp_name, args.output_root)
+
+    input_path = (
+        Path(args.input_path)
+        if args.input_path is not None
+        else default_input_path_for_exp(args.exp_name, args.data_root)
+    )
+    output_path = paths.predictions_dir / "test_raw.jsonl"
 
     if not input_path.exists():
         raise FileNotFoundError(f"Input file not found: {input_path}")
@@ -119,7 +148,7 @@ def main() -> None:
     print(f"Loaded {len(samples)} samples from {input_path}")
 
     llm_backend = BackendClass()
-    prompt_builder = get_prompt_builder()
+    prompt_builder = get_prompt_builder(args.prompt_path)
 
     predictions = run_pointwise_inference(
         samples=samples,
@@ -128,7 +157,7 @@ def main() -> None:
     )
 
     save_jsonl(predictions, output_path)
-    print(f"Saved {len(predictions)} predictions to {output_path}")
+    print(f"[{args.exp_name}] Saved {len(predictions)} predictions to {output_path}")
 
 
 if __name__ == "__main__":
