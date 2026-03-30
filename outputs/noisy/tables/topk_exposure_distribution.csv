@@ -1,0 +1,3 @@
+target_popularity_group,fraction,method
+tail,1.0,baseline
+tail,1.0,uncertainty_aware_rerank

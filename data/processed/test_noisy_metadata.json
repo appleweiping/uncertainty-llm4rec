@@ -1,0 +1,9 @@
+{
+  "input_path": "data/processed/test.jsonl",
+  "output_path": "data/processed/test_noisy.jsonl",
+  "history_drop_prob": 0.2,
+  "text_noise_prob": 0.5,
+  "label_flip_prob": 0.0,
+  "seed": 42,
+  "num_samples": 3
+}

@@ -1,10 +1,15 @@
-# scripts/generate_noisy_data.py
 from __future__ import annotations
 
 import argparse
 import json
 import random
+import sys
 from pathlib import Path
+
+# 把项目根目录加入 Python 搜索路径
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data.noise import apply_noise_to_sample
 
