@@ -205,3 +205,24 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# 数据（最重要）
+data/processed/
+data/raw/
+data/cache/
+
+# 输出
+outputs/
+outputs_backup_old/
+
+# 大文件
+*.jsonl
+*.csv
+*.pdf
+
+# Python
+__pycache__/
+*.pyc
+
+# venv
+.venv/
