@@ -1,0 +1,35 @@
+dataset_name: movielens_1m
+
+raw_dir: data/raw/movielens_1m/ml-1m
+processed_dir: data/processed/movielens_1m
+
+seed: 42
+
+# 预处理过滤
+min_user_interactions: 20
+min_item_interactions: 5
+
+# 文本构造
+text_builder:
+  use_title: true
+  use_genres: true
+  genre_sep: ", "
+
+# pointwise 样本构造
+sample_builder:
+  min_history_length: 3
+  max_history_length: 10
+  negatives_per_positive: 4
+  train_ratio: 0.8
+  valid_ratio: 0.1
+  test_ratio: 0.1
+
+# 标签规则
+labeling:
+  positive_rating_threshold: 4
+
+# popularity 分桶方式：按交互次数排序后切三段
+popularity:
+  method: quantile
+  num_buckets: 3
+  bucket_names: ["tail", "mid", "head"]
