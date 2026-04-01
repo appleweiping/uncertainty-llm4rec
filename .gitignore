@@ -205,3 +205,6 @@ desktop.ini
 
 outputs/*
 !outputs/.gitkeep
+
+Paper/*
+!Paper/.gitkeep
