@@ -1,4 +1,3 @@
-# src/utils/paths.py
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,7 +17,7 @@ class ExpPaths:
 
 def default_input_path_for_exp(
     exp_name: str,
-    data_root: str | Path = "data/processed",
+    data_root: str | Path = "data/processed/movielens_1m",
 ) -> Path:
     data_root = Path(data_root)
 

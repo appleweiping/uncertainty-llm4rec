@@ -1,2 +1,0 @@
-num_samples,overall_accuracy,overall_avg_confidence,correct_avg_confidence,wrong_avg_confidence,high_conf_fraction,high_conf_accuracy,wrong_high_conf_fraction
-9,1.0,0.8500000000000001,0.8500000000000001,,0.8888888888888888,1.0,0.0

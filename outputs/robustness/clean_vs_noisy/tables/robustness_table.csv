@@ -1,3 +1,0 @@
-method,HR@10_clean,HR@10_noisy,HR@10_drop,NDCG@10_clean,NDCG@10_noisy,NDCG@10_drop,MRR@10_clean,MRR@10_noisy,MRR@10_drop,num_users_clean,num_users_noisy,num_users_drop,num_samples_clean,num_samples_noisy,num_samples_drop,head_exposure_ratio@10_clean,head_exposure_ratio@10_noisy,head_exposure_ratio@10_drop,tail_exposure_ratio@10_clean,tail_exposure_ratio@10_noisy,tail_exposure_ratio@10_drop,long_tail_coverage@10_clean,long_tail_coverage@10_noisy,long_tail_coverage@10_drop,topk_total_items@10_clean,topk_total_items@10_noisy,topk_total_items@10_drop
-baseline,1.0,1.0,0.0,1.0,1.0,0.0,1.0,1.0,0.0,1,1,0,3,3,0,0.0,0.0,0.0,1.0,1.0,0.0,1.0,1.0,0.0,3,3,0
-uncertainty_aware_rerank,1.0,1.0,0.0,1.0,1.0,0.0,1.0,1.0,0.0,1,1,0,3,3,0,0.0,0.0,0.0,1.0,1.0,0.0,1.0,1.0,0.0,3,3,0

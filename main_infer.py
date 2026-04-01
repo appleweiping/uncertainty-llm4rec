@@ -1,4 +1,3 @@
-# main_infer.py
 from __future__ import annotations
 
 import argparse
@@ -8,7 +7,6 @@ import pandas as pd
 from src.llm.inference import run_pointwise_inference
 from src.utils.paths import default_input_path_for_exp, ensure_exp_dirs
 
-# ===== backend 兼容导入 =====
 BackendClass = None
 
 try:
@@ -31,7 +29,6 @@ if BackendClass is None:
         "Please check your backend filename/class."
     )
 
-# ===== prompt builder 兼容导入 =====
 PromptBuilderClass = None
 build_prompt_fn = None
 
@@ -106,7 +103,7 @@ def main() -> None:
     parser.add_argument(
         "--data_root",
         type=str,
-        default="data/processed",
+        default="data/processed/movielens_1m",
         help="Directory for processed datasets."
     )
     parser.add_argument(
@@ -137,15 +134,21 @@ def main() -> None:
     )
     output_path = paths.predictions_dir / "test_raw.jsonl"
 
+    print(f"[{args.exp_name}] Input path: {input_path}")
+    print(f"[{args.exp_name}] Output path: {output_path}")
+
     if not input_path.exists():
-        raise FileNotFoundError(f"Input file not found: {input_path}")
+        raise FileNotFoundError(
+            f"[{args.exp_name}] Input file not found: {input_path}. "
+            f"Please run preprocessing and sample building first."
+        )
 
     if output_path.exists() and not args.overwrite:
         print(f"Output already exists at {output_path}. Skip inference.")
         return
 
     samples = load_jsonl(input_path)
-    print(f"Loaded {len(samples)} samples from {input_path}")
+    print(f"[{args.exp_name}] Loaded {len(samples)} samples from {input_path}")
 
     llm_backend = BackendClass()
     prompt_builder = get_prompt_builder(args.prompt_path)
