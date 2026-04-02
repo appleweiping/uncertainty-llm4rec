@@ -1,0 +1,29 @@
+dataset_name: amazon_beauty
+domain_name: beauty
+
+raw:
+  review_path: data/raw/amazon_beauty/reviews_Beauty.jsonl
+  meta_path: data/raw/amazon_beauty/meta_Beauty.jsonl
+
+output:
+  processed_dir: data/processed/amazon_beauty
+
+schema:
+  user_id_col: user_id
+  item_id_col: parent_asin
+  rating_col: rating
+  time_col: timestamp
+
+filter:
+  rating_threshold: 4.0
+  min_user_interactions: 5
+  min_item_interactions: 5
+
+text:
+  strategy: title_categories_description
+  max_desc_len: 1000
+  fallback_to_title_categories: true
+
+popularity:
+  head_ratio: 0.2
+  mid_ratio: 0.6

@@ -1,53 +1,67 @@
+# src/data/text_builder.py
 from __future__ import annotations
 
-from typing import Dict
+from typing import Any
 
 import pandas as pd
 
 
-def _normalize_genres(genres: str, genre_sep: str = ", ") -> str:
-    if not genres or genres == "(no genres listed)":
-        return "unknown genre"
-    return genres.replace("|", genre_sep)
+def clean_text_fields(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        flat = []
+        for x in value:
+            if isinstance(x, list):
+                flat.extend(str(i) for i in x if i is not None)
+            elif x is not None:
+                flat.append(str(x))
+        value = " | ".join(flat)
+    text = str(value).strip()
+    return " ".join(text.split())
 
 
-def build_movielens_item_text(
-    movies_df: pd.DataFrame,
-    use_title: bool = True,
-    use_genres: bool = True,
-    genre_sep: str = ", ",
-) -> pd.DataFrame:
-    """
-    为 MovieLens item 构造统一文本字段 item_text。
+def build_candidate_text(
+    row: pd.Series,
+    strategy: str = "title_categories_description",
+    max_desc_len: int = 1000,
+    fallback_to_title_categories: bool = True,
+) -> str:
+    title = clean_text_fields(row.get("title", ""))
+    categories = clean_text_fields(row.get("categories", ""))
+    description = clean_text_fields(row.get("description", ""))[:max_desc_len]
 
-    输入列要求:
-    - item_id
-    - title
-    - genres
-
-    输出会在原表基础上新增:
-    - clean_title
-    - genre_text
-    - item_text
-    """
-    required_cols = {"item_id", "title", "genres"}
-    missing = required_cols - set(movies_df.columns)
-    if missing:
-        raise ValueError(f"movies_df is missing columns: {missing}")
-
-    df = movies_df.copy()
-    df["clean_title"] = df["title"].fillna("").astype(str).str.strip()
-    df["genre_text"] = df["genres"].fillna("").astype(str).apply(
-        lambda x: _normalize_genres(x, genre_sep=genre_sep)
-    )
-
-    def _compose_row(row: Dict) -> str:
+    if strategy == "title_categories_description":
         parts = []
-        if use_title and row["clean_title"]:
-            parts.append(f"Title: {row['clean_title']}")
-        if use_genres and row["genre_text"]:
-            parts.append(f"Genres: {row['genre_text']}")
-        return " | ".join(parts).strip()
+        if title:
+            parts.append(f"Title: {title}")
+        if categories:
+            parts.append(f"Categories: {categories}")
+        if description:
+            parts.append(f"Description: {description}")
 
-    df["item_text"] = df.apply(_compose_row, axis=1)
-    return df
+        if not description and fallback_to_title_categories:
+            return "\n".join(p for p in parts if p)
+
+        return "\n".join(p for p in parts if p)
+
+    raise ValueError(f"Unknown text strategy: {strategy}")
+
+
+def attach_candidate_text(
+    items: pd.DataFrame,
+    strategy: str = "title_categories_description",
+    max_desc_len: int = 1000,
+    fallback_to_title_categories: bool = True,
+) -> pd.DataFrame:
+    out = items.copy()
+    out["candidate_text"] = out.apply(
+        lambda row: build_candidate_text(
+            row,
+            strategy=strategy,
+            max_desc_len=max_desc_len,
+            fallback_to_title_categories=fallback_to_title_categories,
+        ),
+        axis=1,
+    )
+    return out

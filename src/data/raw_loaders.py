@@ -1,81 +1,176 @@
 from __future__ import annotations
 
+import gzip
+import json
 from pathlib import Path
-from typing import Tuple
+from typing import Any
 
 import pandas as pd
 
 
-def _check_exists(path: Path) -> None:
-    if not path.exists():
-        raise FileNotFoundError(f"File not found: {path}")
+def _read_jsonl(path: str | Path) -> list[dict[str, Any]]:
+    path = Path(path)
+    records: list[dict[str, Any]] = []
+    opener = gzip.open if path.suffix == ".gz" else open
+
+    with opener(path, "rt", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                records.append(json.loads(line))
+    return records
 
 
-def load_movielens_1m(raw_dir: str | Path) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def read_reviews_jsonl_or_gz(path: str | Path) -> pd.DataFrame:
+    records = _read_jsonl(path)
+    return pd.DataFrame(records)
+
+
+def read_meta_jsonl_or_gz(path: str | Path) -> pd.DataFrame:
+    records = _read_jsonl(path)
+    return pd.DataFrame(records)
+
+
+def _pick_first_existing_column(df: pd.DataFrame, candidates: list[str]) -> str:
+    for col in candidates:
+        if col in df.columns:
+            return col
+    raise ValueError(f"None of the candidate columns exist: {candidates}")
+
+
+def normalize_review_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
-    读取 MovieLens 1M 原始数据。
+    将 Amazon review 原始字段统一成:
+    user_id, item_id, rating, timestamp
 
-    参数
-    ----------
-    raw_dir : str | Path
-        MovieLens 1M 解压后的目录，例如：
-        data/raw/movielens_1m/ml-1m
-
-    返回
-    ----------
-    ratings_df : pd.DataFrame
-        列: user_id, item_id, rating, timestamp
-    movies_df : pd.DataFrame
-        列: item_id, title, genres
-    users_df : pd.DataFrame
-        列: user_id, gender, age, occupation, zip_code
+    关键修复点：
+    不再把 asin / parent_asin 同时 rename 成 item_id，
+    而是明确只选一个主键列，避免产生重复列名。
     """
-    raw_dir = Path(raw_dir)
+    if df.empty:
+        return pd.DataFrame(columns=["user_id", "item_id", "rating", "timestamp"])
 
-    ratings_path = raw_dir / "ratings.dat"
-    movies_path = raw_dir / "movies.dat"
-    users_path = raw_dir / "users.dat"
+    user_col = _pick_first_existing_column(df, ["user_id", "reviewerID"])
+    item_col = _pick_first_existing_column(df, ["parent_asin", "asin"])
+    rating_col = _pick_first_existing_column(df, ["rating", "overall"])
+    time_col = _pick_first_existing_column(df, ["timestamp", "unixReviewTime"])
 
-    _check_exists(ratings_path)
-    _check_exists(movies_path)
-    _check_exists(users_path)
+    out = df[[user_col, item_col, rating_col, time_col]].copy()
+    out.columns = ["user_id", "item_id", "rating", "timestamp"]
 
-    ratings_df = pd.read_csv(
-        ratings_path,
-        sep="::",
-        engine="python",
-        header=None,
-        names=["user_id", "item_id", "rating", "timestamp"],
-        encoding="latin-1",
+    out["user_id"] = out["user_id"].astype(str)
+    out["item_id"] = out["item_id"].astype(str)
+    out["rating"] = pd.to_numeric(out["rating"], errors="coerce")
+    out["timestamp"] = pd.to_numeric(out["timestamp"], errors="coerce")
+
+    out = out.dropna(subset=["user_id", "item_id", "rating", "timestamp"])
+    out["timestamp"] = out["timestamp"].astype("int64")
+
+    # 去重，避免重复交互影响后续统计
+    out = out.drop_duplicates(subset=["user_id", "item_id", "timestamp"]).reset_index(drop=True)
+
+    return out
+
+
+def normalize_meta_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    将 Amazon meta 原始字段统一成:
+    item_id, title, categories, description
+    """
+    if df.empty:
+        return pd.DataFrame(columns=["item_id", "title", "categories", "description"])
+
+    item_col = _pick_first_existing_column(df, ["parent_asin", "asin"])
+
+    out = pd.DataFrame()
+    out["item_id"] = df[item_col].astype(str)
+
+    if "title" in df.columns:
+        out["title"] = df["title"]
+    else:
+        out["title"] = None
+
+    if "categories" in df.columns:
+        out["categories"] = df["categories"]
+    else:
+        out["categories"] = None
+
+    if "description" in df.columns:
+        out["description"] = df["description"]
+    else:
+        out["description"] = None
+
+    out = out.dropna(subset=["item_id"])
+    out = out.drop_duplicates(subset=["item_id"]).reset_index(drop=True)
+
+    return out
+
+
+def filter_positive_interactions(df: pd.DataFrame, rating_threshold: float) -> pd.DataFrame:
+    return df[df["rating"] >= rating_threshold].copy()
+
+
+def iterative_k_core_filter(
+    interactions: pd.DataFrame,
+    min_user_interactions: int,
+    min_item_interactions: int,
+) -> pd.DataFrame:
+    """
+    迭代执行 user/item 双侧 k-core 过滤，直到稳定。
+    """
+    out = interactions.copy()
+
+    while True:
+        prev_len = len(out)
+
+        user_counts = out["user_id"].value_counts()
+        valid_users = user_counts[user_counts >= min_user_interactions].index
+
+        out = out[out["user_id"].isin(valid_users)].copy()
+
+        item_counts = out["item_id"].value_counts()
+        valid_items = item_counts[item_counts >= min_item_interactions].index
+
+        out = out[out["item_id"].isin(valid_items)].copy()
+
+        if len(out) == prev_len:
+            break
+
+    out = out.reset_index(drop=True)
+    return out
+
+
+def load_amazon_domain(
+    domain_name: str,
+    review_path: str | Path,
+    meta_path: str | Path,
+    rating_threshold: float,
+    min_user_interactions: int,
+    min_item_interactions: int,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+    review_df = read_reviews_jsonl_or_gz(review_path)
+    meta_df = read_meta_jsonl_or_gz(meta_path)
+
+    interactions = normalize_review_columns(review_df)
+    items = normalize_meta_columns(meta_df)
+
+    interactions = filter_positive_interactions(interactions, rating_threshold)
+    interactions = iterative_k_core_filter(
+        interactions=interactions,
+        min_user_interactions=min_user_interactions,
+        min_item_interactions=min_item_interactions,
     )
 
-    movies_df = pd.read_csv(
-        movies_path,
-        sep="::",
-        engine="python",
-        header=None,
-        names=["item_id", "title", "genres"],
-        encoding="latin-1",
-    )
+    valid_item_ids = set(interactions["item_id"].unique())
+    items = items[items["item_id"].isin(valid_item_ids)].copy().reset_index(drop=True)
 
-    users_df = pd.read_csv(
-        users_path,
-        sep="::",
-        engine="python",
-        header=None,
-        names=["user_id", "gender", "age", "occupation", "zip_code"],
-        encoding="latin-1",
-    )
+    users = pd.DataFrame({"user_id": sorted(interactions["user_id"].unique())})
 
-    ratings_df["user_id"] = ratings_df["user_id"].astype(int)
-    ratings_df["item_id"] = ratings_df["item_id"].astype(int)
-    ratings_df["rating"] = ratings_df["rating"].astype(float)
-    ratings_df["timestamp"] = ratings_df["timestamp"].astype(int)
+    stats = {
+        "domain_name": domain_name,
+        "num_interactions": int(len(interactions)),
+        "num_users": int(interactions["user_id"].nunique()),
+        "num_items": int(interactions["item_id"].nunique()),
+    }
 
-    movies_df["item_id"] = movies_df["item_id"].astype(int)
-    movies_df["title"] = movies_df["title"].fillna("").astype(str)
-    movies_df["genres"] = movies_df["genres"].fillna("").astype(str)
-
-    users_df["user_id"] = users_df["user_id"].astype(int)
-
-    return ratings_df, movies_df, users_df
+    return interactions, items, users, stats
