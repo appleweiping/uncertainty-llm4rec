@@ -1,22 +1,40 @@
 # src/data/candidate_sampling.py
+
 from __future__ import annotations
 
 import random
-from typing import Sequence
+from typing import List, Sequence, Set
 
 
-class RandomCandidateSampler:
-    def __init__(self, all_item_ids: Sequence[str], seed: int = 42) -> None:
-        self.all_item_ids = list(all_item_ids)
-        self.rng = random.Random(seed)
+def sample_negative_items(
+    user_seen_items: Set[str],
+    all_item_ids: Sequence[str],
+    num_negatives: int,
+    rng: random.Random,
+) -> List[str]:
+    """
+    从全量 item 中采样当前用户未交互过的负样本。
 
-    def sample(
-        self,
-        user_history: set[str],
-        pos_item: str,
-        n_neg: int = 19,
-    ) -> list[str]:
-        pool = [x for x in self.all_item_ids if x != pos_item and x not in user_history]
-        if len(pool) < n_neg:
-            return self.rng.sample(pool, k=len(pool))
-        return self.rng.sample(pool, k=n_neg)
+    Args:
+        user_seen_items: 当前用户已经看过/交互过的 item_id 集合
+        all_item_ids: 全量 item_id 列表
+        num_negatives: 需要采样的负样本数量
+        rng: 随机数生成器，保证可复现
+
+    Returns:
+        负样本 item_id 列表
+    """
+    if num_negatives <= 0:
+        return []
+
+    candidates = [item_id for item_id in all_item_ids if item_id not in user_seen_items]
+
+    if not candidates:
+        return []
+
+    if len(candidates) <= num_negatives:
+        shuffled = list(candidates)
+        rng.shuffle(shuffled)
+        return shuffled
+
+    return rng.sample(candidates, num_negatives)

@@ -5,8 +5,7 @@ raw:
   review_path: data/raw/amazon_beauty/reviews_Beauty.jsonl
   meta_path: data/raw/amazon_beauty/meta_Beauty.jsonl
 
-output:
-  processed_dir: data/processed/amazon_beauty
+processed_dir: data/processed/amazon_beauty
 
 schema:
   user_id_col: user_id
@@ -27,3 +26,12 @@ text:
 popularity:
   head_ratio: 0.2
   mid_ratio: 0.6
+
+sampling:
+  max_history_len: 10
+  num_negatives: 5
+  seed: 42
+
+split:
+  method: leave_one_out
+  min_sequence_length: 3

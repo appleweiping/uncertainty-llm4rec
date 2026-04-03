@@ -1,4 +1,5 @@
 # main_preprocess.py
+
 from __future__ import annotations
 
 import argparse
@@ -14,16 +15,20 @@ from src.data.text_builder import attach_candidate_text
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, required=True)
+    parser.add_argument("--config", type=str, required=True, help="配置文件路径，例如 configs/data/amazon_beauty.yaml")
     return parser.parse_args()
+
+
+def load_yaml(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
 def main() -> None:
     args = parse_args()
-    with open(args.config, "r", encoding="utf-8") as f:
-        cfg = yaml.safe_load(f)
+    cfg = load_yaml(args.config)
 
-    processed_dir = Path(cfg["output"]["processed_dir"])
+    processed_dir = Path(cfg["processed_dir"])
     processed_dir.mkdir(parents=True, exist_ok=True)
 
     interactions, items, users, stats = load_amazon_domain(
@@ -42,7 +47,16 @@ def main() -> None:
         fallback_to_title_categories=cfg["text"].get("fallback_to_title_categories", True),
     )
 
-    grouped = interactions.sort_values(["user_id", "timestamp"]).groupby("user_id")["item_id"].apply(list)
+    interactions = interactions.copy()
+    interactions["user_id"] = interactions["user_id"].astype(str)
+    interactions["item_id"] = interactions["item_id"].astype(str)
+
+    grouped = (
+        interactions.sort_values(["user_id", "timestamp"])
+        .groupby("user_id")["item_id"]
+        .apply(list)
+    )
+
     popularity = compute_item_popularity(grouped.tolist())
     popularity_group = build_popularity_groups(
         popularity,
@@ -54,20 +68,30 @@ def main() -> None:
         {
             "item_id": list(popularity.keys()),
             "interaction_count": list(popularity.values()),
-            "popularity_group": [popularity_group[k] for k in popularity.keys()],
+            "popularity_group": [popularity_group[item_id] for item_id in popularity.keys()],
         }
     )
 
-    items = items.merge(popularity_df[["item_id", "popularity_group"]], on="item_id", how="left")
+    items = items.copy()
+    items["item_id"] = items["item_id"].astype(str)
+    items = items.merge(
+        popularity_df[["item_id", "popularity_group"]],
+        on="item_id",
+        how="left",
+    )
 
     interactions.to_csv(processed_dir / "interactions.csv", index=False)
     items.to_csv(processed_dir / "items.csv", index=False)
     users.to_csv(processed_dir / "users.csv", index=False)
     popularity_df.to_csv(processed_dir / "popularity_stats.csv", index=False)
 
-    print("Preprocess done.")
+    print("[Done] preprocess finished")
+    print(f"[Saved] {processed_dir / 'interactions.csv'}")
+    print(f"[Saved] {processed_dir / 'items.csv'}")
+    print(f"[Saved] {processed_dir / 'users.csv'}")
+    print(f"[Saved] {processed_dir / 'popularity_stats.csv'}")
+    print("[Stats]")
     print(stats)
-    print(f"Saved to: {processed_dir}")
 
 
 if __name__ == "__main__":
