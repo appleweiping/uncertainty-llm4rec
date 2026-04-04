@@ -1,4 +1,3 @@
-# main_eval.py
 from __future__ import annotations
 
 import argparse
@@ -38,50 +37,29 @@ def save_table(df: pd.DataFrame, path: str | Path) -> None:
 
 
 def save_summary_dict(summary: dict, path: str | Path) -> None:
-    df = pd.DataFrame([summary])
-    save_table(df, path)
+    save_table(pd.DataFrame([summary]), path)
 
 
-def main() -> None:
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--exp_name",
-        type=str,
-        default="clean",
-        help="Experiment name."
-    )
+    parser.add_argument("--exp_name", type=str, required=True, help="实验名，例如 beauty_deepseek")
     parser.add_argument(
         "--input_path",
         type=str,
         default=None,
-        help="Optional explicit path to prediction jsonl. Defaults to outputs/{exp_name}/predictions/test_raw.jsonl"
+        help="可选，手动指定 prediction 文件；默认读取 outputs/{exp_name}/predictions/test_raw.jsonl",
     )
-    parser.add_argument(
-        "--output_root",
-        type=str,
-        default="outputs",
-        help="Root directory for all experiment outputs."
-    )
-    parser.add_argument(
-        "--n_bins",
-        type=int,
-        default=10,
-        help="Number of bins for reliability analysis."
-    )
-    parser.add_argument(
-        "--high_conf_threshold",
-        type=float,
-        default=0.8,
-        help="Threshold for high-confidence analysis."
-    )
-    args = parser.parse_args()
+    parser.add_argument("--output_root", type=str, default="outputs", help="输出根目录")
+    parser.add_argument("--n_bins", type=int, default=10, help="reliability 分桶数")
+    parser.add_argument("--high_conf_threshold", type=float, default=0.8, help="高置信阈值")
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
 
     paths = ensure_exp_dirs(args.exp_name, args.output_root)
-    input_path = (
-        Path(args.input_path)
-        if args.input_path is not None
-        else paths.predictions_dir / "test_raw.jsonl"
-    )
+    input_path = Path(args.input_path) if args.input_path else paths.predictions_dir / "test_raw.jsonl"
 
     if not input_path.exists():
         raise FileNotFoundError(f"Prediction file not found: {input_path}")
@@ -97,7 +75,7 @@ def main() -> None:
 
     cc_summary = compute_confidence_correctness_summary(
         df,
-        high_conf_threshold=args.high_conf_threshold
+        high_conf_threshold=args.high_conf_threshold,
     )
     save_summary_dict(cc_summary, paths.tables_dir / "confidence_correctness_summary.csv")
 
@@ -107,31 +85,46 @@ def main() -> None:
     reliability_df = get_reliability_dataframe(
         df["label"].to_numpy(),
         df["confidence"].to_numpy(),
-        n_bins=args.n_bins
+        n_bins=args.n_bins,
     )
     save_table(reliability_df, paths.tables_dir / "reliability_bins.csv")
 
     pop_df = compute_popularity_group_stats(
         df,
-        high_conf_threshold=args.high_conf_threshold
+        high_conf_threshold=args.high_conf_threshold,
     )
     save_table(pop_df, paths.tables_dir / "popularity_group_stats.csv")
 
     exposure_df = compute_high_confidence_exposure(
         df,
-        high_conf_threshold=args.high_conf_threshold
+        high_conf_threshold=args.high_conf_threshold,
     )
     save_table(exposure_df, paths.tables_dir / "high_confidence_exposure.csv")
 
-    plot_confidence_histogram(df, paths.figures_dir / "confidence_histogram_correct_vs_wrong.png")
-    plot_reliability_diagram(reliability_df, paths.figures_dir / "reliability_diagram.png")
-    plot_popularity_avg_confidence(pop_df, paths.figures_dir / "popularity_avg_confidence.png")
-    plot_popularity_confidence_boxplot(df, paths.figures_dir / "popularity_confidence_boxplot.png")
-    plot_high_confidence_exposure_shift(exposure_df, paths.figures_dir / "high_confidence_exposure_shift.png")
+    plot_confidence_histogram(
+        df,
+        paths.figures_dir / "confidence_histogram_correct_vs_wrong.png",
+    )
+    plot_reliability_diagram(
+        reliability_df,
+        paths.figures_dir / "reliability_diagram.png",
+    )
+    plot_popularity_avg_confidence(
+        pop_df,
+        paths.figures_dir / "popularity_avg_confidence.png",
+    )
+    plot_popularity_confidence_boxplot(
+        df,
+        paths.figures_dir / "popularity_confidence_boxplot.png",
+    )
+    plot_high_confidence_exposure_shift(
+        exposure_df,
+        paths.figures_dir / "high_confidence_exposure_shift.png",
+    )
 
     print(f"[{args.exp_name}] Evaluation done.")
-    print(f"Tables saved to:  {paths.tables_dir}")
-    print(f"Figures saved to: {paths.figures_dir}")
+    print(f"[{args.exp_name}] Tables saved to:  {paths.tables_dir}")
+    print(f"[{args.exp_name}] Figures saved to: {paths.figures_dir}")
 
 
 if __name__ == "__main__":

@@ -2,59 +2,25 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from typing import Any
+
 import pandas as pd
+import yaml
 
 from src.llm.inference import run_pointwise_inference
 from src.utils.paths import default_input_path_for_exp, ensure_exp_dirs
 
-BackendClass = None
 
-try:
-    from src.llm.openai_backend import DeepSeekBackend as BackendClass
-except Exception:
-    try:
-        from src.llm.deepseek_backend import DeepSeekBackend as BackendClass
-    except Exception:
-        try:
-            from src.llm.openai_backend import OpenAIBackend as BackendClass
-        except Exception:
-            try:
-                from src.llm.deepseek_backend import OpenAIBackend as BackendClass
-            except Exception:
-                BackendClass = None
-
-if BackendClass is None:
-    raise ImportError(
-        "Cannot find a usable LLM backend under src/llm/. "
-        "Please check your backend filename/class."
-    )
-
-PromptBuilderClass = None
-build_prompt_fn = None
-
-try:
-    from src.llm.prompt_builder import PromptBuilder as PromptBuilderClass
-except Exception:
-    PromptBuilderClass = None
-
-if PromptBuilderClass is None:
-    try:
-        from src.llm.prompt_builder import build_pointwise_prompt as build_prompt_fn
-    except Exception:
-        try:
-            from src.llm.prompt_builder import build_prompt as build_prompt_fn
-        except Exception:
-            build_prompt_fn = None
-
-if PromptBuilderClass is None and build_prompt_fn is None:
-    raise ImportError(
-        "Cannot find a usable prompt builder under src/llm/prompt_builder.py. "
-        "Please check whether you have PromptBuilder / build_pointwise_prompt / build_prompt."
-    )
+def load_yaml(path: str | Path) -> dict[str, Any]:
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+    return data
 
 
-def load_jsonl(path: str | Path) -> list[dict]:
+def load_jsonl(path: str | Path, max_samples: int | None = None) -> list[dict]:
     df = pd.read_json(path, lines=True)
+    if max_samples is not None and max_samples > 0:
+        df = df.head(max_samples)
     return df.to_dict(orient="records")
 
 
@@ -62,6 +28,23 @@ def save_jsonl(records: list[dict], path: str | Path) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(records).to_json(path, orient="records", lines=True, force_ascii=False)
+
+
+def build_backend_from_config(model_cfg_path: str | Path):
+    model_cfg = load_yaml(model_cfg_path)
+    backend_name = str(model_cfg.get("backend_name", "deepseek")).strip().lower()
+
+    if backend_name == "deepseek":
+        from src.llm.deepseek_backend import DeepSeekBackend
+
+        return DeepSeekBackend(
+            model_name=model_cfg.get("model_name", "deepseek-chat"),
+            temperature=float(model_cfg.get("temperature", 0.0)),
+            max_tokens=int(model_cfg.get("max_tokens", 300)),
+            base_url=model_cfg.get("base_url", "https://api.deepseek.com"),
+        )
+
+    raise ValueError(f"Unsupported backend_name: {backend_name}")
 
 
 class FunctionPromptBuilderAdapter:
@@ -77,81 +60,92 @@ class FunctionPromptBuilderAdapter:
 
 
 def get_prompt_builder(prompt_path: str | Path):
-    if PromptBuilderClass is not None:
+    try:
+        from src.llm.prompt_builder import PromptBuilder
+        return PromptBuilder(template_path=str(prompt_path))
+    except Exception:
         try:
-            return PromptBuilderClass(template_path=str(prompt_path))
-        except TypeError:
-            return PromptBuilderClass()
+            from src.llm.prompt_builder import build_pointwise_prompt
+            return FunctionPromptBuilderAdapter(build_pointwise_prompt, template_path=prompt_path)
+        except Exception as e:
+            raise ImportError(
+                "Cannot find a usable prompt builder in src/llm/prompt_builder.py"
+            ) from e
 
-    return FunctionPromptBuilderAdapter(build_prompt_fn, template_path=prompt_path)
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, default=None, help="实验配置文件路径")
+    parser.add_argument("--exp_name", type=str, default=None, help="实验名")
+    parser.add_argument("--input_path", type=str, default=None, help="输入 pointwise jsonl")
+    parser.add_argument("--data_root", type=str, default="data/processed/movielens_1m", help="默认数据目录")
+    parser.add_argument("--output_root", type=str, default="outputs", help="输出根目录")
+    parser.add_argument("--prompt_path", type=str, default="prompts/pointwise_yesno.txt", help="prompt 模板路径")
+    parser.add_argument("--model_config", type=str, default=None, help="模型配置文件路径")
+    parser.add_argument("--max_samples", type=int, default=None, help="最多读取多少条样本")
+    parser.add_argument("--overwrite", action="store_true", help="是否覆盖已有预测文件")
+    return parser.parse_args()
+
+
+def merge_config(args: argparse.Namespace) -> dict[str, Any]:
+    cfg: dict[str, Any] = {}
+    if args.config:
+        cfg = load_yaml(args.config)
+
+    merged = {
+        "exp_name": args.exp_name if args.exp_name is not None else cfg.get("exp_name", "clean"),
+        "input_path": args.input_path if args.input_path is not None else cfg.get("input_path"),
+        "data_root": args.data_root if args.data_root is not None else cfg.get("data_root", "data/processed/movielens_1m"),
+        "output_root": args.output_root if args.output_root is not None else cfg.get("output_root", "outputs"),
+        "prompt_path": args.prompt_path if args.prompt_path is not None else cfg.get("prompt_path", "prompts/pointwise_yesno.txt"),
+        "model_config": args.model_config if args.model_config is not None else cfg.get("model_config"),
+        "max_samples": args.max_samples if args.max_samples is not None else cfg.get("max_samples"),
+        "overwrite": bool(args.overwrite or cfg.get("overwrite", False)),
+    }
+    return merged
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--exp_name",
-        type=str,
-        default="clean",
-        help="Experiment name, e.g. clean / noisy."
-    )
-    parser.add_argument(
-        "--input_path",
-        type=str,
-        default=None,
-        help="Optional explicit input jsonl path. If omitted, infer from exp_name."
-    )
-    parser.add_argument(
-        "--data_root",
-        type=str,
-        default="data/processed/movielens_1m",
-        help="Directory for processed datasets."
-    )
-    parser.add_argument(
-        "--output_root",
-        type=str,
-        default="outputs",
-        help="Root directory for all experiment outputs."
-    )
-    parser.add_argument(
-        "--prompt_path",
-        type=str,
-        default="prompts/pointwise_yesno.txt",
-        help="Prompt template path."
-    )
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="Overwrite output file if it already exists."
-    )
-    args = parser.parse_args()
+    args = parse_args()
+    cfg = merge_config(args)
 
-    paths = ensure_exp_dirs(args.exp_name, args.output_root)
+    exp_name = str(cfg["exp_name"])
+    output_root = cfg["output_root"]
+    input_path = cfg["input_path"]
+    data_root = cfg["data_root"]
+    prompt_path = cfg["prompt_path"]
+    model_config = cfg["model_config"]
+    max_samples = cfg["max_samples"]
+    overwrite = cfg["overwrite"]
 
-    input_path = (
-        Path(args.input_path)
-        if args.input_path is not None
-        else default_input_path_for_exp(args.exp_name, args.data_root)
-    )
+    if model_config is None:
+        raise ValueError("model_config 不能为空，请通过 --model_config 或 --config 提供。")
+
+    paths = ensure_exp_dirs(exp_name, output_root)
+
+    if input_path is None:
+        input_path = default_input_path_for_exp(exp_name, data_root)
+
+    input_path = Path(input_path)
     output_path = paths.predictions_dir / "test_raw.jsonl"
 
-    print(f"[{args.exp_name}] Input path: {input_path}")
-    print(f"[{args.exp_name}] Output path: {output_path}")
+    print(f"[{exp_name}] Input path: {input_path}")
+    print(f"[{exp_name}] Output path: {output_path}")
+    print(f"[{exp_name}] Model config: {model_config}")
 
     if not input_path.exists():
-        raise FileNotFoundError(
-            f"[{args.exp_name}] Input file not found: {input_path}. "
-            f"Please run preprocessing and sample building first."
-        )
+        raise FileNotFoundError(f"[{exp_name}] Input file not found: {input_path}")
 
-    if output_path.exists() and not args.overwrite:
-        print(f"Output already exists at {output_path}. Skip inference.")
+    if output_path.exists() and not overwrite:
+        print(f"[{exp_name}] Output already exists: {output_path}")
+        print(f"[{exp_name}] Use overwrite=true in config or --overwrite to rerun.")
         return
 
-    samples = load_jsonl(input_path)
-    print(f"[{args.exp_name}] Loaded {len(samples)} samples from {input_path}")
+    samples = load_jsonl(input_path, max_samples=max_samples)
+    print(f"[{exp_name}] Loaded {len(samples)} samples.")
 
-    llm_backend = BackendClass()
-    prompt_builder = get_prompt_builder(args.prompt_path)
+    llm_backend = build_backend_from_config(model_config)
+    prompt_builder = get_prompt_builder(prompt_path)
 
     predictions = run_pointwise_inference(
         samples=samples,
@@ -160,7 +154,7 @@ def main() -> None:
     )
 
     save_jsonl(predictions, output_path)
-    print(f"[{args.exp_name}] Saved {len(predictions)} predictions to {output_path}")
+    print(f"[{exp_name}] Saved {len(predictions)} predictions to {output_path}")
 
 
 if __name__ == "__main__":

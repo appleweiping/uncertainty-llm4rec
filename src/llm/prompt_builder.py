@@ -10,19 +10,15 @@ class PromptBuilder:
 
     @staticmethod
     def build_history_block(sample: dict[str, Any]) -> str:
-        # 旧 schema：history_items = [{"title": ..., "meta": ...}, ...]
         if "history_items" in sample and isinstance(sample["history_items"], list):
             lines: list[str] = []
             for idx, item in enumerate(sample["history_items"], start=1):
                 title = str(item.get("title", "")).strip()
                 meta = str(item.get("meta", "")).strip()
-                if meta:
-                    lines.append(f"{idx}. {title} | {meta}")
-                else:
-                    lines.append(f"{idx}. {title}")
+                text = f"{title} | {meta}".strip(" |")
+                lines.append(f"{idx}. {text}" if text else f"{idx}. [EMPTY]")
             return "\n".join(lines)
 
-        # 新 schema：history 可能已经是字符串列表
         if "history" in sample:
             history = sample["history"]
 
@@ -33,20 +29,16 @@ class PromptBuilder:
                         title = str(item.get("title", "")).strip()
                         meta = str(item.get("meta", "")).strip()
                         text = str(item.get("text", "")).strip()
-                        if meta:
-                            lines.append(f"{idx}. {title} | {meta}")
-                        elif text:
-                            lines.append(f"{idx}. {text}")
-                        else:
-                            lines.append(f"{idx}. {title}")
+                        value = f"{title} | {meta}".strip(" |") or text or "[EMPTY]"
+                        lines.append(f"{idx}. {value}")
                     else:
-                        lines.append(f"{idx}. {str(item).strip()}")
+                        value = str(item).strip() or "[EMPTY]"
+                        lines.append(f"{idx}. {value}")
                 return "\n".join(lines)
 
             if isinstance(history, str):
                 return history.strip()
 
-        # 有些新数据会直接给 history_text
         if "history_text" in sample and isinstance(sample["history_text"], str):
             return sample["history_text"].strip()
 
@@ -71,7 +63,6 @@ class PromptBuilder:
             or ""
         ).strip()
 
-        # 如果没有 title，但 candidate_text 本身已经很完整，就给一个占位标题
         if not candidate_title:
             candidate_title = str(
                 sample.get("candidate_item_id")

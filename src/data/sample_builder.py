@@ -1,5 +1,3 @@
-# src/data/sample_builder.py
-
 from __future__ import annotations
 
 import random
@@ -25,16 +23,6 @@ def _normalize_id(value: Any) -> str:
 
 
 def build_item_lookup(items_df: pd.DataFrame) -> Dict[str, Dict[str, str]]:
-    """
-    将 items.csv 转成 item_id -> item信息 查找表。
-
-    期望至少包含:
-    - item_id
-    - candidate_text
-
-    可选:
-    - title
-    """
     if "item_id" not in items_df.columns:
         raise ValueError("items.csv 缺少必要字段: item_id")
     if "candidate_text" not in items_df.columns:
@@ -63,9 +51,6 @@ def build_item_lookup(items_df: pd.DataFrame) -> Dict[str, Dict[str, str]]:
 
 
 def build_popularity_lookup(popularity_df: pd.DataFrame) -> Dict[str, str]:
-    """
-    将 popularity_stats.csv 转成 item_id -> popularity_group 查找表。
-    """
     required_cols = ["item_id", "popularity_group"]
     for col in required_cols:
         if col not in popularity_df.columns:
@@ -89,17 +74,6 @@ def build_popularity_lookup(popularity_df: pd.DataFrame) -> Dict[str, str]:
 
 
 def sort_and_group_interactions(interactions_df: pd.DataFrame) -> Dict[str, List[Dict[str, Any]]]:
-    """
-    interactions.csv -> user_id 对应的按时间排序交互序列
-
-    返回格式:
-    {
-        user_id: [
-            {"item_id": "...", "timestamp": ...},
-            ...
-        ]
-    }
-    """
     required_cols = ["user_id", "item_id", "timestamp"]
     for col in required_cols:
         if col not in interactions_df.columns:
@@ -129,6 +103,34 @@ def sort_and_group_interactions(interactions_df: pd.DataFrame) -> Dict[str, List
     return user_sequences
 
 
+def deduplicate_user_sequences(
+    user_sequences: Dict[str, List[Dict[str, Any]]]
+) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    对每个用户去重 item，只保留该 item 第一次出现。
+    目标：把任务定义固定为“推荐未见过的新 item”，而不是复购预测。
+    """
+    deduped: Dict[str, List[Dict[str, Any]]] = {}
+
+    for user_id, seq in user_sequences.items():
+        seen_items = set()
+        new_seq: List[Dict[str, Any]] = []
+
+        for event in seq:
+            item_id = _normalize_id(event["item_id"])
+            if item_id == "":
+                continue
+            if item_id in seen_items:
+                continue
+            seen_items.add(item_id)
+            new_seq.append(event)
+
+        if len(new_seq) > 0:
+            deduped[user_id] = new_seq
+
+    return deduped
+
+
 def split_user_sequence_leave_one_out(
     user_sequences: Dict[str, List[Dict[str, Any]]]
 ) -> Tuple[
@@ -136,12 +138,6 @@ def split_user_sequence_leave_one_out(
     Dict[str, Dict[str, Any]],
     Dict[str, Dict[str, Any]],
 ]:
-    """
-    标准 leave-one-out 划分:
-    - 最后一个交互作为 test
-    - 倒数第二个交互作为 valid
-    - 更早的交互作为 train history
-    """
     train_histories: Dict[str, List[Dict[str, Any]]] = {}
     valid_targets: Dict[str, Dict[str, Any]] = {}
     test_targets: Dict[str, Dict[str, Any]] = {}
@@ -162,10 +158,6 @@ def _format_history(
     item_lookup: Dict[str, Dict[str, str]],
     max_history_len: int,
 ) -> List[str]:
-    """
-    将历史 item 序列转成文本历史。
-    优先使用 title；title 缺失时退化到 candidate_text 前 200 字符。
-    """
     trimmed = history_item_ids[-max_history_len:]
     history_texts: List[str] = []
 
@@ -218,13 +210,6 @@ def build_train_pointwise_samples(
     popularity_lookup: Dict[str, str],
     cfg: BuildSamplesConfig,
 ) -> List[Dict[str, Any]]:
-    """
-    构造训练集 pointwise 样本。
-
-    对每个用户的 train 序列，从第二个位置开始:
-    - 当前 item 作为正样本
-    - 采样若干负样本作为负样本
-    """
     rng = random.Random(cfg.seed)
     all_item_ids = list(item_lookup.keys())
     records: List[Dict[str, Any]] = []
@@ -246,7 +231,9 @@ def build_train_pointwise_samples(
             if target_item_id == "" or target_item_id not in item_lookup:
                 continue
 
-            # 正样本
+            if target_item_id in set(history_item_ids):
+                continue
+
             pos_record = _build_single_record(
                 user_id=user_id,
                 history_item_ids=history_item_ids,
@@ -259,7 +246,6 @@ def build_train_pointwise_samples(
             )
             records.append(pos_record)
 
-            # 负样本
             negative_item_ids = sample_negative_items(
                 user_seen_items=full_seen_items,
                 all_item_ids=all_item_ids,
@@ -269,6 +255,8 @@ def build_train_pointwise_samples(
 
             for neg_item_id in negative_item_ids:
                 if neg_item_id not in item_lookup:
+                    continue
+                if neg_item_id in set(history_item_ids):
                     continue
 
                 neg_record = _build_single_record(
@@ -293,15 +281,6 @@ def build_eval_samples_for_split(
     popularity_lookup: Dict[str, str],
     cfg: BuildSamplesConfig,
 ) -> List[Dict[str, Any]]:
-    """
-    构造 valid/test 的 pointwise 样本。
-
-    每个用户:
-    - 1 条正样本
-    - num_negatives 条负样本
-
-    注意 valid/test 都只基于 train_histories 构造 history，避免目标泄漏。
-    """
     rng = random.Random(cfg.seed)
     all_item_ids = list(item_lookup.keys())
     records: List[Dict[str, Any]] = []
@@ -318,9 +297,11 @@ def build_eval_samples_for_split(
         if target_item_id == "" or target_item_id not in item_lookup:
             continue
 
+        if target_item_id in set(history_item_ids):
+            continue
+
         user_seen_items = set(history_item_ids + [target_item_id])
 
-        # 正样本
         pos_record = _build_single_record(
             user_id=user_id,
             history_item_ids=history_item_ids,
@@ -333,7 +314,6 @@ def build_eval_samples_for_split(
         )
         records.append(pos_record)
 
-        # 负样本
         negative_item_ids = sample_negative_items(
             user_seen_items=user_seen_items,
             all_item_ids=all_item_ids,
@@ -343,6 +323,8 @@ def build_eval_samples_for_split(
 
         for neg_item_id in negative_item_ids:
             if neg_item_id not in item_lookup:
+                continue
+            if neg_item_id in set(history_item_ids):
                 continue
 
             neg_record = _build_single_record(
