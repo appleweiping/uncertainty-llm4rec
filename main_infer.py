@@ -73,6 +73,17 @@ def get_prompt_builder(prompt_path: str | Path):
             ) from e
 
 
+def infer_prediction_filename(input_path: str | Path) -> str:
+    stem = Path(input_path).stem.lower()
+    if stem.startswith("valid"):
+        return "valid_raw.jsonl"
+    if stem.startswith("test"):
+        return "test_raw.jsonl"
+    if stem.startswith("train"):
+        return "train_raw.jsonl"
+    return f"{stem}_raw.jsonl"
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=None, help="实验配置文件路径")
@@ -83,6 +94,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--prompt_path", type=str, default="prompts/pointwise_yesno.txt", help="prompt 模板路径")
     parser.add_argument("--model_config", type=str, default=None, help="模型配置文件路径")
     parser.add_argument("--max_samples", type=int, default=None, help="最多读取多少条样本")
+    parser.add_argument("--output_path", type=str, default=None, help="预测输出 jsonl 路径")
+    parser.add_argument("--split_name", type=str, default=None, help="可选 split 名称，如 train/valid/test")
     parser.add_argument("--overwrite", action="store_true", help="是否覆盖已有预测文件")
     return parser.parse_args()
 
@@ -100,6 +113,8 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
         "prompt_path": args.prompt_path if args.prompt_path is not None else cfg.get("prompt_path", "prompts/pointwise_yesno.txt"),
         "model_config": args.model_config if args.model_config is not None else cfg.get("model_config"),
         "max_samples": args.max_samples if args.max_samples is not None else cfg.get("max_samples"),
+        "output_path": args.output_path if args.output_path is not None else cfg.get("output_path"),
+        "split_name": args.split_name if args.split_name is not None else cfg.get("split_name"),
         "overwrite": bool(args.overwrite or cfg.get("overwrite", False)),
     }
     return merged
@@ -116,6 +131,8 @@ def main() -> None:
     prompt_path = cfg["prompt_path"]
     model_config = cfg["model_config"]
     max_samples = cfg["max_samples"]
+    output_path = cfg["output_path"]
+    split_name = cfg["split_name"]
     overwrite = cfg["overwrite"]
 
     if model_config is None:
@@ -127,7 +144,12 @@ def main() -> None:
         input_path = default_input_path_for_exp(exp_name, data_root)
 
     input_path = Path(input_path)
-    output_path = paths.predictions_dir / "test_raw.jsonl"
+    if output_path is not None:
+        output_path = Path(output_path)
+    elif split_name is not None:
+        output_path = paths.predictions_dir / f"{str(split_name).strip().lower()}_raw.jsonl"
+    else:
+        output_path = paths.predictions_dir / infer_prediction_filename(input_path)
 
     print(f"[{exp_name}] Input path: {input_path}")
     print(f"[{exp_name}] Output path: {output_path}")
