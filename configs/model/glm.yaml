@@ -1,0 +1,11 @@
+backend_name: openai_compatible
+provider_name: glm
+model_name: glm-4.5
+
+connection:
+  base_url: https://open.bigmodel.cn/api/paas/v4
+  api_key_env: GLM_API_KEY
+
+generation:
+  temperature: 0.0
+  max_tokens: 300

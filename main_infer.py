@@ -11,6 +11,13 @@ from src.llm.inference import run_pointwise_inference
 from src.utils.paths import default_input_path_for_exp, ensure_exp_dirs
 
 
+def _first_present(*values):
+    for value in values:
+        if value is not None:
+            return value
+    return None
+
+
 def load_yaml(path: str | Path) -> dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
@@ -32,16 +39,26 @@ def save_jsonl(records: list[dict], path: str | Path) -> None:
 
 def build_backend_from_config(model_cfg_path: str | Path):
     model_cfg = load_yaml(model_cfg_path)
-    backend_name = str(model_cfg.get("backend_name", "deepseek")).strip().lower()
+    backend_name = str(model_cfg.get("backend_name", "")).strip().lower()
+    if not backend_name:
+        raise ValueError(f"backend_name is required in model config: {model_cfg_path}")
+
+    generation_cfg = model_cfg.get("generation", {}) or {}
+    connection_cfg = model_cfg.get("connection", {}) or {}
 
     if backend_name == "deepseek":
         from src.llm.deepseek_backend import DeepSeekBackend
 
+        model_name = _first_present(model_cfg.get("model_name"), generation_cfg.get("model_name"))
+        if not model_name:
+            raise ValueError(f"model_name is required in model config: {model_cfg_path}")
+
         return DeepSeekBackend(
-            model_name=model_cfg.get("model_name", "deepseek-chat"),
-            temperature=float(model_cfg.get("temperature", 0.0)),
-            max_tokens=int(model_cfg.get("max_tokens", 300)),
-            base_url=model_cfg.get("base_url", "https://api.deepseek.com"),
+            model_name=str(model_name),
+            temperature=float(_first_present(generation_cfg.get("temperature"), model_cfg.get("temperature"), 0.0)),
+            max_tokens=int(_first_present(generation_cfg.get("max_tokens"), model_cfg.get("max_tokens"), 300)),
+            base_url=str(_first_present(connection_cfg.get("base_url"), model_cfg.get("base_url"), "https://api.deepseek.com")),
+            api_key_env=str(_first_present(connection_cfg.get("api_key_env"), model_cfg.get("api_key_env"), "DEEPSEEK_API_KEY")),
         )
 
     raise ValueError(f"Unsupported backend_name: {backend_name}")
@@ -62,15 +79,15 @@ class FunctionPromptBuilderAdapter:
 def get_prompt_builder(prompt_path: str | Path):
     try:
         from src.llm.prompt_builder import PromptBuilder
+
         return PromptBuilder(template_path=str(prompt_path))
     except Exception:
         try:
             from src.llm.prompt_builder import build_pointwise_prompt
+
             return FunctionPromptBuilderAdapter(build_pointwise_prompt, template_path=prompt_path)
         except Exception as e:
-            raise ImportError(
-                "Cannot find a usable prompt builder in src/llm/prompt_builder.py"
-            ) from e
+            raise ImportError("Cannot find a usable prompt builder in src/llm/prompt_builder.py") from e
 
 
 def infer_prediction_filename(input_path: str | Path) -> str:
@@ -86,17 +103,17 @@ def infer_prediction_filename(input_path: str | Path) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default=None, help="实验配置文件路径")
-    parser.add_argument("--exp_name", type=str, default=None, help="实验名")
-    parser.add_argument("--input_path", type=str, default=None, help="输入 pointwise jsonl")
-    parser.add_argument("--data_root", type=str, default="data/processed/movielens_1m", help="默认数据目录")
-    parser.add_argument("--output_root", type=str, default="outputs", help="输出根目录")
-    parser.add_argument("--prompt_path", type=str, default="prompts/pointwise_yesno.txt", help="prompt 模板路径")
-    parser.add_argument("--model_config", type=str, default=None, help="模型配置文件路径")
-    parser.add_argument("--max_samples", type=int, default=None, help="最多读取多少条样本")
-    parser.add_argument("--output_path", type=str, default=None, help="预测输出 jsonl 路径")
-    parser.add_argument("--split_name", type=str, default=None, help="可选 split 名称，如 train/valid/test")
-    parser.add_argument("--overwrite", action="store_true", help="是否覆盖已有预测文件")
+    parser.add_argument("--config", type=str, default=None, help="Experiment config path.")
+    parser.add_argument("--exp_name", type=str, default=None, help="Experiment name.")
+    parser.add_argument("--input_path", type=str, default=None, help="Input pointwise jsonl path.")
+    parser.add_argument("--data_root", type=str, default=None, help="Optional default data directory.")
+    parser.add_argument("--output_root", type=str, default="outputs", help="Output root directory.")
+    parser.add_argument("--prompt_path", type=str, default="prompts/pointwise_yesno.txt", help="Prompt template path.")
+    parser.add_argument("--model_config", type=str, default=None, help="Model config path.")
+    parser.add_argument("--max_samples", type=int, default=None, help="Optional sample cap.")
+    parser.add_argument("--output_path", type=str, default=None, help="Prediction output jsonl path.")
+    parser.add_argument("--split_name", type=str, default=None, help="Optional split name, e.g. train/valid/test.")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing prediction file.")
     return parser.parse_args()
 
 
@@ -108,7 +125,7 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
     merged = {
         "exp_name": args.exp_name if args.exp_name is not None else cfg.get("exp_name", "clean"),
         "input_path": args.input_path if args.input_path is not None else cfg.get("input_path"),
-        "data_root": args.data_root if args.data_root is not None else cfg.get("data_root", "data/processed/movielens_1m"),
+        "data_root": args.data_root if args.data_root is not None else cfg.get("data_root"),
         "output_root": args.output_root if args.output_root is not None else cfg.get("output_root", "outputs"),
         "prompt_path": args.prompt_path if args.prompt_path is not None else cfg.get("prompt_path", "prompts/pointwise_yesno.txt"),
         "model_config": args.model_config if args.model_config is not None else cfg.get("model_config"),
@@ -136,11 +153,13 @@ def main() -> None:
     overwrite = cfg["overwrite"]
 
     if model_config is None:
-        raise ValueError("model_config 不能为空，请通过 --model_config 或 --config 提供。")
+        raise ValueError("model_config must be provided via config or CLI.")
 
     paths = ensure_exp_dirs(exp_name, output_root)
 
     if input_path is None:
+        if data_root is None:
+            raise ValueError("input_path or data_root must be provided via config or CLI.")
         input_path = default_input_path_for_exp(exp_name, data_root)
 
     input_path = Path(input_path)

@@ -105,23 +105,45 @@ If you are using the DeepSeek backend, set the API key in the environment before
 $env:DEEPSEEK_API_KEY="your_api_key"
 ```
 
+## Config Structure
+
+The repository is organized around three config layers:
+
+- `configs/data/`: domain-specific preprocessing and sample-building settings
+- `configs/model/`: backend, model, connection, and generation settings
+- `configs/exp/`: experiment-level inference settings such as `exp_name`, input path, output root, prompt path, and model config
+
+This design keeps experiments reproducible and makes Week2 extensions easier. In practice:
+
+- changing domains should mostly mean switching `configs/data/*.yaml`
+- changing models should mostly mean switching `configs/model/*.yaml`
+- changing an experiment run should mostly mean switching `configs/exp/*.yaml`
+
+Current model config files include:
+
+- `configs/model/deepseek.yaml`: active backend used in Week1 experiments
+- `configs/model/qwen.yaml`: template for Week2 multi-model extension
+- `configs/model/glm.yaml`: template for Week2 multi-model extension
+
 ## Quickstart
 
-The commands below show the intended end-to-end flow on Amazon Beauty.
+The commands below show the intended end-to-end flow on Amazon Beauty and the lightweight Movies subset used for cross-domain validation.
 
-### 1. Preprocess raw data
+### Beauty End-to-End
+
+#### 1. Preprocess raw data
 
 ```powershell
 py -3.12 main_preprocess.py --config configs/data/amazon_beauty.yaml
 ```
 
-### 2. Build pointwise train/valid/test samples
+#### 2. Build pointwise train/valid/test samples
 
 ```powershell
 py -3.12 main_build_samples.py --config configs/data/amazon_beauty.yaml
 ```
 
-### 3. Run LLM inference
+#### 3. Run LLM inference
 
 Generate split-specific prediction files:
 
@@ -143,13 +165,13 @@ py -3.12 main_infer.py `
   --overwrite
 ```
 
-### 4. Evaluate prediction quality
+#### 4. Evaluate prediction quality
 
 ```powershell
 py -3.12 main_eval.py --exp_name beauty_deepseek
 ```
 
-### 5. Run strict calibration
+#### 5. Run strict calibration
 
 Calibration is designed to be leakage-aware:
 
@@ -165,13 +187,76 @@ py -3.12 main_calibrate.py `
   --method isotonic
 ```
 
-### 6. Run uncertainty-aware reranking
+#### 6. Run uncertainty-aware reranking
 
 ```powershell
 py -3.12 main_rerank.py `
   --exp_name beauty_deepseek `
   --input_path outputs/beauty_deepseek/calibrated/test_calibrated.jsonl `
   --lambda_penalty 0.5
+```
+
+### Movies-Small Validation
+
+Week1 Day5 uses a lightweight Movies subset to validate that the same pipeline is not Beauty-specific.
+
+#### 1. Build the Movies-small split data
+
+The full Movies preprocess has already been validated. After preprocess, create a lightweight subset under `data/processed/amazon_movies_small/`, then run the original sample-building pipeline:
+
+```powershell
+py -3.12 main_build_samples.py --config configs/data/amazon_movies_small.yaml
+```
+
+#### 2. Run inference on valid and test
+
+```powershell
+py -3.12 main_infer.py `
+  --config configs/exp/movies_small_deepseek.yaml `
+  --input_path data/processed/amazon_movies_small/valid.jsonl `
+  --output_path outputs/movies_small_deepseek/predictions/valid_raw.jsonl `
+  --split_name valid `
+  --max_samples 100 `
+  --overwrite
+```
+
+```powershell
+py -3.12 main_infer.py `
+  --config configs/exp/movies_small_deepseek.yaml `
+  --input_path data/processed/amazon_movies_small/test.jsonl `
+  --output_path outputs/movies_small_deepseek/predictions/test_raw.jsonl `
+  --split_name test `
+  --max_samples 100 `
+  --overwrite
+```
+
+#### 3. Run evaluation, calibration, and reranking
+
+```powershell
+py -3.12 main_eval.py --exp_name movies_small_deepseek --input_path outputs/movies_small_deepseek/predictions/test_raw.jsonl
+```
+
+```powershell
+py -3.12 main_calibrate.py `
+  --exp_name movies_small_deepseek `
+  --valid_path outputs/movies_small_deepseek/predictions/valid_raw.jsonl `
+  --test_path outputs/movies_small_deepseek/predictions/test_raw.jsonl `
+  --method isotonic
+```
+
+```powershell
+py -3.12 main_rerank.py `
+  --exp_name movies_small_deepseek `
+  --input_path outputs/movies_small_deepseek/calibrated/test_calibrated.jsonl `
+  --lambda_penalty 0.5
+```
+
+### Aggregate Domain Results
+
+To consolidate diagnosis, calibration, and reranking results into a unified table for analysis and paper writing:
+
+```powershell
+py -3.12 src\analysis\aggregate_domain_results.py --exp_names beauty_deepseek movies_small_deepseek
 ```
 
 ## Key Outputs
@@ -186,6 +271,11 @@ Typical experiment artifacts are written under `outputs/{exp_name}/`:
 - `tables/rerank_results.csv`
 
 These files are enough to audit whether calibration is leakage-free, whether calibration improves reliability, and whether uncertainty-aware reranking changes ranking or exposure behavior.
+
+Under `outputs/summary/`, the repository also maintains:
+
+- `rerank_ablation.csv`: unified cross-domain / cross-lambda summary table
+- `weekly_summary.csv`: compact view over diagnosis, calibration, and reranking metrics
 
 ## Evaluation Philosophy
 

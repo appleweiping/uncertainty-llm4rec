@@ -14,10 +14,11 @@ class DeepSeekBackend(LLMBackend):
         temperature: float = 0.0,
         max_tokens: int = 300,
         base_url: str = "https://api.deepseek.com",
+        api_key_env: str = "DEEPSEEK_API_KEY",
     ) -> None:
-        api_key = os.getenv("DEEPSEEK_API_KEY")
+        api_key = os.getenv(api_key_env)
         if not api_key:
-            raise ValueError("DEEPSEEK_API_KEY is not set in environment variables.")
+            raise ValueError(f"{api_key_env} is not set in environment variables.")
 
         self.client = OpenAI(
             api_key=api_key,

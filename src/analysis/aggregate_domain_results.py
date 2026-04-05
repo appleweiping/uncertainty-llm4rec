@@ -201,6 +201,29 @@ def aggregate_experiment(exp_dir: Path) -> dict[str, Any]:
     return row
 
 
+def build_weekly_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
+    columns = [
+        "domain",
+        "exp_name",
+        "lambda",
+        "diagnostic_accuracy",
+        "diagnostic_ece",
+        "diagnostic_brier_score",
+        "calibration_test_ece_before",
+        "calibration_test_ece_after",
+        "calibration_test_brier_score_before",
+        "calibration_test_brier_score_after",
+        "rerank_hr_at_10",
+        "rerank_ndcg_at_10",
+        "rerank_mrr_at_10",
+        "rerank_head_exposure_ratio_at_10",
+        "rerank_tail_exposure_ratio_at_10",
+        "rerank_long_tail_coverage_at_10",
+    ]
+    existing = [column for column in columns if column in summary_df.columns]
+    return summary_df[existing].copy()
+
+
 def main() -> None:
     args = parse_args()
     output_root = Path(args.output_root)
@@ -222,11 +245,15 @@ def main() -> None:
 
     summary_dir = output_root / "summary"
     ensure_dir(summary_dir)
-    output_path = summary_dir / "rerank_ablation.csv"
-    summary_df.to_csv(output_path, index=False)
+    rerank_output_path = summary_dir / "rerank_ablation.csv"
+    weekly_output_path = summary_dir / "weekly_summary.csv"
+
+    summary_df.to_csv(rerank_output_path, index=False)
+    build_weekly_summary(summary_df).to_csv(weekly_output_path, index=False)
 
     print(f"Aggregated {len(summary_df)} experiment rows.")
-    print(f"Saved summary to: {output_path}")
+    print(f"Saved rerank ablation to: {rerank_output_path}")
+    print(f"Saved weekly summary to: {weekly_output_path}")
 
 
 if __name__ == "__main__":
