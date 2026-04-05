@@ -42,10 +42,19 @@ def build_item_lookup(items_df: pd.DataFrame) -> Dict[str, Dict[str, str]]:
             "candidate_title": str(row["title"]).strip()
             if "title" in df.columns and pd.notna(row["title"])
             else "",
-            "candidate_text": str(row["candidate_text"]).strip()
-            if pd.notna(row["candidate_text"])
-            else "",
+            "candidate_text": "",
         }
+
+        candidate_text = (
+            str(row["candidate_text"]).strip()
+            if "candidate_text" in df.columns and pd.notna(row["candidate_text"])
+            else ""
+        )
+        if not candidate_text:
+            candidate_title = lookup[item_id]["candidate_title"]
+            candidate_text = f"Title: {candidate_title}" if candidate_title else f"Item ID: {item_id}"
+
+        lookup[item_id]["candidate_text"] = candidate_text
 
     return lookup
 
