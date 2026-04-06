@@ -59,6 +59,7 @@ The codebase already supports the core week-one research loop:
 - Strict calibration with separate validation and test prediction files
 - Reranking evaluation with ranking metrics and bias-oriented metrics
 - Initial scaffolding for richer uncertainty estimators, including consistency-based and fused variants
+- Cross-domain validation across Beauty, Movies, Books, and Electronics under the same experimental definition
 
 In other words, the project has moved beyond pure diagnosis and into the first decision-level uncertainty pipeline.
 
@@ -127,7 +128,7 @@ Current model config files include:
 
 ## Quickstart
 
-The commands below show the intended end-to-end flow on Amazon Beauty and the lightweight Movies subset used for cross-domain validation.
+The commands below show the intended end-to-end flow on Amazon Beauty and the lightweight cross-domain subsets used for Week1 validation.
 
 ### Beauty End-to-End
 
@@ -251,12 +252,98 @@ py -3.12 main_rerank.py `
   --lambda_penalty 0.5
 ```
 
+### Books-Small And Electronics-Small Validation
+
+Books and Electronics follow the same principle used for Movies:
+
+- run full-domain `preprocess` first
+- construct a lightweight processed-level subset
+- reuse the original downstream pipeline unchanged
+
+#### 1. Run full preprocess
+
+```powershell
+py -3.12 main_preprocess.py --config configs/data/amazon_books.yaml
+```
+
+```powershell
+py -3.12 main_preprocess.py --config configs/data/amazon_electronics.yaml
+```
+
+#### 2. Build the small-subset samples
+
+Once `data/processed/amazon_books_small/` and `data/processed/amazon_electronics_small/` have been constructed from the processed full-domain outputs, run:
+
+```powershell
+py -3.12 main_build_samples.py --config configs/data/amazon_books_small.yaml
+```
+
+```powershell
+py -3.12 main_build_samples.py --config configs/data/amazon_electronics_small.yaml
+```
+
+#### 3. Run valid/test inference
+
+```powershell
+py -3.12 main_infer.py `
+  --config configs/exp/books_small_deepseek.yaml `
+  --input_path data/processed/amazon_books_small/valid.jsonl `
+  --output_path outputs/books_small_deepseek/predictions/valid_raw.jsonl `
+  --split_name valid `
+  --max_samples 100 `
+  --overwrite
+```
+
+```powershell
+py -3.12 main_infer.py `
+  --config configs/exp/books_small_deepseek.yaml `
+  --input_path data/processed/amazon_books_small/test.jsonl `
+  --output_path outputs/books_small_deepseek/predictions/test_raw.jsonl `
+  --split_name test `
+  --max_samples 100 `
+  --overwrite
+```
+
+```powershell
+py -3.12 main_infer.py `
+  --config configs/exp/electronics_small_deepseek.yaml `
+  --input_path data/processed/amazon_electronics_small/valid.jsonl `
+  --output_path outputs/electronics_small_deepseek/predictions/valid_raw.jsonl `
+  --split_name valid `
+  --max_samples 100 `
+  --overwrite
+```
+
+```powershell
+py -3.12 main_infer.py `
+  --config configs/exp/electronics_small_deepseek.yaml `
+  --input_path data/processed/amazon_electronics_small/test.jsonl `
+  --output_path outputs/electronics_small_deepseek/predictions/test_raw.jsonl `
+  --split_name test `
+  --max_samples 100 `
+  --overwrite
+```
+
+#### 4. Run evaluation, calibration, and reranking
+
+```powershell
+py -3.12 main_eval.py --exp_name books_small_deepseek --input_path outputs/books_small_deepseek/predictions/test_raw.jsonl
+py -3.12 main_calibrate.py --exp_name books_small_deepseek --valid_path outputs/books_small_deepseek/predictions/valid_raw.jsonl --test_path outputs/books_small_deepseek/predictions/test_raw.jsonl --method isotonic
+py -3.12 main_rerank.py --exp_name books_small_deepseek --input_path outputs/books_small_deepseek/calibrated/test_calibrated.jsonl --lambda_penalty 0.5
+```
+
+```powershell
+py -3.12 main_eval.py --exp_name electronics_small_deepseek --input_path outputs/electronics_small_deepseek/predictions/test_raw.jsonl
+py -3.12 main_calibrate.py --exp_name electronics_small_deepseek --valid_path outputs/electronics_small_deepseek/predictions/valid_raw.jsonl --test_path outputs/electronics_small_deepseek/predictions/test_raw.jsonl --method isotonic
+py -3.12 main_rerank.py --exp_name electronics_small_deepseek --input_path outputs/electronics_small_deepseek/calibrated/test_calibrated.jsonl --lambda_penalty 0.5
+```
+
 ### Aggregate Domain Results
 
 To consolidate diagnosis, calibration, and reranking results into a unified table for analysis and paper writing:
 
 ```powershell
-py -3.12 src\analysis\aggregate_domain_results.py --exp_names beauty_deepseek movies_small_deepseek
+py -3.12 src\analysis\aggregate_domain_results.py --exp_names beauty_deepseek movies_small_deepseek books_small_deepseek electronics_small_deepseek
 ```
 
 ## Key Outputs
@@ -276,6 +363,7 @@ Under `outputs/summary/`, the repository also maintains:
 
 - `rerank_ablation.csv`: unified cross-domain / cross-lambda summary table
 - `weekly_summary.csv`: compact view over diagnosis, calibration, and reranking metrics
+- `final_results.csv`: consolidated Week1 multi-domain result table with explicit `domain` and `lambda` columns
 
 ## Evaluation Philosophy
 
@@ -295,7 +383,13 @@ The repository already supports:
 - strict validation-to-test calibration
 - first-pass uncertainty-aware reranking
 
-Current experiments are best understood as method-grounding and pipeline validation. The next natural extensions are broader domain transfer, richer uncertainty estimators, and stronger robustness experiments.
+Current experiments are best understood as method-grounding and pipeline validation. Week1 already covers:
+
+- Beauty as the main full-domain experiment
+- Movies-small as the first cross-domain validation subset
+- Books-small and Electronics-small as additional cross-domain validation subsets
+
+The next natural extensions are multi-model comparison, richer uncertainty estimators, and stronger robustness experiments.
 
 ## Notes
 
