@@ -1,0 +1,10 @@
+exp_name: electronics_deepseek
+
+input_path: data/processed/amazon_electronics/test.jsonl
+output_root: outputs
+prompt_path: prompts/pointwise_yesno.txt
+
+model_config: configs/model/deepseek.yaml
+
+max_samples: 500
+overwrite: true

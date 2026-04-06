@@ -247,13 +247,16 @@ def main() -> None:
     ensure_dir(summary_dir)
     rerank_output_path = summary_dir / "rerank_ablation.csv"
     weekly_output_path = summary_dir / "weekly_summary.csv"
+    final_results_path = summary_dir / "final_results.csv"
 
     summary_df.to_csv(rerank_output_path, index=False)
     build_weekly_summary(summary_df).to_csv(weekly_output_path, index=False)
+    summary_df.to_csv(final_results_path, index=False)
 
     print(f"Aggregated {len(summary_df)} experiment rows.")
     print(f"Saved rerank ablation to: {rerank_output_path}")
     print(f"Saved weekly summary to: {weekly_output_path}")
+    print(f"Saved final results to: {final_results_path}")
 
 
 if __name__ == "__main__":
