@@ -123,12 +123,22 @@ This design keeps experiments reproducible and makes Week2 extensions easier. In
 Current model config files include:
 
 - `configs/model/deepseek.yaml`: active backend used in Week1 experiments
-- `configs/model/qwen.yaml`: template for Week2 multi-model extension
-- `configs/model/glm.yaml`: template for Week2 multi-model extension
+- `configs/model/qwen.yaml`: Qwen API-compatible backend config
+- `configs/model/glm.yaml`: GLM API-compatible backend config
+- `configs/model/doubao.yaml`: Doubao API-compatible backend config
+- `configs/model/kimi.yaml`: Kimi API-compatible backend config
 
 ## Quickstart
 
 The commands below show the intended end-to-end flow on Amazon Beauty and the lightweight cross-domain subsets used for Week1 validation.
+
+For Week2 multi-model validation, keep the same data and pipeline, and only switch `model_config` / `exp_name`. Typical Beauty experiment names are:
+
+- `beauty_deepseek`
+- `beauty_qwen`
+- `beauty_glm`
+- `beauty_doubao`
+- `beauty_kimi`
 
 ### Beauty End-to-End
 

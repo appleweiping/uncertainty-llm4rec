@@ -1,0 +1,15 @@
+backend_name: openai_compatible
+provider: kimi
+model_name: kimi-k2.5
+
+connection:
+  base_url: https://api.moonshot.cn/v1
+  api_key_env: KIMI_API_KEY
+
+generation:
+  temperature: 0.6
+  max_tokens: 300
+
+extra_body:
+  thinking:
+    type: disabled

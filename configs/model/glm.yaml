@@ -1,5 +1,5 @@
 backend_name: openai_compatible
-provider_name: glm
+provider: glm
 model_name: glm-4.5
 
 connection:

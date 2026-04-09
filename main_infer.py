@@ -7,15 +7,9 @@ from typing import Any
 import pandas as pd
 import yaml
 
+from src.llm import build_backend_from_config
 from src.llm.inference import run_pointwise_inference
 from src.utils.paths import default_input_path_for_exp, ensure_exp_dirs
-
-
-def _first_present(*values):
-    for value in values:
-        if value is not None:
-            return value
-    return None
 
 
 def load_yaml(path: str | Path) -> dict[str, Any]:
@@ -35,34 +29,6 @@ def save_jsonl(records: list[dict], path: str | Path) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(records).to_json(path, orient="records", lines=True, force_ascii=False)
-
-
-def build_backend_from_config(model_cfg_path: str | Path):
-    model_cfg = load_yaml(model_cfg_path)
-    backend_name = str(model_cfg.get("backend_name", "")).strip().lower()
-    if not backend_name:
-        raise ValueError(f"backend_name is required in model config: {model_cfg_path}")
-
-    generation_cfg = model_cfg.get("generation", {}) or {}
-    connection_cfg = model_cfg.get("connection", {}) or {}
-
-    if backend_name == "deepseek":
-        from src.llm.deepseek_backend import DeepSeekBackend
-
-        model_name = _first_present(model_cfg.get("model_name"), generation_cfg.get("model_name"))
-        if not model_name:
-            raise ValueError(f"model_name is required in model config: {model_cfg_path}")
-
-        return DeepSeekBackend(
-            model_name=str(model_name),
-            temperature=float(_first_present(generation_cfg.get("temperature"), model_cfg.get("temperature"), 0.0)),
-            max_tokens=int(_first_present(generation_cfg.get("max_tokens"), model_cfg.get("max_tokens"), 300)),
-            base_url=str(_first_present(connection_cfg.get("base_url"), model_cfg.get("base_url"), "https://api.deepseek.com")),
-            api_key_env=str(_first_present(connection_cfg.get("api_key_env"), model_cfg.get("api_key_env"), "DEEPSEEK_API_KEY")),
-        )
-
-    raise ValueError(f"Unsupported backend_name: {backend_name}")
-
 
 class FunctionPromptBuilderAdapter:
     def __init__(self, fn, template_path: str | Path):

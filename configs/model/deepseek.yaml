@@ -1,5 +1,5 @@
 backend_name: deepseek
-provider_name: deepseek
+provider: deepseek
 model_name: deepseek-chat
 
 connection:
