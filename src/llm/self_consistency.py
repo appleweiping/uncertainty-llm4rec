@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import List, Dict
 import time
 
+from src.llm.base import normalize_generation_result
+
 
 def run_self_consistency(
     llm_backend,
@@ -18,7 +20,11 @@ def run_self_consistency(
     outputs = []
 
     for _ in range(num_samples):
-        response = llm_backend.generate(prompt)
+        response = normalize_generation_result(
+            llm_backend.generate(prompt),
+            default_provider=getattr(llm_backend, "provider", None),
+            default_model_name=getattr(llm_backend, "model_name", "unknown"),
+        )
         outputs.append(response)
 
         if sleep_time > 0:

@@ -21,14 +21,51 @@ def _read_jsonl(path: str | Path) -> list[dict[str, Any]]:
     return records
 
 
+def _read_jsonl_dataframe(
+    path: str | Path,
+    columns: list[str] | None = None,
+    chunksize: int = 100_000,
+) -> pd.DataFrame:
+    path = Path(path)
+    frames: list[pd.DataFrame] = []
+
+    reader = pd.read_json(
+        path,
+        lines=True,
+        compression="infer",
+        chunksize=chunksize,
+    )
+
+    for chunk in reader:
+        if columns is not None:
+            existing = [col for col in columns if col in chunk.columns]
+            chunk = chunk[existing].copy()
+            for col in columns:
+                if col not in chunk.columns:
+                    chunk[col] = None
+            chunk = chunk[columns]
+        frames.append(chunk)
+
+    if not frames:
+        if columns is None:
+            return pd.DataFrame()
+        return pd.DataFrame(columns=columns)
+
+    return pd.concat(frames, ignore_index=True)
+
+
 def read_reviews_jsonl_or_gz(path: str | Path) -> pd.DataFrame:
-    records = _read_jsonl(path)
-    return pd.DataFrame(records)
+    return _read_jsonl_dataframe(
+        path,
+        columns=["user_id", "reviewerID", "parent_asin", "asin", "rating", "overall", "timestamp", "unixReviewTime"],
+    )
 
 
 def read_meta_jsonl_or_gz(path: str | Path) -> pd.DataFrame:
-    records = _read_jsonl(path)
-    return pd.DataFrame(records)
+    return _read_jsonl_dataframe(
+        path,
+        columns=["parent_asin", "asin", "title", "categories", "description"],
+    )
 
 
 def _pick_first_existing_column(df: pd.DataFrame, candidates: list[str]) -> str:

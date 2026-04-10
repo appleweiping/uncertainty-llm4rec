@@ -7,6 +7,7 @@ from typing import Any
 import pandas as pd
 import yaml
 
+from src.llm import build_backend_from_config
 from src.llm.inference import run_pointwise_inference
 from src.utils.paths import default_input_path_for_exp, ensure_exp_dirs
 
@@ -29,24 +30,6 @@ def save_jsonl(records: list[dict], path: str | Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(records).to_json(path, orient="records", lines=True, force_ascii=False)
 
-
-def build_backend_from_config(model_cfg_path: str | Path):
-    model_cfg = load_yaml(model_cfg_path)
-    backend_name = str(model_cfg.get("backend_name", "deepseek")).strip().lower()
-
-    if backend_name == "deepseek":
-        from src.llm.deepseek_backend import DeepSeekBackend
-
-        return DeepSeekBackend(
-            model_name=model_cfg.get("model_name", "deepseek-chat"),
-            temperature=float(model_cfg.get("temperature", 0.0)),
-            max_tokens=int(model_cfg.get("max_tokens", 300)),
-            base_url=model_cfg.get("base_url", "https://api.deepseek.com"),
-        )
-
-    raise ValueError(f"Unsupported backend_name: {backend_name}")
-
-
 class FunctionPromptBuilderAdapter:
     def __init__(self, fn, template_path: str | Path):
         self.fn = fn
@@ -62,28 +45,41 @@ class FunctionPromptBuilderAdapter:
 def get_prompt_builder(prompt_path: str | Path):
     try:
         from src.llm.prompt_builder import PromptBuilder
+
         return PromptBuilder(template_path=str(prompt_path))
     except Exception:
         try:
             from src.llm.prompt_builder import build_pointwise_prompt
+
             return FunctionPromptBuilderAdapter(build_pointwise_prompt, template_path=prompt_path)
         except Exception as e:
-            raise ImportError(
-                "Cannot find a usable prompt builder in src/llm/prompt_builder.py"
-            ) from e
+            raise ImportError("Cannot find a usable prompt builder in src/llm/prompt_builder.py") from e
+
+
+def infer_prediction_filename(input_path: str | Path) -> str:
+    stem = Path(input_path).stem.lower()
+    if stem.startswith("valid"):
+        return "valid_raw.jsonl"
+    if stem.startswith("test"):
+        return "test_raw.jsonl"
+    if stem.startswith("train"):
+        return "train_raw.jsonl"
+    return f"{stem}_raw.jsonl"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default=None, help="实验配置文件路径")
-    parser.add_argument("--exp_name", type=str, default=None, help="实验名")
-    parser.add_argument("--input_path", type=str, default=None, help="输入 pointwise jsonl")
-    parser.add_argument("--data_root", type=str, default="data/processed/movielens_1m", help="默认数据目录")
-    parser.add_argument("--output_root", type=str, default="outputs", help="输出根目录")
-    parser.add_argument("--prompt_path", type=str, default="prompts/pointwise_yesno.txt", help="prompt 模板路径")
-    parser.add_argument("--model_config", type=str, default=None, help="模型配置文件路径")
-    parser.add_argument("--max_samples", type=int, default=None, help="最多读取多少条样本")
-    parser.add_argument("--overwrite", action="store_true", help="是否覆盖已有预测文件")
+    parser.add_argument("--config", type=str, default=None, help="Experiment config path.")
+    parser.add_argument("--exp_name", type=str, default=None, help="Experiment name.")
+    parser.add_argument("--input_path", type=str, default=None, help="Input pointwise jsonl path.")
+    parser.add_argument("--data_root", type=str, default=None, help="Optional default data directory.")
+    parser.add_argument("--output_root", type=str, default="outputs", help="Output root directory.")
+    parser.add_argument("--prompt_path", type=str, default="prompts/pointwise_yesno.txt", help="Prompt template path.")
+    parser.add_argument("--model_config", type=str, default=None, help="Model config path.")
+    parser.add_argument("--max_samples", type=int, default=None, help="Optional sample cap.")
+    parser.add_argument("--output_path", type=str, default=None, help="Prediction output jsonl path.")
+    parser.add_argument("--split_name", type=str, default=None, help="Optional split name, e.g. train/valid/test.")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing prediction file.")
     return parser.parse_args()
 
 
@@ -95,11 +91,13 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
     merged = {
         "exp_name": args.exp_name if args.exp_name is not None else cfg.get("exp_name", "clean"),
         "input_path": args.input_path if args.input_path is not None else cfg.get("input_path"),
-        "data_root": args.data_root if args.data_root is not None else cfg.get("data_root", "data/processed/movielens_1m"),
+        "data_root": args.data_root if args.data_root is not None else cfg.get("data_root"),
         "output_root": args.output_root if args.output_root is not None else cfg.get("output_root", "outputs"),
         "prompt_path": args.prompt_path if args.prompt_path is not None else cfg.get("prompt_path", "prompts/pointwise_yesno.txt"),
         "model_config": args.model_config if args.model_config is not None else cfg.get("model_config"),
         "max_samples": args.max_samples if args.max_samples is not None else cfg.get("max_samples"),
+        "output_path": args.output_path if args.output_path is not None else cfg.get("output_path"),
+        "split_name": args.split_name if args.split_name is not None else cfg.get("split_name"),
         "overwrite": bool(args.overwrite or cfg.get("overwrite", False)),
     }
     return merged
@@ -116,18 +114,27 @@ def main() -> None:
     prompt_path = cfg["prompt_path"]
     model_config = cfg["model_config"]
     max_samples = cfg["max_samples"]
+    output_path = cfg["output_path"]
+    split_name = cfg["split_name"]
     overwrite = cfg["overwrite"]
 
     if model_config is None:
-        raise ValueError("model_config 不能为空，请通过 --model_config 或 --config 提供。")
+        raise ValueError("model_config must be provided via config or CLI.")
 
     paths = ensure_exp_dirs(exp_name, output_root)
 
     if input_path is None:
+        if data_root is None:
+            raise ValueError("input_path or data_root must be provided via config or CLI.")
         input_path = default_input_path_for_exp(exp_name, data_root)
 
     input_path = Path(input_path)
-    output_path = paths.predictions_dir / "test_raw.jsonl"
+    if output_path is not None:
+        output_path = Path(output_path)
+    elif split_name is not None:
+        output_path = paths.predictions_dir / f"{str(split_name).strip().lower()}_raw.jsonl"
+    else:
+        output_path = paths.predictions_dir / infer_prediction_filename(input_path)
 
     print(f"[{exp_name}] Input path: {input_path}")
     print(f"[{exp_name}] Output path: {output_path}")

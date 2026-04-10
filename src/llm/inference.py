@@ -4,6 +4,7 @@ from typing import Any
 
 from tqdm import tqdm
 
+from src.llm.base import normalize_generation_result
 from src.llm.parser import parse_response
 
 
@@ -42,6 +43,7 @@ def _build_result_record(
     candidate: dict[str, Any],
     prompt: str,
     raw_text: str,
+    generation: dict[str, Any],
     parsed: dict[str, Any],
     label: int,
 ) -> dict[str, Any]:
@@ -64,6 +66,10 @@ def _build_result_record(
         "recommend": parsed.get("recommend", "unknown"),
         "confidence": parsed.get("confidence", -1.0),
         "reason": parsed.get("reason", ""),
+        "response_latency": generation.get("latency", 0.0),
+        "response_model_name": generation.get("model_name", ""),
+        "response_provider": generation.get("provider", ""),
+        "response_usage": generation.get("usage", {}),
     }
 
 
@@ -83,7 +89,12 @@ def run_pointwise_inference(
 
             for candidate in sample["candidates"]:
                 prompt = prompt_builder.build_pointwise_prompt(sample, candidate)
-                raw_text = llm_backend.generate(prompt)
+                generation = normalize_generation_result(
+                    llm_backend.generate(prompt),
+                    default_provider=getattr(llm_backend, "provider", None),
+                    default_model_name=getattr(llm_backend, "model_name", "unknown"),
+                )
+                raw_text = generation["raw_text"]
                 parsed = parse_response(raw_text)
 
                 result = {
@@ -97,6 +108,10 @@ def run_pointwise_inference(
                     "recommend": parsed["recommend"],
                     "confidence": parsed["confidence"],
                     "reason": parsed["reason"],
+                    "response_latency": generation.get("latency", 0.0),
+                    "response_model_name": generation.get("model_name", ""),
+                    "response_provider": generation.get("provider", ""),
+                    "response_usage": generation.get("usage", {}),
                 }
                 results.append(result)
 
@@ -105,7 +120,12 @@ def run_pointwise_inference(
         # 新真实数据 schema：每条 sample 已经是一条 pointwise 记录
         candidate = _normalize_candidate_from_pointwise_sample(sample)
         prompt = prompt_builder.build_pointwise_prompt(sample, candidate)
-        raw_text = llm_backend.generate(prompt)
+        generation = normalize_generation_result(
+            llm_backend.generate(prompt),
+            default_provider=getattr(llm_backend, "provider", None),
+            default_model_name=getattr(llm_backend, "model_name", "unknown"),
+        )
+        raw_text = generation["raw_text"]
         parsed = parse_response(raw_text)
 
         label = sample.get("label", 0)
@@ -115,6 +135,7 @@ def run_pointwise_inference(
             candidate=candidate,
             prompt=prompt,
             raw_text=raw_text,
+            generation=generation,
             parsed=parsed,
             label=label,
         )

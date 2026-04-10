@@ -1,0 +1,11 @@
+backend_name: openai_compatible
+provider: qwen
+model_name: qwen-plus
+
+connection:
+  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+  api_key_env: QWEN_API_KEY
+
+generation:
+  temperature: 0.0
+  max_tokens: 300

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Tuple
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -72,6 +72,22 @@ class IsotonicCalibrator:
         return np.clip(self.model.predict(x), 0.0, 1.0)
 
 
+class ConstantCalibrator:
+    """
+    Fallback calibrator for degenerate valid splits with a single target value.
+    """
+    def __init__(self, constant: float):
+        self.constant = float(np.clip(constant, 0.0, 1.0))
+        self.is_fitted = True
+
+    def fit(self, confidence: np.ndarray, correctness: np.ndarray) -> None:
+        return None
+
+    def predict(self, confidence: np.ndarray) -> np.ndarray:
+        x = np.asarray(confidence).astype(float)
+        return np.full(shape=x.shape, fill_value=self.constant, dtype=float)
+
+
 class PlattCalibrator:
     """
     Logistic regression over confidence -> correctness
@@ -93,6 +109,15 @@ class PlattCalibrator:
         return np.clip(self.model.predict_proba(x)[:, 1], 0.0, 1.0)
 
 
+def _build_calibrator(method: str):
+    method = method.lower()
+    if method == "isotonic":
+        return IsotonicCalibrator()
+    if method == "platt":
+        return PlattCalibrator()
+    raise ValueError("method must be either 'isotonic' or 'platt'.")
+
+
 def fit_calibrator(
     valid_df: pd.DataFrame,
     method: str = "isotonic",
@@ -103,20 +128,45 @@ def fit_calibrator(
         raise ValueError(f"Column `{confidence_col}` not found in valid_df.")
     if target_col not in valid_df.columns:
         raise ValueError(f"Column `{target_col}` not found in valid_df.")
+    if valid_df.empty:
+        raise ValueError("valid_df is empty; cannot fit calibrator.")
 
     x = valid_df[confidence_col].to_numpy()
     y = valid_df[target_col].to_numpy()
 
-    method = method.lower()
-    if method == "isotonic":
-        calibrator = IsotonicCalibrator()
-    elif method == "platt":
-        calibrator = PlattCalibrator()
-    else:
-        raise ValueError("method must be either 'isotonic' or 'platt'.")
+    unique_targets = np.unique(y.astype(int))
+    if len(unique_targets) < 2:
+        return ConstantCalibrator(constant=float(unique_targets[0]))
 
+    calibrator = _build_calibrator(method)
     calibrator.fit(x, y)
     return calibrator
+
+
+def fit_isotonic_calibrator(
+    valid_df: pd.DataFrame,
+    confidence_col: str = "confidence",
+    target_col: str = "is_correct"
+):
+    return fit_calibrator(
+        valid_df=valid_df,
+        method="isotonic",
+        confidence_col=confidence_col,
+        target_col=target_col,
+    )
+
+
+def fit_platt_calibrator(
+    valid_df: pd.DataFrame,
+    confidence_col: str = "confidence",
+    target_col: str = "is_correct"
+):
+    return fit_calibrator(
+        valid_df=valid_df,
+        method="platt",
+        confidence_col=confidence_col,
+        target_col=target_col,
+    )
 
 
 def apply_calibrator(

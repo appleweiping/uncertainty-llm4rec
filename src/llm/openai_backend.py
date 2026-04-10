@@ -3,19 +3,19 @@ from __future__ import annotations
 from src.llm.api_backend import APIBackend
 
 
-class DeepSeekBackend(APIBackend):
+class OpenAIBackend(APIBackend):
     def __init__(
         self,
         *,
-        model_name: str = "deepseek-chat",
+        model_name: str = "gpt-4o-mini",
+        base_url: str | None = "https://api.openai.com/v1",
+        api_key_env: str = "OPENAI_API_KEY",
         temperature: float = 0.0,
         max_tokens: int = 300,
-        base_url: str = "https://api.deepseek.com",
-        api_key_env: str = "DEEPSEEK_API_KEY",
         timeout: float | None = None,
     ) -> None:
         super().__init__(
-            provider="deepseek",
+            provider="openai",
             model_name=model_name,
             base_url=base_url,
             api_key_env=api_key_env,

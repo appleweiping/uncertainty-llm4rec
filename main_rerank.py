@@ -12,10 +12,7 @@ from src.eval.bias_metrics import (
 )
 from src.eval.ranking_metrics import compute_ranking_metrics
 from src.methods.baseline_ranker import add_baseline_score, rank_by_score
-from src.methods.uncertainty_reranker import (
-    add_uncertainty_aware_score,
-    rank_by_rerank_score,
-)
+from src.methods.uncertainty_reranker import rerank_candidates
 from src.utils.paths import ensure_exp_dirs
 
 
@@ -38,12 +35,15 @@ def save_table(df: pd.DataFrame, path: str | Path) -> None:
 def build_result_row(
     method_name: str,
     ranked_df: pd.DataFrame,
-    k: int
+    k: int,
+    lambda_penalty: float | None = None,
 ) -> pd.DataFrame:
     ranking = compute_ranking_metrics(ranked_df, k=k)
     bias = compute_bias_metrics(ranked_df, k=k)
 
     row = {"method": method_name}
+    if lambda_penalty is not None:
+        row["lambda_penalty"] = float(lambda_penalty)
     row.update(ranking)
     row.update(bias)
     return pd.DataFrame([row])
@@ -122,26 +122,28 @@ def main() -> None:
     )
     save_jsonl(baseline_ranked, paths.reranked_dir / "baseline_ranked.jsonl")
 
-    rerank_df = add_uncertainty_aware_score(
-        df,
+    rerank_ranked = rerank_candidates(
+        df=df,
+        user_col="user_id",
         confidence_col="calibrated_confidence",
         uncertainty_col="uncertainty",
         lambda_penalty=args.lambda_penalty,
-        output_col="rerank_score"
-    )
-    rerank_ranked = rank_by_rerank_score(
-        rerank_df,
-        user_col="user_id",
-        score_col="rerank_score",
-        rank_col="rank"
+        score_col="final_score",
+        rank_col="rank",
     )
     save_jsonl(rerank_ranked, paths.reranked_dir / "uncertainty_reranked.jsonl")
 
     baseline_row = build_result_row("baseline", baseline_ranked, k=args.k)
-    rerank_row = build_result_row("uncertainty_aware_rerank", rerank_ranked, k=args.k)
+    rerank_row = build_result_row(
+        "uncertainty_aware_rerank",
+        rerank_ranked,
+        k=args.k,
+        lambda_penalty=args.lambda_penalty,
+    )
 
     results_df = pd.concat([baseline_row, rerank_row], ignore_index=True)
     save_table(results_df, paths.tables_dir / "rerank_results.csv")
+    save_table(results_df, paths.reranked_dir / "rerank_results.csv")
 
     baseline_dist = compute_topk_exposure_distribution(baseline_ranked, k=args.k)
     baseline_dist["method"] = "baseline"

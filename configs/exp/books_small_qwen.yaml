@@ -1,0 +1,10 @@
+exp_name: books_small_qwen
+
+input_path: data/processed/amazon_books_small/test.jsonl
+output_root: outputs
+prompt_path: prompts/pointwise_yesno.txt
+
+model_config: configs/model/qwen.yaml
+
+max_samples: 500
+overwrite: true

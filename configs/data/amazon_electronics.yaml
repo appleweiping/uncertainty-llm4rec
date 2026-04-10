@@ -1,0 +1,38 @@
+dataset_name: amazon_electronics
+domain_name: amazon_electronics
+
+raw:
+  review_path: data/raw/amazon_electronics/Electronics.jsonl
+  meta_path: data/raw/amazon_electronics/meta_Electronics.jsonl
+
+processed_dir: data/processed/amazon_electronics
+
+fields:
+  user_id_field: user_id
+  item_id_field: parent_asin
+  timestamp_field: timestamp
+  rating_field: rating
+
+filter:
+  rating_threshold: 4.0
+  min_user_interactions: 3
+  min_item_interactions: 3
+
+text:
+  strategy: title_categories_description
+  fallback_strategy: title_categories
+  max_desc_len: 1000
+  fallback_to_title_categories: true
+
+sampling:
+  max_history_len: 10
+  num_negatives: 5
+  seed: 42
+
+split:
+  method: leave_one_out
+  min_sequence_length: 3
+
+popularity:
+  head_ratio: 0.2
+  mid_ratio: 0.6

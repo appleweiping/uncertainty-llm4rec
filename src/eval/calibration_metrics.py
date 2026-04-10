@@ -59,10 +59,6 @@ def ensure_binary_columns(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
-def binary_accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
-    return float(np.mean(y_true == y_pred))
-
-
 def brier_score(y_true: np.ndarray, y_prob: np.ndarray) -> float:
     return float(np.mean((y_prob - y_true) ** 2))
 
@@ -161,19 +157,22 @@ def get_reliability_dataframe(
 def compute_calibration_metrics(
     df: pd.DataFrame,
     confidence_col: str = "confidence",
+    target_col: str = "is_correct",
     n_bins: int = 10
 ) -> Dict[str, float]:
     df = ensure_binary_columns(df)
 
-    y_true = df["label"].to_numpy()
-    y_pred = df["pred_label"].to_numpy()
+    if target_col not in df.columns:
+        raise ValueError(f"Column `{target_col}` not found in dataframe.")
+
+    y_true = df[target_col].astype(int).to_numpy()
     y_prob = df[confidence_col].astype(float).clip(0.0, 1.0).to_numpy()
 
     ece, mce, _ = expected_calibration_error(y_true, y_prob, n_bins=n_bins)
 
     metrics = {
         "num_samples": int(len(df)),
-        "accuracy": binary_accuracy(y_true, y_pred),
+        "accuracy": float(np.mean(df["is_correct"])),
         "avg_confidence": float(np.mean(y_prob)),
         "avg_correctness": float(np.mean(df["is_correct"])),
         "brier_score": brier_score(y_true, y_prob),
