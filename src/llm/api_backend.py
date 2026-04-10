@@ -63,6 +63,8 @@ class APIBackend(LLMBackend):
         self.timeout = timeout
         self.extra_body = extra_body or {}
         self.extra_headers = extra_headers or {}
+        self.max_retries = 8
+        self.retry_backoff_seconds = 1.5
         self.client = build_client_from_config(
             api_key_env=api_key_env,
             base_url=base_url,
@@ -91,7 +93,22 @@ class APIBackend(LLMBackend):
         if merged_extra_headers:
             request_kwargs["extra_headers"] = merged_extra_headers
 
-        return self.client.chat.completions.create(**request_kwargs)
+        max_retries = int(kwargs.get("max_retries", self.max_retries))
+        retry_backoff_seconds = float(
+            kwargs.get("retry_backoff_seconds", self.retry_backoff_seconds)
+        )
+
+        for attempt in range(max_retries + 1):
+            try:
+                return self.client.chat.completions.create(**request_kwargs)
+            except Exception as exc:
+                status_code = getattr(exc, "status_code", None)
+                is_retryable = status_code == 429 or (isinstance(status_code, int) and 500 <= status_code < 600)
+                if not is_retryable or attempt >= max_retries:
+                    raise
+
+                sleep_seconds = retry_backoff_seconds * (attempt + 1)
+                time.sleep(sleep_seconds)
 
     def normalize_response(self, response: Any, *, latency: float) -> dict[str, Any]:
         content = ""

@@ -1,0 +1,10 @@
+exp_name: electronics_small_kimi
+
+input_path: data/processed/amazon_electronics_small/test.jsonl
+output_root: outputs
+prompt_path: prompts/pointwise_yesno.txt
+
+model_config: configs/model/kimi.yaml
+
+max_samples: 500
+overwrite: true
