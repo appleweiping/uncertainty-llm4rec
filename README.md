@@ -128,6 +128,13 @@ Current model config files include:
 - `configs/model/doubao.yaml`: Doubao API-compatible backend config
 - `configs/model/kimi.yaml`: Kimi API-compatible backend config
 
+Environment variables are read from model configs via `api_key_env`. Typical examples are:
+
+- `DEEPSEEK_API_KEY`
+- `QWEN_API_KEY`
+- `DOUBAO_API_KEY`
+- `KIMI_API_KEY`
+
 ## Quickstart
 
 The commands below show the intended end-to-end flow on Amazon Beauty and the lightweight cross-domain subsets used for Week1 validation.
@@ -139,6 +146,12 @@ For Week2 multi-model validation, keep the same data and pipeline, and only swit
 - `beauty_glm`
 - `beauty_doubao`
 - `beauty_kimi`
+
+The same pattern now extends to the lightweight cross-domain subsets:
+
+- `movies_small_deepseek`, `movies_small_qwen`, `movies_small_kimi`, `movies_small_doubao`
+- `books_small_deepseek`, `books_small_qwen`, `books_small_kimi`, `books_small_doubao`
+- `electronics_small_deepseek`, `electronics_small_qwen`, `electronics_small_kimi`, `electronics_small_doubao`
 
 ### Beauty End-to-End
 
@@ -356,6 +369,16 @@ To consolidate diagnosis, calibration, and reranking results into a unified tabl
 py -3.12 src\analysis\aggregate_domain_results.py --exp_names beauty_deepseek movies_small_deepseek books_small_deepseek electronics_small_deepseek
 ```
 
+To aggregate the currently completed 4-model x 4-domain setting:
+
+```powershell
+py -3.12 src\analysis\aggregate_domain_results.py --exp_names `
+  beauty_deepseek beauty_qwen beauty_kimi beauty_doubao `
+  movies_small_deepseek movies_small_qwen movies_small_kimi movies_small_doubao `
+  books_small_deepseek books_small_qwen books_small_kimi books_small_doubao `
+  electronics_small_deepseek electronics_small_qwen electronics_small_kimi electronics_small_doubao
+```
+
 ## Key Outputs
 
 Typical experiment artifacts are written under `outputs/{exp_name}/`:
@@ -373,7 +396,7 @@ Under `outputs/summary/`, the repository also maintains:
 
 - `rerank_ablation.csv`: unified cross-domain / cross-lambda summary table
 - `weekly_summary.csv`: compact view over diagnosis, calibration, and reranking metrics
-- `final_results.csv`: consolidated Week1 multi-domain result table with explicit `domain` and `lambda` columns
+- `final_results.csv`: consolidated cross-model, cross-domain result table with explicit `domain` and `lambda` columns
 
 ## Evaluation Philosophy
 
@@ -399,7 +422,13 @@ Current experiments are best understood as method-grounding and pipeline validat
 - Movies-small as the first cross-domain validation subset
 - Books-small and Electronics-small as additional cross-domain validation subsets
 
-The next natural extensions are multi-model comparison, richer uncertainty estimators, and stronger robustness experiments.
+Week2 has already started extending this base into multi-model validation:
+
+- `DeepSeek`, `Qwen`, `Kimi`, and `Doubao` are all connected to the same inference / evaluation / calibration / reranking pipeline
+- the current summary table already supports a `4 models x 4 domains` comparison setting
+- this creates a stronger basis for upcoming multi-uncertainty and robustness experiments
+
+The next natural extensions are richer uncertainty estimators, stronger robustness experiments, and more systematic cross-model analysis.
 
 ## Notes
 
