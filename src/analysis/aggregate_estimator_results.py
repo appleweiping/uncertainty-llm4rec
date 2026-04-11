@@ -162,12 +162,12 @@ def build_beauty_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     args = parse_args()
-    output_root = Path(args.output_root)
+    output_root = Path(args.output_root).resolve()
     if not output_root.exists():
         raise FileNotFoundError(f"Output root does not exist: {output_root}")
 
     if args.exp_names:
-        exp_dirs = [output_root / exp_name for exp_name in args.exp_names]
+        exp_dirs = [(output_root / exp_name).resolve() for exp_name in args.exp_names]
     else:
         exp_dirs = discover_experiment_dirs(output_root)
 
