@@ -1,0 +1,10 @@
+exp_name: books_small_glm
+
+input_path: data/processed/amazon_books_small/test.jsonl
+output_root: outputs
+prompt_path: prompts/pointwise_yesno.txt
+
+model_config: configs/model/glm.yaml
+
+max_samples: 500
+overwrite: true
