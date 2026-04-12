@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import re
 
 import pandas as pd
 
@@ -36,60 +37,40 @@ def _read_test_calibration_metrics(path: Path) -> dict[str, float]:
     return metrics
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--clean_exp",
-        type=str,
-        default="clean",
-        help="Experiment name for clean setting."
-    )
-    parser.add_argument(
-        "--noisy_exp",
-        type=str,
-        default="noisy",
-        help="Experiment name for noisy setting."
-    )
-    parser.add_argument(
-        "--output_root",
-        type=str,
-        default="outputs",
-        help="Root directory for all experiment outputs."
-    )
-    parser.add_argument(
-        "--results_filename",
-        type=str,
-        default="rerank_results.csv",
-        help="Filename under each experiment's tables/ directory."
-    )
-    parser.add_argument(
-        "--diagnostic_filename",
-        type=str,
-        default="diagnostic_metrics.csv",
-        help="Filename for raw diagnostic metrics under tables/.",
-    )
-    parser.add_argument(
-        "--calibration_filename",
-        type=str,
-        default="calibration_comparison.csv",
-        help="Filename for calibration comparison under tables/.",
-    )
-    parser.add_argument(
-        "--confidence_filename",
-        type=str,
-        default="confidence_correctness_summary.csv",
-        help="Filename for confidence/correctness summary under tables/.",
-    )
-    args = parser.parse_args()
+def infer_noise_level(exp_name: str) -> float | None:
+    normalized = exp_name.strip().lower()
+    match = re.search(r"(?:^|_)nl(\d+)(?:_|$)", normalized)
+    if match:
+        return float(match.group(1)) / 100.0
 
-    clean_path = Path(args.output_root) / args.clean_exp / "tables" / args.results_filename
-    noisy_path = Path(args.output_root) / args.noisy_exp / "tables" / args.results_filename
-    clean_diagnostic_path = Path(args.output_root) / args.clean_exp / "tables" / args.diagnostic_filename
-    noisy_diagnostic_path = Path(args.output_root) / args.noisy_exp / "tables" / args.diagnostic_filename
-    clean_calibration_path = Path(args.output_root) / args.clean_exp / "tables" / args.calibration_filename
-    noisy_calibration_path = Path(args.output_root) / args.noisy_exp / "tables" / args.calibration_filename
-    clean_confidence_path = Path(args.output_root) / args.clean_exp / "tables" / args.confidence_filename
-    noisy_confidence_path = Path(args.output_root) / args.noisy_exp / "tables" / args.confidence_filename
+    match = re.search(r"(?:^|_)noise[_-]?(\d+)p?(\d+)?(?:_|$)", normalized)
+    if match:
+        integer = match.group(1)
+        frac = match.group(2)
+        if frac is None:
+            return float(integer)
+        return float(f"{integer}.{frac}")
+    return None
+
+
+def build_compare_outputs(
+    *,
+    clean_exp: str,
+    noisy_exp: str,
+    output_root: str,
+    results_filename: str,
+    diagnostic_filename: str,
+    calibration_filename: str,
+    confidence_filename: str,
+) -> dict[str, float | str]:
+    clean_path = Path(output_root) / clean_exp / "tables" / results_filename
+    noisy_path = Path(output_root) / noisy_exp / "tables" / results_filename
+    clean_diagnostic_path = Path(output_root) / clean_exp / "tables" / diagnostic_filename
+    noisy_diagnostic_path = Path(output_root) / noisy_exp / "tables" / diagnostic_filename
+    clean_calibration_path = Path(output_root) / clean_exp / "tables" / calibration_filename
+    noisy_calibration_path = Path(output_root) / noisy_exp / "tables" / calibration_filename
+    clean_confidence_path = Path(output_root) / clean_exp / "tables" / confidence_filename
+    noisy_confidence_path = Path(output_root) / noisy_exp / "tables" / confidence_filename
 
     if not clean_path.exists():
         raise FileNotFoundError(f"Clean result file not found: {clean_path}")
@@ -123,8 +104,8 @@ def main() -> None:
         _read_single_row_csv(noisy_confidence_path),
     )
 
-    compare_name = f"{args.clean_exp}_vs_{args.noisy_exp}"
-    compare_root = ensure_compare_dirs(compare_name, args.output_root)
+    compare_name = f"{clean_exp}_vs_{noisy_exp}"
+    compare_root = ensure_compare_dirs(compare_name, output_root)
     tables_dir = compare_root / "tables"
 
     robustness_table_path = tables_dir / "robustness_table.csv"
@@ -138,7 +119,15 @@ def main() -> None:
     calibration_df.to_csv(calibration_table_path, index=False)
     confidence_df.to_csv(confidence_table_path, index=False)
 
-    summary = {}
+    summary: dict[str, float | str] = {
+        "clean_exp": clean_exp,
+        "noisy_exp": noisy_exp,
+        "compare_name": compare_name,
+    }
+    noise_level = infer_noise_level(noisy_exp)
+    if noise_level is not None:
+        summary["noise_level"] = noise_level
+
     for prefix, df in [
         ("rerank", robustness_df),
         ("diagnostic", diagnostic_df),
@@ -155,6 +144,87 @@ def main() -> None:
     print(f"Saved calibration robustness table to: {calibration_table_path}")
     print(f"Saved confidence robustness table to: {confidence_table_path}")
     print(f"Saved robustness summary to: {robustness_summary_path}")
+    return summary
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--clean_exp",
+        type=str,
+        default="clean",
+        help="Experiment name for clean setting."
+    )
+    parser.add_argument(
+        "--noisy_exp",
+        type=str,
+        default="noisy",
+        help="Experiment name for noisy setting."
+    )
+    parser.add_argument(
+        "--noisy_exps",
+        type=str,
+        nargs="*",
+        default=None,
+        help="Optional list of noisy experiment names for multi-level robustness analysis.",
+    )
+    parser.add_argument(
+        "--output_root",
+        type=str,
+        default="outputs",
+        help="Root directory for all experiment outputs."
+    )
+    parser.add_argument(
+        "--results_filename",
+        type=str,
+        default="rerank_results.csv",
+        help="Filename under each experiment's tables/ directory."
+    )
+    parser.add_argument(
+        "--diagnostic_filename",
+        type=str,
+        default="diagnostic_metrics.csv",
+        help="Filename for raw diagnostic metrics under tables/.",
+    )
+    parser.add_argument(
+        "--calibration_filename",
+        type=str,
+        default="calibration_comparison.csv",
+        help="Filename for calibration comparison under tables/.",
+    )
+    parser.add_argument(
+        "--confidence_filename",
+        type=str,
+        default="confidence_correctness_summary.csv",
+        help="Filename for confidence/correctness summary under tables/.",
+    )
+    args = parser.parse_args()
+
+    noisy_exps = args.noisy_exps if args.noisy_exps else [args.noisy_exp]
+    summaries: list[dict[str, float | str]] = []
+    for noisy_exp in noisy_exps:
+        summaries.append(
+            build_compare_outputs(
+                clean_exp=args.clean_exp,
+                noisy_exp=noisy_exp,
+                output_root=args.output_root,
+                results_filename=args.results_filename,
+                diagnostic_filename=args.diagnostic_filename,
+                calibration_filename=args.calibration_filename,
+                confidence_filename=args.confidence_filename,
+            )
+        )
+
+    if len(summaries) > 1:
+        curve_root = ensure_compare_dirs(f"{args.clean_exp}_noise_curve", args.output_root)
+        curve_df = pd.DataFrame(summaries).sort_values(
+            by=["noise_level", "noisy_exp"],
+            ascending=[True, True],
+            na_position="last",
+        ).reset_index(drop=True)
+        curve_path = curve_root / "tables" / "robustness_curve_summary.csv"
+        curve_df.to_csv(curve_path, index=False)
+        print(f"Saved robustness curve summary to: {curve_path}")
 
 
 if __name__ == "__main__":

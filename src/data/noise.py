@@ -5,6 +5,19 @@ import random
 from typing import Any
 
 
+def resolve_noise_profile(noise_level: float) -> dict[str, float]:
+    level = float(noise_level)
+    if not 0.0 <= level <= 1.0:
+        raise ValueError(f"noise_level must be in [0, 1], got {noise_level}.")
+
+    # Keep the profile intentionally lightweight and interpretable.
+    return {
+        "history_drop_prob": level,
+        "text_noise_prob": min(1.0, 2.5 * level),
+        "label_flip_prob": min(0.3, 0.5 * level),
+    }
+
+
 def perturb_text(text: str) -> str:
     if not isinstance(text, str):
         return text
