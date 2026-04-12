@@ -136,6 +136,7 @@ def aggregate_experiment(exp_dir: Path) -> list[dict[str, Any]]:
             "confidence_col": record.get("confidence_col"),
             "uncertainty_col": record.get("uncertainty_col"),
             "lambda": record.get("lambda_penalty", 0.0),
+            "fusion_alpha": record.get("fusion_alpha"),
             "num_eval_samples": record.get("num_eval_samples"),
             "num_eval_users": record.get("num_eval_users"),
         }
@@ -154,6 +155,7 @@ def build_beauty_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
         "model",
         "estimator",
         "lambda",
+        "fusion_alpha",
         "num_eval_samples",
         "calibration_ece",
         "calibration_brier_score",

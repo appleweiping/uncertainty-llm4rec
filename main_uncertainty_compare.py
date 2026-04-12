@@ -44,6 +44,7 @@ def evaluate_estimator(
     uncertainty_col: str,
     k: int,
     lambda_penalty: float,
+    fusion_alpha: float | None = None,
 ) -> dict:
     eval_df = df[df[confidence_col].notna() & df[uncertainty_col].notna()].copy()
     if eval_df.empty:
@@ -79,6 +80,7 @@ def evaluate_estimator(
         "confidence_col": confidence_col,
         "uncertainty_col": uncertainty_col,
         "lambda_penalty": float(lambda_penalty),
+        "fusion_alpha": fusion_alpha if estimator_name == "fused" else pd.NA,
         "num_eval_samples": int(len(eval_df)),
         "num_eval_users": int(eval_df["user_id"].nunique()),
     }
@@ -98,6 +100,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--consistency_path", type=str, default=None, help="Optional explicit path to self-consistency jsonl.")
     parser.add_argument("--k", type=int, default=10, help="Top-K for ranking evaluation.")
     parser.add_argument("--lambda_penalty", type=float, default=0.5, help="Lambda for rerank evaluation.")
+    parser.add_argument(
+        "--fused_alpha",
+        type=float,
+        default=0.5,
+        help="Weight on calibrated verbalized confidence when forming fused uncertainty.",
+    )
     return parser.parse_args()
 
 
@@ -130,8 +138,8 @@ def main() -> None:
     else:
         print(f"[{args.exp_name}] Self-consistency file not found, skipping consistency-based estimators.")
 
-    df = ensure_estimator_columns(df)
-    estimators = get_available_estimators(df)
+    df = ensure_estimator_columns(df, fused_alpha=args.fused_alpha)
+    estimators = get_available_estimators(df, fused_alpha=args.fused_alpha)
     if not estimators:
         raise ValueError("No available estimators found after loading inputs.")
 
@@ -145,6 +153,7 @@ def main() -> None:
                 uncertainty_col=cols["uncertainty_col"],
                 k=args.k,
                 lambda_penalty=args.lambda_penalty,
+                fusion_alpha=cols.get("fusion_alpha") if isinstance(cols, dict) else None,
             )
         )
 

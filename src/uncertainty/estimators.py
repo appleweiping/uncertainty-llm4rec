@@ -20,6 +20,35 @@ def add_consistency_confidence(df: pd.DataFrame) -> pd.Series:
     return df["consistency_confidence"].astype(float).clip(0.0, 1.0)
 
 
+def _normalize_alpha(alpha: float) -> float:
+    alpha = float(alpha)
+    if not 0.0 <= alpha <= 1.0:
+        raise ValueError(f"Fusion alpha must be in [0, 1], got {alpha}.")
+    return alpha
+
+
+def fuse_confidence(
+    calibrated_confidence: pd.Series,
+    consistency_confidence: pd.Series,
+    alpha: float,
+) -> pd.Series:
+    alpha = _normalize_alpha(alpha)
+    calibrated = calibrated_confidence.astype(float).clip(0.0, 1.0)
+    consistency = consistency_confidence.astype(float).clip(0.0, 1.0)
+    return alpha * calibrated + (1.0 - alpha) * consistency
+
+
+def fuse_uncertainty(
+    calibrated_uncertainty: pd.Series,
+    consistency_uncertainty: pd.Series,
+    alpha: float,
+) -> pd.Series:
+    alpha = _normalize_alpha(alpha)
+    calibrated = calibrated_uncertainty.astype(float).clip(0.0, 1.0)
+    consistency = consistency_uncertainty.astype(float).clip(0.0, 1.0)
+    return alpha * calibrated + (1.0 - alpha) * consistency
+
+
 def merge_consistency_outputs(
     base_df: pd.DataFrame,
     consistency_df: pd.DataFrame,
@@ -56,21 +85,23 @@ def merge_consistency_outputs(
     return base_df.merge(deduped, on=available_key_cols, how="left")
 
 
-def add_fused_confidence(df: pd.DataFrame) -> pd.Series:
-    return (
-        0.5 * df["calibrated_confidence"].astype(float).clip(0.0, 1.0)
-        + 0.5 * df["consistency_confidence"].astype(float).clip(0.0, 1.0)
+def add_fused_confidence(df: pd.DataFrame, alpha: float = 0.5) -> pd.Series:
+    return fuse_confidence(
+        df["calibrated_confidence"],
+        df["consistency_confidence"],
+        alpha=alpha,
     )
 
 
-def add_fused_uncertainty(df: pd.DataFrame) -> pd.Series:
-    return (
-        0.5 * df["uncertainty"].astype(float).clip(0.0, 1.0)
-        + 0.5 * df["consistency_uncertainty"].astype(float).clip(0.0, 1.0)
+def add_fused_uncertainty(df: pd.DataFrame, alpha: float = 0.5) -> pd.Series:
+    return fuse_uncertainty(
+        df["uncertainty"],
+        df["consistency_uncertainty"],
+        alpha=alpha,
     )
 
 
-def ensure_estimator_columns(df: pd.DataFrame) -> pd.DataFrame:
+def ensure_estimator_columns(df: pd.DataFrame, fused_alpha: float = 0.5) -> pd.DataFrame:
     out = df.copy()
 
     if "confidence" in out.columns:
@@ -95,14 +126,15 @@ def ensure_estimator_columns(df: pd.DataFrame) -> pd.DataFrame:
         "consistency_confidence",
         "consistency_uncertainty",
     }.issubset(out.columns):
-        out["fused_confidence"] = add_fused_confidence(out)
-        out["fused_uncertainty"] = add_fused_uncertainty(out)
+        out["fused_confidence"] = add_fused_confidence(out, alpha=fused_alpha)
+        out["fused_uncertainty"] = add_fused_uncertainty(out, alpha=fused_alpha)
+        out["fused_alpha"] = fused_alpha
 
     return out
 
 
-def get_available_estimators(df: pd.DataFrame) -> dict[str, dict[str, str]]:
-    estimators: dict[str, dict[str, str]] = {}
+def get_available_estimators(df: pd.DataFrame, fused_alpha: float = 0.5) -> dict[str, dict[str, str | float]]:
+    estimators: dict[str, dict[str, str | float]] = {}
 
     if {"verbalized_confidence", "verbalized_uncertainty"}.issubset(df.columns):
         estimators["verbalized_raw"] = {
@@ -126,6 +158,7 @@ def get_available_estimators(df: pd.DataFrame) -> dict[str, dict[str, str]]:
         estimators["fused"] = {
             "confidence_col": "fused_confidence",
             "uncertainty_col": "fused_uncertainty",
+            "fusion_alpha": _normalize_alpha(fused_alpha),
         }
 
     return estimators
