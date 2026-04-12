@@ -10,6 +10,7 @@ import yaml
 from src.llm import build_backend_from_config
 from src.llm.inference import run_pointwise_inference
 from src.utils.paths import default_input_path_for_exp, ensure_exp_dirs
+from src.utils.reproducibility import set_global_seed
 
 
 def load_yaml(path: str | Path) -> dict[str, Any]:
@@ -80,6 +81,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output_path", type=str, default=None, help="Prediction output jsonl path.")
     parser.add_argument("--split_name", type=str, default=None, help="Optional split name, e.g. train/valid/test.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing prediction file.")
+    parser.add_argument("--seed", type=int, default=None, help="Optional global random seed.")
     return parser.parse_args()
 
 
@@ -99,6 +101,7 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
         "output_path": args.output_path if args.output_path is not None else cfg.get("output_path"),
         "split_name": args.split_name if args.split_name is not None else cfg.get("split_name"),
         "overwrite": bool(args.overwrite or cfg.get("overwrite", False)),
+        "seed": args.seed if args.seed is not None else cfg.get("seed"),
     }
     return merged
 
@@ -117,6 +120,9 @@ def main() -> None:
     output_path = cfg["output_path"]
     split_name = cfg["split_name"]
     overwrite = cfg["overwrite"]
+    seed = cfg["seed"]
+
+    set_global_seed(seed)
 
     if model_config is None:
         raise ValueError("model_config must be provided via config or CLI.")
@@ -139,6 +145,8 @@ def main() -> None:
     print(f"[{exp_name}] Input path: {input_path}")
     print(f"[{exp_name}] Output path: {output_path}")
     print(f"[{exp_name}] Model config: {model_config}")
+    if seed is not None:
+        print(f"[{exp_name}] Seed: {seed}")
 
     if not input_path.exists():
         raise FileNotFoundError(f"[{exp_name}] Input file not found: {input_path}")

@@ -24,6 +24,7 @@ from src.eval.calibration_metrics import (
     get_reliability_dataframe,
 )
 from src.utils.paths import ensure_exp_dirs
+from src.utils.reproducibility import set_global_seed
 
 
 def load_jsonl(path: str | Path) -> pd.DataFrame:
@@ -52,11 +53,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output_root", type=str, default="outputs", help="输出根目录")
     parser.add_argument("--n_bins", type=int, default=10, help="reliability 分桶数")
     parser.add_argument("--high_conf_threshold", type=float, default=0.8, help="高置信阈值")
+    parser.add_argument("--seed", type=int, default=None, help="Optional global random seed.")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    set_global_seed(args.seed)
 
     paths = ensure_exp_dirs(args.exp_name, args.output_root)
     input_path = Path(args.input_path) if args.input_path else paths.predictions_dir / "test_raw.jsonl"
@@ -69,6 +72,8 @@ def main() -> None:
     df = prepare_prediction_dataframe(raw_df)
 
     print(f"[{args.exp_name}] Loaded {len(df)} samples.")
+    if args.seed is not None:
+        print(f"[{args.exp_name}] Seed: {args.seed}")
 
     metrics = compute_calibration_metrics(df, confidence_col="confidence", n_bins=args.n_bins)
     save_summary_dict(metrics, paths.tables_dir / "diagnostic_metrics.csv")

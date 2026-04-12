@@ -14,6 +14,7 @@ from src.eval.ranking_metrics import compute_ranking_metrics
 from src.methods.baseline_ranker import add_baseline_score, rank_by_score
 from src.methods.uncertainty_reranker import rerank_candidates
 from src.utils.paths import ensure_exp_dirs
+from src.utils.reproducibility import set_global_seed
 
 
 def load_jsonl(path: str | Path) -> pd.DataFrame:
@@ -81,7 +82,14 @@ def main() -> None:
         default=0.5,
         help="Penalty coefficient for uncertainty-aware reranking."
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Optional global random seed."
+    )
     args = parser.parse_args()
+    set_global_seed(args.seed)
 
     paths = ensure_exp_dirs(args.exp_name, args.output_root)
     input_path = (
@@ -96,6 +104,8 @@ def main() -> None:
     print(f"[{args.exp_name}] Loading calibrated predictions from: {input_path}")
     df = load_jsonl(input_path)
     print(f"[{args.exp_name}] Loaded {len(df)} samples.")
+    if args.seed is not None:
+        print(f"[{args.exp_name}] Seed: {args.seed}")
 
     required_cols = [
         "user_id",
