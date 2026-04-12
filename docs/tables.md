@@ -124,6 +124,7 @@ Recommended use:
 
 - main robustness curve table
 - source table for a noise-level trend figure
+- cross-model robustness support on Beauty (`deepseek` and `glm`)
 
 ### `beauty_reproducibility_brief.csv`
 
@@ -133,6 +134,24 @@ Recommended use:
 
 - appendix stability table
 - concise support for the reproducibility paragraph
+
+### `beauty_consistency_sensitivity_brief.csv`
+
+Beauty-only sampling-sensitivity brief table for `self-consistency`.
+
+Recommended use:
+
+- appendix table for consistency sensitivity
+- source table for the claim that increasing temperature only partially activates consistency-based uncertainty
+
+### `beauty_fused_alpha_brief.csv`
+
+Beauty-only fusion-weight ablation brief table.
+
+Recommended use:
+
+- appendix table for `fused_alpha` analysis
+- compact support for the claim that fused uncertainty is controllable but still weaker than calibrated verbalized confidence
 
 ## Auxiliary Tables
 
@@ -177,6 +196,8 @@ Recommended use:
 - Main estimator table: `beauty_estimator_brief.csv`
 - Main robustness table: `beauty_robustness_curve_brief.csv`
 - Reproducibility appendix table: `beauty_reproducibility_brief.csv`
+- Consistency-sensitivity appendix table: `beauty_consistency_sensitivity_brief.csv`
+- Fused-alpha appendix table: `beauty_fused_alpha_brief.csv`
 
 ## Regeneration
 

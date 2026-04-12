@@ -24,9 +24,9 @@ This checklist defines when the Beauty main domain can be treated as complete en
 
 - [x] `docs/tables.md` maps summary files to paper usage.
 - [x] `docs/paper_outline.md` maps claims to Beauty-centered evidence.
-- [ ] A Beauty experiment-section draft is written in full prose.
-- [ ] Final figure choices are fixed.
-- [ ] Main-text versus appendix placement is frozen.
+- [x] A Beauty experiment-section draft is written in full prose.
+- [x] Final figure choices are fixed at the table/summary level.
+- [x] Main-text versus appendix placement is frozen.
 
 ## Interpretation Layer
 

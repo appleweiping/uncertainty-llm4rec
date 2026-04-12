@@ -18,6 +18,12 @@ def load_required_csv(path: Path) -> pd.DataFrame:
     return pd.read_csv(path)
 
 
+def load_optional_csv(path: Path) -> pd.DataFrame | None:
+    if not path.exists():
+        return None
+    return pd.read_csv(path)
+
+
 def build_beauty_main_results(final_df: pd.DataFrame) -> pd.DataFrame:
     beauty_df = final_df[final_df["domain"].astype(str).str.lower() == "beauty"].copy()
     columns = [
@@ -99,6 +105,44 @@ def build_beauty_reproducibility_brief(repro_df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def build_beauty_consistency_sensitivity_brief(sensitivity_df: pd.DataFrame) -> pd.DataFrame:
+    columns = [
+        "exp_name",
+        "temperature",
+        "num_samples",
+        "avg_vote_entropy",
+        "nonzero_entropy_fraction",
+        "high_entropy_fraction",
+        "avg_consistency_confidence",
+        "avg_consistency_uncertainty",
+        "consistency_ece",
+        "consistency_brier_score",
+        "fused_ece",
+        "fused_brier_score",
+        "consistency_ece_delta_vs_t00",
+        "fused_ece_delta_vs_t00",
+    ]
+    return sensitivity_df[
+        [column for column in columns if column in sensitivity_df.columns]
+    ].sort_values(["temperature"])
+
+
+def build_beauty_fused_alpha_brief(alpha_df: pd.DataFrame) -> pd.DataFrame:
+    columns = [
+        "model",
+        "estimator",
+        "fusion_alpha",
+        "num_eval_samples",
+        "calibration_ece",
+        "calibration_brier_score",
+        "calibration_auroc",
+        "rerank_ndcg_at_10",
+        "rerank_mrr_at_10",
+    ]
+    sort_cols = [col for col in ["estimator", "fusion_alpha"] if col in alpha_df.columns]
+    return alpha_df[[column for column in columns if column in alpha_df.columns]].sort_values(sort_cols)
+
+
 def main() -> None:
     args = parse_args()
     output_root = Path(args.output_root).resolve()
@@ -108,6 +152,8 @@ def main() -> None:
     estimator_df = load_required_csv(summary_dir / "beauty_estimator_results.csv")
     robustness_curve_df = load_required_csv(summary_dir / "robustness_curve_results.csv")
     reproducibility_df = load_required_csv(summary_dir / "reproducibility_delta.csv")
+    sensitivity_df = load_optional_csv(summary_dir / "beauty_consistency_sensitivity.csv")
+    fused_alpha_df = load_optional_csv(summary_dir / "beauty_fused_alpha_ablation.csv")
 
     beauty_main_results = build_beauty_main_results(final_df)
     beauty_estimator_brief = build_beauty_estimator_brief(estimator_df)
@@ -122,12 +168,24 @@ def main() -> None:
     beauty_reproducibility_brief.to_csv(
         summary_dir / "beauty_reproducibility_brief.csv", index=False
     )
+    if sensitivity_df is not None and not sensitivity_df.empty:
+        build_beauty_consistency_sensitivity_brief(sensitivity_df).to_csv(
+            summary_dir / "beauty_consistency_sensitivity_brief.csv", index=False
+        )
+    if fused_alpha_df is not None and not fused_alpha_df.empty:
+        build_beauty_fused_alpha_brief(fused_alpha_df).to_csv(
+            summary_dir / "beauty_fused_alpha_brief.csv", index=False
+        )
 
     print("Saved Beauty paper-facing tables:")
     print(f"- {summary_dir / 'beauty_main_results.csv'}")
     print(f"- {summary_dir / 'beauty_estimator_brief.csv'}")
     print(f"- {summary_dir / 'beauty_robustness_curve_brief.csv'}")
     print(f"- {summary_dir / 'beauty_reproducibility_brief.csv'}")
+    if sensitivity_df is not None and not sensitivity_df.empty:
+        print(f"- {summary_dir / 'beauty_consistency_sensitivity_brief.csv'}")
+    if fused_alpha_df is not None and not fused_alpha_df.empty:
+        print(f"- {summary_dir / 'beauty_fused_alpha_brief.csv'}")
 
 
 if __name__ == "__main__":

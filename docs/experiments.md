@@ -135,6 +135,8 @@ Generated summary files under `outputs/summary/`:
 - `beauty_estimator_brief.csv`
 - `beauty_robustness_curve_brief.csv`
 - `beauty_reproducibility_brief.csv`
+- `beauty_consistency_sensitivity_brief.csv`
+- `beauty_fused_alpha_brief.csv`
 
 For table-level responsibilities and paper mapping, see:
 
@@ -161,6 +163,8 @@ For Beauty-first paper writing, the most direct files are:
 - `outputs/summary/beauty_estimator_brief.csv`
 - `outputs/summary/beauty_robustness_curve_brief.csv`
 - `outputs/summary/beauty_reproducibility_brief.csv`
+- `outputs/summary/beauty_consistency_sensitivity_brief.csv`
+- `outputs/summary/beauty_fused_alpha_brief.csv`
 
 ## Current Practical Baselines
 

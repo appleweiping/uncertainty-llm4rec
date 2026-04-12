@@ -83,6 +83,8 @@ Primary table sources:
 
 - `outputs/summary/beauty_estimator_results.csv`
 - `outputs/summary/beauty_estimator_brief.csv`
+- `outputs/summary/beauty_consistency_sensitivity_brief.csv`
+- `outputs/summary/beauty_fused_alpha_brief.csv`
 
 Core claims:
 
@@ -132,6 +134,8 @@ Recommended topics:
 - Table 3: `outputs/summary/beauty_estimator_brief.csv`
 - Table 4: `outputs/summary/beauty_robustness_curve_brief.csv`
 - Appendix Table A1: `outputs/summary/beauty_reproducibility_brief.csv`
+- Appendix Table A2: `outputs/summary/beauty_consistency_sensitivity_brief.csv`
+- Appendix Table A3: `outputs/summary/beauty_fused_alpha_brief.csv`
 
 ## Writing Guidance
 
