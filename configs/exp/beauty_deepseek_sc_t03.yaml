@@ -1,0 +1,11 @@
+exp_name: beauty_deepseek_sc_t03
+
+input_path: data/processed/amazon_beauty/test.jsonl
+output_root: outputs
+prompt_path: prompts/pointwise_yesno.txt
+
+model_config: configs/model/deepseek_sc_t03.yaml
+
+max_samples: 100
+overwrite: true
+seed: 42
