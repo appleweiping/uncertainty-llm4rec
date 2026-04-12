@@ -150,7 +150,10 @@ def build_beauty_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
     if beauty_df.empty:
         return beauty_df
 
+    beauty_df = beauty_df[beauty_df["exp_name"].map(is_primary_beauty_experiment)].copy()
+
     columns = [
+        "exp_name",
         "domain",
         "model",
         "estimator",
@@ -171,6 +174,41 @@ def build_beauty_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
     ]
     existing = [column for column in columns if column in beauty_df.columns]
     return beauty_df[existing].copy()
+
+
+def is_primary_beauty_experiment(exp_name: str) -> bool:
+    normalized = str(exp_name).strip().lower()
+    excluded_markers = ["_sc_", "_rep", "_noisy"]
+    return not any(marker in normalized for marker in excluded_markers)
+
+
+def build_beauty_supporting_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
+    beauty_df = summary_df[summary_df["domain"].astype(str).str.lower() == "beauty"].copy()
+    if beauty_df.empty:
+        return beauty_df
+
+    supporting_df = beauty_df[~beauty_df["exp_name"].map(is_primary_beauty_experiment)].copy()
+    if supporting_df.empty:
+        return supporting_df
+
+    columns = [
+        "exp_name",
+        "domain",
+        "model",
+        "estimator",
+        "lambda",
+        "fusion_alpha",
+        "num_eval_samples",
+        "calibration_ece",
+        "calibration_brier_score",
+        "calibration_auroc",
+        "baseline_ndcg_at_10",
+        "baseline_mrr_at_10",
+        "rerank_ndcg_at_10",
+        "rerank_mrr_at_10",
+    ]
+    existing = [column for column in columns if column in supporting_df.columns]
+    return supporting_df[existing].sort_values(["exp_name", "estimator", "lambda"]).reset_index(drop=True)
 
 
 def main() -> None:
@@ -207,13 +245,16 @@ def main() -> None:
 
     estimator_output_path = summary_dir / "estimator_results.csv"
     beauty_output_path = summary_dir / "beauty_estimator_results.csv"
+    beauty_supporting_output_path = summary_dir / "beauty_estimator_supporting_results.csv"
 
     summary_df.to_csv(estimator_output_path, index=False)
     build_beauty_summary(summary_df).to_csv(beauty_output_path, index=False)
+    build_beauty_supporting_summary(summary_df).to_csv(beauty_supporting_output_path, index=False)
 
     print(f"Aggregated {len(summary_df)} estimator rows.")
     print(f"Saved estimator comparison summary to: {estimator_output_path}")
     print(f"Saved Beauty-focused estimator summary to: {beauty_output_path}")
+    print(f"Saved Beauty supporting estimator summary to: {beauty_supporting_output_path}")
 
 
 if __name__ == "__main__":

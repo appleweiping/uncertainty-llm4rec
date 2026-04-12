@@ -71,6 +71,16 @@ Recommended use:
 
 - main estimator-comparison table in the paper
 - the central `Beauty x model x estimator` comparison view
+- contains only the five primary clean Beauty experiment lines
+
+### `beauty_estimator_supporting_results.csv`
+
+Beauty-only supporting estimator table for non-main experiment variants.
+
+Recommended use:
+
+- appendix-level estimator support
+- sensitivity or derived experiment bookkeeping without polluting the main Beauty estimator table
 
 ## Robustness Tables
 
