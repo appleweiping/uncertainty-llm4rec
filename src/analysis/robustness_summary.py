@@ -66,6 +66,20 @@ def load_single_row(path: Path) -> dict[str, Any]:
     return df.iloc[0].to_dict()
 
 
+def load_metric_drop_table(path: Path, prefix: str) -> dict[str, Any]:
+    df = pd.read_csv(path)
+    if df.empty:
+        return {}
+
+    metrics: dict[str, Any] = {}
+    for _, row in df.iterrows():
+        metric_name = str(row.get("metric", "")).strip()
+        if not metric_name:
+            continue
+        metrics[f"{prefix}_{metric_name}_drop"] = row.get("drop")
+    return metrics
+
+
 def aggregate_compare_dir(compare_dir: Path) -> dict[str, Any]:
     compare_name = compare_dir.name
     if "_vs_" not in compare_name:
@@ -85,6 +99,18 @@ def aggregate_compare_dir(compare_dir: Path) -> dict[str, Any]:
         "model": model,
     }
     row.update(summary_row)
+    row.update(
+        load_metric_drop_table(
+            compare_dir / "tables" / "robustness_calibration_table.csv",
+            prefix="calibration",
+        )
+    )
+    row.update(
+        load_metric_drop_table(
+            compare_dir / "tables" / "robustness_confidence_table.csv",
+            prefix="confidence",
+        )
+    )
     if "noise_level" not in row or pd.isna(row.get("noise_level")):
         inferred = infer_noise_level(noisy_exp)
         if inferred is not None:

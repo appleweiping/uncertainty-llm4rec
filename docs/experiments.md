@@ -131,10 +131,16 @@ Generated summary files under `outputs/summary/`:
 - `beauty_estimator_results.csv`
 - `robustness_results.csv`
 - `robustness_brief.csv`
+- `beauty_main_results.csv`
+- `beauty_estimator_brief.csv`
+- `beauty_robustness_curve_brief.csv`
+- `beauty_reproducibility_brief.csv`
 
 For table-level responsibilities and paper mapping, see:
 
 - [docs/tables.md](tables.md)
+- [docs/paper_outline.md](paper_outline.md)
+- [docs/beauty_freeze_checklist.md](beauty_freeze_checklist.md)
 
 ## Suggested Reading Order for Paper Writing
 
@@ -148,6 +154,13 @@ If you are mapping code/results to the paper, the cleanest order is:
    Use for the first clean/noisy robustness claim.
 4. `outputs/summary/reproducibility_delta.csv`
    Use for the reproducibility appendix or stability note.
+
+For Beauty-first paper writing, the most direct files are:
+
+- `outputs/summary/beauty_main_results.csv`
+- `outputs/summary/beauty_estimator_brief.csv`
+- `outputs/summary/beauty_robustness_curve_brief.csv`
+- `outputs/summary/beauty_reproducibility_brief.csv`
 
 ## Current Practical Baselines
 

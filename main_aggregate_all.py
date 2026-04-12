@@ -28,12 +28,13 @@ def main() -> None:
         REPO_ROOT / "src" / "analysis" / "aggregate_model_results.py",
         REPO_ROOT / "src" / "analysis" / "aggregate_estimator_results.py",
         REPO_ROOT / "src" / "analysis" / "robustness_summary.py",
+        REPO_ROOT / "src" / "analysis" / "export_paper_tables.py",
     ]
 
     for script in scripts:
         run_step(script, args.output_root)
 
-    print("Finished aggregating domain, model, estimator, and robustness summaries.")
+    print("Finished aggregating domain, model, estimator, robustness, and paper-facing summaries.")
 
 
 if __name__ == "__main__":

@@ -119,7 +119,7 @@ def discover_experiment_dirs(output_root: Path) -> list[Path]:
 
 def should_skip_experiment_dir(exp_name: str) -> bool:
     normalized = exp_name.strip().lower()
-    return normalized.endswith("_noisy") or re.search(r"_rep\d+$", normalized) is not None
+    return "_noisy" in normalized or re.search(r"_rep\d+$", normalized) is not None
 
 
 def load_diagnostic_metrics(path: Path) -> dict[str, Any]:

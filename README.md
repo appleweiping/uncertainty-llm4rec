@@ -89,6 +89,34 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 `-- main_uncertainty_compare.py
 ```
 
+## Paper-Facing Summary Layer
+
+For paper writing, the repository now maintains two result layers:
+
+- experiment-complete summaries under `outputs/summary/`
+- Beauty-centered paper-facing tables derived from those summaries
+
+After running:
+
+```powershell
+py -3.12 main_aggregate_all.py --output_root outputs
+```
+
+the main Beauty-facing exports are:
+
+- `outputs/summary/beauty_main_results.csv`
+- `outputs/summary/beauty_estimator_brief.csv`
+- `outputs/summary/beauty_robustness_curve_brief.csv`
+- `outputs/summary/beauty_reproducibility_brief.csv`
+
+These are intended to be the direct bridge from experiment artifacts to paper tables.
+
+For the current Beauty-first writing phase, the main coordination docs are:
+
+- `docs/paper_outline.md`
+- `docs/beauty_freeze_checklist.md`
+- `docs/tables.md`
+
 ## Environment
 
 Use the project with Python 3.12. In this repository, the safest convention is to avoid ambiguous `python` calls and instead use `py -3.12` or the project virtual environment explicitly.

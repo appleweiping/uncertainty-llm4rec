@@ -98,6 +98,42 @@ Recommended use:
 - main robustness table in the paper
 - first clean/noisy claim
 
+### `beauty_main_results.csv`
+
+Beauty-only main-results table derived from `final_results.csv`.
+
+Recommended use:
+
+- main Beauty clean-results table
+- first paper-facing table for the main domain
+
+### `beauty_estimator_brief.csv`
+
+Beauty-only estimator comparison brief table.
+
+Recommended use:
+
+- compact main-text estimator table
+- quicker model-by-estimator comparison view
+
+### `beauty_robustness_curve_brief.csv`
+
+Beauty-only robustness curve table with noise-level organization.
+
+Recommended use:
+
+- main robustness curve table
+- source table for a noise-level trend figure
+
+### `beauty_reproducibility_brief.csv`
+
+Beauty-only reproducibility brief table.
+
+Recommended use:
+
+- appendix stability table
+- concise support for the reproducibility paragraph
+
 ## Auxiliary Tables
 
 ### `weekly_summary.csv`
@@ -137,9 +173,10 @@ Recommended use:
 
 - Table 1: `final_results.csv`
 - Table 2: `model_results.csv`
-- Main estimator table: `beauty_estimator_results.csv`
-- Main robustness table: `robustness_brief.csv`
-- Reproducibility appendix table: `reproducibility_delta.csv`
+- Main Beauty table: `beauty_main_results.csv`
+- Main estimator table: `beauty_estimator_brief.csv`
+- Main robustness table: `beauty_robustness_curve_brief.csv`
+- Reproducibility appendix table: `beauty_reproducibility_brief.csv`
 
 ## Regeneration
 
