@@ -361,22 +361,62 @@ py -3.12 main_calibrate.py --exp_name electronics_small_deepseek --valid_path ou
 py -3.12 main_rerank.py --exp_name electronics_small_deepseek --input_path outputs/electronics_small_deepseek/calibrated/test_calibrated.jsonl --lambda_penalty 0.5
 ```
 
-### Aggregate Domain Results
+### Aggregate Results
 
-To consolidate diagnosis, calibration, and reranking results into a unified table for analysis and paper writing:
+To regenerate the current summary layer in one command:
 
 ```powershell
-py -3.12 src\analysis\aggregate_domain_results.py --exp_names beauty_deepseek movies_small_deepseek books_small_deepseek electronics_small_deepseek
+py -3.12 main_aggregate_all.py --output_root outputs
 ```
 
-To aggregate the currently completed 4-model x 4-domain setting:
+This entry point runs:
+
+- `src/analysis/aggregate_domain_results.py`
+- `src/analysis/aggregate_model_results.py`
+- `src/analysis/aggregate_estimator_results.py`
+- `src/analysis/robustness_summary.py`
+
+If you only want the domain-level rerank/calibration summary, you can still run:
 
 ```powershell
-py -3.12 src\analysis\aggregate_domain_results.py --exp_names `
-  beauty_deepseek beauty_qwen beauty_kimi beauty_doubao `
-  movies_small_deepseek movies_small_qwen movies_small_kimi movies_small_doubao `
-  books_small_deepseek books_small_qwen books_small_kimi books_small_doubao `
-  electronics_small_deepseek electronics_small_qwen electronics_small_kimi electronics_small_doubao
+py -3.12 src\analysis\aggregate_domain_results.py --output_root outputs
+```
+
+For a more complete experiment map, see:
+
+- [docs/experiments.md](docs/experiments.md)
+
+### Robustness Baseline
+
+The current Week2 robustness baseline uses `Beauty + DeepSeek + noisy`.
+
+Generate noisy pointwise data:
+
+```powershell
+py -3.12 main_generate_noisy.py `
+  --input_path data/processed/amazon_beauty/test.jsonl `
+  --output_path data/processed/amazon_beauty_noisy/test.jsonl `
+  --history_drop_prob 0.2 `
+  --text_noise_prob 0.5 `
+  --label_flip_prob 0.0
+```
+
+Run the noisy experiment:
+
+```powershell
+py -3.12 main_infer.py `
+  --config configs/exp/beauty_deepseek_noisy.yaml `
+  --input_path data/processed/amazon_beauty_noisy/test.jsonl `
+  --output_path outputs/beauty_deepseek_noisy/predictions/test_raw.jsonl `
+  --split_name test `
+  --max_samples 100 `
+  --overwrite
+```
+
+Then evaluate clean vs noisy:
+
+```powershell
+py -3.12 main_robustness.py --clean_exp beauty_deepseek --noisy_exp beauty_deepseek_noisy
 ```
 
 ## Key Outputs
@@ -397,6 +437,12 @@ Under `outputs/summary/`, the repository also maintains:
 - `rerank_ablation.csv`: unified cross-domain / cross-lambda summary table
 - `weekly_summary.csv`: compact view over diagnosis, calibration, and reranking metrics
 - `final_results.csv`: consolidated cross-model, cross-domain result table with explicit `domain` and `lambda` columns
+- `model_results.csv`: cross-domain / cross-model summary table
+- `domain_model_summary.csv`: grouped model comparison per domain
+- `estimator_results.csv`: multi-estimator comparison table
+- `beauty_estimator_results.csv`: Beauty-focused estimator table for the main Day4 comparison
+- `robustness_results.csv`: clean/noisy robustness summary rows
+- `robustness_brief.csv`: compact robustness table for reporting
 
 ## Evaluation Philosophy
 
@@ -422,13 +468,14 @@ Current experiments are best understood as method-grounding and pipeline validat
 - Movies-small as the first cross-domain validation subset
 - Books-small and Electronics-small as additional cross-domain validation subsets
 
-Week2 has already started extending this base into multi-model validation:
+Week2 has already extended this base substantially:
 
-- `DeepSeek`, `Qwen`, `Kimi`, and `Doubao` are all connected to the same inference / evaluation / calibration / reranking pipeline
-- the current summary table already supports a `4 models x 4 domains` comparison setting
-- this creates a stronger basis for upcoming multi-uncertainty and robustness experiments
+- `DeepSeek`, `Qwen`, `GLM`, `Kimi`, and `Doubao` are all connected to the same inference / evaluation / calibration / reranking pipeline
+- the current summary layer supports a `5 models x 4 domains` comparison setting
+- multi-estimator comparison is available through verbalized, calibrated, consistency-based, and fused uncertainty definitions
+- a first `Beauty + DeepSeek` noisy robustness baseline has been added
 
-The next natural extensions are richer uncertainty estimators, stronger robustness experiments, and more systematic cross-model analysis.
+The current natural next step is not to add more raw experiments immediately, but to use the summary layer and docs layer to support paper writing and later larger-scale reruns.
 
 ## Notes
 
