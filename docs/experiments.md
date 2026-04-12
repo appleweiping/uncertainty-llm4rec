@@ -87,9 +87,13 @@ main_generate_noisy.py
 -> main_robustness.py
 ```
 
-Current reference setting:
+Current Beauty robustness settings now include:
 
-- `beauty_deepseek_noisy`
+- `beauty_deepseek_noisy_nl10/nl20/nl30`
+- `beauty_glm_noisy_nl10/nl20/nl30`
+- `beauty_qwen_noisy_nl10/nl20/nl30`
+- `beauty_kimi_noisy_nl10/nl20/nl30`
+- `beauty_doubao_noisy_nl10/nl20/nl30`
 
 Key robustness outputs:
 
@@ -153,7 +157,7 @@ If you are mapping code/results to the paper, the cleanest order is:
 2. `outputs/summary/beauty_estimator_results.csv`
    Use for the main multi-estimator comparison table.
 3. `outputs/summary/robustness_brief.csv`
-   Use for the first clean/noisy robustness claim.
+   Use for the Beauty-first clean/noisy robustness claim and multi-model robustness comparison.
 4. `outputs/summary/reproducibility_delta.csv`
    Use for the reproducibility appendix or stability note.
 
@@ -171,7 +175,8 @@ For Beauty-first paper writing, the most direct files are:
 At the current stage, the most stable reference settings are:
 
 - `beauty_deepseek` for the main clean baseline
-- `beauty_deepseek_noisy` for the first robustness baseline
+- `beauty_*` for the five-model clean comparison layer
+- `beauty_*_noisy_nl10/nl20/nl30` for the five-model robustness curve layer
 - `beauty_*` for the full five-model estimator comparison
 - `movies_small_deepseek` for the minimal cross-domain estimator validation
 

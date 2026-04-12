@@ -1,0 +1,8 @@
+exp_name: beauty_kimi_noisy_nl30
+input_path: data/processed/amazon_beauty_noisy_nl30/test.jsonl
+output_root: outputs
+prompt_path: prompts/pointwise_yesno.txt
+model_config: configs/model/kimi.yaml
+max_samples: 100
+overwrite: true
+seed: 42

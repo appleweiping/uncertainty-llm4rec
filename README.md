@@ -417,7 +417,20 @@ For a more complete experiment map, see:
 
 ### Robustness Baseline
 
-The current Week2 robustness baseline uses `Beauty + DeepSeek + noisy`.
+The robustness line now extends beyond a single-model baseline. On `Beauty`, the repository currently supports multi-level noisy evaluation for:
+
+- `beauty_deepseek`
+- `beauty_glm`
+- `beauty_qwen`
+- `beauty_kimi`
+- `beauty_doubao`
+
+with `noise_level = 0.1 / 0.2 / 0.3` summarized in:
+
+- `outputs/summary/beauty_robustness_curve_brief.csv`
+- `outputs/summary/robustness_curve_results.csv`
+
+The original Week2 entry point remains `Beauty + DeepSeek + noisy`, but the current paper-facing robustness layer is already a five-model Beauty comparison.
 
 Generate noisy pointwise data:
 
@@ -497,12 +510,14 @@ Current experiments are best understood as method-grounding and pipeline validat
 - Movies-small as the first cross-domain validation subset
 - Books-small and Electronics-small as additional cross-domain validation subsets
 
-Week2 has already extended this base substantially:
+Week2 and the current Week3 Beauty-first writing phase have already extended this base substantially:
 
 - `DeepSeek`, `Qwen`, `GLM`, `Kimi`, and `Doubao` are all connected to the same inference / evaluation / calibration / reranking pipeline
 - the current summary layer supports a `5 models x 4 domains` comparison setting
 - multi-estimator comparison is available through verbalized, calibrated, consistency-based, and fused uncertainty definitions
-- a first `Beauty + DeepSeek` noisy robustness baseline has been added
+- `Beauty` now has five-model clean comparisons, five-model estimator comparisons, and five-model multi-level robustness curves
+- `Beauty` robustness is no longer only a `DeepSeek` story; `GLM`, `Qwen`, `Kimi`, and `Doubao` now follow the same `noise_level = 0.1 / 0.2 / 0.3` curve setup
+- `Beauty` also includes consistency sensitivity and fused-alpha supporting analyses for paper writing
 
 The current natural next step is not to add more raw experiments immediately, but to use the summary layer and docs layer to support paper writing and later larger-scale reruns.
 
