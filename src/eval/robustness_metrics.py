@@ -1,5 +1,3 @@
-# src/eval/robustness_metrics.py
-
 from __future__ import annotations
 
 import pandas as pd
@@ -36,4 +34,26 @@ def build_robustness_table(clean_df: pd.DataFrame, noisy_df: pd.DataFrame):
 
         rows.append(entry)
 
+    return pd.DataFrame(rows)
+
+
+def build_scalar_robustness_table(
+    clean_metrics: dict[str, float],
+    noisy_metrics: dict[str, float],
+    key_name: str = "metric",
+) -> pd.DataFrame:
+    rows = []
+    for key, clean_val in clean_metrics.items():
+        if key not in noisy_metrics:
+            continue
+
+        noisy_val = noisy_metrics[key]
+        rows.append(
+            {
+                key_name: key,
+                "clean": clean_val,
+                "noisy": noisy_val,
+                "drop": clean_val - noisy_val,
+            }
+        )
     return pd.DataFrame(rows)
