@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -45,6 +46,8 @@ def discover_experiment_dirs(output_root: Path) -> list[Path]:
     for child in sorted(output_root.iterdir()):
         if not child.is_dir() or child.name in {"summary", "robustness", "clean", "noisy"}:
             continue
+        if should_skip_experiment_dir(child.name):
+            continue
         try:
             for filename in REQUIRED_FILENAMES:
                 resolve_table_path(child, filename)
@@ -52,6 +55,11 @@ def discover_experiment_dirs(output_root: Path) -> list[Path]:
             continue
         experiment_dirs.append(child)
     return experiment_dirs
+
+
+def should_skip_experiment_dir(exp_name: str) -> bool:
+    normalized = exp_name.strip().lower()
+    return normalized.endswith("_noisy") or re.search(r"_rep\d+$", normalized) is not None
 
 
 def infer_domain_name(exp_name: str) -> str:
@@ -135,23 +143,33 @@ def load_rerank_metrics(path: Path) -> dict[str, Any]:
     if df.empty:
         return {}
 
+    baseline_df = df[df["method"].astype(str).str.lower() == "baseline"].copy()
     rerank_df = df[df["method"].astype(str).str.lower() == "uncertainty_aware_rerank"].copy()
-    if rerank_df.empty:
-        rerank_df = df[df["method"].astype(str).str.lower() == "baseline"].copy()
-    if rerank_df.empty:
+    if rerank_df.empty and baseline_df.empty:
         return {}
 
-    row = rerank_df.iloc[0].to_dict()
+    baseline_row = baseline_df.iloc[0].to_dict() if not baseline_df.empty else {}
+    rerank_row = rerank_df.iloc[0].to_dict() if not rerank_df.empty else baseline_row
+    lambda_value = rerank_row.get("lambda_penalty", 0.0) if rerank_row else 0.0
+
     return {
-        "lambda": row.get("lambda_penalty", 0.0) if pd.notna(row.get("lambda_penalty", 0.0)) else 0.0,
-        "rerank_hr_at_10": row.get("HR@10"),
-        "rerank_ndcg_at_10": row.get("NDCG@10"),
-        "rerank_mrr_at_10": row.get("MRR@10"),
-        "rerank_num_users": row.get("num_users"),
-        "rerank_num_samples": row.get("num_samples"),
-        "rerank_head_exposure_ratio_at_10": row.get("head_exposure_ratio@10"),
-        "rerank_tail_exposure_ratio_at_10": row.get("tail_exposure_ratio@10"),
-        "rerank_long_tail_coverage_at_10": row.get("long_tail_coverage@10"),
+        "lambda": lambda_value if pd.notna(lambda_value) else 0.0,
+        "baseline_hr_at_10": baseline_row.get("HR@10"),
+        "baseline_ndcg_at_10": baseline_row.get("NDCG@10"),
+        "baseline_mrr_at_10": baseline_row.get("MRR@10"),
+        "baseline_num_users": baseline_row.get("num_users"),
+        "baseline_num_samples": baseline_row.get("num_samples"),
+        "baseline_head_exposure_ratio_at_10": baseline_row.get("head_exposure_ratio@10"),
+        "baseline_tail_exposure_ratio_at_10": baseline_row.get("tail_exposure_ratio@10"),
+        "baseline_long_tail_coverage_at_10": baseline_row.get("long_tail_coverage@10"),
+        "rerank_hr_at_10": rerank_row.get("HR@10"),
+        "rerank_ndcg_at_10": rerank_row.get("NDCG@10"),
+        "rerank_mrr_at_10": rerank_row.get("MRR@10"),
+        "rerank_num_users": rerank_row.get("num_users"),
+        "rerank_num_samples": rerank_row.get("num_samples"),
+        "rerank_head_exposure_ratio_at_10": rerank_row.get("head_exposure_ratio@10"),
+        "rerank_tail_exposure_ratio_at_10": rerank_row.get("tail_exposure_ratio@10"),
+        "rerank_long_tail_coverage_at_10": rerank_row.get("long_tail_coverage@10"),
     }
 
 
@@ -177,6 +195,12 @@ def build_domain_model_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
         "calibration_test_ece_after",
         "calibration_test_brier_score_before",
         "calibration_test_brier_score_after",
+        "baseline_hr_at_10",
+        "baseline_ndcg_at_10",
+        "baseline_mrr_at_10",
+        "baseline_head_exposure_ratio_at_10",
+        "baseline_tail_exposure_ratio_at_10",
+        "baseline_long_tail_coverage_at_10",
         "rerank_hr_at_10",
         "rerank_ndcg_at_10",
         "rerank_mrr_at_10",

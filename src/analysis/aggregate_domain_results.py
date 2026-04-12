@@ -4,6 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 from typing import Any
+import re
 
 import pandas as pd
 
@@ -19,6 +20,17 @@ REQUIRED_FILENAMES = [
     "calibration_comparison.csv",
     "rerank_results.csv",
 ]
+
+KNOWN_MODELS = {
+    "deepseek",
+    "qwen",
+    "kimi",
+    "doubao",
+    "glm",
+    "gpt",
+    "openai",
+    "local",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -53,11 +65,7 @@ def resolve_table_path(exp_dir: Path, filename: str) -> Path:
 def infer_domain_name(exp_name: str) -> str:
     tokens = [token.strip().lower() for token in exp_name.split("_") if token.strip()]
     ignore_tokens = {
-        "deepseek",
-        "qwen",
-        "gpt",
-        "openai",
-        "local",
+        *KNOWN_MODELS,
         "small",
         "mini",
         "large",
@@ -78,7 +86,17 @@ def infer_domain_name(exp_name: str) -> str:
         return "movies"
     if domain.startswith("book"):
         return "books"
+    if domain.startswith("electronic"):
+        return "electronics"
     return domain
+
+
+def infer_model_name(exp_name: str) -> str:
+    tokens = [token.strip().lower() for token in exp_name.split("_") if token.strip()]
+    for token in reversed(tokens):
+        if token in KNOWN_MODELS:
+            return token
+    return "unknown"
 
 
 def discover_experiment_dirs(output_root: Path) -> list[Path]:
@@ -88,6 +106,8 @@ def discover_experiment_dirs(output_root: Path) -> list[Path]:
             continue
         if child.name in {"summary", "robustness", "clean", "noisy"}:
             continue
+        if should_skip_experiment_dir(child.name):
+            continue
         try:
             for filename in REQUIRED_FILENAMES:
                 resolve_table_path(child, filename)
@@ -95,6 +115,11 @@ def discover_experiment_dirs(output_root: Path) -> list[Path]:
             continue
         experiment_dirs.append(child)
     return experiment_dirs
+
+
+def should_skip_experiment_dir(exp_name: str) -> bool:
+    normalized = exp_name.strip().lower()
+    return normalized.endswith("_noisy") or re.search(r"_rep\d+$", normalized) is not None
 
 
 def load_diagnostic_metrics(path: Path) -> dict[str, Any]:
@@ -196,6 +221,7 @@ def aggregate_experiment(exp_dir: Path) -> dict[str, Any]:
     row: dict[str, Any] = {
         "exp_name": exp_name,
         "domain": infer_domain_name(exp_name),
+        "model": infer_model_name(exp_name),
     }
     row.update(load_diagnostic_metrics(resolve_table_path(exp_dir, "diagnostic_metrics.csv")))
     row.update(load_calibration_metrics(resolve_table_path(exp_dir, "calibration_comparison.csv")))
@@ -206,6 +232,7 @@ def aggregate_experiment(exp_dir: Path) -> dict[str, Any]:
 def build_weekly_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
     columns = [
         "domain",
+        "model",
         "exp_name",
         "lambda",
         "diagnostic_accuracy",

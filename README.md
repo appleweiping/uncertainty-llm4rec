@@ -385,6 +385,7 @@ py -3.12 src\analysis\aggregate_domain_results.py --output_root outputs
 For a more complete experiment map, see:
 
 - [docs/experiments.md](docs/experiments.md)
+- [docs/tables.md](docs/tables.md)
 
 ### Robustness Baseline
 

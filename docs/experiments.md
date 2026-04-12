@@ -132,6 +132,10 @@ Generated summary files under `outputs/summary/`:
 - `robustness_results.csv`
 - `robustness_brief.csv`
 
+For table-level responsibilities and paper mapping, see:
+
+- [docs/tables.md](tables.md)
+
 ## Suggested Reading Order for Paper Writing
 
 If you are mapping code/results to the paper, the cleanest order is:
@@ -142,6 +146,8 @@ If you are mapping code/results to the paper, the cleanest order is:
    Use for the main multi-estimator comparison table.
 3. `outputs/summary/robustness_brief.csv`
    Use for the first clean/noisy robustness claim.
+4. `outputs/summary/reproducibility_delta.csv`
+   Use for the reproducibility appendix or stability note.
 
 ## Current Practical Baselines
 
