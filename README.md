@@ -127,6 +127,14 @@ The current summary layer now also begins to compare uncertainty sources across 
 
 This matters because the project is no longer asking only which uncertainty source calibrates best in isolation. It is now asking a stronger question: which uncertainty source remains useful after it is pushed through different decision formulations, and whether pairwise gains still hold once limited support is expanded with explicit direct-ranking fallback rather than hidden by metric mismatch.
 
+The project now also starts to maintain a same-task baseline layer for the multi-decision setting instead of relying only on within-method comparisons:
+
+- `src/methods/baseline_ranker_multitask.py` aligns pointwise calibrated-confidence baselines, direct candidate-ranking baselines, and plain pairwise aggregation baselines under one compare schema
+- `main_baseline_multitask.py` produces `outputs/summary/week6_day4_decision_baseline_compare.csv`
+- retained complex families remain visible in that table rather than disappearing once they fail to become the current best default line
+
+This baseline layer is intentionally narrower than the later literature-aligned benchmark stage. Its role is to make the Part5 method story experimentally honest first: each decision layer should have a same-task, non-uncertainty reference before stronger external baselines are brought in.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -172,6 +180,7 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 |-- main_compare_multitask.py
 |-- main_rank_rerank.py
 |-- main_uncertainty_compare_multitask.py
+|-- main_baseline_multitask.py
 |-- main_calibrate.py
 |-- main_rerank.py
 `-- main_uncertainty_compare.py
@@ -190,6 +199,7 @@ For the new multi-task branch, the summary layer also starts to maintain a cross
 - `outputs/summary/week5_multitask_summary.md`
 - `outputs/summary/week6_day3_estimator_compare.csv`
 - `outputs/summary/week6_day3_pairwise_coverage_compare.csv`
+- `outputs/summary/week6_day4_decision_baseline_compare.csv`
 
 These files are designed to answer a narrower but important question than the full paper tables: what role does uncertainty appear to play at pointwise, pairwise, and ranking decision granularities once the first multi-task pipeline is closed?
 
