@@ -155,6 +155,7 @@ This design keeps experiments reproducible and makes Week2 extensions easier. In
 
 For `candidate_ranking`, use one of the new prompt templates under `prompts/` and set `task_type: candidate_ranking` in the experiment config or CLI.
 The ranking-side evaluation extension is intentionally deferred to later Version 3 work; Part 2 only establishes the inference-and-parser minimal loop.
+The current `main_eval.py` now supports the minimal ranking read path and basic NH-style metrics for `candidate_ranking`, while calibration, reranking, and uncertainty adaptation for ranking remain later Version 3 work.
 
 Current model config files include:
 
