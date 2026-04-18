@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 import yaml
 
-from src.baseline.adapters import CoVEAdapter, SLMRecAdapter
+from src.baseline.adapters import CoVEAdapter, LLMESRAdapter, SLMRecAdapter
 from src.baseline.eval import build_ranked_rows, build_score_rows, compute_nh_nr_metrics
 from src.baseline.io import ensure_baseline_dirs, load_grouped_candidate_samples, save_jsonl_records, save_table
 from src.utils.reproducibility import set_global_seed
@@ -21,7 +21,7 @@ def load_yaml(path: str | Path) -> dict[str, Any]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=None, help="Optional baseline eval config path.")
-    parser.add_argument("--baseline_name", type=str, default=None, help="Baseline name: cove or slmrec.")
+    parser.add_argument("--baseline_name", type=str, default=None, help="Baseline name: cove, slmrec, or llm_esr.")
     parser.add_argument("--exp_name", type=str, default=None, help="Baseline experiment name.")
     parser.add_argument("--input_path", type=str, default=None, help="Grouped candidate input path.")
     parser.add_argument("--train_path", type=str, default=None, help="Optional grouped candidate train path for fit.")
@@ -52,6 +52,8 @@ def build_adapter(name: str):
     normalized = str(name or "").strip().lower()
     if normalized == "cove":
         return CoVEAdapter()
+    if normalized == "llm_esr":
+        return LLMESRAdapter()
     if normalized == "slmrec":
         return SLMRecAdapter()
     raise ValueError(f"Unsupported baseline_name: {name}")
