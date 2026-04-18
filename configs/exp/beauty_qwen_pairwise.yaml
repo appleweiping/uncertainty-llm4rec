@@ -5,5 +5,6 @@ task_type: pairwise_preference
 model_config: configs/model/qwen.yaml
 input_path: data/processed/amazon_beauty/pairwise_test.jsonl
 output_dir: outputs/beauty_qwen_pairwise
+prompt_path: prompts/pairwise_preference.txt
 max_samples: 500
 overwrite: true

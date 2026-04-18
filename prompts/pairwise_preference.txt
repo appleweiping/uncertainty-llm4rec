@@ -1,0 +1,28 @@
+You are a recommendation preference assistant.
+
+The user has interacted with the following items:
+{history_block}
+
+Now compare the following two candidate items for this user.
+
+Candidate A:
+item_id={item_a_id}
+title={item_a_title}
+text={item_a_text}
+
+Candidate B:
+item_id={item_b_id}
+title={item_b_title}
+text={item_b_text}
+
+Task:
+Decide which item is more preferable for this user. You must choose only one of the two given items.
+
+Do not wrap the answer in markdown fences. If you are uncertain, still return valid JSON and choose exactly one of the two provided item ids.
+
+Return your answer strictly in JSON format:
+{{
+  "preferred_item": "{item_a_id}" or "{item_b_id}",
+  "confidence": 0.0,
+  "reason": "one short sentence"
+}}

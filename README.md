@@ -58,6 +58,14 @@ The repository is now being expanded from a single-task pointwise pipeline into 
 
 The current transition keeps the old pointwise chain intact while adding new task-specific inputs, configs, and later task-specific inference/evaluation paths.
 
+To support this transition, the repository now also defines task-specific language interfaces:
+
+- `prompts/candidate_ranking.txt` and `prompts/pairwise_preference.txt` provide explicit structured-output templates for the two new decision tasks
+- `src/llm/prompt_builder.py` now constructs pointwise, ranking, and pairwise prompts from a shared interface layer
+- `src/llm/parser.py` now includes task-specific parsing paths for candidate ranking and pairwise preference outputs, including fenced JSON, partial JSON, and lightweight free-form recovery cases
+
+This keeps the multi-task expansion aligned with the old project principle: prompt design and parser robustness are part of the method boundary, not an afterthought.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:

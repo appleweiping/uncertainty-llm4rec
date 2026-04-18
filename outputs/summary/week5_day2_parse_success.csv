@@ -1,0 +1,3 @@
+task,sample_count,parse_success_rate,avg_output_length,illegal_output_ratio,out_of_candidate_item_ratio,ambiguous_preference_ratio,notes
+candidate_ranking,12,0.9167,293.75,0.0833,0.0833,0.0,Parser self-check over real ranking samples with strict/fenced/partial JSON plus out-of-candidate stress cases.
+pairwise_preference,24,0.9583,122.75,0.0417,0.0,0.0417,"Parser self-check over real pairwise samples with item-id JSON, A/B shorthand, natural language wrapping, and ambiguous failures."
