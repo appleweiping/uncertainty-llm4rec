@@ -119,6 +119,14 @@ The mechanism layer is now being pushed one step further rather than left as a d
 
 This compare is intentionally disciplined. When pairwise predictions cover only part of the ranking set, the repository evaluates pairwise-to-rank against direct ranking and retained ranking families on the event-overlap subset rather than mixing unmatched events into a single headline table. The goal is to keep the mechanism evidence useful without overstating how complete it already is.
 
+The current summary layer now also begins to compare uncertainty sources across decision granularities instead of only within the old pointwise diagnostic view:
+
+- `main_uncertainty_compare_multitask.py` aligns verbalized raw, calibrated, self-consistency, and fused uncertainty under one multitask evaluation entry
+- `outputs/summary/week6_day3_estimator_compare.csv` places pointwise diagnosis, candidate-ranking rerank families, and pairwise-to-rank results under one paper-facing schema
+- `outputs/summary/week6_day3_pairwise_coverage_compare.csv` records pairwise support rate, pair coverage, and overlap-vs-expanded ranking results so that mechanism gains can be interpreted together with coverage limits
+
+This matters because the project is no longer asking only which uncertainty source calibrates best in isolation. It is now asking a stronger question: which uncertainty source remains useful after it is pushed through different decision formulations, and whether pairwise gains still hold once limited support is expanded with explicit direct-ranking fallback rather than hidden by metric mismatch.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -163,6 +171,7 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 |-- main_eval_pairwise.py
 |-- main_compare_multitask.py
 |-- main_rank_rerank.py
+|-- main_uncertainty_compare_multitask.py
 |-- main_calibrate.py
 |-- main_rerank.py
 `-- main_uncertainty_compare.py
@@ -179,6 +188,8 @@ For the new multi-task branch, the summary layer also starts to maintain a cross
 
 - `outputs/summary/week5_multitask_summary.csv`
 - `outputs/summary/week5_multitask_summary.md`
+- `outputs/summary/week6_day3_estimator_compare.csv`
+- `outputs/summary/week6_day3_pairwise_coverage_compare.csv`
 
 These files are designed to answer a narrower but important question than the full paper tables: what role does uncertainty appear to play at pointwise, pairwise, and ranking decision granularities once the first multi-task pipeline is closed?
 
