@@ -85,3 +85,38 @@ class PromptBuilder:
             candidate_title=candidate_title,
             candidate_meta=candidate_meta,
         )
+
+    def build_candidate_block(self, sample: dict[str, Any]) -> str:
+        candidates = sample.get("candidates", [])
+        if not isinstance(candidates, list) or not candidates:
+            return ""
+
+        lines: list[str] = []
+        for idx, candidate in enumerate(candidates, start=1):
+            item_id = str(
+                candidate.get("item_id")
+                or candidate.get("candidate_item_id")
+                or f"candidate_{idx}"
+            ).strip()
+            title, meta = self.build_candidate_fields(sample, candidate)
+            text = f"item_id={item_id} | title={title}".strip(" |")
+            if meta:
+                text = f"{text} | description={meta}"
+            lines.append(f"{idx}. {text}")
+        return "\n".join(lines)
+
+    def build_candidate_ranking_prompt(
+        self,
+        sample: dict[str, Any],
+        ranking_mode: str = "score_list",
+    ) -> str:
+        history_block = self.build_history_block(sample)
+        candidate_block = self.build_candidate_block(sample)
+        candidates = sample.get("candidates", [])
+
+        return self.template.format(
+            history_block=history_block,
+            candidate_block=candidate_block,
+            candidate_count=len(candidates) if isinstance(candidates, list) else 0,
+            ranking_mode=ranking_mode,
+        )

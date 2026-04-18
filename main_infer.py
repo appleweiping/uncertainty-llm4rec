@@ -6,10 +6,13 @@ from typing import Any
 
 import pandas as pd
 import yaml
+from tqdm import tqdm
 
 from src.llm import build_backend_from_config
 from src.llm.inference import run_pointwise_inference
 from src.llm.local_backend import LocalHFBackend
+from src.llm.base import normalize_generation_result
+from src.llm.parser import parse_ranking_response
 from src.utils.paths import default_input_path_for_exp, ensure_exp_dirs
 from src.utils.reproducibility import set_global_seed
 
@@ -91,6 +94,12 @@ class FunctionPromptBuilderAdapter:
         except TypeError:
             return self.fn(sample, candidate)
 
+    def build_candidate_ranking_prompt(self, sample: dict, ranking_mode: str = "score_list") -> str:
+        raise NotImplementedError(
+            "Fallback function prompt builder does not support candidate_ranking. "
+            "Please use PromptBuilder class from src/llm/prompt_builder.py."
+        )
+
 
 def get_prompt_builder(prompt_path: str | Path):
     try:
@@ -106,15 +115,16 @@ def get_prompt_builder(prompt_path: str | Path):
             raise ImportError("Cannot find a usable prompt builder in src/llm/prompt_builder.py") from e
 
 
-def infer_prediction_filename(input_path: str | Path) -> str:
+def infer_prediction_filename(input_path: str | Path, task_type: str = "pointwise_yesno") -> str:
     stem = Path(input_path).stem.lower()
+    suffix = "_raw.jsonl" if task_type == "pointwise_yesno" else "_ranking_raw.jsonl"
     if stem.startswith("valid"):
-        return "valid_raw.jsonl"
+        return f"valid{suffix}"
     if stem.startswith("test"):
-        return "test_raw.jsonl"
+        return f"test{suffix}"
     if stem.startswith("train"):
-        return "train_raw.jsonl"
-    return f"{stem}_raw.jsonl"
+        return f"train{suffix}"
+    return f"{stem}{suffix}"
 
 
 def parse_args() -> argparse.Namespace:
@@ -131,6 +141,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--split_name", type=str, default=None, help="Optional split name, e.g. train/valid/test.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing prediction file.")
     parser.add_argument("--seed", type=int, default=None, help="Optional global random seed.")
+    parser.add_argument(
+        "--task_type",
+        type=str,
+        default=None,
+        help="Task type: pointwise_yesno or candidate_ranking.",
+    )
+    parser.add_argument(
+        "--ranking_mode",
+        type=str,
+        default=None,
+        help="Ranking parser/prompt mode: score_list or rank_topk.",
+    )
     return parser.parse_args()
 
 
@@ -151,8 +173,128 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
         "split_name": args.split_name if args.split_name is not None else cfg.get("split_name"),
         "overwrite": bool(args.overwrite or cfg.get("overwrite", False)),
         "seed": args.seed if args.seed is not None else cfg.get("seed"),
+        "task_type": args.task_type if args.task_type is not None else cfg.get("task_type", "pointwise_yesno"),
+        "ranking_mode": args.ranking_mode if args.ranking_mode is not None else cfg.get("ranking_mode"),
     }
     return merged
+
+
+def build_candidate_ranking_samples(
+    input_path: str | Path,
+    max_samples: int | None = None,
+) -> list[dict[str, Any]]:
+    df = pd.read_json(input_path, lines=True)
+    rows = df.to_dict(orient="records")
+
+    user_groups: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        user_id = str(row.get("user_id", "")).strip()
+        if not user_id:
+            continue
+        user_groups.setdefault(user_id, []).append(row)
+
+    samples: list[dict[str, Any]] = []
+    for user_id, group_rows in user_groups.items():
+        first = group_rows[0]
+        target_item_id = str(
+            first.get("target_item_id")
+            or next(
+                (
+                    row.get("candidate_item_id")
+                    for row in group_rows
+                    if int(row.get("label", 0)) == 1 and row.get("candidate_item_id")
+                ),
+                "",
+            )
+        ).strip()
+
+        candidates: list[dict[str, Any]] = []
+        for row in group_rows:
+            candidate_item_id = str(row.get("candidate_item_id", "")).strip()
+            if not candidate_item_id:
+                continue
+            candidates.append(
+                {
+                    "item_id": candidate_item_id,
+                    "title": str(row.get("candidate_title") or candidate_item_id).strip(),
+                    "meta": str(
+                        row.get("candidate_meta")
+                        or row.get("candidate_description")
+                        or row.get("candidate_text")
+                        or ""
+                    ).strip(),
+                    "label": int(row.get("label", 0)),
+                }
+            )
+
+        samples.append(
+            {
+                "user_id": user_id,
+                "history": first.get("history", []),
+                "history_items": first.get("history_items", []),
+                "target_item_id": target_item_id,
+                "target_popularity_group": first.get("target_popularity_group", "unknown"),
+                "candidates": candidates,
+            }
+        )
+
+    if max_samples is not None and max_samples > 0:
+        samples = samples[:max_samples]
+    return samples
+
+
+def run_candidate_ranking_inference(
+    samples: list[dict[str, Any]],
+    llm_backend,
+    prompt_builder,
+    ranking_mode: str = "score_list",
+) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
+
+    for sample in tqdm(samples, desc="Running candidate ranking inference"):
+        prompt = prompt_builder.build_candidate_ranking_prompt(sample, ranking_mode=ranking_mode)
+        generation = normalize_generation_result(
+            llm_backend.generate(prompt),
+            default_provider=getattr(llm_backend, "provider", None),
+            default_model_name=getattr(llm_backend, "model_name", "unknown"),
+        )
+        raw_text = generation["raw_text"]
+        parsed = parse_ranking_response(raw_text, ranking_mode=ranking_mode)
+
+        candidate_payload = [
+            {
+                "item_id": str(candidate.get("item_id", "")).strip(),
+                "title": str(candidate.get("title", "")).strip(),
+                "label": int(candidate.get("label", 0)),
+            }
+            for candidate in sample.get("candidates", [])
+        ]
+
+        results.append(
+            {
+                "task_type": "candidate_ranking",
+                "ranking_mode": parsed.get("ranking_mode", ranking_mode),
+                "user_id": sample.get("user_id", ""),
+                "target_item_id": sample.get("target_item_id", ""),
+                "target_popularity_group": sample.get("target_popularity_group", "unknown"),
+                "candidate_count": len(candidate_payload),
+                "candidates": candidate_payload,
+                "prompt": prompt,
+                "raw_response": raw_text,
+                "selected_item_id": parsed.get("selected_item_id", ""),
+                "top_k_item_ids": parsed.get("top_k_item_ids", []),
+                "ranked_item_ids": parsed.get("ranked_item_ids", []),
+                "candidate_scores": parsed.get("candidate_scores", []),
+                "reason": parsed.get("reason", ""),
+                "response_latency": generation.get("latency", 0.0),
+                "response_model_name": generation.get("model_name", ""),
+                "response_provider": generation.get("provider", ""),
+                "response_backend_type": generation.get("backend_type"),
+                "response_usage": generation.get("usage", {}),
+            }
+        )
+
+    return results
 
 
 def main() -> None:
@@ -170,11 +312,18 @@ def main() -> None:
     split_name = cfg["split_name"]
     overwrite = cfg["overwrite"]
     seed = cfg["seed"]
+    task_type = str(cfg["task_type"]).strip().lower()
+    ranking_mode = cfg["ranking_mode"]
 
     set_global_seed(seed)
 
     if model_config is None:
         raise ValueError("model_config must be provided via config or CLI.")
+    if task_type not in {"pointwise_yesno", "candidate_ranking"}:
+        raise ValueError(f"Unsupported task_type: {task_type}")
+    if ranking_mode is None:
+        ranking_mode = "rank_topk" if "rank_topk" in str(prompt_path).lower() else "score_list"
+    ranking_mode = str(ranking_mode).strip().lower()
 
     paths = ensure_exp_dirs(exp_name, output_root)
 
@@ -187,13 +336,17 @@ def main() -> None:
     if output_path is not None:
         output_path = Path(output_path)
     elif split_name is not None:
-        output_path = paths.predictions_dir / f"{str(split_name).strip().lower()}_raw.jsonl"
+        suffix = "_raw.jsonl" if task_type == "pointwise_yesno" else "_ranking_raw.jsonl"
+        output_path = paths.predictions_dir / f"{str(split_name).strip().lower()}{suffix}"
     else:
-        output_path = paths.predictions_dir / infer_prediction_filename(input_path)
+        output_path = paths.predictions_dir / infer_prediction_filename(input_path, task_type=task_type)
 
     print(f"[{exp_name}] Input path: {input_path}")
     print(f"[{exp_name}] Output path: {output_path}")
     print(f"[{exp_name}] Model config: {model_config}")
+    print(f"[{exp_name}] Task type: {task_type}")
+    if task_type == "candidate_ranking":
+        print(f"[{exp_name}] Ranking mode: {ranking_mode}")
     if seed is not None:
         print(f"[{exp_name}] Seed: {seed}")
 
@@ -205,7 +358,10 @@ def main() -> None:
         print(f"[{exp_name}] Use overwrite=true in config or --overwrite to rerun.")
         return
 
-    samples = load_jsonl(input_path, max_samples=max_samples)
+    if task_type == "pointwise_yesno":
+        samples = load_jsonl(input_path, max_samples=max_samples)
+    else:
+        samples = build_candidate_ranking_samples(input_path, max_samples=max_samples)
     print(f"[{exp_name}] Loaded {len(samples)} samples.")
 
     llm_backend = build_llm_backend(model_config)
@@ -213,11 +369,19 @@ def main() -> None:
     print(f"[{exp_name}] Resolved backend: {backend_details}")
     prompt_builder = get_prompt_builder(prompt_path)
 
-    predictions = run_pointwise_inference(
-        samples=samples,
-        llm_backend=llm_backend,
-        prompt_builder=prompt_builder,
-    )
+    if task_type == "pointwise_yesno":
+        predictions = run_pointwise_inference(
+            samples=samples,
+            llm_backend=llm_backend,
+            prompt_builder=prompt_builder,
+        )
+    else:
+        predictions = run_candidate_ranking_inference(
+            samples=samples,
+            llm_backend=llm_backend,
+            prompt_builder=prompt_builder,
+            ranking_mode=ranking_mode,
+        )
 
     save_jsonl(predictions, output_path)
     print(f"[{exp_name}] Saved {len(predictions)} predictions to {output_path}")

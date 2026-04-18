@@ -148,6 +148,14 @@ This design keeps experiments reproducible and makes Week2 extensions easier. In
 - changing models should mostly mean switching `configs/model/*.yaml`
 - changing an experiment run should mostly mean switching `configs/exp/*.yaml`
 
+`main_infer.py` now supports two config-driven task modes:
+
+- `pointwise_yesno`: the legacy yes/no recommendation baseline
+- `candidate_ranking`: the Version 3 ranking-oriented minimal loop
+
+For `candidate_ranking`, use one of the new prompt templates under `prompts/` and set `task_type: candidate_ranking` in the experiment config or CLI.
+The ranking-side evaluation extension is intentionally deferred to later Version 3 work; Part 2 only establishes the inference-and-parser minimal loop.
+
 Current model config files include:
 
 - `configs/model/deepseek.yaml`: active backend used in Week1 experiments
