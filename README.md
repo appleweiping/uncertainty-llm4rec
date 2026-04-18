@@ -536,6 +536,24 @@ Week2 and the current Week3 Beauty-first writing phase have already extended thi
 
 The current natural next step is not to add more raw experiments immediately, but to use the summary layer and docs layer to support paper writing and later larger-scale reruns.
 
+## Version 3 Upgrade Track
+
+Version 3 now has a dedicated documentation bundle under:
+
+- `docs/version3/README_version3.md`
+- `docs/version3/server_execution.md`
+
+Those docs summarize the six-part upgrade path, the complete smoke-test matrix, and the server-first execution templates for:
+
+- legacy `pointwise_yesno`
+- local-backend `candidate_ranking`
+- baseline-side confidence validation
+- ranking-aware uncertainty compare and rerank
+
+For the first tracked local ranking config example, see:
+
+- `configs/exp/beauty_qwen_local_rank.yaml`
+
 ## Notes
 
 - Current small-scale runs are useful for validating methodology, not for claiming final large-scale empirical conclusions.
