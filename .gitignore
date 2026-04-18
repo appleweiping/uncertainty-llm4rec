@@ -88,6 +88,7 @@ instance/
 # Documentation builds
 # =========================
 docs/_build/
+docs/
 site/
 
 # =========================
