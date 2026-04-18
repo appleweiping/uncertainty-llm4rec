@@ -9,6 +9,7 @@ import yaml
 
 from src.llm import build_backend_from_config
 from src.llm.inference import run_pointwise_inference
+from src.llm.local_backend import LocalHFBackend
 from src.utils.paths import default_input_path_for_exp, ensure_exp_dirs
 from src.utils.reproducibility import set_global_seed
 
@@ -17,6 +18,54 @@ def load_yaml(path: str | Path) -> dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     return data
+
+
+def build_llm_backend(model_cfg_path: str | Path):
+    model_cfg = load_yaml(model_cfg_path)
+    backend_name = str(model_cfg.get("backend_name", "")).strip().lower()
+
+    if backend_name != "local_hf":
+        return build_backend_from_config(model_cfg_path)
+
+    generation_cfg = model_cfg.get("generation", {}) or {}
+    local_cfg = model_cfg.get("local", {}) or {}
+
+    model_name = str(model_cfg.get("model_name") or generation_cfg.get("model_name") or "local-model")
+    model_path = local_cfg.get("model_path") or model_cfg.get("model_path")
+    tokenizer_path = local_cfg.get("tokenizer_path") or model_cfg.get("tokenizer_path")
+    if not model_path:
+        raise ValueError(f"model_path is required for local_hf config: {model_cfg_path}")
+
+    return LocalHFBackend(
+        model_name=model_name,
+        model_path=str(model_path),
+        tokenizer_path=str(tokenizer_path) if tokenizer_path else None,
+        provider=str(model_cfg.get("provider") or "local_hf"),
+        dtype=str(local_cfg.get("dtype") or model_cfg.get("dtype") or "auto"),
+        device_map=local_cfg.get("device_map", model_cfg.get("device_map", "auto")),
+        max_tokens=int(generation_cfg.get("max_tokens", model_cfg.get("max_tokens", 300))),
+        temperature=float(generation_cfg.get("temperature", model_cfg.get("temperature", 0.0))),
+        top_p=float(generation_cfg.get("top_p", model_cfg.get("top_p", 1.0))),
+        do_sample=local_cfg.get("do_sample", generation_cfg.get("do_sample", model_cfg.get("do_sample"))),
+        use_chat_template=bool(local_cfg.get("use_chat_template", model_cfg.get("use_chat_template", True))),
+        trust_remote_code=bool(local_cfg.get("trust_remote_code", model_cfg.get("trust_remote_code", False))),
+    )
+
+
+def describe_backend(backend) -> dict[str, Any]:
+    details = {
+        "backend_class": type(backend).__name__,
+        "backend_type": getattr(backend, "backend_type", None),
+        "provider": getattr(backend, "provider", None),
+        "model_name": getattr(backend, "model_name", None),
+    }
+    model_path = getattr(backend, "model_path", None)
+    tokenizer_path = getattr(backend, "tokenizer_path", None)
+    if model_path is not None:
+        details["model_path"] = model_path
+    if tokenizer_path is not None:
+        details["tokenizer_path"] = tokenizer_path
+    return details
 
 
 def load_jsonl(path: str | Path, max_samples: int | None = None) -> list[dict]:
@@ -159,7 +208,9 @@ def main() -> None:
     samples = load_jsonl(input_path, max_samples=max_samples)
     print(f"[{exp_name}] Loaded {len(samples)} samples.")
 
-    llm_backend = build_backend_from_config(model_config)
+    llm_backend = build_llm_backend(model_config)
+    backend_details = describe_backend(llm_backend)
+    print(f"[{exp_name}] Resolved backend: {backend_details}")
     prompt_builder = get_prompt_builder(prompt_path)
 
     predictions = run_pointwise_inference(

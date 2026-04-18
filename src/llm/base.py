@@ -12,6 +12,7 @@ class GenerationResult:
     latency: float
     model_name: str
     provider: str | None = None
+    backend_type: str | None = None
     usage: dict[str, Any] | None = None
     raw_response: Any | None = None
 
@@ -42,6 +43,7 @@ def normalize_generation_result(
             "latency": float(result.get("latency", 0.0) or 0.0),
             "model_name": str(result.get("model_name", default_model_name) or default_model_name),
             "provider": result.get("provider", default_provider),
+            "backend_type": result.get("backend_type"),
             "usage": result.get("usage", {}) or {},
             "raw_response": result.get("raw_response"),
         }
@@ -51,6 +53,7 @@ def normalize_generation_result(
             "latency": 0.0,
             "model_name": default_model_name,
             "provider": default_provider,
+            "backend_type": None,
             "usage": {},
             "raw_response": None,
         }
@@ -60,4 +63,5 @@ def normalize_generation_result(
     normalized["model_name"] = str(normalized.get("model_name", default_model_name) or default_model_name)
     normalized["usage"] = normalized.get("usage", {}) or {}
     normalized["provider"] = normalized.get("provider", default_provider)
+    normalized["backend_type"] = normalized.get("backend_type")
     return normalized

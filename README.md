@@ -155,6 +155,8 @@ Current model config files include:
 - `configs/model/glm.yaml`: GLM API-compatible backend config
 - `configs/model/doubao.yaml`: Doubao API-compatible backend config
 - `configs/model/kimi.yaml`: Kimi API-compatible backend config
+- `configs/model/qwen_local_7b.yaml`: local Hugging Face backend skeleton for Qwen 7B
+- `configs/model/llama_local_8b.yaml`: local Hugging Face backend skeleton for Llama 8B
 
 Environment variables are read from model configs via `api_key_env`. Typical examples are:
 
@@ -162,6 +164,8 @@ Environment variables are read from model configs via `api_key_env`. Typical exa
 - `QWEN_API_KEY`
 - `DOUBAO_API_KEY`
 - `KIMI_API_KEY`
+
+For the new `local_hf` backend skeleton, install `transformers` and `torch` in the runtime environment and point `model_path` / `tokenizer_path` to an available local or Hugging Face checkpoint before running inference.
 
 ## Quickstart
 

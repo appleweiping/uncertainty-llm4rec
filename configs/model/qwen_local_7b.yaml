@@ -1,0 +1,16 @@
+backend_name: local_hf
+provider: local_hf
+model_name: qwen2.5-7b-instruct-local
+
+local:
+  model_path: Qwen/Qwen2.5-7B-Instruct
+  tokenizer_path: Qwen/Qwen2.5-7B-Instruct
+  dtype: auto
+  device_map: auto
+  use_chat_template: true
+  trust_remote_code: true
+
+generation:
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 300
