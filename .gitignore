@@ -208,3 +208,9 @@ outputs/*
 
 Paper/*
 !Paper/.gitkeep
+Paper (2).zip
+baseline/
+docs/version3/
+tmp_outputs/
+tmp_pycache/
+docs.zip
