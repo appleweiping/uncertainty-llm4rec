@@ -6,6 +6,21 @@ import numpy as np
 import pandas as pd
 
 
+LINEAR_VARIANTS = {
+    "linear",
+    "coverage_aware_linear",
+    "topk_gated_linear",
+}
+STRUCTURED_VARIANT = "nonlinear_structured_risk_rerank"
+LOCAL_SWAP_VARIANT = "local_margin_swap_rerank"
+STRUCTURED_SWAP_VARIANT = "structured_risk_plus_local_margin_swap_rerank"
+SUPPORTED_RERANK_VARIANTS = LINEAR_VARIANTS | {
+    STRUCTURED_VARIANT,
+    LOCAL_SWAP_VARIANT,
+    STRUCTURED_SWAP_VARIANT,
+}
+
+
 def _normalize_item_list(value: Any) -> list[str]:
     if isinstance(value, list):
         return [str(item) for item in value if str(item).strip()]
@@ -37,7 +52,11 @@ def _build_lookup(
         key = (str(record[user_col]), str(record[item_col]))
         uncertainty_value = float(record[uncertainty_col])
         entry = {"uncertainty": uncertainty_value}
-        if uncertainty_confidence_col and uncertainty_confidence_col in record and pd.notna(record[uncertainty_confidence_col]):
+        if (
+            uncertainty_confidence_col
+            and uncertainty_confidence_col in record
+            and pd.notna(record[uncertainty_confidence_col])
+        ):
             entry["uncertainty_confidence"] = float(record[uncertainty_confidence_col])
         lookup[key] = entry
         uncertainties.append(uncertainty_value)
@@ -52,12 +71,35 @@ def _position_to_relevance(rank_position: int, num_candidates: int) -> float:
     return float((num_candidates - rank_position + 1) / num_candidates)
 
 
+def _resolve_score_formula_variant(rerank_variant: str) -> str:
+    if rerank_variant not in SUPPORTED_RERANK_VARIANTS:
+        raise ValueError(f"Unsupported rerank variant: {rerank_variant}")
+    if rerank_variant == STRUCTURED_SWAP_VARIANT:
+        return STRUCTURED_VARIANT
+    if rerank_variant == LOCAL_SWAP_VARIANT:
+        return "baseline_relevance_only"
+    return rerank_variant
+
+
 def build_ranker_rows(
     ranking_predictions_df: pd.DataFrame,
     uncertainty_df: pd.DataFrame,
     *,
     lambda_penalty: float,
     topk: int = 10,
+    rerank_variant: str = "linear",
+    gate_topk: int | None = None,
+    tau: float = 0.35,
+    gamma: float = 2.0,
+    alpha: float = 1.0,
+    beta: float = 0.7,
+    delta: float = 0.5,
+    coverage_fallback_scale: float = 0.5,
+    eta: float = 0.02,
+    m_rel: float = 0.05,
+    m_unc: float = 0.15,
+    swap_a: float = 1.5,
+    swap_b: float = 1.0,
     user_col: str = "user_id",
     item_col: str = "candidate_item_id",
     uncertainty_col: str = "uncertainty",
@@ -71,6 +113,7 @@ def build_ranker_rows(
         uncertainty_col=uncertainty_col,
         uncertainty_confidence_col=uncertainty_confidence_col,
     )
+    score_formula_variant = _resolve_score_formula_variant(rerank_variant)
 
     rows: list[dict[str, Any]] = []
     for record in ranking_predictions_df.to_dict(orient="records"):
@@ -89,22 +132,93 @@ def build_ranker_rows(
         rank_lookup = {item_id: idx + 1 for idx, item_id in enumerate(ranked_ids)}
         num_candidates = len(candidate_ids)
         positive_item_id = str(record.get("positive_item_id", "")).strip()
+        matched_uncertainties: list[float] = []
+
+        for item_id in candidate_ids:
+            uncertainty_key = (str(record.get(user_col)), str(item_id))
+            uncertainty_entry = lookup.get(uncertainty_key)
+            if uncertainty_entry is not None:
+                matched_uncertainties.append(float(uncertainty_entry["uncertainty"]))
+
+        event_coverage_rate = float(len(matched_uncertainties) / num_candidates) if num_candidates else 0.0
+        event_mean_uncertainty = (
+            float(np.mean(matched_uncertainties))
+            if matched_uncertainties
+            else fallback_uncertainty
+        )
+        effective_gate_topk = int(max(1, min(gate_topk or topk, num_candidates))) if num_candidates else 0
 
         for item_id in candidate_ids:
             original_rank = int(rank_lookup.get(item_id, num_candidates + 1))
             relevance_score = _position_to_relevance(original_rank, num_candidates)
-            uncertainty_key = (str(record.get("user_id")), str(item_id))
+            uncertainty_key = (str(record.get(user_col)), str(item_id))
             uncertainty_entry = lookup.get(uncertainty_key)
             if uncertainty_entry is None:
-                candidate_uncertainty = fallback_uncertainty
+                observed_uncertainty = event_mean_uncertainty
                 uncertainty_confidence = float("nan")
                 matched_uncertainty = False
             else:
-                candidate_uncertainty = float(uncertainty_entry["uncertainty"])
+                observed_uncertainty = float(uncertainty_entry["uncertainty"])
                 uncertainty_confidence = float(uncertainty_entry.get("uncertainty_confidence", np.nan))
                 matched_uncertainty = True
 
-            final_score = relevance_score - float(lambda_penalty) * candidate_uncertainty
+            effective_uncertainty = observed_uncertainty
+            coverage_factor = 1.0
+            coverage_weight = 1.0
+            is_topk_band = original_rank <= effective_gate_topk if effective_gate_topk > 0 else False
+            gate_weight = 1.0
+            gate_value = 1.0
+            position_boost = 1.0
+            risk_weight = 1.0
+            u_core = 0.0
+            u_nonlinear = effective_uncertainty
+            protection_bonus = 0.0
+
+            if score_formula_variant == "coverage_aware_linear":
+                effective_uncertainty = observed_uncertainty if matched_uncertainty else event_mean_uncertainty
+                coverage_weight = event_coverage_rate
+                effective_lambda_penalty = float(lambda_penalty) * coverage_weight
+                final_score = relevance_score - effective_lambda_penalty * effective_uncertainty
+            elif score_formula_variant == "topk_gated_linear":
+                gate_weight = 1.0 if is_topk_band else 0.0
+                effective_lambda_penalty = float(lambda_penalty) * gate_weight
+                final_score = relevance_score - effective_lambda_penalty * effective_uncertainty
+            elif score_formula_variant == STRUCTURED_VARIANT:
+                coverage_factor = 1.0 if matched_uncertainty else float(coverage_fallback_scale)
+                gate_value = (
+                    float(np.exp(-float(beta) * max(original_rank - 1, 0)))
+                    if original_rank <= effective_gate_topk
+                    else 0.0
+                )
+                position_boost = (
+                    1.0 + float(delta) * max(effective_gate_topk - original_rank, 0) / effective_gate_topk
+                    if effective_gate_topk > 0
+                    else 1.0
+                )
+                u_core = max(effective_uncertainty - float(tau), 0.0)
+                u_nonlinear = (u_core ** float(gamma)) * (1.0 + float(alpha) * effective_uncertainty)
+                risk_weight = gate_value * coverage_factor * position_boost
+                protection_bonus = float(eta) * relevance_score * (1.0 - effective_uncertainty)
+                if not matched_uncertainty:
+                    protection_bonus *= float(coverage_fallback_scale)
+                effective_lambda_penalty = float(lambda_penalty) * risk_weight
+                final_score = (
+                    relevance_score
+                    - float(lambda_penalty) * risk_weight * u_nonlinear
+                    + protection_bonus
+                )
+            elif score_formula_variant == "baseline_relevance_only":
+                effective_lambda_penalty = 0.0
+                final_score = relevance_score
+            elif score_formula_variant == "linear":
+                effective_lambda_penalty = float(lambda_penalty)
+                final_score = relevance_score - effective_lambda_penalty * effective_uncertainty
+            else:
+                raise ValueError(f"Unsupported score formula variant: {score_formula_variant}")
+
+            comparison_uncertainty = (
+                effective_uncertainty if matched_uncertainty else effective_uncertainty * float(coverage_fallback_scale)
+            )
 
             rows.append(
                 {
@@ -118,13 +232,43 @@ def build_ranker_rows(
                     "label": int(str(item_id) == positive_item_id) if positive_item_id else 0,
                     "num_candidates": int(num_candidates),
                     "original_rank": original_rank,
+                    "rerank_variant": rerank_variant,
+                    "score_formula_variant": score_formula_variant,
+                    "gate_topk": int(effective_gate_topk) if effective_gate_topk > 0 else np.nan,
+                    "is_topk_band": is_topk_band,
                     "relevance_score": relevance_score,
-                    "uncertainty": candidate_uncertainty,
+                    "uncertainty": observed_uncertainty,
+                    "effective_uncertainty": effective_uncertainty,
+                    "comparison_uncertainty": comparison_uncertainty,
                     "uncertainty_confidence": uncertainty_confidence,
                     "matched_uncertainty": matched_uncertainty,
+                    "event_uncertainty_coverage_rate": event_coverage_rate,
+                    "event_mean_uncertainty": event_mean_uncertainty,
+                    "coverage_weight": coverage_weight,
+                    "coverage_factor": coverage_factor,
+                    "gate_weight": gate_weight,
+                    "gate_value": gate_value,
+                    "position_boost": position_boost,
+                    "risk_weight": risk_weight,
+                    "u_core": u_core,
+                    "u_nonlinear": u_nonlinear,
+                    "protection_bonus": protection_bonus,
+                    "effective_lambda_penalty": effective_lambda_penalty,
                     "final_score": final_score,
                     "uncertainty_source": uncertainty_source,
                     "lambda_penalty": float(lambda_penalty),
+                    "lambda": float(lambda_penalty),
+                    "tau": float(tau),
+                    "gamma": float(gamma),
+                    "alpha": float(alpha),
+                    "beta": float(beta),
+                    "delta": float(delta),
+                    "coverage_fallback_scale": float(coverage_fallback_scale),
+                    "eta": float(eta),
+                    "m_rel": float(m_rel),
+                    "m_unc": float(m_unc),
+                    "swap_a": float(swap_a),
+                    "swap_b": float(swap_b),
                     "topk": int(topk),
                     "raw_rank_confidence": float(record.get("confidence", np.nan)),
                     "rank_parse_success": bool(record.get("parse_success", False)),
@@ -154,7 +298,62 @@ def rank_candidates_by_score(
         kind="mergesort",
     ).copy()
     out[rank_col] = out.groupby(group_col).cumcount() + 1
+    out["local_swap_applied"] = False
+    out["local_swap_iterations"] = 0
+    out["swap_gain"] = 0.0
     return out
+
+
+def apply_local_margin_swaps(
+    ranked_df: pd.DataFrame,
+    *,
+    rerank_variant: str,
+    m_rel: float,
+    m_unc: float,
+    swap_a: float,
+    swap_b: float,
+    max_iterations: int = 2,
+    group_col: str = "source_event_id",
+    rank_col: str = "rerank_rank",
+) -> pd.DataFrame:
+    if rerank_variant not in {LOCAL_SWAP_VARIANT, STRUCTURED_SWAP_VARIANT}:
+        return ranked_df
+
+    output_groups: list[pd.DataFrame] = []
+    for _, event_df in ranked_df.groupby(group_col, dropna=False):
+        event_rows = event_df.sort_values(rank_col).copy().reset_index(drop=True)
+        swap_applied = False
+        total_swap_gain = 0.0
+        completed_iterations = 0
+
+        for iteration_idx in range(max_iterations):
+            changed_in_pass = False
+            for idx in range(len(event_rows) - 1):
+                left = event_rows.iloc[idx]
+                right = event_rows.iloc[idx + 1]
+                num_candidates = max(int(left.get("num_candidates", len(event_rows))), 1)
+                rel_gap = float(left["relevance_score"]) - float(right["relevance_score"])
+                normalized_rel_gap = rel_gap / float(num_candidates)
+                unc_gap = float(left["comparison_uncertainty"]) - float(right["comparison_uncertainty"])
+                swap_gain = float(swap_a) * unc_gap - float(swap_b) * normalized_rel_gap
+
+                if normalized_rel_gap < float(m_rel) and unc_gap > float(m_unc) and swap_gain > 0.0:
+                    event_rows.iloc[[idx, idx + 1]] = event_rows.iloc[[idx + 1, idx]].to_numpy()
+                    swap_applied = True
+                    changed_in_pass = True
+                    total_swap_gain += swap_gain
+
+            completed_iterations = iteration_idx + 1
+            if not changed_in_pass:
+                break
+
+        event_rows[rank_col] = np.arange(1, len(event_rows) + 1)
+        event_rows["local_swap_applied"] = swap_applied
+        event_rows["local_swap_iterations"] = completed_iterations
+        event_rows["swap_gain"] = total_swap_gain
+        output_groups.append(event_rows)
+
+    return pd.concat(output_groups, ignore_index=True)
 
 
 def build_reranked_predictions(
@@ -180,6 +379,10 @@ def build_reranked_predictions(
                 "original_rank": int(row["original_rank"]),
                 "relevance_score": float(row["relevance_score"]),
                 "uncertainty": float(row["uncertainty"]),
+                "effective_uncertainty": float(row["effective_uncertainty"]),
+                "risk_weight": float(row["risk_weight"]),
+                "protection_bonus": float(row["protection_bonus"]),
+                "effective_lambda_penalty": float(row["effective_lambda_penalty"]),
                 "final_score": float(row["final_score"]),
                 "matched_uncertainty": bool(row["matched_uncertainty"]),
             }
@@ -191,13 +394,14 @@ def build_reranked_predictions(
             if not bool(row["matched_uncertainty"])
         ]
 
+        first_row = event_df.iloc[0]
         rows.append(
             {
-                "user_id": event_df.iloc[0]["user_id"],
+                "user_id": first_row["user_id"],
                 "source_event_id": source_event_id,
-                "positive_item_id": event_df.iloc[0]["positive_item_id"],
-                "split_name": event_df.iloc[0]["split_name"],
-                "timestamp": event_df.iloc[0]["timestamp"],
+                "positive_item_id": first_row["positive_item_id"],
+                "split_name": first_row["split_name"],
+                "timestamp": first_row["timestamp"],
                 "candidate_item_ids": _normalize_item_list(original_record.get("candidate_item_ids")),
                 "candidate_titles": _normalize_item_list(original_record.get("candidate_titles")),
                 "candidate_popularity_groups": _normalize_item_list(original_record.get("candidate_popularity_groups")),
@@ -210,9 +414,27 @@ def build_reranked_predictions(
                 "contains_out_of_candidate_item": bool(original_record.get("contains_out_of_candidate_item", False)),
                 "out_of_candidate_item_ids": _normalize_item_list(original_record.get("out_of_candidate_item_ids")),
                 "candidate_scores": candidate_scores,
-                "uncertainty_source": event_df.iloc[0]["uncertainty_source"],
-                "lambda_penalty": float(event_df.iloc[0]["lambda_penalty"]),
+                "uncertainty_source": first_row["uncertainty_source"],
+                "lambda_penalty": float(first_row["lambda_penalty"]),
+                "lambda": float(first_row["lambda"]),
+                "rerank_variant": first_row.get("rerank_variant", "linear"),
+                "gate_topk": first_row.get("gate_topk", np.nan),
+                "tau": float(first_row["tau"]),
+                "gamma": float(first_row["gamma"]),
+                "alpha": float(first_row["alpha"]),
+                "beta": float(first_row["beta"]),
+                "delta": float(first_row["delta"]),
+                "coverage_fallback_scale": float(first_row["coverage_fallback_scale"]),
+                "eta": float(first_row["eta"]),
+                "m_rel": float(first_row["m_rel"]),
+                "m_unc": float(first_row["m_unc"]),
+                "swap_a": float(first_row["swap_a"]),
+                "swap_b": float(first_row["swap_b"]),
                 "uncertainty_coverage_rate": float(event_df["matched_uncertainty"].mean()),
+                "event_uncertainty_coverage_rate": float(event_df["event_uncertainty_coverage_rate"].mean()),
+                "local_swap_applied": bool(event_df["local_swap_applied"].any()),
+                "local_swap_iterations": int(event_df["local_swap_iterations"].max()),
+                "swap_gain": float(event_df["swap_gain"].max()),
                 "missing_uncertainty_item_ids": missing_uncertainty_item_ids,
                 "raw_response": original_record.get("raw_response"),
             }
@@ -234,6 +456,7 @@ def summarize_rerank_effect(
     total = 0
     average_shift_accumulator = []
     coverage_values = []
+    local_swap_values = []
 
     for record in reranked_predictions_df.to_dict(orient="records"):
         event_id = str(record.get("source_event_id"))
@@ -249,9 +472,13 @@ def summarize_rerank_effect(
         shifts = [abs((idx + 1) - old_positions.get(item_id, idx + 1)) for idx, item_id in enumerate(new_rank)]
         average_shift_accumulator.append(float(np.mean(shifts)) if shifts else 0.0)
         coverage_values.append(float(record.get("uncertainty_coverage_rate", np.nan)))
+        local_swap_values.append(1.0 if bool(record.get("local_swap_applied", False)) else 0.0)
 
+    avg_coverage = float(np.nanmean(coverage_values)) if coverage_values else float("nan")
     return {
         "changed_ranking_fraction": float(changed / total) if total else float("nan"),
         "avg_position_shift": float(np.mean(average_shift_accumulator)) if average_shift_accumulator else float("nan"),
-        "avg_uncertainty_coverage_rate": float(np.nanmean(coverage_values)) if coverage_values else float("nan"),
+        "avg_uncertainty_coverage_rate": avg_coverage,
+        "uncertainty_coverage": avg_coverage,
+        "local_swap_event_fraction": float(np.mean(local_swap_values)) if local_swap_values else 0.0,
     }

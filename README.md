@@ -96,6 +96,22 @@ The next method step is to let uncertainty move from the diagnostic layer into t
 
 This transition is important because it changes uncertainty from a pointwise observation variable into a listwise control variable that can directly alter resource allocation across candidates.
 
+The current ranking decision layer intentionally keeps the uncertainty control family simple and paper-friendly:
+
+- a plain linear penalty remains the baseline transfer rule
+- a coverage-aware linear penalty softens the penalty when aligned uncertainty support is partial
+- a top-k gated penalty concentrates uncertainty intervention on the most decision-critical prefix of the list
+
+These variants are not meant to be the final method family. They are the first controlled compare set for studying how pointwise-derived uncertainty should enter listwise recommendation decisions under imperfect alignment.
+
+The current week-six method line now also includes a more structured decision family aimed at recovering utility rather than only validating transfer:
+
+- `nonlinear_structured_risk_rerank` combines position gating, uncertainty thresholding, non-linear risk amplification, coverage-aware weakening, and a small protection bonus for high-relevance low-risk candidates
+- `local_margin_swap_rerank` applies a local swap correction when nearby candidates have small normalized relevance gaps but clear uncertainty gaps
+- `structured_risk_plus_local_margin_swap_rerank` stacks the two ideas so that global risk shaping and local order repair can be evaluated together under one interface
+
+This extension is driven by an empirical failure mode rather than formula inflation: simple uncertainty penalties already show that uncertainty can enter ranking decisions, but they do not yet recover or improve ranking utility. The structured-risk line is therefore designed to be more selective, more position-aware, and more honest about partial uncertainty coverage.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:

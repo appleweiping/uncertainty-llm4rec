@@ -11,6 +11,7 @@ from src.eval.ranking_task_metrics import (
     compute_ranking_task_metrics,
 )
 from src.methods.uncertainty_ranker import (
+    apply_local_margin_swaps,
     build_ranker_rows,
     build_reranked_predictions,
     rank_candidates_by_score,
@@ -129,6 +130,19 @@ def build_result_row(
     topk: int,
     lambda_penalty: float | None = None,
     uncertainty_source: str | None = None,
+    rerank_variant: str | None = None,
+    gate_topk: int | None = None,
+    tau: float | None = None,
+    gamma: float | None = None,
+    alpha: float | None = None,
+    beta: float | None = None,
+    delta: float | None = None,
+    coverage_fallback_scale: float | None = None,
+    eta: float | None = None,
+    m_rel: float | None = None,
+    m_unc: float | None = None,
+    swap_a: float | None = None,
+    swap_b: float | None = None,
     extra_metrics: dict[str, float] | None = None,
 ) -> pd.DataFrame:
     eval_df = build_ranking_eval_frame(prediction_df)
@@ -141,8 +155,35 @@ def build_result_row(
     row: dict[str, float | str] = {"method": method_name}
     if lambda_penalty is not None:
         row["lambda_penalty"] = float(lambda_penalty)
+        row["lambda"] = float(lambda_penalty)
     if uncertainty_source is not None:
         row["uncertainty_source"] = uncertainty_source
+    if rerank_variant is not None:
+        row["rerank_variant"] = rerank_variant
+    if gate_topk is not None:
+        row["gate_topk"] = int(gate_topk)
+    if tau is not None:
+        row["tau"] = float(tau)
+    if gamma is not None:
+        row["gamma"] = float(gamma)
+    if alpha is not None:
+        row["alpha"] = float(alpha)
+    if beta is not None:
+        row["beta"] = float(beta)
+    if delta is not None:
+        row["delta"] = float(delta)
+    if coverage_fallback_scale is not None:
+        row["coverage_fallback_scale"] = float(coverage_fallback_scale)
+    if eta is not None:
+        row["eta"] = float(eta)
+    if m_rel is not None:
+        row["m_rel"] = float(m_rel)
+    if m_unc is not None:
+        row["m_unc"] = float(m_unc)
+    if swap_a is not None:
+        row["swap_a"] = float(swap_a)
+    if swap_b is not None:
+        row["swap_b"] = float(swap_b)
     row.update(metrics)
     if extra_metrics:
         row.update(extra_metrics)
@@ -167,6 +208,43 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--uncertainty_col", type=str, default=None, help="Optional explicit uncertainty column name.")
     parser.add_argument("--uncertainty_confidence_col", type=str, default=None, help="Optional explicit uncertainty confidence column name.")
     parser.add_argument("--lambda_penalty", type=float, default=0.5, help="Penalty coefficient in final_score = relevance - lambda * uncertainty.")
+    parser.add_argument(
+        "--rerank_variant",
+        type=str,
+        default="linear",
+        choices=[
+            "linear",
+            "coverage_aware_linear",
+            "topk_gated_linear",
+            "nonlinear_structured_risk_rerank",
+            "local_margin_swap_rerank",
+            "structured_risk_plus_local_margin_swap_rerank",
+        ],
+        help="Ranking rerank variant.",
+    )
+    parser.add_argument(
+        "--gate_topk",
+        type=int,
+        default=3,
+        help="Top-k decision band for gated and structured-risk variants.",
+    )
+    parser.add_argument("--tau", type=float, default=0.35, help="Structured-risk threshold before non-linear uncertainty activation.")
+    parser.add_argument("--gamma", type=float, default=2.0, help="Structured-risk non-linear exponent.")
+    parser.add_argument("--alpha", type=float, default=1.0, help="Structured-risk uncertainty amplification coefficient.")
+    parser.add_argument("--beta", type=float, default=0.7, help="Structured-risk positional gate decay.")
+    parser.add_argument("--delta", type=float, default=0.5, help="Structured-risk front-position boost factor.")
+    parser.add_argument(
+        "--coverage_fallback_scale",
+        type=float,
+        default=0.5,
+        help="Penalty/protection down-scaling factor when uncertainty is only available through fallback.",
+    )
+    parser.add_argument("--eta", type=float, default=0.02, help="Structured-risk protection bonus coefficient.")
+    parser.add_argument("--m_rel", type=float, default=0.05, help="Local margin swap relevance gap threshold.")
+    parser.add_argument("--m_unc", type=float, default=0.15, help="Local margin swap uncertainty gap threshold.")
+    parser.add_argument("--swap_a", type=float, default=1.5, help="Local margin swap uncertainty gain coefficient.")
+    parser.add_argument("--swap_b", type=float, default=1.0, help="Local margin swap relevance penalty coefficient.")
+    parser.add_argument("--swap_iterations", type=int, default=2, help="Maximum local swap passes for swap-based variants.")
     parser.add_argument("--k", type=int, default=10, help="Top-k cutoff for rerank evaluation.")
     parser.add_argument("--seed", type=int, default=None, help="Optional global random seed.")
     return parser.parse_args()
@@ -220,11 +298,33 @@ def main() -> None:
         uncertainty_df=uncertainty_df,
         lambda_penalty=args.lambda_penalty,
         topk=args.k,
+        rerank_variant=args.rerank_variant,
+        gate_topk=args.gate_topk,
+        tau=args.tau,
+        gamma=args.gamma,
+        alpha=args.alpha,
+        beta=args.beta,
+        delta=args.delta,
+        coverage_fallback_scale=args.coverage_fallback_scale,
+        eta=args.eta,
+        m_rel=args.m_rel,
+        m_unc=args.m_unc,
+        swap_a=args.swap_a,
+        swap_b=args.swap_b,
         uncertainty_col=uncertainty_col,
         uncertainty_confidence_col=uncertainty_confidence_col,
         uncertainty_source=args.uncertainty_source,
     )
     ranked_rows = rank_candidates_by_score(scored_rows)
+    ranked_rows = apply_local_margin_swaps(
+        ranked_rows,
+        rerank_variant=args.rerank_variant,
+        m_rel=args.m_rel,
+        m_unc=args.m_unc,
+        swap_a=args.swap_a,
+        swap_b=args.swap_b,
+        max_iterations=args.swap_iterations,
+    )
     reranked_predictions = build_reranked_predictions(ranked_rows, ranking_df, topk=args.k)
 
     save_jsonl(reranked_predictions, rerank_paths.reranked_dir / "rank_reranked.jsonl")
@@ -234,15 +334,34 @@ def main() -> None:
         method_name="direct_candidate_ranking",
         prediction_df=ranking_df,
         topk=args.k,
-        extra_metrics={"avg_uncertainty_coverage_rate": float("nan"), "changed_ranking_fraction": 0.0, "avg_position_shift": 0.0},
+        extra_metrics={
+            "avg_uncertainty_coverage_rate": float("nan"),
+            "uncertainty_coverage": float("nan"),
+            "changed_ranking_fraction": 0.0,
+            "avg_position_shift": 0.0,
+            "local_swap_event_fraction": 0.0,
+        },
     )
     rerank_effect_metrics = summarize_rerank_effect(ranking_df, reranked_predictions)
     rerank_row = build_result_row(
-        method_name="uncertainty_aware_rank_rerank",
+        method_name=f"uncertainty_aware_rank_rerank_{args.rerank_variant}",
         prediction_df=reranked_predictions,
         topk=args.k,
         lambda_penalty=args.lambda_penalty,
         uncertainty_source=args.uncertainty_source,
+        rerank_variant=args.rerank_variant,
+        gate_topk=args.gate_topk,
+        tau=args.tau,
+        gamma=args.gamma,
+        alpha=args.alpha,
+        beta=args.beta,
+        delta=args.delta,
+        coverage_fallback_scale=args.coverage_fallback_scale,
+        eta=args.eta,
+        m_rel=args.m_rel,
+        m_unc=args.m_unc,
+        swap_a=args.swap_a,
+        swap_b=args.swap_b,
         extra_metrics=rerank_effect_metrics,
     )
 
@@ -252,7 +371,7 @@ def main() -> None:
     baseline_exposure_df = compute_ranking_exposure_distribution(build_ranking_eval_frame(ranking_df), k=args.k)
     baseline_exposure_df["method"] = "direct_candidate_ranking"
     rerank_exposure_df = compute_ranking_exposure_distribution(build_ranking_eval_frame(reranked_predictions), k=args.k)
-    rerank_exposure_df["method"] = "uncertainty_aware_rank_rerank"
+    rerank_exposure_df["method"] = f"uncertainty_aware_rank_rerank_{args.rerank_variant}"
     exposure_df = pd.concat([baseline_exposure_df, rerank_exposure_df], ignore_index=True)
     save_table(exposure_df, rerank_paths.tables_dir / "topk_exposure_distribution.csv")
 
@@ -263,7 +382,10 @@ def main() -> None:
     compare_df.insert(3, "base_exp_name", args.exp_name)
     compare_df.insert(4, "rerank_exp_name", new_exp_name)
     compare_df.insert(5, "uncertainty_exp_name", uncertainty_exp_name)
-    save_table(compare_df, Path(args.output_root) / "summary" / "week6_day1_rank_rerank_compare.csv")
+    summary_dir = Path(args.output_root) / "summary"
+    save_table(compare_df, summary_dir / f"{new_exp_name}_compare.csv")
+    if args.rerank_variant == "linear" and new_exp_name == f"{args.exp_name}_rerank":
+        save_table(compare_df, summary_dir / "week6_day1_rank_rerank_compare.csv")
 
     print(f"[{new_exp_name}] Ranking rerank done.")
     print(f"[{new_exp_name}] Reranked predictions saved to: {rerank_paths.reranked_dir / 'rank_reranked.jsonl'}")
