@@ -82,6 +82,20 @@ The evaluation layer is now moving in the same direction:
 
 This keeps the multi-task expansion methodologically honest: different decision granularities now produce different prediction files and are judged by different, task-appropriate metrics.
 
+The repository now also begins to aggregate these task-specific results back into a single paper-facing comparison layer:
+
+- `src/analysis/aggregate_multitask_results.py` collects pointwise, pairwise, and ranking summaries under one schema
+- `main_compare_multitask.py` produces a unified cross-task comparison table and a compact narrative summary
+
+This matters because the project is no longer asking only whether confidence is calibrated in isolation, but also how uncertainty behaves across different decision granularities.
+
+The next method step is to let uncertainty move from the diagnostic layer into the decision layer itself:
+
+- `src/methods/uncertainty_ranker.py` maps listwise ranking outputs into candidate-level scores and injects explicit uncertainty penalties
+- `main_rank_rerank.py` applies pointwise-derived uncertainty signals to candidate ranking predictions and evaluates the reranked list under the same ranking metrics
+
+This transition is important because it changes uncertainty from a pointwise observation variable into a listwise control variable that can directly alter resource allocation across candidates.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -124,6 +138,8 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 |-- main_eval.py
 |-- main_eval_rank.py
 |-- main_eval_pairwise.py
+|-- main_compare_multitask.py
+|-- main_rank_rerank.py
 |-- main_calibrate.py
 |-- main_rerank.py
 `-- main_uncertainty_compare.py
@@ -135,6 +151,13 @@ For paper writing, the repository now maintains two result layers:
 
 - experiment-complete summaries under `outputs/summary/`
 - Beauty-centered paper-facing tables derived from those summaries
+
+For the new multi-task branch, the summary layer also starts to maintain a cross-task comparison view:
+
+- `outputs/summary/week5_multitask_summary.csv`
+- `outputs/summary/week5_multitask_summary.md`
+
+These files are designed to answer a narrower but important question than the full paper tables: what role does uncertainty appear to play at pointwise, pairwise, and ranking decision granularities once the first multi-task pipeline is closed?
 
 After running:
 
@@ -212,6 +235,14 @@ The corresponding evaluation outputs are also beginning to separate by task:
 - pairwise tables such as `pairwise_metrics.csv` and `preference_confidence_bins.csv`
 
 This separation is intentional: pointwise remains the uncertainty diagnosis layer, while ranking and pairwise are evaluated in their own task spaces before later cross-task comparison.
+
+For candidate ranking, the repository also starts to support uncertainty-aware decision-time reranking:
+
+- direct listwise predictions remain in `predictions/rank_predictions.jsonl`
+- uncertainty-aware listwise outputs land in `reranked/rank_reranked.jsonl`
+- corresponding comparison tables land in `tables/rerank_results.csv`
+
+This extends the original uncertainty-aware reranking idea beyond pointwise candidate judgments and into the listwise decision layer.
 
 Current model config files include:
 
