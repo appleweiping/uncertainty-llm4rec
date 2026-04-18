@@ -1,0 +1,11 @@
+exp_name: version3_part4_baseline_smoke
+
+input_path: docs/version3/examples/baseline_score_rows_example.jsonl
+input_format: score_rows
+
+output_root: outputs
+
+k: 3
+n_bins: 5
+high_conf_threshold: 0.8
+seed: 42
