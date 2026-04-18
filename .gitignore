@@ -203,11 +203,9 @@ Paper/
 Thumbs.db
 desktop.ini
 
-outputs/*
-!outputs/.gitkeep
+outputs/
 
-Paper/*
-!Paper/.gitkeep
+Paper/
 Paper (2).zip
 baseline/
 docs/version3/

@@ -1,3 +1,0 @@
-split_name,ranking_sample_count,pairwise_sample_count,avg_candidate_count,avg_pair_count,pair_type_distribution,positive_coverage_rate,pairwise_source_coverage_rate
-valid,973,4865,6.0,5.0,"{""positive_vs_negative"": 4865}",1.0,1.0
-test,973,4865,6.0,5.0,"{""positive_vs_negative"": 4865}",1.0,1.0

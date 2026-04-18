@@ -1,4 +1,0 @@
-task,sample_count,HR@10,NDCG@10,MRR,pairwise_accuracy,ECE,Brier,coverage,head_exposure,longtail_coverage,parse_success_rate,avg_latency,source_path
-pointwise_yesno,30.0,,,,,0.436,0.4234399999999999,,0.1,,1.0,2.1667152166662467,outputs\beauty_qwen_pointwise\tables\diagnostic_metrics.csv
-candidate_ranking,30.0,1.0,0.6612582956731647,0.5522222222222221,,,,1.0,0.15,1.0,1.0,6.054734526666047,outputs\beauty_qwen_rank\tables\ranking_metrics.csv
-pairwise_preference,30.0,,,,0.6,,,,,,1.0,2.744530063333756,outputs\beauty_qwen_pairwise\tables\pairwise_metrics.csv
