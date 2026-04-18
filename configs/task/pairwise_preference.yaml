@@ -1,0 +1,11 @@
+task_type: pairwise_preference
+
+builder:
+  source_splits:
+    - valid
+    - test
+  output_prefix: pairwise
+  pair_type: positive_vs_negative
+  shuffle_pair_order: true
+  shuffle_seed: 42
+  max_pairs_per_sample:

@@ -48,6 +48,16 @@ The current method layer includes:
 
 This repository intentionally favors standard, interpretable baselines before more complex uncertainty modeling.
 
+## Current Research Direction
+
+The repository is now being expanded from a single-task pointwise pipeline into a unified multi-decision framework:
+
+- `pointwise_yesno` remains the diagnostic layer for uncertainty elicitation and calibration
+- `pairwise_preference` is being introduced as the local preference-mechanism layer
+- `candidate_ranking` is being introduced as the primary listwise decision layer
+
+The current transition keeps the old pointwise chain intact while adding new task-specific inputs, configs, and later task-specific inference/evaluation paths.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -68,6 +78,7 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 ```text
 .
 |-- configs/                  # data, model, and experiment configurations
+|   |-- task/                 # task-level builder and interface configs
 |-- data/                     # raw and processed datasets
 |-- outputs/                  # predictions, calibrated outputs, tables, and figures
 |-- prompts/                  # LLM prompting templates
@@ -82,6 +93,7 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 |   `-- utils/                # IO, logging, paths, registry, seeding
 |-- main_preprocess.py
 |-- main_build_samples.py
+|-- main_build_multitask_samples.py
 |-- main_infer.py
 |-- main_eval.py
 |-- main_calibrate.py
@@ -136,17 +148,26 @@ $env:DEEPSEEK_API_KEY="your_api_key"
 
 ## Config Structure
 
-The repository is organized around three config layers:
+The repository is organized around four config layers:
 
 - `configs/data/`: domain-specific preprocessing and sample-building settings
+- `configs/task/`: task-specific sample-building and interface settings
 - `configs/model/`: backend, model, connection, and generation settings
 - `configs/exp/`: experiment-level inference settings such as `exp_name`, input path, output root, prompt path, and model config
 
 This design keeps experiments reproducible and makes Week2 extensions easier. In practice:
 
 - changing domains should mostly mean switching `configs/data/*.yaml`
+- changing task formulations should mostly mean switching `configs/task/*.yaml`
 - changing models should mostly mean switching `configs/model/*.yaml`
 - changing an experiment run should mostly mean switching `configs/exp/*.yaml`
+
+For the multi-task transition, `main_build_multitask_samples.py` derives:
+
+- `ranking_valid.jsonl` and `ranking_test.jsonl`
+- `pairwise_valid.jsonl` and `pairwise_test.jsonl`
+
+from the existing pointwise evaluation splits, while preserving per-user alignment to the same positive target event.
 
 Current model config files include:
 

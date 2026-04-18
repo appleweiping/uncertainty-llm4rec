@@ -1,0 +1,9 @@
+exp_name: beauty_qwen_pairwise
+data_config: configs/data/amazon_beauty.yaml
+task_config: configs/task/pairwise_preference.yaml
+task_type: pairwise_preference
+model_config: configs/model/qwen.yaml
+input_path: data/processed/amazon_beauty/pairwise_test.jsonl
+output_dir: outputs/beauty_qwen_pairwise
+max_samples: 500
+overwrite: true

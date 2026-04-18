@@ -1,0 +1,10 @@
+task_type: candidate_ranking
+
+builder:
+  source_splits:
+    - valid
+    - test
+  output_prefix: ranking
+  shuffle_candidates: true
+  shuffle_seed: 42
+  require_single_positive: true

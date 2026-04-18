@@ -1,0 +1,9 @@
+exp_name: beauty_qwen_rank
+data_config: configs/data/amazon_beauty.yaml
+task_config: configs/task/candidate_ranking.yaml
+task_type: candidate_ranking
+model_config: configs/model/qwen.yaml
+input_path: data/processed/amazon_beauty/ranking_test.jsonl
+output_dir: outputs/beauty_qwen_rank
+max_samples: 500
+overwrite: true
