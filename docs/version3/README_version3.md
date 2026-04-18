@@ -26,6 +26,8 @@ This guide is the shortest way to understand what Version 3 added, what is alrea
 - Part 6: Version 3 round-1 wrap-up
   - [2026-04-18_part6_version3_round1_summary.md](./2026-04-18_part6_version3_round1_summary.md)
   - [server_execution.md](./server_execution.md)
+- Follow-up gap closure: ranking-side calibration minimal adapter
+  - [2026-04-18_part5b_ranking_calibration_minimal_adapter.md](./2026-04-18_part5b_ranking_calibration_minimal_adapter.md)
 
 ## Architecture Snapshot
 
@@ -37,7 +39,7 @@ Version 3 now has three clearly separated lines:
 2. Ranking-oriented main line
    - `candidate_ranking`
    - ranking prompt -> ranking parser -> ranking eval
-   - ranking proxy uncertainty compare -> ranking-aware rerank
+   - ranking proxy calibration -> ranking proxy uncertainty compare -> ranking-aware rerank
 3. Baseline-side confidence validation line
    - independent baseline score input
    - NH-style ranking metrics
@@ -161,3 +163,13 @@ Part 6 is a wrap-up layer. It does not add:
 - new data builders
 
 Its role is to make Version 3 easier to run, audit, and move to a server.
+
+## Current Completion Boundary
+
+Version 3 should currently be read as:
+
+- Round 1 architecture closure: completed
+- Follow-up ranking-side calibration minimal adapter: completed
+- Full research migration to the ranking line: not yet completed
+
+That means the repository now has runnable backend, ranking, eval, calibration, uncertainty, rerank, and baseline-confidence entry points, but still does **not** yet imply that multi-model, multi-domain, multi-estimator, and robustness experiments have all been migrated to the new ranking-oriented main line.

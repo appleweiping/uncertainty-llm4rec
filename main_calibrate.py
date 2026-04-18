@@ -10,6 +10,7 @@ from src.analysis.calibration_plotting import plot_before_after_reliability
 from src.analysis.confidence_correctness import prepare_prediction_dataframe
 from src.eval.calibration_metrics import (
     compute_calibration_metrics,
+    ensure_binary_columns,
     get_reliability_dataframe,
 )
 from src.uncertainty.calibration import (
@@ -24,6 +25,7 @@ from src.uncertainty.verbalized_confidence import (
     add_uncertainty_from_confidence,
     normalize_confidence_column,
 )
+from src.uncertainty.estimators import build_ranking_proxy_dataframe
 from src.utils.paths import ensure_exp_dirs
 
 
@@ -47,9 +49,39 @@ def save_summary_dict(summary: dict, path: str | Path) -> None:
     save_table(pd.DataFrame([summary]), path)
 
 
+def infer_task_type(
+    *,
+    explicit_task_type: str,
+    input_path: str | Path | None,
+    valid_path: str | Path | None,
+    test_path: str | Path | None,
+    paths,
+) -> str:
+    task_type = str(explicit_task_type).strip().lower()
+    if task_type in {"pointwise_yesno", "candidate_ranking"}:
+        return task_type
+
+    candidates = [
+        valid_path,
+        test_path,
+        input_path,
+        paths.predictions_dir / "valid_ranking_raw.jsonl",
+        paths.predictions_dir / "test_ranking_raw.jsonl",
+    ]
+    for candidate in candidates:
+        if candidate is None:
+            continue
+        text = str(candidate).lower()
+        if "ranking" in text:
+            return "candidate_ranking"
+
+    return "pointwise_yesno"
+
+
 def resolve_prediction_splits(
     *,
     exp_name: str,
+    task_type: str,
     paths,
     input_path: str | Path | None,
     valid_path: str | Path | None,
@@ -60,8 +92,12 @@ def resolve_prediction_splits(
         test_df = load_jsonl(test_path)
         return valid_df, test_df, "explicit_valid_test_paths"
 
-    default_valid_path = paths.predictions_dir / "valid_raw.jsonl"
-    default_test_path = paths.predictions_dir / "test_raw.jsonl"
+    if task_type == "candidate_ranking":
+        default_valid_path = paths.predictions_dir / "valid_ranking_raw.jsonl"
+        default_test_path = paths.predictions_dir / "test_ranking_raw.jsonl"
+    else:
+        default_valid_path = paths.predictions_dir / "valid_raw.jsonl"
+        default_test_path = paths.predictions_dir / "test_raw.jsonl"
 
     if default_valid_path.exists() and default_test_path.exists():
         valid_df = load_jsonl(default_valid_path)
@@ -71,7 +107,11 @@ def resolve_prediction_splits(
     fallback_input_path = (
         Path(input_path)
         if input_path is not None
-        else paths.predictions_dir / "test_raw.jsonl"
+        else (
+            paths.predictions_dir / "test_ranking_raw.jsonl"
+            if task_type == "candidate_ranking"
+            else paths.predictions_dir / "test_raw.jsonl"
+        )
     )
     if not fallback_input_path.exists():
         raise FileNotFoundError(
@@ -100,20 +140,40 @@ def count_overlapping_users(valid_df: pd.DataFrame, test_df: pd.DataFrame, user_
     return int(len(overlap))
 
 
+def prepare_ranking_proxy_dataframe(raw_df: pd.DataFrame) -> pd.DataFrame:
+    proxy_df = build_ranking_proxy_dataframe(raw_df)
+    if proxy_df.empty:
+        raise ValueError("Ranking prediction file did not produce any proxy rows for calibration.")
+
+    proxy_df = normalize_confidence_column(
+        proxy_df,
+        input_col="proxy_confidence",
+        output_col="proxy_confidence",
+    )
+    proxy_df["confidence"] = proxy_df["proxy_confidence"].astype(float)
+    proxy_df = ensure_binary_columns(proxy_df)
+    if "target_popularity_group" not in proxy_df.columns:
+        proxy_df["target_popularity_group"] = "unknown"
+    return proxy_df
+
+
 def compare_metrics(
     raw_df: pd.DataFrame,
     calibrated_df: pd.DataFrame,
     split_name: str,
+    *,
+    raw_confidence_col: str = "confidence",
+    calibrated_confidence_col: str = "calibrated_confidence",
 ) -> pd.DataFrame:
     before_metrics = compute_calibration_metrics(
         raw_df,
-        confidence_col="confidence",
+        confidence_col=raw_confidence_col,
         target_col="is_correct",
         n_bins=10,
     )
     after_metrics = compute_calibration_metrics(
         calibrated_df,
-        confidence_col="calibrated_confidence",
+        confidence_col=calibrated_confidence_col,
         target_col="is_correct",
         n_bins=10,
     )
@@ -182,11 +242,25 @@ def main() -> None:
         default=42,
         help="Random seed for split."
     )
+    parser.add_argument(
+        "--task_type",
+        type=str,
+        default="auto",
+        help="auto | pointwise_yesno | candidate_ranking",
+    )
     args = parser.parse_args()
 
     paths = ensure_exp_dirs(args.exp_name, args.output_root)
+    task_type = infer_task_type(
+        explicit_task_type=args.task_type,
+        input_path=args.input_path,
+        valid_path=args.valid_path,
+        test_path=args.test_path,
+        paths=paths,
+    )
     raw_valid_df, raw_test_df, split_mode = resolve_prediction_splits(
         exp_name=args.exp_name,
+        task_type=task_type,
         paths=paths,
         input_path=args.input_path,
         valid_path=args.valid_path,
@@ -195,8 +269,11 @@ def main() -> None:
 
     if split_mode == "single_file_fallback_split":
         print(f"[{args.exp_name}] Loading fallback predictions from: {args.input_path or (paths.predictions_dir / 'test_raw.jsonl')}")
-        df = prepare_prediction_dataframe(raw_valid_df)
-        df = normalize_confidence_column(df, input_col="confidence", output_col="confidence")
+        if task_type == "candidate_ranking":
+            df = prepare_ranking_proxy_dataframe(raw_valid_df)
+        else:
+            df = prepare_prediction_dataframe(raw_valid_df)
+            df = normalize_confidence_column(df, input_col="confidence", output_col="confidence")
         print(f"[{args.exp_name}] Loaded {len(df)} samples from fallback raw predictions.")
 
         split_result = user_level_split(
@@ -208,11 +285,18 @@ def main() -> None:
         valid_df = split_result.valid_df
         test_df = split_result.test_df
     else:
-        valid_df = prepare_prediction_dataframe(raw_valid_df)
-        valid_df = normalize_confidence_column(valid_df, input_col="confidence", output_col="confidence")
-        test_df = prepare_prediction_dataframe(raw_test_df)
-        test_df = normalize_confidence_column(test_df, input_col="confidence", output_col="confidence")
-        print(f"[{args.exp_name}] Loaded {len(valid_df)} valid samples and {len(test_df)} test samples from prediction files.")
+        if task_type == "candidate_ranking":
+            valid_df = prepare_ranking_proxy_dataframe(raw_valid_df)
+            test_df = prepare_ranking_proxy_dataframe(raw_test_df)
+        else:
+            valid_df = prepare_prediction_dataframe(raw_valid_df)
+            valid_df = normalize_confidence_column(valid_df, input_col="confidence", output_col="confidence")
+            test_df = prepare_prediction_dataframe(raw_test_df)
+            test_df = normalize_confidence_column(test_df, input_col="confidence", output_col="confidence")
+        print(
+            f"[{args.exp_name}] Loaded {len(valid_df)} valid samples and {len(test_df)} test samples "
+            f"from prediction files for task_type={task_type}."
+        )
 
     overlapping_users = count_overlapping_users(valid_df, test_df, user_col="user_id")
     if split_mode == "single_file_fallback_split":
@@ -226,6 +310,7 @@ def main() -> None:
             "random_state": int(args.random_state),
             "calibration_method": args.method,
             "num_overlapping_users": int(overlapping_users),
+            "task_type": task_type,
         }
     )
     save_summary_dict(split_meta, paths.tables_dir / "calibration_split_metadata.csv")
@@ -257,8 +342,16 @@ def main() -> None:
     test_calibrated = apply_calibrator(test_df, calibrator, input_col="confidence", output_col="calibrated_confidence")
     test_calibrated = add_uncertainty_from_confidence(test_calibrated, confidence_col="calibrated_confidence", output_col="uncertainty")
 
+    if task_type == "candidate_ranking":
+        valid_calibrated["calibrated_proxy_confidence"] = valid_calibrated["calibrated_confidence"]
+        test_calibrated["calibrated_proxy_confidence"] = test_calibrated["calibrated_confidence"]
+
     save_jsonl(test_calibrated, paths.calibrated_dir / "test_calibrated.jsonl")
     save_jsonl(valid_calibrated, paths.calibrated_dir / "valid_calibrated.jsonl")
+
+    if task_type == "candidate_ranking":
+        save_table(valid_calibrated, paths.tables_dir / "ranking_proxy_valid_calibrated.csv")
+        save_table(test_calibrated, paths.tables_dir / "ranking_proxy_test_calibrated.csv")
 
     comparison_df = pd.concat(
         [
@@ -292,6 +385,7 @@ def main() -> None:
     )
 
     print(f"[{args.exp_name}] Calibration done.")
+    print(f"[{args.exp_name}] Calibration task type: {task_type}")
     print(f"Calibrated files saved to: {paths.calibrated_dir}")
     print(f"Tables saved to:          {paths.tables_dir}")
     print(f"Figures saved to:         {paths.figures_dir}")

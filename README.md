@@ -155,9 +155,9 @@ This design keeps experiments reproducible and makes Week2 extensions easier. In
 
 For `candidate_ranking`, use one of the new prompt templates under `prompts/` and set `task_type: candidate_ranking` in the experiment config or CLI.
 The ranking-side evaluation extension is intentionally deferred to later Version 3 work; Part 2 only establishes the inference-and-parser minimal loop.
-The current `main_eval.py` now supports the minimal ranking read path and basic NH-style metrics for `candidate_ranking`, while calibration, reranking, and uncertainty adaptation for ranking remain later Version 3 work.
+The current `main_eval.py` now supports the minimal ranking read path and basic NH-style metrics for `candidate_ranking`.
 Version 3 also now includes an independent `main_baseline_confidence.py` entry for **baseline-side confidence validation**, which reads baseline score outputs, computes NH-style metrics, and exports minimal confidence-like proxy diagnostics without changing the main research line.
-Version 3 Part 5 now adds the first ranking-aware uncertainty hooks: `main_uncertainty_compare.py` can read ranking outputs through proxy estimators such as `score_margin` and `score_entropy`, and `main_rerank.py` now has a task-aware `candidate_ranking` branch that consumes ranking score sources without breaking the legacy pointwise rerank path.
+Version 3 now also has first-pass ranking-side calibration, uncertainty, and rerank support: `main_calibrate.py` can calibrate ranking proxy confidence through the same valid-fit / test-apply protocol, `main_uncertainty_compare.py` can read ranking outputs through proxy estimators such as `score_margin` and `score_entropy`, and `main_rerank.py` now has a task-aware `candidate_ranking` branch that consumes ranking score sources without breaking the legacy pointwise rerank path. Full multi-model, multi-domain, and robustness migration to the ranking line is still later Version 3 work.
 
 Current model config files include:
 
