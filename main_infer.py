@@ -134,7 +134,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input_path", type=str, default=None, help="Input pointwise jsonl path.")
     parser.add_argument("--data_root", type=str, default=None, help="Optional default data directory.")
     parser.add_argument("--output_root", type=str, default="outputs", help="Output root directory.")
-    parser.add_argument("--prompt_path", type=str, default="prompts/pointwise_yesno.txt", help="Prompt template path.")
+    parser.add_argument("--prompt_path", type=str, default=None, help="Prompt template path.")
     parser.add_argument("--model_config", type=str, default=None, help="Model config path.")
     parser.add_argument("--max_samples", type=int, default=None, help="Optional sample cap.")
     parser.add_argument("--output_path", type=str, default=None, help="Prediction output jsonl path.")

@@ -1,0 +1,15 @@
+exp_name: movies_small_qwen_local_rank
+
+input_path: data/processed/amazon_movies_small/test.jsonl
+output_root: outputs
+split_name: test
+
+task_type: candidate_ranking
+ranking_mode: score_list
+prompt_path: prompts/candidate_score_list.txt
+
+model_config: configs/model/qwen_local_7b.yaml
+
+max_samples: 20
+overwrite: true
+seed: 42

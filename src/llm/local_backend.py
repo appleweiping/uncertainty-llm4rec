@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import os
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,41 @@ def _maybe_path(value: str | None) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _resolve_local_hf_snapshot(value: str | None) -> tuple[str | None, bool]:
+    text = _maybe_path(value)
+    if not text:
+        return None, False
+
+    candidate = Path(text)
+    if candidate.exists():
+        return str(candidate), True
+
+    if "/" not in text:
+        return text, False
+
+    org, model = text.split("/", 1)
+    cache_root = Path(os.environ.get("HF_HUB_CACHE", Path.home() / ".cache" / "huggingface" / "hub"))
+    repo_dir = cache_root / f"models--{org}--{model}"
+    refs_main = repo_dir / "refs" / "main"
+    snapshots_dir = repo_dir / "snapshots"
+
+    snapshot_hash = None
+    if refs_main.exists():
+        snapshot_hash = refs_main.read_text(encoding="utf-8").strip()
+
+    if snapshot_hash:
+        snapshot_path = snapshots_dir / snapshot_hash
+        if snapshot_path.exists():
+            return str(snapshot_path), True
+
+    if snapshots_dir.exists():
+        snapshots = sorted([p for p in snapshots_dir.iterdir() if p.is_dir()])
+        if snapshots:
+            return str(snapshots[-1]), True
+
+    return text, False
 
 
 class LocalHFBackend(LLMBackend):
@@ -80,24 +116,35 @@ class LocalHFBackend(LLMBackend):
 
         self._torch = torch
 
-        model_path = _maybe_path(self.model_path)
-        tokenizer_path = _maybe_path(self.tokenizer_path)
+        model_path, model_local_only = _resolve_local_hf_snapshot(self.model_path)
+        tokenizer_path, tokenizer_local_only = _resolve_local_hf_snapshot(self.tokenizer_path)
         if not model_path:
             raise ValueError("LocalHFBackend requires a non-empty model_path.")
 
         tokenizer_kwargs: dict[str, Any] = {
             "trust_remote_code": bool(self.trust_remote_code),
         }
+        if tokenizer_local_only:
+            tokenizer_kwargs["local_files_only"] = True
         self._tokenizer = AutoTokenizer.from_pretrained(tokenizer_path or model_path, **tokenizer_kwargs)
 
         model_kwargs: dict[str, Any] = {
             "trust_remote_code": bool(self.trust_remote_code),
         }
+        if model_local_only:
+            model_kwargs["local_files_only"] = True
         resolved_dtype = self._resolve_dtype(torch)
         if resolved_dtype != "auto":
             model_kwargs["torch_dtype"] = resolved_dtype
         if self.device_map not in {None, "", "none"}:
-            model_kwargs["device_map"] = self.device_map
+            allow_device_map = True
+            try:
+                import accelerate  # noqa: F401
+            except ImportError:
+                allow_device_map = False
+
+            if allow_device_map:
+                model_kwargs["device_map"] = self.device_map
 
         self._model = AutoModelForCausalLM.from_pretrained(model_path, **model_kwargs)
         self._model.eval()

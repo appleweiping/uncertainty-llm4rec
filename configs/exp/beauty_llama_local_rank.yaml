@@ -1,0 +1,15 @@
+exp_name: beauty_llama_local_rank
+
+input_path: data/processed/amazon_beauty/test.jsonl
+output_root: outputs
+split_name: test
+
+task_type: candidate_ranking
+ranking_mode: score_list
+prompt_path: prompts/candidate_score_list.txt
+
+model_config: configs/model/llama_local_8b.yaml
+
+max_samples: 20
+overwrite: true
+seed: 42

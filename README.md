@@ -555,6 +555,21 @@ For the first tracked local ranking config example, see:
 
 - `configs/exp/beauty_qwen_local_rank.yaml`
 
+Additional local-first ranking templates are now available for:
+
+- `configs/exp/beauty_llama_local_rank.yaml`
+- `configs/exp/movies_small_qwen_local_rank.yaml`
+- `configs/exp/books_small_qwen_local_rank.yaml`
+- `configs/exp/electronics_small_qwen_local_rank.yaml`
+
+If you want to validate the full local ranking line on the current machine before moving to a server, use:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run_version3_local_rank_pipeline.ps1 `
+  -ExpConfig configs/exp/beauty_qwen_local_rank.yaml `
+  -MaxSamples 20
+```
+
 ## Notes
 
 - Current small-scale runs are useful for validating methodology, not for claiming final large-scale empirical conclusions.
