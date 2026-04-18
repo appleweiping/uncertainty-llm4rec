@@ -112,6 +112,13 @@ The current week-six method line now also includes a more structured decision fa
 
 This extension is driven by an empirical failure mode rather than formula inflation: simple uncertainty penalties already show that uncertainty can enter ranking decisions, but they do not yet recover or improve ranking utility. The structured-risk line is therefore designed to be more selective, more position-aware, and more honest about partial uncertainty coverage.
 
+The mechanism layer is now being pushed one step further rather than left as a diagnostic side branch:
+
+- `src/methods/uncertainty_pairwise_aggregator.py` turns pairwise preference outputs into event-level candidate scores through uncertainty-weighted preference aggregation
+- `main_pairwise_rank.py` evaluates whether pairwise preference can act as a ranking-construction path instead of stopping at pairwise accuracy
+
+This compare is intentionally disciplined. When pairwise predictions cover only part of the ranking set, the repository evaluates pairwise-to-rank against direct ranking and retained ranking families on the event-overlap subset rather than mixing unmatched events into a single headline table. The goal is to keep the mechanism evidence useful without overstating how complete it already is.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
