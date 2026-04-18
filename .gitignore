@@ -151,7 +151,11 @@ data/cache/
 # Research outputs
 # 实验输出、中间结果、旧备份都不提交
 # =========================
-outputs/
+outputs/**
+!outputs/
+!outputs/**/
+!outputs/.gitkeep
+!outputs/**/.gitkeep
 outputs_backup_old/
 logs/
 results/
@@ -189,7 +193,11 @@ tb_logs/
 # Papers / reports / local docs
 # 本地论文材料和导出报告不进仓库
 # =========================
-Paper/
+Paper/**
+!Paper/
+!Paper/**/
+!Paper/.gitkeep
+!Paper/**/.gitkeep
 *.pdf
 *.ppt
 *.pptx
@@ -203,9 +211,6 @@ Paper/
 Thumbs.db
 desktop.ini
 
-outputs/
-
-Paper/
 Paper (2).zip
 baseline/
 docs/version3/
