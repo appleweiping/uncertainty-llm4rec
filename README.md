@@ -66,6 +66,22 @@ To support this transition, the repository now also defines task-specific langua
 
 This keeps the multi-task expansion aligned with the old project principle: prompt design and parser robustness are part of the method boundary, not an afterthought.
 
+The inference layer is now also being separated by task boundary rather than collapsed into a single entry point:
+
+- `main_infer.py` remains the pointwise diagnostic entry
+- `main_rank.py` serves the candidate ranking decision path
+- `main_pairwise.py` serves the pairwise preference path
+
+This preserves pointwise clarity while allowing ranking and pairwise outputs to land as first-class prediction artifacts rather than side experiments.
+
+The evaluation layer is now moving in the same direction:
+
+- `main_eval.py` remains responsible for pointwise diagnosis, calibration quality, and confidence-related bias views
+- `main_eval_rank.py` evaluates candidate ranking outputs in the recommendation metric space
+- `main_eval_pairwise.py` evaluates pairwise preference outputs in the local preference-consistency space
+
+This keeps the multi-task expansion methodologically honest: different decision granularities now produce different prediction files and are judged by different, task-appropriate metrics.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -103,7 +119,11 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 |-- main_build_samples.py
 |-- main_build_multitask_samples.py
 |-- main_infer.py
+|-- main_rank.py
+|-- main_pairwise.py
 |-- main_eval.py
+|-- main_eval_rank.py
+|-- main_eval_pairwise.py
 |-- main_calibrate.py
 |-- main_rerank.py
 `-- main_uncertainty_compare.py
@@ -176,6 +196,22 @@ For the multi-task transition, `main_build_multitask_samples.py` derives:
 - `pairwise_valid.jsonl` and `pairwise_test.jsonl`
 
 from the existing pointwise evaluation splits, while preserving per-user alignment to the same positive target event.
+
+The repository can now also land three task-specific prediction files under experiment directories:
+
+- pointwise predictions in `predictions/test_raw.jsonl`
+- ranking predictions in `predictions/rank_predictions.jsonl`
+- pairwise predictions in `predictions/pairwise_predictions.jsonl`
+
+This makes later multi-task evaluation and aggregation much cleaner because the diagnostic, preference, and ranking layers no longer share the same raw prediction schema.
+
+The corresponding evaluation outputs are also beginning to separate by task:
+
+- pointwise tables such as `diagnostic_metrics.csv`, `confidence_bins_accuracy.csv`, and exposure-oriented figures
+- ranking tables such as `ranking_metrics.csv`
+- pairwise tables such as `pairwise_metrics.csv` and `preference_confidence_bins.csv`
+
+This separation is intentional: pointwise remains the uncertainty diagnosis layer, while ranking and pairwise are evaluated in their own task spaces before later cross-task comparison.
 
 Current model config files include:
 

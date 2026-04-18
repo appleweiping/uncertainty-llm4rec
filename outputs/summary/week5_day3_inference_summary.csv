@@ -1,0 +1,4 @@
+task,sample_count,avg_latency,parse_success_rate,avg_response_length,failure_ratio,empty_output_ratio,source_path
+pointwise_yesno,30,2.1667,1,263.3,0.0,0,outputs\beauty_qwen_pointwise\predictions\test_raw.jsonl
+candidate_ranking,30,6.0547,1,598.3667,0.0,0,outputs\beauty_qwen_rank\predictions\rank_predictions.jsonl
+pairwise_preference,30,2.7445,1,356.7333,0.0,0,outputs\beauty_qwen_pairwise\predictions\pairwise_predictions.jsonl
