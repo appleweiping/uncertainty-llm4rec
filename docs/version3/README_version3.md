@@ -21,6 +21,7 @@ This guide is the shortest way to understand what Version 3 added, what is alrea
   - [2026-04-18_part3_ranking_eval_minimal_adapter.md](./2026-04-18_part3_ranking_eval_minimal_adapter.md)
 - Part 4: baseline-side confidence validation
   - [2026-04-18_part4_baseline_confidence_validation.md](./2026-04-18_part4_baseline_confidence_validation.md)
+  - [2026-04-18_part4b_nh_baseline_shortlist_and_adapter_plan.md](./2026-04-18_part4b_nh_baseline_shortlist_and_adapter_plan.md)
 - Part 5: ranking uncertainty and rerank adaptation
   - [2026-04-18_part5_ranking_uncertainty_and_rerank_adaptation.md](./2026-04-18_part5_ranking_uncertainty_and_rerank_adaptation.md)
 - Part 6: Version 3 round-1 wrap-up

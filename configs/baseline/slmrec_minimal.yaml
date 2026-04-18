@@ -1,0 +1,7 @@
+baseline_name: slmrec
+exp_name: beauty_slmrec_minimal
+input_path: data/processed/amazon_beauty/test.jsonl
+output_root: outputs/baselines
+k: 10
+max_samples: 20
+seed: 42

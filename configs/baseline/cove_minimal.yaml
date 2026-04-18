@@ -1,0 +1,7 @@
+baseline_name: cove
+exp_name: beauty_cove_minimal
+input_path: data/processed/amazon_beauty/test.jsonl
+output_root: outputs/baselines
+k: 10
+max_samples: 20
+seed: 42
