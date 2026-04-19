@@ -2,7 +2,7 @@
 
 Week7 changes the execution role of the project. Official APIs remain useful for small cross-model observations, case studies, and consistency checks, but they should not be treated as the main experiment throughput path. The main experiment path is now the server-side Hugging Face backend, with the base model stored on the execution machine and the code synchronized through Git.
 
-The selected Week7 main local model is Llama 3.1 8B Instruct. The default config is `configs/model/llama31_8b_instruct_local.yaml`, which points to `/home/ajifang/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct`. If the server image mounts the model workspace under another path, adjust only `model_name_or_path` and `tokenizer_name_or_path`; do not hard-code SSH credentials or passwords into configs, docs, scripts, or logs.
+The selected Week7 main local model is Llama 3.1 8B Instruct. The default config is `configs/model/llama31_8b_instruct_local.yaml`, which now points to `/root/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct` for the current root-based AutoDL/SeeTaCloud server. If the server image mounts the model workspace under another path, adjust only `model_name_or_path` and `tokenizer_name_or_path`; do not hard-code SSH credentials or passwords into configs, docs, scripts, or logs.
 
 The intended workflow is:
 
@@ -55,4 +55,4 @@ python main_backend_check.py \
   --dry_run
 ```
 
-This dry run only confirms config wiring. The actual Week7 Day1 acceptance check requires the non-dry-run command on the Ubuntu 22 + RTX 4090 server.
+This dry run only confirms config wiring. The actual Week7 Day1 acceptance check requires the non-dry-run command on the current AutoDL/SeeTaCloud GPU server.

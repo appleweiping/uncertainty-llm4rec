@@ -1,8 +1,8 @@
 backend_name: local_hf
 provider: local_hf
 model_name: llama-3.1-8b-instruct-local
-model_name_or_path: /home/ajifang/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct
-tokenizer_name_or_path: /home/ajifang/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct
+model_name_or_path: /root/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct
+tokenizer_name_or_path: /root/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct
 
 runtime:
   device: cuda

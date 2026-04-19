@@ -4,11 +4,10 @@ The Week7 Day1 backend line is now defined around a two-layer execution model. A
 
 Current selected server setting:
 
-- OS: Ubuntu 22
-- GPU: RTX 4090 class, 48G memory
+- Provider: AutoDL/SeeTaCloud root-based GPU server
 - Main local model: Llama 3.1 8B Instruct
 - Default config: `configs/model/llama31_8b_instruct_local.yaml`
-- Default model path: `/home/ajifang/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct`
+- Default model path: `/root/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct`
 
 No server password, remote desktop password, SSH password, token, or temporary URL should be committed to this repository.
 
