@@ -170,6 +170,8 @@ The final Part5 evidence layer is organized through these main entrances:
 - `src/analysis/build_part5_consolidated_tables.py` builds the paper-ready consolidated tables.
 - `part5_artifact_map.md` records the main tables, figures, notes, and reports for this stage.
 
+Week7 begins the execution-layer upgrade for the next validation phase. The repository now distinguishes API backends as observation/comparison channels and the server-side Hugging Face backend as the main experiment path. The selected local main model is Llama 3.1 8B Instruct, configured through `configs/model/llama31_8b_instruct_local.yaml`; the backend implementation is `src/llm/local_hf_backend.py`, with `main_backend_check.py` providing a minimal schema and loading check before larger runs. Server credentials and temporary access links are intentionally kept outside the repository.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -209,6 +211,7 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 |-- main_infer.py
 |-- main_rank.py
 |-- main_pairwise.py
+|-- main_backend_check.py
 |-- main_eval.py
 |-- main_eval_rank.py
 |-- main_eval_pairwise.py
@@ -687,6 +690,7 @@ The repository already supports:
 - strict validation-to-test calibration
 - first-pass uncertainty-aware reranking
 - a compact Part5 multitask evidence version with pointwise diagnosis, pairwise mechanism evidence, candidate-ranking structured-risk reranking, four-domain DeepSeek compact replication, upgraded pairwise coverage, and paper-ready consolidated tables
+- the first Week7 server-backend handoff: unified local-HF backend wiring, Llama 3.1 8B Instruct model config, smoke experiment configs, and server workflow docs
 
 Current experiments are best understood as method-grounding and pipeline validation. Week1 already covers:
 

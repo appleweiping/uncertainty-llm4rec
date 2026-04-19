@@ -27,6 +27,9 @@ class LLMBackend(ABC):
     def generate(self, prompt: str, **kwargs) -> dict[str, Any]:
         raise NotImplementedError
 
+    def batch_generate(self, prompts: list[str], **kwargs) -> list[dict[str, Any]]:
+        return [self.generate(prompt, **kwargs) for prompt in prompts]
+
 
 def normalize_generation_result(
     result: GenerationResult | dict[str, Any] | str,

@@ -7,6 +7,7 @@ import yaml
 
 from src.llm.api_backend import APIBackend
 from src.llm.deepseek_backend import DeepSeekBackend
+from src.llm.local_hf_backend import LocalHFBackend
 from src.llm.openai_backend import OpenAIBackend
 
 
@@ -14,6 +15,9 @@ BACKEND_REGISTRY = {
     "api": APIBackend,
     "openai_compatible": APIBackend,
     "deepseek": DeepSeekBackend,
+    "hf": LocalHFBackend,
+    "local_hf": LocalHFBackend,
+    "transformers": LocalHFBackend,
     "openai": OpenAIBackend,
 }
 
@@ -50,6 +54,42 @@ def build_backend_from_config(model_cfg_path: str | Path):
 
     generation_cfg = model_cfg.get("generation", {}) or {}
     connection_cfg = model_cfg.get("connection", {}) or {}
+    runtime_cfg = model_cfg.get("runtime", {}) or {}
+
+    if backend_name in {"hf", "local_hf", "transformers"}:
+        model_name_or_path = _first_present(
+            model_cfg.get("model_name_or_path"),
+            runtime_cfg.get("model_name_or_path"),
+            model_cfg.get("model_path"),
+            model_cfg.get("model_name"),
+        )
+        if not model_name_or_path:
+            raise ValueError(f"model_name_or_path is required in local HF model config: {model_cfg_path}")
+        tokenizer_name_or_path = _first_present(
+            model_cfg.get("tokenizer_name_or_path"),
+            runtime_cfg.get("tokenizer_name_or_path"),
+            model_cfg.get("tokenizer_path"),
+            model_name_or_path,
+        )
+        return backend_cls(
+            provider=provider,
+            model_name=str(_first_present(model_cfg.get("model_name"), Path(str(model_name_or_path)).name)),
+            model_name_or_path=str(model_name_or_path),
+            tokenizer_name_or_path=str(tokenizer_name_or_path),
+            device=str(_first_present(runtime_cfg.get("device"), model_cfg.get("device"), "cuda")),
+            device_map=_first_present(runtime_cfg.get("device_map"), model_cfg.get("device_map"), "auto"),
+            dtype=str(_first_present(runtime_cfg.get("dtype"), model_cfg.get("dtype"), "auto")),
+            batch_size=int(_first_present(runtime_cfg.get("batch_size"), model_cfg.get("batch_size"), 1)),
+            max_new_tokens=int(_first_present(generation_cfg.get("max_new_tokens"), generation_cfg.get("max_tokens"), model_cfg.get("max_new_tokens"), model_cfg.get("max_tokens"), 300)),
+            temperature=float(_first_present(generation_cfg.get("temperature"), model_cfg.get("temperature"), 0.0)),
+            top_p=float(_first_present(generation_cfg.get("top_p"), model_cfg.get("top_p"), 1.0)),
+            trust_remote_code=bool(_first_present(runtime_cfg.get("trust_remote_code"), model_cfg.get("trust_remote_code"), False)),
+            local_files_only=bool(_first_present(runtime_cfg.get("local_files_only"), model_cfg.get("local_files_only"), True)),
+            load_in_4bit=bool(_first_present(runtime_cfg.get("load_in_4bit"), model_cfg.get("load_in_4bit"), False)),
+            load_in_8bit=bool(_first_present(runtime_cfg.get("load_in_8bit"), model_cfg.get("load_in_8bit"), False)),
+            adapter_path=_first_present(runtime_cfg.get("adapter_path"), model_cfg.get("adapter_path")),
+            use_chat_template=bool(_first_present(generation_cfg.get("use_chat_template"), model_cfg.get("use_chat_template"), True)),
+        )
 
     model_name = _first_present(model_cfg.get("model_name"), generation_cfg.get("model_name"))
     if not model_name:
