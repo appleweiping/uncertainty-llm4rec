@@ -169,9 +169,12 @@ def main() -> None:
     )
     pairwise_cfg = PairwisePreferenceBuildConfig(
         pair_type=str(pairwise_builder_cfg.get("pair_type", "positive_vs_negative")),
+        pair_generation_mode=str(pairwise_builder_cfg.get("pair_generation_mode", "positive_vs_negative")),
         shuffle_pair_order=bool(pairwise_builder_cfg.get("shuffle_pair_order", True)),
         shuffle_seed=int(pairwise_builder_cfg.get("shuffle_seed", 42)),
         max_pairs_per_sample=pairwise_builder_cfg.get("max_pairs_per_sample"),
+        max_pairs_per_event=pairwise_builder_cfg.get("max_pairs_per_event"),
+        event_balanced_order=bool(pairwise_builder_cfg.get("event_balanced_order", False)),
     )
 
     ranking_prefix = str(ranking_builder_cfg.get("output_prefix", "ranking")).strip() or "ranking"

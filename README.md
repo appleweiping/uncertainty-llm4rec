@@ -156,6 +156,20 @@ The cross-domain handoff is also now represented as a compact four-domain DeepSe
 - `src/analysis/aggregate_cross_domain_minimal_results.py` writes the four-domain status and compare tables under `outputs/summary/`.
 - `main_literature_baseline.py` and `main_batch_run.py` provide the first minimal baseline and registry hooks for the next larger-scale stage.
 
+The current Part5 compact evidence version is now complete under the 100-sample real-API scope. Week5 supplies the multitask data, prompt/parser, inference, evaluation, and summary base; Week6 supplies the ranking decision family, pairwise-to-rank mechanism line, estimator compare, same-task baseline, final Part5 table, and final summary. The magic supplement adds paper-facing figures, pairwise coverage evidence, the four-domain DeepSeek compact matrix, baseline/registry handoff hooks, and the final structured-risk cross-domain landing.
+
+The default Part5 ranking line is `nonlinear_structured_risk_rerank`, treated as the current best structured-risk family. `local_margin_swap_rerank` and `structured_risk_plus_local_margin_swap_rerank` remain retained exploratory families: they stay visible in code, tables, figures, and documentation, but they are not the default main experimental line. Pairwise-to-rank is currently interpreted as mechanism-layer evidence rather than a replacement for candidate ranking; its coverage has been upgraded in the compact Beauty setting, while the current evidence still remains intentionally bounded to the 100-sample scope.
+
+The final Part5 evidence layer is organized through these main entrances:
+
+- `main_compare_multitask.py --finalize_part5` refreshes the unified Part5 results and summary.
+- `main_part5_artifacts.py --build_figures --build_pairwise_coverage` rebuilds paper-facing figures and coverage evidence.
+- `main_rank_rerank.py` runs the current structured-risk ranking family on candidate-ranking outputs.
+- `src/analysis/aggregate_cross_domain_structured_risk_results.py` consolidates four-domain direct-vs-structured-risk results.
+- `main_literature_baseline.py` runs the compact task-aligned baseline group.
+- `src/analysis/build_part5_consolidated_tables.py` builds the paper-ready consolidated tables.
+- `part5_artifact_map.md` records the main tables, figures, notes, and reports for this stage.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -650,6 +664,10 @@ Under `outputs/summary/`, the repository also maintains:
 - `beauty_estimator_results.csv`: Beauty-focused estimator table for the main Day4 comparison
 - `robustness_results.csv`: clean/noisy robustness summary rows
 - `robustness_brief.csv`: compact robustness table for reporting
+- `week6_final_4domain_structured_risk_compare.csv`: four-domain direct ranking vs structured-risk current best comparison
+- `week6_final_pairwise_coverage_upgrade.csv`: upgraded pairwise event coverage and overlap/expanded boundary table
+- `week6_final_literature_baseline_compare.csv`: compact task-aligned and literature-aligned ranking baseline compare table
+- `part5_single_domain_main_table.csv`, `part5_4domain_main_table.csv`, and `part5_pairwise_boundary_table.csv`: paper-ready consolidated Part5 table skeletons
 
 ## Evaluation Philosophy
 
@@ -668,6 +686,7 @@ The repository already supports:
 - end-to-end inference and evaluation
 - strict validation-to-test calibration
 - first-pass uncertainty-aware reranking
+- a compact Part5 multitask evidence version with pointwise diagnosis, pairwise mechanism evidence, candidate-ranking structured-risk reranking, four-domain DeepSeek compact replication, upgraded pairwise coverage, and paper-ready consolidated tables
 
 Current experiments are best understood as method-grounding and pipeline validation. Week1 already covers:
 

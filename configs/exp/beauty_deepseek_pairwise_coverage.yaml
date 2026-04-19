@@ -1,0 +1,11 @@
+exp_name: beauty_deepseek_pairwise_coverage
+data_config: configs/data/amazon_beauty.yaml
+task_config: configs/task/pairwise_preference_coverage.yaml
+task_type: pairwise_preference
+model_config: configs/model/deepseek.yaml
+input_path: data/processed/amazon_beauty/pairwise_coverage_test.jsonl
+output_dir: outputs/beauty_deepseek_pairwise_coverage
+output_root: outputs
+prompt_path: prompts/pairwise_preference.txt
+max_samples: 100
+overwrite: false

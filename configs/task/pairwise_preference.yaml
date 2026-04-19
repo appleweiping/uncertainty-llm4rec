@@ -6,6 +6,9 @@ builder:
     - test
   output_prefix: pairwise
   pair_type: positive_vs_negative
+  pair_generation_mode: positive_vs_negative
   shuffle_pair_order: true
   shuffle_seed: 42
   max_pairs_per_sample:
+  max_pairs_per_event:
+  event_balanced_order: false

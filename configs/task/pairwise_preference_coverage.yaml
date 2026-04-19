@@ -1,0 +1,15 @@
+task_type: pairwise_preference
+
+builder:
+  source_splits:
+    - valid
+    - test
+  output_prefix: pairwise_coverage
+  pair_type: positive_vs_negative
+  pair_generation_mode: event_balanced_positive_vs_negative
+  shuffle_pair_order: true
+  shuffle_seed: 42
+  max_pairs_per_sample: 500
+  max_pairs_per_event: 5
+  event_balanced_order: true
+

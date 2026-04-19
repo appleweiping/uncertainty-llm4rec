@@ -9,9 +9,12 @@ from typing import Any, Dict, List, Optional
 @dataclass(frozen=True)
 class PairwisePreferenceBuildConfig:
     pair_type: str = "positive_vs_negative"
+    pair_generation_mode: str = "positive_vs_negative"
     shuffle_pair_order: bool = True
     shuffle_seed: int = 42
     max_pairs_per_sample: Optional[int] = None
+    max_pairs_per_event: Optional[int] = None
+    event_balanced_order: bool = False
 
 
 def _stable_rng(seed: int, *parts: str) -> random.Random:
@@ -34,7 +37,8 @@ def build_pairwise_preferences_from_ranking_samples(
     *,
     cfg: PairwisePreferenceBuildConfig,
 ) -> List[Dict[str, Any]]:
-    pairwise_samples: List[Dict[str, Any]] = []
+    event_pair_groups: List[List[Dict[str, Any]]] = []
+    mode = cfg.pair_generation_mode.strip().lower()
 
     for sample in ranking_samples:
         source_event_id = str(sample["source_event_id"])
@@ -47,10 +51,26 @@ def build_pairwise_preferences_from_ranking_samples(
             if int(label) == 0
         ]
 
-        if cfg.max_pairs_per_sample is not None:
-            negative_indices = negative_indices[: cfg.max_pairs_per_sample]
+        if mode in {"positive_vs_negative", "positive_vs_all_negatives"}:
+            selected_negative_indices = negative_indices
+        elif mode in {"event_balanced_positive_vs_negative", "coverage_balanced_positive_vs_negative"}:
+            selected_negative_indices = negative_indices
+        elif mode == "local_positive_neighbors":
+            selected_negative_indices = sorted(
+                negative_indices,
+                key=lambda idx: (abs(idx - positive_index), idx),
+            )
+        else:
+            raise ValueError(f"Unsupported pair_generation_mode: {cfg.pair_generation_mode}")
 
-        for pair_offset, negative_index in enumerate(negative_indices):
+        max_pairs = cfg.max_pairs_per_event
+        if max_pairs is None:
+            max_pairs = cfg.max_pairs_per_sample
+        if max_pairs is not None:
+            selected_negative_indices = selected_negative_indices[: int(max_pairs)]
+
+        event_pairs: List[Dict[str, Any]] = []
+        for pair_offset, negative_index in enumerate(selected_negative_indices):
             negative = _candidate_record(sample, negative_index)
 
             item_a = positive
@@ -61,7 +81,7 @@ def build_pairwise_preferences_from_ranking_samples(
                 if rng.random() < 0.5:
                     item_a, item_b = item_b, item_a
 
-            pairwise_samples.append(
+            event_pairs.append(
                 {
                     "pair_id": f"{source_event_id}::pair::{pair_offset}",
                     "source_event_id": source_event_id,
@@ -81,7 +101,22 @@ def build_pairwise_preferences_from_ranking_samples(
                     "timestamp": sample["timestamp"],
                     "split_name": sample["split_name"],
                     "source_candidate_count": int(sample["num_candidates"]),
+                    "pair_generation_mode": cfg.pair_generation_mode,
                 }
             )
+        event_pair_groups.append(event_pairs)
 
+    pairwise_samples: List[Dict[str, Any]] = []
+    if cfg.event_balanced_order:
+        max_group_len = max((len(group) for group in event_pair_groups), default=0)
+        for pair_idx in range(max_group_len):
+            for group in event_pair_groups:
+                if pair_idx < len(group):
+                    pairwise_samples.append(group[pair_idx])
+    else:
+        for group in event_pair_groups:
+            pairwise_samples.extend(group)
+
+    if cfg.max_pairs_per_sample is not None and cfg.event_balanced_order:
+        pairwise_samples = pairwise_samples[: int(cfg.max_pairs_per_sample)]
     return pairwise_samples

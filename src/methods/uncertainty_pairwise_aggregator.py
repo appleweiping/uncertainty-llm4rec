@@ -7,6 +7,7 @@ import pandas as pd
 
 
 SUPPORTED_PAIRWISE_AGG_VARIANTS = {
+    "plain_win_count",
     "weighted_win_count",
     "weighted_borda",
 }
@@ -304,7 +305,7 @@ def aggregate_pairwise_preferences(
         for pair_record in event_pair_df.to_dict(orient="records"):
             winner = str(pair_record["preferred_item_pred"])
             loser = str(pair_record["non_preferred_item_pred"])
-            weight = float(pair_record["pair_reliability_weight"])
+            weight = 1.0 if aggregation_variant == "plain_win_count" else float(pair_record["pair_reliability_weight"])
 
             if winner in item_stats:
                 item_stats[winner]["wins"] += weight
