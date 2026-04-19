@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.baselines.literature_rank_baselines import BASELINE_BUILDERS
+from src.baselines.literature_rank_baselines import BASELINE_BUILDERS, BASELINE_NOTES
 from src.eval.ranking_task_metrics import (
     build_ranking_eval_frame,
     compute_ranking_exposure_distribution,
@@ -75,7 +75,10 @@ def main() -> None:
                 "HR@10": metrics.get("HR@10"),
                 "NDCG@10": metrics.get("NDCG@10"),
                 "MRR": metrics.get("MRR"),
-                "notes": "Task-aligned ranking baseline over the same candidate set and metrics; intended as the compact Part5 defensive baseline group.",
+                "notes": BASELINE_NOTES.get(
+                    baseline_name,
+                    "Task-aligned ranking baseline over the same candidate set and metrics.",
+                ),
             }
         )
         print(f"Saved baseline predictions to: {prediction_path}")

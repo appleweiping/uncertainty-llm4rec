@@ -1,0 +1,19 @@
+domain: beauty
+model: llama31_8b_instruct_local
+model_family: local_hf_base_only
+adapter_path:
+rank_input_path: data/processed/amazon_beauty/ranking_test.jsonl
+pairwise_input_path: data/processed/amazon_beauty/pairwise_coverage_test.jsonl
+output_root: outputs
+summary_path: outputs/summary/week7_day3_literature_baseline_summary.csv
+k: 10
+max_samples: 100
+rank_baselines:
+  - candidate_order_rank
+  - popularity_prior_rank
+  - longtail_prior_rank
+  - history_overlap_rank
+pairwise_baselines:
+  - history_overlap_pairwise
+  - popularity_prior_pairwise
+

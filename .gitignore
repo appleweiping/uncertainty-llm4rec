@@ -213,6 +213,8 @@ desktop.ini
 
 Paper (2).zip
 baseline/
+!configs/baseline/
+!configs/baseline/**
 docs/version3/
 tmp_outputs/
 tmp_pycache/

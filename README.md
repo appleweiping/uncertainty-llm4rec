@@ -174,6 +174,8 @@ Week7 begins the execution-layer upgrade for the next validation phase. The repo
 
 Week7 also now has a structured batch and registry layer. `main_batch_run.py` reads `configs/batch/week7_local_scale.yaml`, builds task-specific commands for pointwise, candidate ranking, and pairwise smoke runs, and writes `outputs/summary/week7_day2_batch_status.csv`. The default mode is dry-run/registration; real server execution requires `--run`, while `--only_failed` supports targeted recovery from a previous registry. The related workflow notes live in `docs/week7_day2_batch_workflow.md` and `docs/week7_server_execution.md`.
 
+The first Part6 literature-aligned baseline group is now represented through `main_run_literature_baselines.py` and `configs/baseline/week7_literature_baselines.yaml`. It keeps the scope intentionally small but strict: ranking baselines and pairwise preference baselines run on the same Beauty candidate and pairwise samples, produce task-native prediction files, and summarize into `outputs/summary/week7_day3_literature_baseline_summary.csv`. The schema already records `model_family` and `adapter_path`, so the current base-only Llama path can later be extended to adapter-based comparisons without redefining the baseline table.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -194,6 +196,7 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 ```text
 .
 |-- configs/                  # data, model, and experiment configurations
+|   |-- baseline/             # literature-aligned baseline configs
 |   |-- task/                 # task-level builder and interface configs
 |-- data/                     # raw and processed datasets
 |-- outputs/                  # predictions, calibrated outputs, tables, and figures
@@ -221,6 +224,8 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 |-- main_rank_rerank.py
 |-- main_uncertainty_compare_multitask.py
 |-- main_baseline_multitask.py
+|-- main_literature_baseline.py
+|-- main_run_literature_baselines.py
 |-- main_calibrate.py
 |-- main_rerank.py
 `-- main_uncertainty_compare.py
@@ -672,6 +677,7 @@ Under `outputs/summary/`, the repository also maintains:
 - `week6_final_4domain_structured_risk_compare.csv`: four-domain direct ranking vs structured-risk current best comparison
 - `week6_final_pairwise_coverage_upgrade.csv`: upgraded pairwise event coverage and overlap/expanded boundary table
 - `week6_final_literature_baseline_compare.csv`: compact task-aligned and literature-aligned ranking baseline compare table
+- `week7_day3_literature_baseline_summary.csv`: first Part6 ranking and pairwise literature-aligned baseline summary
 - `part5_single_domain_main_table.csv`, `part5_4domain_main_table.csv`, and `part5_pairwise_boundary_table.csv`: paper-ready consolidated Part5 table skeletons
 
 ## Evaluation Philosophy
@@ -693,6 +699,7 @@ The repository already supports:
 - first-pass uncertainty-aware reranking
 - a compact Part5 multitask evidence version with pointwise diagnosis, pairwise mechanism evidence, candidate-ranking structured-risk reranking, four-domain DeepSeek compact replication, upgraded pairwise coverage, and paper-ready consolidated tables
 - the first Week7 server-backend handoff: unified local-HF backend wiring, Llama 3.1 8B Instruct model config, smoke experiment configs, server workflow docs, and a recoverable batch registry for local-HF smoke runs
+- the first Part6 literature-aligned baseline handoff: compact ranking and pairwise baseline groups under the same candidate/pairwise samples, with base-only and future adapter identity represented in the summary schema
 
 Current experiments are best understood as method-grounding and pipeline validation. Week1 already covers:
 
