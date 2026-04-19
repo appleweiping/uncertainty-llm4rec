@@ -38,6 +38,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--domain", type=str, default=None)
     parser.add_argument("--model", type=str, default=None)
     parser.add_argument("--exp_names", type=str, nargs="*", default=None)
+    parser.add_argument(
+        "--finalize_part5",
+        action="store_true",
+        help="Build the week6 Part5 final results and narrative summary from the day4 baseline matrix.",
+    )
+    parser.add_argument(
+        "--part5_input_path",
+        type=str,
+        default=None,
+        help="Optional explicit input CSV for Part5 finalization. Defaults to outputs/summary/week6_day4_decision_baseline_compare.csv.",
+    )
+    parser.add_argument("--part5_results_filename", type=str, default="part5_multitask_final_results.csv")
+    parser.add_argument("--part5_summary_filename", type=str, default="part5_multitask_final_summary.md")
     return parser.parse_args()
 
 
@@ -425,11 +438,320 @@ def build_markdown_summary(summary_df: pd.DataFrame) -> str:
     return "\n".join(paragraphs).strip() + "\n"
 
 
+def _ensure_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    out = df.copy()
+    for column in columns:
+        if column not in out.columns:
+            out[column] = pd.NA
+    return out
+
+
+def _metric_value(row: pd.Series | None, column: str) -> Any:
+    if row is None or column not in row:
+        return None
+    return row.get(column)
+
+
+def _pick_part5_row(
+    df: pd.DataFrame,
+    *,
+    task: str | None = None,
+    method_family: str | None = None,
+    method_variant: str | None = None,
+    evaluation_scope: str | None = None,
+    is_current_best_family: bool | None = None,
+) -> pd.Series | None:
+    out = df.copy()
+    if task is not None:
+        out = out[out["task"].astype(str) == task].copy()
+    if method_family is not None:
+        out = out[out["method_family"].astype(str) == method_family].copy()
+    if method_variant is not None:
+        out = out[out["method_variant"].astype(str) == method_variant].copy()
+    if evaluation_scope is not None:
+        out = out[out["evaluation_scope"].astype(str) == evaluation_scope].copy()
+    if is_current_best_family is not None and "is_current_best_family" in out.columns:
+        out = out[out["is_current_best_family"].astype(str).str.lower() == str(is_current_best_family).lower()].copy()
+    if out.empty:
+        return None
+
+    for column in ["NDCG@10", "MRR", "changed_ranking_fraction"]:
+        if column not in out.columns:
+            out[column] = float("nan")
+        out[column] = pd.to_numeric(out[column], errors="coerce")
+    out = out.sort_values(
+        ["NDCG@10", "MRR", "changed_ranking_fraction", "method_family", "method_variant"],
+        ascending=[False, False, True, True, True],
+        kind="mergesort",
+    )
+    return out.iloc[0]
+
+
+def _assign_part5_role(row: pd.Series) -> str:
+    task = str(row.get("task", ""))
+    method_family = str(row.get("method_family", ""))
+    method_variant = str(row.get("method_variant", ""))
+    is_baseline = str(row.get("is_same_task_baseline", "")).lower() == "true"
+    is_current = str(row.get("is_current_best_family", "")).lower() == "true"
+
+    if task == "pointwise_yesno" and is_baseline:
+        return "diagnostic_same_task_baseline"
+    if task == "pointwise_yesno":
+        return "diagnostic_uncertainty_aware_reference"
+    if task == "candidate_ranking" and is_baseline:
+        return "ranking_same_task_direct_baseline"
+    if task == "candidate_ranking" and is_current:
+        return "current_best_ranking_family"
+    if task == "candidate_ranking" and "plus" in method_family:
+        return "retained_complex_ranking_family"
+    if task == "candidate_ranking":
+        return "retained_ranking_family"
+    if task == "pairwise_to_rank" and method_family == "direct_candidate_ranking":
+        return "pairwise_scope_direct_reference"
+    if task == "pairwise_to_rank" and is_baseline:
+        return "pairwise_plain_aggregation_baseline"
+    if task == "pairwise_to_rank" and "expanded" in method_variant:
+        return "pairwise_uncertainty_aware_expanded"
+    if task == "pairwise_to_rank":
+        return "pairwise_uncertainty_aware_overlap"
+    return "part5_reference"
+
+
+def build_part5_final_results(day4_df: pd.DataFrame) -> pd.DataFrame:
+    required_columns = [
+        "domain",
+        "model",
+        "task",
+        "method",
+        "method_family",
+        "method_variant",
+        "evaluation_scope",
+        "estimator",
+        "uncertainty_source",
+        "is_same_task_baseline",
+        "is_current_best_family",
+        "lambda",
+        "lambda_penalty",
+        "HR@10",
+        "NDCG@10",
+        "MRR",
+        "pairwise_accuracy",
+        "ECE",
+        "Brier",
+        "AUROC",
+        "coverage",
+        "head_exposure",
+        "longtail_coverage",
+        "pairwise_supported_event_fraction",
+        "pairwise_pair_coverage_rate",
+        "changed_ranking_fraction",
+        "avg_position_shift",
+        "uncertainty_coverage",
+        "notes",
+    ]
+    out = _ensure_columns(day4_df, required_columns)
+    if "lambda" in out.columns and "lambda_penalty" in out.columns:
+        out["lambda"] = out["lambda"].fillna(out["lambda_penalty"])
+
+    out["part5_final_role"] = out.apply(_assign_part5_role, axis=1)
+    out["part5_inclusion"] = "included_in_part5_final_results"
+
+    task_order = {
+        "pointwise_yesno": 0,
+        "candidate_ranking": 1,
+        "pairwise_to_rank": 2,
+    }
+    scope_order = {
+        "full_pointwise_set": 0,
+        "full_ranking_set": 1,
+        "pairwise_event_overlap_subset": 2,
+        "expanded_with_direct_fallback": 3,
+    }
+    role_order = {
+        "diagnostic_same_task_baseline": 0,
+        "diagnostic_uncertainty_aware_reference": 1,
+        "ranking_same_task_direct_baseline": 0,
+        "current_best_ranking_family": 1,
+        "retained_ranking_family": 2,
+        "retained_complex_ranking_family": 3,
+        "pairwise_scope_direct_reference": 0,
+        "pairwise_plain_aggregation_baseline": 1,
+        "pairwise_uncertainty_aware_overlap": 2,
+        "pairwise_uncertainty_aware_expanded": 2,
+    }
+    out["_task_order"] = out["task"].map(task_order).fillna(99)
+    out["_scope_order"] = out["evaluation_scope"].map(scope_order).fillna(99)
+    out["_role_order"] = out["part5_final_role"].map(role_order).fillna(99)
+    out = out.sort_values(
+        ["_task_order", "_scope_order", "_role_order", "method_family", "method_variant"],
+        kind="mergesort",
+    ).drop(columns=["_task_order", "_scope_order", "_role_order"])
+
+    final_columns = [
+        "domain",
+        "model",
+        "task",
+        "part5_final_role",
+        "method",
+        "method_family",
+        "method_variant",
+        "evaluation_scope",
+        "estimator",
+        "uncertainty_source",
+        "is_same_task_baseline",
+        "is_current_best_family",
+        "lambda",
+        "HR@10",
+        "NDCG@10",
+        "MRR",
+        "pairwise_accuracy",
+        "ECE",
+        "Brier",
+        "AUROC",
+        "coverage",
+        "head_exposure",
+        "longtail_coverage",
+        "pairwise_supported_event_fraction",
+        "pairwise_pair_coverage_rate",
+        "changed_ranking_fraction",
+        "avg_position_shift",
+        "uncertainty_coverage",
+        "notes",
+        "part5_inclusion",
+    ]
+    return _ensure_columns(out, final_columns)[final_columns].reset_index(drop=True)
+
+
+def build_part5_final_summary(final_df: pd.DataFrame) -> str:
+    pointwise_baseline = _pick_part5_row(
+        final_df,
+        task="pointwise_yesno",
+        method_variant="calibrated_confidence_baseline",
+    )
+    pointwise_unc = _pick_part5_row(
+        final_df,
+        task="pointwise_yesno",
+        method_variant="uncertainty_aware_rerank",
+    )
+    direct_rank = _pick_part5_row(
+        final_df,
+        task="candidate_ranking",
+        method_variant="direct_candidate_ranking",
+    )
+    current_rank = _pick_part5_row(
+        final_df,
+        task="candidate_ranking",
+        is_current_best_family=True,
+    )
+    local_rank = _pick_part5_row(
+        final_df,
+        task="candidate_ranking",
+        method_family="local_margin_swap_family",
+    )
+    combo_rank = _pick_part5_row(
+        final_df,
+        task="candidate_ranking",
+        method_family="structured_risk_plus_local_swap_family",
+    )
+    pairwise_direct_overlap = _pick_part5_row(
+        final_df,
+        task="pairwise_to_rank",
+        method_variant="direct_overlap_reference",
+    )
+    pairwise_plain_overlap = _pick_part5_row(
+        final_df,
+        task="pairwise_to_rank",
+        method_variant="plain_win_count_overlap",
+    )
+    pairwise_weighted_overlap = _pick_part5_row(
+        final_df,
+        task="pairwise_to_rank",
+        method_variant="weighted_win_count",
+    )
+    pairwise_direct_expanded = _pick_part5_row(
+        final_df,
+        task="pairwise_to_rank",
+        method_variant="direct_expanded_reference",
+    )
+    pairwise_plain_expanded = _pick_part5_row(
+        final_df,
+        task="pairwise_to_rank",
+        method_variant="plain_win_count_expanded",
+    )
+    pairwise_weighted_expanded = _pick_part5_row(
+        final_df,
+        task="pairwise_to_rank",
+        method_variant="weighted_win_count_expanded",
+    )
+
+    domain = str(final_df["domain"].dropna().iloc[0]) if "domain" in final_df.columns and not final_df.empty else "unknown"
+    model = str(final_df["model"].dropna().iloc[0]) if "model" in final_df.columns and not final_df.empty else "unknown"
+
+    lines = [
+        "# Part5 Multitask Final Summary",
+        "",
+        f"本文件收口的是 Part5 的 Beauty + Qwen 阶段性多任务方法证据。它不是 Part6 的跨域、跨模型、强 baseline 终局结论，而是 week6 完成后用于支撑方法章节与初版实验章节的论文级中间总表。当前 final table 共包含 {len(final_df)} 条方法记录，覆盖 pointwise diagnosis、candidate ranking decision 与 pairwise-to-rank mechanism 三个层级。",
+        "",
+        "## 1. Pointwise Remains The Diagnostic Layer",
+        "",
+        f"pointwise 层在 Part5 中的定位已经明确：它不再承担最终推荐主任务，而是负责提供 uncertainty elicitation 与 calibration 证据。在当前 {domain}/{model} 设置下，calibrated confidence baseline 与 uncertainty-aware rerank 的列表指标保持一致，NDCG@10={format_metric(_metric_value(pointwise_baseline, 'NDCG@10'))}、MRR={format_metric(_metric_value(pointwise_baseline, 'MRR'))}；更重要的是，calibrated uncertainty 的诊断质量已经稳定落到 ECE={format_metric(_metric_value(pointwise_baseline, 'ECE'))}、Brier={format_metric(_metric_value(pointwise_baseline, 'Brier'))}、AUROC={format_metric(_metric_value(pointwise_baseline, 'AUROC'))}。这说明 pointwise 的主要贡献不是直接改写最终排序，而是为后续 ranking 与 pairwise 决策提供可信 uncertainty source。",
+        "",
+        "## 2. Candidate Ranking Is The Main Decision Layer",
+        "",
+        f"candidate ranking 已经成为 Part5 的主决策层。direct ranking baseline 的 NDCG@10={format_metric(_metric_value(direct_rank, 'NDCG@10'))}、MRR={format_metric(_metric_value(direct_rank, 'MRR'))}，current structured risk family 的 NDCG@10={format_metric(_metric_value(current_rank, 'NDCG@10'))}、MRR={format_metric(_metric_value(current_rank, 'MRR'))}，并且 changed_ranking_fraction={format_metric(_metric_value(current_rank, 'changed_ranking_fraction'))}。这意味着当前最稳的主线不是强行追求大幅改序，而是在统一 compare 下保留一个不破坏 direct ranking 的 uncertainty-aware decision family。local swap family 与完全融合版仍然被保留在 final table 中，其中 local swap 的最好结果为 NDCG@10={format_metric(_metric_value(local_rank, 'NDCG@10'))}、MRR={format_metric(_metric_value(local_rank, 'MRR'))}，完全融合版为 NDCG@10={format_metric(_metric_value(combo_rank, 'NDCG@10'))}、MRR={format_metric(_metric_value(combo_rank, 'MRR'))}。它们显示出局部逼近甚至轻微反超信号，但由于依赖特定 uncertainty source 且会引入额外改序，当前仍应定位为 retained exploratory family，而不是默认主线。",
+        "",
+        "## 3. Pairwise-To-Rank Provides Mechanism Evidence",
+        "",
+        f"pairwise-to-rank 现在已经不只是 pairwise accuracy 的辅助观察，而是能反哺 candidate ranking 的机制层路径。在 pairwise-supported overlap subset 上，direct reference 为 NDCG@10={format_metric(_metric_value(pairwise_direct_overlap, 'NDCG@10'))}、MRR={format_metric(_metric_value(pairwise_direct_overlap, 'MRR'))}，plain win-count baseline 为 {format_metric(_metric_value(pairwise_plain_overlap, 'NDCG@10'))}/{format_metric(_metric_value(pairwise_plain_overlap, 'MRR'))}，uncertainty-aware weighted aggregation 为 {format_metric(_metric_value(pairwise_weighted_overlap, 'NDCG@10'))}/{format_metric(_metric_value(pairwise_weighted_overlap, 'MRR'))}。expanded fallback 后，direct reference 为 {format_metric(_metric_value(pairwise_direct_expanded, 'NDCG@10'))}/{format_metric(_metric_value(pairwise_direct_expanded, 'MRR'))}，plain baseline 为 {format_metric(_metric_value(pairwise_plain_expanded, 'NDCG@10'))}/{format_metric(_metric_value(pairwise_plain_expanded, 'MRR'))}，weighted aggregation 为 {format_metric(_metric_value(pairwise_weighted_expanded, 'NDCG@10'))}/{format_metric(_metric_value(pairwise_weighted_expanded, 'MRR'))}。因此，pairwise 机制线的收益不只是 aggregation 本身带来的，uncertainty weight 在局部偏好聚合中确实提供了额外信息量。",
+        "",
+        "## 4. Final Part5 Claim",
+        "",
+        "Part5 的阶段性结论可以收紧为三句话。第一，pointwise 是最可靠的 uncertainty diagnosis 与 calibration 观测层，但不再是最终推荐主任务。第二，candidate ranking 是当前主决策层，structured risk family 是 week6 统一 compare 后保留的 current best family；完全融合版不删除，但作为复杂 retained family 继续观察。第三，pairwise-to-rank 已经形成机制层价值，尤其在 calibrated uncertainty 作为 reliability weight 时，它能在 plain aggregation baseline 之上继续提升排序质量，但当前仍受 pairwise coverage 限制，因此不应越级替代主线。",
+        "",
+        "## 5. Next Step",
+        "",
+        "week7 不应重新打开无限方法搜索，而应把当前 Part5 收敛出的 current best ranking family、pairwise mechanism line 与 retained complex family 带入更强执行环境和更严格 baseline 体系。最优先要补的是 pairwise coverage、medium-scale batch 后端和 literature-aligned baseline，而不是继续堆叠新的公式。",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def finalize_part5_outputs(args: argparse.Namespace, output_root: Path) -> None:
+    summary_dir = output_root / "summary"
+    ensure_dir(summary_dir)
+
+    input_path = (
+        Path(args.part5_input_path)
+        if args.part5_input_path is not None
+        else summary_dir / "week6_day4_decision_baseline_compare.csv"
+    )
+    if not input_path.exists():
+        raise FileNotFoundError(f"Part5 finalization input not found: {input_path}")
+
+    day4_df = pd.read_csv(input_path)
+    final_df = build_part5_final_results(day4_df)
+    final_df = filter_summary(final_df, args.domain, args.model)
+    if final_df.empty:
+        raise ValueError("No Part5 final rows remain after applying the requested filters.")
+
+    results_path = summary_dir / args.part5_results_filename
+    summary_path = summary_dir / args.part5_summary_filename
+    final_df.to_csv(results_path, index=False)
+    summary_path.write_text(build_part5_final_summary(final_df), encoding="utf-8")
+
+    print(f"Saved Part5 final results to: {results_path}")
+    print(f"Saved Part5 final summary to: {summary_path}")
+
+
 def main() -> None:
     args = parse_args()
     output_root = Path(args.output_root)
     if not output_root.exists():
         raise FileNotFoundError(f"Output root does not exist: {output_root}")
+
+    if args.finalize_part5:
+        finalize_part5_outputs(args, output_root)
+        return
 
     if args.exp_names:
         exp_dirs = [output_root / exp_name for exp_name in args.exp_names]

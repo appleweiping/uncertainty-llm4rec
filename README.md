@@ -135,6 +135,27 @@ The project now also starts to maintain a same-task baseline layer for the multi
 
 This baseline layer is intentionally narrower than the later literature-aligned benchmark stage. Its role is to make the Part5 method story experimentally honest first: each decision layer should have a same-task, non-uncertainty reference before stronger external baselines are brought in.
 
+The Part5 branch can now be finalized into a compact paper-facing evidence bundle:
+
+- `main_compare_multitask.py --finalize_part5` converts the same-task baseline matrix into `outputs/summary/part5_multitask_final_results.csv`
+- `outputs/summary/part5_multitask_final_summary.md` records the current interpretation of pointwise, candidate ranking, and pairwise-to-rank under the unified Part5 setting
+
+This finalization step is deliberately conservative. It identifies the current ranking family, keeps pairwise-to-rank as a coverage-limited mechanism line, and preserves complex retained variants without presenting them as the default method.
+
+The immediate research handoff is therefore not another round of formula expansion. The current Part5 branch should be treated as a closed method loop that still needs stronger evidence: paper-facing figures, better pairwise coverage, controlled medium-scale execution, four-domain DeepSeek validation on compact samples, and later literature-aligned baselines. Official API models remain useful as small external observation windows, but the main evidence path should move toward reproducible batch execution.
+
+The Part5 evidence layer now has a dedicated artifact entry point:
+
+- `main_part5_artifacts.py --refresh_part5_final --build_figures --build_pairwise_coverage` rebuilds the final Part5 table, paper-facing figure pack, and pairwise coverage evidence pack from existing summaries.
+- Part5 figures are written under `outputs/summary/figures/part5/`, and their plot-source tables are written under `outputs/summary/tables/part5/`.
+- `outputs/summary/part5_figure_pack.md` records how the figures support the current paper narrative without opening new ranking families.
+
+The cross-domain handoff is also now represented as a compact four-domain DeepSeek matrix:
+
+- `configs/exp/*_deepseek_pointwise.yaml` and `configs/exp/*_deepseek_rank.yaml` define compact Movies, Beauty, Books, and Electronics runs.
+- `src/analysis/aggregate_cross_domain_minimal_results.py` writes the four-domain status and compare tables under `outputs/summary/`.
+- `main_literature_baseline.py` and `main_batch_run.py` provide the first minimal baseline and registry hooks for the next larger-scale stage.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -200,6 +221,10 @@ For the new multi-task branch, the summary layer also starts to maintain a cross
 - `outputs/summary/week6_day3_estimator_compare.csv`
 - `outputs/summary/week6_day3_pairwise_coverage_compare.csv`
 - `outputs/summary/week6_day4_decision_baseline_compare.csv`
+- `outputs/summary/part5_multitask_final_results.csv`
+- `outputs/summary/part5_multitask_final_summary.md`
+- `outputs/summary/part5_figure_pack.md`
+- `outputs/summary/week6_magic7_4domain_deepseek_compare.csv`
 
 These files are designed to answer a narrower but important question than the full paper tables: what role does uncertainty appear to play at pointwise, pairwise, and ranking decision granularities once the first multi-task pipeline is closed?
 

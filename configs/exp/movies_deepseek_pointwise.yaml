@@ -1,0 +1,11 @@
+exp_name: movies_deepseek_pointwise
+data_config: configs/data/amazon_movies_small.yaml
+task_type: pointwise_yesno
+model_config: configs/model/deepseek.yaml
+input_path: data/processed/amazon_movies_small/test.jsonl
+output_dir: outputs/movies_deepseek_pointwise
+output_root: outputs
+prompt_path: prompts/pointwise_yesno.txt
+max_samples: 100
+overwrite: false
+
