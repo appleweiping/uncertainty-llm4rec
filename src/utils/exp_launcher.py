@@ -16,6 +16,9 @@ TASK_SCRIPT_MAP = {
     "ranking": "main_rank.py",
     "pairwise_preference": "main_pairwise.py",
     "pairwise": "main_pairwise.py",
+    "candidate_ranking_rerank": "main_rank_rerank.py",
+    "rank_rerank": "main_rank_rerank.py",
+    "rerank": "main_rank_rerank.py",
 }
 
 
@@ -36,6 +39,8 @@ def infer_task(cfg: dict[str, Any], exp_name: str) -> str:
         return task_type
     if exp_name.endswith("_rank") or "_rank_" in exp_name:
         return "candidate_ranking"
+    if "structured_risk" in exp_name or exp_name.endswith("_rerank") or "_rerank_" in exp_name:
+        return "candidate_ranking_rerank"
     if exp_name.endswith("_pairwise") or "_pairwise_" in exp_name:
         return "pairwise_preference"
     if exp_name.endswith("_pointwise") or "_pointwise_" in exp_name:
@@ -54,6 +59,8 @@ def expected_eval_ready(output_dir: Path, task: str) -> bool:
     task = str(task).strip().lower()
     if task == "candidate_ranking":
         return (output_dir / "tables" / "ranking_metrics.csv").exists()
+    if task in {"candidate_ranking_rerank", "rank_rerank", "rerank"}:
+        return (output_dir / "tables" / "rerank_results.csv").exists()
     if task == "pairwise_preference":
         return (output_dir / "tables" / "pairwise_metrics.csv").exists()
     if task in {"pointwise_yesno", "pointwise"}:
@@ -65,6 +72,8 @@ def expected_prediction_ready(output_dir: Path, task: str) -> bool:
     task = str(task).strip().lower()
     if task == "candidate_ranking":
         return (output_dir / "predictions" / "rank_predictions.jsonl").exists()
+    if task in {"candidate_ranking_rerank", "rank_rerank", "rerank"}:
+        return (output_dir / "reranked" / "rank_reranked.jsonl").exists()
     if task == "pairwise_preference":
         return (output_dir / "predictions" / "pairwise_predictions.jsonl").exists()
     if task in {"pointwise_yesno", "pointwise"}:
@@ -95,6 +104,7 @@ def build_experiment_row(
         "model": str(spec.get("model") or Path(model_config).stem or "unknown"),
         "method_family": str(spec.get("method_family") or cfg.get("method_family") or "local_hf_inference"),
         "method_variant": str(spec.get("method_variant") or cfg.get("method_variant") or "base_only"),
+        "is_current_best_family": bool(spec.get("is_current_best_family") or cfg.get("is_current_best_family") or False),
         "config_path": str(config_path),
         "input_path": str(input_path),
         "output_dir": str(output_dir),
@@ -194,4 +204,3 @@ def launch_experiment(
             }
         )
         return result
-

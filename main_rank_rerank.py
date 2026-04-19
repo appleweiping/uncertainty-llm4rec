@@ -19,6 +19,7 @@ from src.methods.uncertainty_ranker import (
 )
 from src.utils.paths import ensure_exp_dirs
 from src.utils.reproducibility import set_global_seed
+from src.utils.exp_io import load_yaml
 
 
 UNCERTAINTY_SOURCE_DEFAULTS = {
@@ -192,6 +193,7 @@ def build_result_row(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, default=None, help="Optional rerank config YAML.")
     parser.add_argument("--exp_name", type=str, default="beauty_qwen_rank", help="Direct ranking experiment name.")
     parser.add_argument("--new_exp_name", type=str, default=None, help="Output experiment name for rank rerank results.")
     parser.add_argument("--uncertainty_exp_name", type=str, default=None, help="Pointwise uncertainty experiment name.")
@@ -250,8 +252,19 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def merge_config(args: argparse.Namespace) -> argparse.Namespace:
+    if not args.config:
+        return args
+
+    cfg = load_yaml(args.config)
+    for key, value in cfg.items():
+        if hasattr(args, key):
+            setattr(args, key, value)
+    return args
+
+
 def main() -> None:
-    args = parse_args()
+    args = merge_config(parse_args())
     set_global_seed(args.seed)
 
     new_exp_name = args.new_exp_name or f"{args.exp_name}_rerank"

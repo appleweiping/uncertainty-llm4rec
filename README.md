@@ -178,6 +178,8 @@ The first Part6 literature-aligned baseline group is now represented through `ma
 
 The baseline evidence layer now also has a unified matrix entrance. `main_compare_baselines.py` reads the uncertainty-source comparison, same-task decision baseline table, and first literature-aligned baseline summary, then writes `outputs/summary/week7_day4_baseline_matrix.csv`. The companion note `docs/week7_day4_baseline_system.md` records the intended roles of official API observation models, the server-side local-HF main model group, and the reserved LoRA-adapted group without turning README into a runbook.
 
+The Week7 medium-scale handoff is represented through `configs/batch/week7_medium_scale.yaml` and `main_compare_week7_medium_scale.py`. The batch list registers Beauty pointwise, direct candidate ranking, pairwise, and the structured-risk current best rerank line under the same server-local Llama identity. The server run plan lives in `docs/week7_day5_server_run_plan.md`; it fixes the base-only first route, keeps LoRA as a later adapter-only extension, and reserves vLLM for a future throughput stage.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -229,6 +231,7 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 |-- main_literature_baseline.py
 |-- main_run_literature_baselines.py
 |-- main_compare_baselines.py
+|-- main_compare_week7_medium_scale.py
 |-- main_calibrate.py
 |-- main_rerank.py
 `-- main_uncertainty_compare.py
@@ -682,6 +685,7 @@ Under `outputs/summary/`, the repository also maintains:
 - `week6_final_literature_baseline_compare.csv`: compact task-aligned and literature-aligned ranking baseline compare table
 - `week7_day3_literature_baseline_summary.csv`: first Part6 ranking and pairwise literature-aligned baseline summary
 - `week7_day4_baseline_matrix.csv`: unified uncertainty-source, decision-formulation, and literature-aligned baseline matrix
+- `week7_day5_batch_status.csv` and `week7_day5_medium_scale_summary.csv`: server-local medium-scale handoff status and summary shell
 - `part5_single_domain_main_table.csv`, `part5_4domain_main_table.csv`, and `part5_pairwise_boundary_table.csv`: paper-ready consolidated Part5 table skeletons
 
 ## Evaluation Philosophy
@@ -705,6 +709,7 @@ The repository already supports:
 - the first Week7 server-backend handoff: unified local-HF backend wiring, Llama 3.1 8B Instruct model config, smoke experiment configs, server workflow docs, and a recoverable batch registry for local-HF smoke runs
 - the first Part6 literature-aligned baseline handoff: compact ranking and pairwise baseline groups under the same candidate/pairwise samples, with base-only and future adapter identity represented in the summary schema
 - a unified Part6 baseline matrix that places uncertainty-source, decision-formulation, and literature-aligned baselines under one schema before the server-side local-HF runs are scaled
+- a Week7 medium-scale server handoff that registers base-only Llama pointwise/ranking/pairwise runs and the structured-risk current best rerank line without reopening the ranking-family search
 
 Current experiments are best understood as method-grounding and pipeline validation. Week1 already covers:
 
