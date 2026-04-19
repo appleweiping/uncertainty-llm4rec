@@ -2,7 +2,7 @@
 
 Week7 changes the execution role of the project. Official APIs remain useful for small cross-model observations, case studies, and consistency checks, but they should not be treated as the main experiment throughput path. The main experiment path is now the server-side Hugging Face backend, with the base model stored on the execution machine and the code synchronized through Git.
 
-The selected Week7 main local model is now Qwen3-8B. The default config is `configs/model/qwen3_8b_local.yaml`, which points to `/home/ajifang/autodl-tmp/models/Qwen3-8B`. The model should be downloaded or mirrored through ModelScope, then loaded from that server-local path with `local_files_only: true`; runtime inference should not depend on online Hugging Face access. The currently verified server baseline is Ubuntu 22 with an RTX 4090-class 48G GPU, NVIDIA driver 570.211.01, CUDA 12.8 as reported by `nvidia-smi`, and `/home/ajifang` as the user workspace. If the server image mounts the model workspace under another path, adjust only `model_name_or_path` and `tokenizer_name_or_path`; do not hard-code SSH credentials or passwords into configs, docs, scripts, or logs.
+The selected Week7 main local model is now Qwen3-8B. The default config is `configs/model/qwen3_8b_local.yaml`, which now points to the current server-verified ModelScope path `/home/ajifang/models/Qwen/Qwen3-8B`. This replaces the earlier placeholder path as an execution-environment correction only; runtime inference should still load from a server-local path with `local_files_only: true` and should not depend on online Hugging Face access. The currently verified server baseline is Ubuntu 22 with an RTX 4090-class 48G GPU, NVIDIA driver 570.211.01, CUDA 12.8 as reported by `nvidia-smi`, and `/home/ajifang` as the user workspace. If the server image mounts the model workspace under another path, adjust only `model_name_or_path` and `tokenizer_name_or_path`; do not hard-code SSH credentials or passwords into configs, docs, scripts, or logs.
 
 The intended workflow is:
 
@@ -14,10 +14,10 @@ The intended workflow is:
 6. Run task-specific smoke configs before medium-scale experiments.
 7. Keep future LoRA adapters as separate server-side adapter directories rather than duplicating the base model.
 
-The default ModelScope preparation command is:
+The current server-verified ModelScope preparation command is:
 
 ```bash
-modelscope download --model Qwen/Qwen3-8B --local_dir /home/ajifang/autodl-tmp/models/Qwen3-8B
+modelscope download --model Qwen/Qwen3-8B --local_dir /home/ajifang/models/Qwen/Qwen3-8B
 ```
 
 The backend abstraction is centered on `src/llm/base.py`. API backends and local HF backends expose the same `generate()` and `batch_generate()` shape so that pointwise, pairwise, and candidate ranking inference can keep using the existing parser and evaluation stack.

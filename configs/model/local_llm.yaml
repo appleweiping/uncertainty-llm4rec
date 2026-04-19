@@ -3,8 +3,8 @@ provider: local_hf
 model_name: qwen3-8b-local
 download_source: modelscope
 modelscope_model_id: Qwen/Qwen3-8B
-model_name_or_path: /home/ajifang/autodl-tmp/models/Qwen3-8B
-tokenizer_name_or_path: /home/ajifang/autodl-tmp/models/Qwen3-8B
+model_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
 
 runtime:
   device: cuda

@@ -29,4 +29,4 @@ PYTHON_BIN=/path/to/env/bin/python BATCH_CONFIG=configs/batch/week7_local_scale.
 
 Credentials, temporary SSH links, remote desktop passwords, and one-off tokens must stay outside this repository. If a server path changes, only update model paths and non-sensitive workflow notes.
 
-The current default server backbone is Qwen3-8B loaded from the server-local ModelScope directory. Older Llama-named configs may remain as historical handoff artifacts, but the default Week7 smoke and medium-scale batches now point to `qwen3_8b_local`.
+The current default server backbone is Qwen3-8B loaded from the verified server-local ModelScope directory `/home/ajifang/models/Qwen/Qwen3-8B`. This path correction is an execution-environment update only. Older Llama-named configs may remain as historical handoff artifacts, but the default Week7 smoke and medium-scale batches now point to `qwen3_8b_local`.

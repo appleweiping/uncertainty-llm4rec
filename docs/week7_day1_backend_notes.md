@@ -12,10 +12,12 @@ Current selected server setting:
 - Default user workspace: `/home/ajifang`
 - Main local model: Qwen3-8B
 - Default config: `configs/model/qwen3_8b_local.yaml`
-- Default model path: `/home/ajifang/autodl-tmp/models/Qwen3-8B`
+- Verified model path on the current server: `/home/ajifang/models/Qwen/Qwen3-8B`
 - Download source: ModelScope, with runtime loading from the server-local path
 
 No server password, remote desktop password, SSH password, token, or temporary URL should be committed to this repository.
+
+The model path above is a server environment correction, not a method change. The earlier placeholder path was replaced because the current server has already verified local Qwen3 loading from `/home/ajifang/models/Qwen/Qwen3-8B`.
 
 The server already has a recent CUDA/driver stack, so the main remaining runtime risk is the Python environment. Because the default `python3` is 3.13.5, the first real run should happen inside a pinned conda environment after PyTorch, Transformers, Accelerate, and optional quantization dependencies are confirmed. The helper script supports `PYTHON_BIN=...` so the experiment runner can point to the intended environment without editing repository files.
 
