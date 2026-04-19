@@ -172,6 +172,8 @@ The final Part5 evidence layer is organized through these main entrances:
 
 Week7 begins the execution-layer upgrade for the next validation phase. The repository now distinguishes API backends as observation/comparison channels and the server-side Hugging Face backend as the main experiment path. The selected local main model is Llama 3.1 8B Instruct, configured through `configs/model/llama31_8b_instruct_local.yaml`; the backend implementation is `src/llm/local_hf_backend.py`, with `main_backend_check.py` providing a minimal schema and loading check before larger runs. The verified execution baseline is an Ubuntu 22 server with an RTX 4090 48G GPU and CUDA 12.8 reported by `nvidia-smi`; server credentials and temporary access links are intentionally kept outside the repository.
 
+Week7 also now has a structured batch and registry layer. `main_batch_run.py` reads `configs/batch/week7_local_scale.yaml`, builds task-specific commands for pointwise, candidate ranking, and pairwise smoke runs, and writes `outputs/summary/week7_day2_batch_status.csv`. The default mode is dry-run/registration; real server execution requires `--run`, while `--only_failed` supports targeted recovery from a previous registry. The related workflow notes live in `docs/week7_day2_batch_workflow.md` and `docs/week7_server_execution.md`.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -690,7 +692,7 @@ The repository already supports:
 - strict validation-to-test calibration
 - first-pass uncertainty-aware reranking
 - a compact Part5 multitask evidence version with pointwise diagnosis, pairwise mechanism evidence, candidate-ranking structured-risk reranking, four-domain DeepSeek compact replication, upgraded pairwise coverage, and paper-ready consolidated tables
-- the first Week7 server-backend handoff: unified local-HF backend wiring, Llama 3.1 8B Instruct model config, smoke experiment configs, and server workflow docs
+- the first Week7 server-backend handoff: unified local-HF backend wiring, Llama 3.1 8B Instruct model config, smoke experiment configs, server workflow docs, and a recoverable batch registry for local-HF smoke runs
 
 Current experiments are best understood as method-grounding and pipeline validation. Week1 already covers:
 
