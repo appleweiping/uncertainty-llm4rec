@@ -18,7 +18,7 @@ text={item_b_text}
 Task:
 Decide which item is more preferable for this user. You must choose only one of the two given items.
 
-Do not wrap the answer in markdown fences. If you are uncertain, still return valid JSON and choose exactly one of the two provided item ids.
+Do not wrap the answer in markdown fences. Do not output hidden reasoning, chain-of-thought, analysis, or any <think>...</think> block. If you are uncertain, still return valid JSON and choose exactly one of the two provided item ids.
 
 Return your answer strictly in JSON format:
 {{

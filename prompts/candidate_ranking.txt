@@ -15,7 +15,7 @@ Return a complete candidate ordering in `ranked_item_ids`, and return the top-{t
 Allowed item ids:
 {allowed_item_ids}
 
-Do not wrap the answer in markdown fences. If you are uncertain, still return valid JSON and keep every item inside the allowed list.
+Do not wrap the answer in markdown fences. Do not output hidden reasoning, chain-of-thought, analysis, or any <think>...</think> block. If you are uncertain, still return valid JSON and keep every item inside the allowed list.
 
 Return your answer strictly in JSON format:
 {{

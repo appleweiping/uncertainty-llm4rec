@@ -30,6 +30,7 @@ class LocalHFBackend(LLMBackend):
         load_in_8bit: bool = False,
         adapter_path: str | None = None,
         use_chat_template: bool = True,
+        enable_thinking: bool | None = None,
     ) -> None:
         self.model_name_or_path = str(model_name_or_path)
         self.tokenizer_name_or_path = str(tokenizer_name_or_path or model_name_or_path)
@@ -48,6 +49,7 @@ class LocalHFBackend(LLMBackend):
         self.load_in_8bit = bool(load_in_8bit)
         self.adapter_path = str(adapter_path).strip() if adapter_path else None
         self.use_chat_template = bool(use_chat_template)
+        self.enable_thinking = enable_thinking
 
         self._torch = None
         self._tokenizer = None
@@ -128,11 +130,23 @@ class LocalHFBackend(LLMBackend):
             and tokenizer is not None
             and getattr(tokenizer, "chat_template", None)
         ):
-            return tokenizer.apply_chat_template(
-                [{"role": "user", "content": prompt}],
-                tokenize=False,
-                add_generation_prompt=True,
-            )
+            template_kwargs: dict[str, Any] = {
+                "tokenize": False,
+                "add_generation_prompt": True,
+            }
+            if self.enable_thinking is not None:
+                template_kwargs["enable_thinking"] = bool(self.enable_thinking)
+            try:
+                return tokenizer.apply_chat_template(
+                    [{"role": "user", "content": prompt}],
+                    **template_kwargs,
+                )
+            except TypeError:
+                template_kwargs.pop("enable_thinking", None)
+                return tokenizer.apply_chat_template(
+                    [{"role": "user", "content": prompt}],
+                    **template_kwargs,
+                )
         return prompt
 
     def generate(self, prompt: str, **kwargs) -> dict[str, Any]:

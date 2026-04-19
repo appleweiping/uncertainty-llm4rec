@@ -21,6 +21,8 @@ The server already has a recent CUDA/driver stack, so the main remaining runtime
 
 The local HF backend is implemented in `src/llm/local_hf_backend.py` and registered through `src/llm/__init__.py` under `local_hf`, `hf`, and `transformers`. It uses the same inference-level shape as API backends, so `main_infer.py`, `main_rank.py`, and `main_pairwise.py` can continue to load the backend from `model_config`.
 
+Qwen3 can emit `<think>...</think>` reasoning blocks by default. The current server-local route therefore treats thinking control as an execution-layer compatibility issue, not a method change: `configs/model/qwen3_8b_local.yaml` sets `enable_thinking: false`, the local HF backend forwards that option to chat templates that support it, the prompt templates explicitly request final JSON only, and `src/llm/parser.py` strips any remaining thinking block before task-specific parsing. This shared cleanup guard covers pointwise, candidate ranking, and pairwise preference outputs.
+
 The first server-side check should run:
 
 ```bash

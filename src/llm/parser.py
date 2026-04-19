@@ -5,6 +5,14 @@ import re
 from typing import Any
 
 
+def strip_thinking_blocks(text: str) -> str:
+    """Remove model-visible reasoning wrappers before task-specific parsing."""
+    clean = str(text or "")
+    clean = re.sub(r"<think\b[^>]*>.*?</think>", "", clean, flags=re.I | re.S)
+    clean = re.sub(r"^\s*</think>\s*", "", clean, flags=re.I)
+    return clean.strip()
+
+
 def _strip_code_fence(text: str) -> str:
     text = text.strip()
     if text.startswith("```"):
@@ -121,7 +129,7 @@ def _extract_pairwise_text_preference(
 
 
 def parse_pointwise_response(text: str) -> dict[str, Any]:
-    raw = text.strip()
+    raw = strip_thinking_blocks(text)
     clean = _strip_code_fence(raw)
     obj = _extract_json_payload(clean)
 
@@ -156,7 +164,7 @@ def parse_candidate_ranking_response(
     allowed_item_ids: list[str] | None = None,
     topk: int | None = None,
 ) -> dict[str, Any]:
-    raw = text.strip()
+    raw = strip_thinking_blocks(text)
     clean = _strip_code_fence(raw)
     allowed_item_ids = [str(item_id).strip() for item_id in (allowed_item_ids or []) if str(item_id).strip()]
 
@@ -246,7 +254,7 @@ def parse_pairwise_preference_response(
     item_a_id: str | None = None,
     item_b_id: str | None = None,
 ) -> dict[str, Any]:
-    raw = text.strip()
+    raw = strip_thinking_blocks(text)
     clean = _strip_code_fence(raw)
 
     preferred_item = ""

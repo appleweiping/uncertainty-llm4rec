@@ -89,6 +89,7 @@ def build_backend_from_config(model_cfg_path: str | Path):
             load_in_8bit=bool(_first_present(runtime_cfg.get("load_in_8bit"), model_cfg.get("load_in_8bit"), False)),
             adapter_path=_first_present(runtime_cfg.get("adapter_path"), model_cfg.get("adapter_path")),
             use_chat_template=bool(_first_present(generation_cfg.get("use_chat_template"), model_cfg.get("use_chat_template"), True)),
+            enable_thinking=_first_present(generation_cfg.get("enable_thinking"), model_cfg.get("enable_thinking")),
         )
 
     model_name = _first_present(model_cfg.get("model_name"), generation_cfg.get("model_name"))

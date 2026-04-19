@@ -10,6 +10,8 @@ Description: {candidate_meta}
 Question:
 Should this item be recommended to the user?
 
+Do not output hidden reasoning, chain-of-thought, analysis, or any <think>...</think> block. Return only the final JSON object.
+
 Return your answer strictly in JSON format:
 {{
   "recommend": "yes" or "no",

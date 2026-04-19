@@ -22,7 +22,7 @@ modelscope download --model Qwen/Qwen3-8B --local_dir /home/ajifang/autodl-tmp/m
 
 The backend abstraction is centered on `src/llm/base.py`. API backends and local HF backends expose the same `generate()` and `batch_generate()` shape so that pointwise, pairwise, and candidate ranking inference can keep using the existing parser and evaluation stack.
 
-The local HF implementation lives in `src/llm/local_hf_backend.py`. It supports local model paths, tokenizer paths, `device_map`, dtype, batch size, local-files-only loading, optional 4-bit or 8-bit flags, optional adapter path, and chat-template formatting. This is intentionally a base-only first path: LoRA and vLLM should be added after the server-side base inference path is stable.
+The local HF implementation lives in `src/llm/local_hf_backend.py`. It supports local model paths, tokenizer paths, `device_map`, dtype, batch size, local-files-only loading, optional 4-bit or 8-bit flags, optional adapter path, and chat-template formatting. This is intentionally a base-only first path: LoRA and vLLM should be added after the server-side base inference path is stable. Qwen3 thinking output is handled as an execution compatibility layer: the config sets `enable_thinking: false`, prompts request final JSON only, and the shared parser removes any residual `<think>...</think>` block before parsing pointwise, candidate ranking, or pairwise responses.
 
 Minimal server checks:
 

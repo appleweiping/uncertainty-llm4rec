@@ -22,17 +22,20 @@ TASK_PROMPTS = {
         "User history: item A, item B.\n"
         "Candidate item id: C.\n"
         "Answer in JSON with fields recommend, confidence, reason. "
-        "recommend must be yes or no."
+        "recommend must be yes or no. Do not output chain-of-thought or <think> blocks; "
+        "return only the final JSON object."
     ),
     "candidate_ranking": (
         "User history: item A, item B.\n"
         "Candidates: I1, I2, I3.\n"
-        "Rank all candidates and answer in JSON with ranked_item_ids, confidence, reason."
+        "Rank all candidates and answer in JSON with ranked_item_ids, confidence, reason. "
+        "Do not output chain-of-thought or <think> blocks; return only the final JSON object."
     ),
     "pairwise_preference": (
         "User history: item A, item B.\n"
         "Item A id: I1. Item B id: I2.\n"
-        "Choose the preferred item and answer in JSON with preferred_item, confidence, reason."
+        "Choose the preferred item and answer in JSON with preferred_item, confidence, reason. "
+        "Do not output chain-of-thought or <think> blocks; return only the final JSON object."
     ),
 }
 
