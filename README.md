@@ -180,6 +180,8 @@ The baseline evidence layer now also has a unified matrix entrance. `main_compar
 
 The Week7 medium-scale handoff is represented through `configs/batch/week7_medium_scale.yaml` and `main_compare_week7_medium_scale.py`. The batch list registers Beauty pointwise, direct candidate ranking, pairwise, and the structured-risk current best rerank line under the same server-local Qwen3 identity. The server run plan lives in `docs/week7_day5_server_run_plan.md`; it fixes the base-only first route, keeps LoRA as a later adapter-only extension, and reserves vLLM for a future throughput stage.
 
+This handoff is no longer only a dry-run shell. The current server-local Qwen3 medium execution has already completed for Beauty at 300 samples per task, followed by pointwise isotonic calibration, structured-risk reranking, and task-native evaluation. The resulting summary is written to `outputs/summary/week7_day5_medium_scale_summary.csv`. In that setting, the direct ranking line reaches `NDCG@10=0.6244063031442281` and `MRR=0.5039761904761905`, while the current best structured-risk rerank line reaches `NDCG@10=0.624482549323477` and `MRR=0.5040555555555557`, with full rerank coverage and lower head exposure than the direct ranking medium line. Pairwise medium evaluation is also materialized in the same summary with `pairwise_accuracy=0.61`. This means Week7 has already crossed the boundary from backend scaffolding into real medium-scale server evidence under the Qwen3 local execution backbone.
+
 Before continuing server-side Week7 runs, the server data layer should be aligned with the local processed pony data rather than the old partial `data/` upload. The upload manifest in `docs/week7_server_data_upload_manifest.md` defines the minimal Beauty processed directory for immediate Qwen3 smoke / medium-scale runs and the recommended compact four-domain processed upload for the next validation stage.
 
 ## What Is Implemented
@@ -687,7 +689,7 @@ Under `outputs/summary/`, the repository also maintains:
 - `week6_final_literature_baseline_compare.csv`: compact task-aligned and literature-aligned ranking baseline compare table
 - `week7_day3_literature_baseline_summary.csv`: first Part6 ranking and pairwise literature-aligned baseline summary
 - `week7_day4_baseline_matrix.csv`: unified uncertainty-source, decision-formulation, and literature-aligned baseline matrix
-- `week7_day5_batch_status.csv` and `week7_day5_medium_scale_summary.csv`: server-local medium-scale handoff status and summary shell
+- `week7_day5_batch_status.csv` and `week7_day5_medium_scale_summary.csv`: server-local medium-scale status and consolidated summary after the real Beauty Qwen3 medium run
 - `part5_single_domain_main_table.csv`, `part5_4domain_main_table.csv`, and `part5_pairwise_boundary_table.csv`: paper-ready consolidated Part5 table skeletons
 
 ## Evaluation Philosophy

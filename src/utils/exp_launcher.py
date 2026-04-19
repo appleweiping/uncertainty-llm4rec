@@ -82,6 +82,23 @@ def expected_prediction_ready(output_dir: Path, task: str) -> bool:
     return False
 
 
+def registry_status_for_existing_artifacts(*, eval_ready: bool, prediction_ready: bool) -> tuple[str, str]:
+    if eval_ready and prediction_ready:
+        return (
+            "artifact_ready",
+            "artifacts already exist; registry refreshed without re-running the command",
+        )
+    if prediction_ready:
+        return (
+            "prediction_ready",
+            "prediction artifacts already exist; evaluation artifacts are still incomplete",
+        )
+    return (
+        "dry_run_ready",
+        "command built and input exists; use --run on server to execute",
+    )
+
+
 def build_experiment_row(
     *,
     spec: dict[str, Any],
@@ -158,11 +175,15 @@ def launch_experiment(
         return result
 
     if dry_run:
+        status, notes = registry_status_for_existing_artifacts(
+            eval_ready=bool(result.get("eval_ready")),
+            prediction_ready=bool(result.get("prediction_ready")),
+        )
         result.update(
             {
-                "status": "dry_run_ready",
+                "status": status,
                 "finished_at": now_iso(),
-                "notes": "command built and input exists; use --run on server to execute",
+                "notes": notes,
             }
         )
         return result
