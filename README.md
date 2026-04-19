@@ -176,6 +176,8 @@ Week7 also now has a structured batch and registry layer. `main_batch_run.py` re
 
 The first Part6 literature-aligned baseline group is now represented through `main_run_literature_baselines.py` and `configs/baseline/week7_literature_baselines.yaml`. It keeps the scope intentionally small but strict: ranking baselines and pairwise preference baselines run on the same Beauty candidate and pairwise samples, produce task-native prediction files, and summarize into `outputs/summary/week7_day3_literature_baseline_summary.csv`. The schema already records `model_family` and `adapter_path`, so the current base-only Llama path can later be extended to adapter-based comparisons without redefining the baseline table.
 
+The baseline evidence layer now also has a unified matrix entrance. `main_compare_baselines.py` reads the uncertainty-source comparison, same-task decision baseline table, and first literature-aligned baseline summary, then writes `outputs/summary/week7_day4_baseline_matrix.csv`. The companion note `docs/week7_day4_baseline_system.md` records the intended roles of official API observation models, the server-side local-HF main model group, and the reserved LoRA-adapted group without turning README into a runbook.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
@@ -226,6 +228,7 @@ In other words, the project has moved beyond pure diagnosis and into the first d
 |-- main_baseline_multitask.py
 |-- main_literature_baseline.py
 |-- main_run_literature_baselines.py
+|-- main_compare_baselines.py
 |-- main_calibrate.py
 |-- main_rerank.py
 `-- main_uncertainty_compare.py
@@ -678,6 +681,7 @@ Under `outputs/summary/`, the repository also maintains:
 - `week6_final_pairwise_coverage_upgrade.csv`: upgraded pairwise event coverage and overlap/expanded boundary table
 - `week6_final_literature_baseline_compare.csv`: compact task-aligned and literature-aligned ranking baseline compare table
 - `week7_day3_literature_baseline_summary.csv`: first Part6 ranking and pairwise literature-aligned baseline summary
+- `week7_day4_baseline_matrix.csv`: unified uncertainty-source, decision-formulation, and literature-aligned baseline matrix
 - `part5_single_domain_main_table.csv`, `part5_4domain_main_table.csv`, and `part5_pairwise_boundary_table.csv`: paper-ready consolidated Part5 table skeletons
 
 ## Evaluation Philosophy
@@ -700,6 +704,7 @@ The repository already supports:
 - a compact Part5 multitask evidence version with pointwise diagnosis, pairwise mechanism evidence, candidate-ranking structured-risk reranking, four-domain DeepSeek compact replication, upgraded pairwise coverage, and paper-ready consolidated tables
 - the first Week7 server-backend handoff: unified local-HF backend wiring, Llama 3.1 8B Instruct model config, smoke experiment configs, server workflow docs, and a recoverable batch registry for local-HF smoke runs
 - the first Part6 literature-aligned baseline handoff: compact ranking and pairwise baseline groups under the same candidate/pairwise samples, with base-only and future adapter identity represented in the summary schema
+- a unified Part6 baseline matrix that places uncertainty-source, decision-formulation, and literature-aligned baselines under one schema before the server-side local-HF runs are scaled
 
 Current experiments are best understood as method-grounding and pipeline validation. Week1 already covers:
 
