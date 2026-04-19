@@ -1,32 +1,31 @@
 batch_name: week7_local_scale
-description: Week7 local-HF smoke batch for pointwise, candidate ranking, and pairwise tasks.
+description: Week7 local-HF smoke batch for Qwen3-8B pointwise, candidate ranking, and pairwise tasks.
 python_bin: python
 status_path: outputs/summary/week7_day2_batch_status.csv
 log_dir: outputs/logs/batch/week7_local_scale
 
 experiments:
-  - exp_name: beauty_llama31_local_pointwise_smoke
+  - exp_name: beauty_qwen3_local_pointwise_smoke
     domain: beauty
     task: pointwise_yesno
-    model: llama31_8b_instruct_local
+    model: qwen3_8b_local
     method_family: local_hf_base_only
     method_variant: pointwise_smoke
-    config_path: configs/exp/beauty_llama31_local_pointwise_smoke.yaml
+    config_path: configs/exp/beauty_qwen3_local_pointwise_smoke.yaml
     enabled: true
-  - exp_name: beauty_llama31_local_rank_smoke
+  - exp_name: beauty_qwen3_local_rank_smoke
     domain: beauty
     task: candidate_ranking
-    model: llama31_8b_instruct_local
+    model: qwen3_8b_local
     method_family: local_hf_base_only
     method_variant: candidate_ranking_smoke
-    config_path: configs/exp/beauty_llama31_local_rank_smoke.yaml
+    config_path: configs/exp/beauty_qwen3_local_rank_smoke.yaml
     enabled: true
-  - exp_name: beauty_llama31_local_pairwise_smoke
+  - exp_name: beauty_qwen3_local_pairwise_smoke
     domain: beauty
     task: pairwise_preference
-    model: llama31_8b_instruct_local
+    model: qwen3_8b_local
     method_family: local_hf_base_only
     method_variant: pairwise_smoke
-    config_path: configs/exp/beauty_llama31_local_pairwise_smoke.yaml
+    config_path: configs/exp/beauty_qwen3_local_pairwise_smoke.yaml
     enabled: true
-

@@ -1,0 +1,16 @@
+exp_name: beauty_qwen3_local_rank_medium
+domain: beauty
+data_config: configs/data/amazon_beauty.yaml
+task_config: configs/task/candidate_ranking.yaml
+task_type: candidate_ranking
+model_config: configs/model/qwen3_8b_local.yaml
+input_path: data/processed/amazon_beauty/ranking_test.jsonl
+output_dir: outputs/beauty_qwen3_local_rank_medium
+output_root: outputs
+prompt_path: prompts/candidate_ranking.txt
+topk: 10
+max_samples: 300
+method_family: local_hf_base_only
+method_variant: direct_candidate_ranking_medium_scale
+is_current_best_family: false
+overwrite: false

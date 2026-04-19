@@ -10,9 +10,10 @@ Current selected server setting:
 - CUDA runtime reported by `nvidia-smi`: 12.8
 - Default `python3`: 3.13.5
 - Default user workspace: `/home/ajifang`
-- Main local model: Llama 3.1 8B Instruct
-- Default config: `configs/model/llama31_8b_instruct_local.yaml`
-- Default model path: `/home/ajifang/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct`
+- Main local model: Qwen3-8B
+- Default config: `configs/model/qwen3_8b_local.yaml`
+- Default model path: `/home/ajifang/autodl-tmp/models/Qwen3-8B`
+- Download source: ModelScope, with runtime loading from the server-local path
 
 No server password, remote desktop password, SSH password, token, or temporary URL should be committed to this repository.
 
@@ -24,7 +25,7 @@ The first server-side check should run:
 
 ```bash
 python main_backend_check.py \
-  --model_config configs/model/llama31_8b_instruct_local.yaml \
+  --model_config configs/model/qwen3_8b_local.yaml \
   --status_path outputs/summary/week7_day1_backend_check.csv
 ```
 
@@ -44,8 +45,8 @@ Set `RUN_SMOKE=1` before the helper only after the model path and Python depende
 
 The three smoke configs are:
 
-- `configs/exp/beauty_llama31_local_pointwise_smoke.yaml`
-- `configs/exp/beauty_llama31_local_rank_smoke.yaml`
-- `configs/exp/beauty_llama31_local_pairwise_smoke.yaml`
+- `configs/exp/beauty_qwen3_local_pointwise_smoke.yaml`
+- `configs/exp/beauty_qwen3_local_rank_smoke.yaml`
+- `configs/exp/beauty_qwen3_local_pairwise_smoke.yaml`
 
 Current boundary: this day establishes the backend abstraction and server workflow. It does not run medium-scale experiments, does not train LoRA, does not start vLLM serving, and does not change the Part5 structured-risk method family.

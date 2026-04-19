@@ -1,43 +1,43 @@
 batch_name: week7_medium_scale
-description: Week7 Beauty medium-scale server-local batch for Llama 3.1 8B Instruct.
+description: Week7 Beauty medium-scale server-local batch for Qwen3-8B.
 python_bin: python
 status_path: outputs/summary/week7_day5_batch_status.csv
 log_dir: outputs/logs/batch/week7_medium_scale
 
 experiments:
-  - exp_name: beauty_llama31_local_pointwise_medium
+  - exp_name: beauty_qwen3_local_pointwise_medium
     domain: beauty
     task: pointwise_yesno
-    model: llama31_8b_instruct_local
+    model: qwen3_8b_local
     method_family: local_hf_base_only
     method_variant: pointwise_medium_scale
     is_current_best_family: false
-    config_path: configs/exp/beauty_llama31_local_pointwise_medium.yaml
+    config_path: configs/exp/beauty_qwen3_local_pointwise_medium.yaml
     enabled: true
-  - exp_name: beauty_llama31_local_rank_medium
+  - exp_name: beauty_qwen3_local_rank_medium
     domain: beauty
     task: candidate_ranking
-    model: llama31_8b_instruct_local
+    model: qwen3_8b_local
     method_family: local_hf_base_only
     method_variant: direct_candidate_ranking_medium_scale
     is_current_best_family: false
-    config_path: configs/exp/beauty_llama31_local_rank_medium.yaml
+    config_path: configs/exp/beauty_qwen3_local_rank_medium.yaml
     enabled: true
-  - exp_name: beauty_llama31_local_structured_risk_medium
+  - exp_name: beauty_qwen3_local_structured_risk_medium
     domain: beauty
     task: candidate_ranking_rerank
-    model: llama31_8b_instruct_local
+    model: qwen3_8b_local
     method_family: structured_risk_family
     method_variant: nonlinear_structured_risk_rerank
     is_current_best_family: true
-    config_path: configs/exp/beauty_llama31_local_structured_risk_medium.yaml
+    config_path: configs/exp/beauty_qwen3_local_structured_risk_medium.yaml
     enabled: true
-  - exp_name: beauty_llama31_local_pairwise_medium
+  - exp_name: beauty_qwen3_local_pairwise_medium
     domain: beauty
     task: pairwise_preference
-    model: llama31_8b_instruct_local
+    model: qwen3_8b_local
     method_family: local_hf_base_only
     method_variant: pairwise_medium_scale
     is_current_best_family: false
-    config_path: configs/exp/beauty_llama31_local_pairwise_medium.yaml
+    config_path: configs/exp/beauty_qwen3_local_pairwise_medium.yaml
     enabled: true

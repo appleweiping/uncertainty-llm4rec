@@ -1,5 +1,5 @@
 domain: beauty
-model: llama31_8b_instruct_local
+model: qwen3_8b_local
 model_family: local_hf_base_only
 adapter_path:
 rank_input_path: data/processed/amazon_beauty/ranking_test.jsonl
@@ -16,4 +16,3 @@ rank_baselines:
 pairwise_baselines:
   - history_overlap_pairwise
   - popularity_prior_pairwise
-
