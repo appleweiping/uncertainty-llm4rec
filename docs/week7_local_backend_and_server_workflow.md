@@ -2,7 +2,7 @@
 
 Week7 changes the execution role of the project. Official APIs remain useful for small cross-model observations, case studies, and consistency checks, but they should not be treated as the main experiment throughput path. The main experiment path is now the server-side Hugging Face backend, with the base model stored on the execution machine and the code synchronized through Git.
 
-The selected Week7 main local model is Llama 3.1 8B Instruct. The default config is `configs/model/llama31_8b_instruct_local.yaml`, which points to `/home/ajifang/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct`. If the server image mounts the model workspace under another path, adjust only `model_name_or_path` and `tokenizer_name_or_path`; do not hard-code SSH credentials or passwords into configs, docs, scripts, or logs.
+The selected Week7 main local model is Llama 3.1 8B Instruct. The default config is `configs/model/llama31_8b_instruct_local.yaml`, which points to `/home/ajifang/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct`. The currently verified server baseline is Ubuntu 22 with an RTX 4090-class 48G GPU, NVIDIA driver 570.211.01, CUDA 12.8 as reported by `nvidia-smi`, and `/home/ajifang` as the user workspace. If the server image mounts the model workspace under another path, adjust only `model_name_or_path` and `tokenizer_name_or_path`; do not hard-code SSH credentials or passwords into configs, docs, scripts, or logs.
 
 The intended workflow is:
 
@@ -44,6 +44,12 @@ To run the backend check and the three smoke configs together:
 
 ```bash
 RUN_SMOKE=1 bash scripts/week7_day1_server_backend_check.sh "$PWD"
+```
+
+If the default `python3` is not the intended experiment environment, select the interpreter explicitly:
+
+```bash
+PYTHON_BIN=/path/to/env/bin/python RUN_SMOKE=1 bash scripts/week7_day1_server_backend_check.sh "$PWD"
 ```
 
 The local workstation can run a dry-run status file without loading the model:

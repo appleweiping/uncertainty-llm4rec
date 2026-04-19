@@ -170,7 +170,7 @@ The final Part5 evidence layer is organized through these main entrances:
 - `src/analysis/build_part5_consolidated_tables.py` builds the paper-ready consolidated tables.
 - `part5_artifact_map.md` records the main tables, figures, notes, and reports for this stage.
 
-Week7 begins the execution-layer upgrade for the next validation phase. The repository now distinguishes API backends as observation/comparison channels and the server-side Hugging Face backend as the main experiment path. The selected local main model is Llama 3.1 8B Instruct, configured through `configs/model/llama31_8b_instruct_local.yaml`; the backend implementation is `src/llm/local_hf_backend.py`, with `main_backend_check.py` providing a minimal schema and loading check before larger runs. Server credentials and temporary access links are intentionally kept outside the repository.
+Week7 begins the execution-layer upgrade for the next validation phase. The repository now distinguishes API backends as observation/comparison channels and the server-side Hugging Face backend as the main experiment path. The selected local main model is Llama 3.1 8B Instruct, configured through `configs/model/llama31_8b_instruct_local.yaml`; the backend implementation is `src/llm/local_hf_backend.py`, with `main_backend_check.py` providing a minimal schema and loading check before larger runs. The verified execution baseline is an Ubuntu 22 server with an RTX 4090 48G GPU and CUDA 12.8 reported by `nvidia-smi`; server credentials and temporary access links are intentionally kept outside the repository.
 
 ## What Is Implemented
 

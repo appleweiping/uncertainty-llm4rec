@@ -5,12 +5,18 @@ The Week7 Day1 backend line is now defined around a two-layer execution model. A
 Current selected server setting:
 
 - OS: Ubuntu 22
-- GPU: RTX 4090 class, 48G memory
+- GPU: NVIDIA GeForce RTX 4090, 49140 MiB memory
+- NVIDIA driver: 570.211.01
+- CUDA runtime reported by `nvidia-smi`: 12.8
+- Default `python3`: 3.13.5
+- Default user workspace: `/home/ajifang`
 - Main local model: Llama 3.1 8B Instruct
 - Default config: `configs/model/llama31_8b_instruct_local.yaml`
 - Default model path: `/home/ajifang/autodl-tmp/models/Meta-Llama-3.1-8B-Instruct`
 
 No server password, remote desktop password, SSH password, token, or temporary URL should be committed to this repository.
+
+The server already has a recent CUDA/driver stack, so the main remaining runtime risk is the Python environment. Because the default `python3` is 3.13.5, the first real run should happen inside a pinned conda environment after PyTorch, Transformers, Accelerate, and optional quantization dependencies are confirmed. The helper script supports `PYTHON_BIN=...` so the experiment runner can point to the intended environment without editing repository files.
 
 The local HF backend is implemented in `src/llm/local_hf_backend.py` and registered through `src/llm/__init__.py` under `local_hf`, `hf`, and `transformers`. It uses the same inference-level shape as API backends, so `main_infer.py`, `main_rank.py`, and `main_pairwise.py` can continue to load the backend from `model_config`.
 
@@ -26,6 +32,12 @@ The equivalent server-side helper is:
 
 ```bash
 bash scripts/week7_day1_server_backend_check.sh "$PWD"
+```
+
+If the conda environment exposes a different interpreter, run:
+
+```bash
+PYTHON_BIN=/path/to/env/bin/python bash scripts/week7_day1_server_backend_check.sh "$PWD"
 ```
 
 Set `RUN_SMOKE=1` before the helper only after the model path and Python dependencies are confirmed.
