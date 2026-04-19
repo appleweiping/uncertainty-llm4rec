@@ -22,8 +22,9 @@ TASK_PROMPTS = {
         "User history: item A, item B.\n"
         "Candidate item id: C.\n"
         "Answer in JSON with fields recommend, confidence, reason. "
-        "recommend must be yes or no. Do not output chain-of-thought or <think> blocks; "
-        "return only the final JSON object."
+        "recommend must be yes or no. confidence must be a numeric value between 0 and 1, "
+        "not a word such as low, medium, or high. Do not output chain-of-thought or <think> "
+        "blocks; return only the final JSON object."
     ),
     "candidate_ranking": (
         "User history: item A, item B.\n"

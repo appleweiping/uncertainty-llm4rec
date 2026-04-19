@@ -31,7 +31,20 @@ def _normalize_confidence(value: Any) -> float:
         text = str(value).strip().replace("%", "")
         if text == "":
             return -1.0
-        conf = float(text)
+        confidence_labels = {
+            "very low": 0.1,
+            "low": 0.2,
+            "medium": 0.5,
+            "mid": 0.5,
+            "moderate": 0.5,
+            "high": 0.8,
+            "very high": 0.9,
+        }
+        normalized_text = re.sub(r"[\s_\-]+", " ", text.lower()).strip()
+        if normalized_text in confidence_labels:
+            conf = confidence_labels[normalized_text]
+        else:
+            conf = float(text)
 
     if conf > 1.0:
         conf = conf / 100.0

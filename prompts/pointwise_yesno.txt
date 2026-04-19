@@ -15,6 +15,6 @@ Do not output hidden reasoning, chain-of-thought, analysis, or any <think>...</t
 Return your answer strictly in JSON format:
 {{
   "recommend": "yes" or "no",
-  "confidence": a number between 0 and 1 indicating how confident you are in this yes/no decision,
+  "confidence": a numeric value between 0 and 1 indicating how confident you are in this yes/no decision. Do not use words such as "low", "medium", or "high",
   "reason": "one short sentence"
 }}
