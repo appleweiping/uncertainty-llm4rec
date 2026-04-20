@@ -8,9 +8,9 @@ tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
 
 runtime:
   device: cuda
-  device_map: cuda:0
+  device_map: auto
   dtype: bfloat16
-  batch_size: 1
+  batch_size: 4
   local_files_only: true
   trust_remote_code: true
   load_in_4bit: false

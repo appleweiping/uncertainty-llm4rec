@@ -56,11 +56,7 @@ class LocalHFBackend(LLMBackend):
         self._model = None
 
     def _uses_single_device(self) -> bool:
-        if self.device_map is None:
-            return True
-        if isinstance(self.device_map, str):
-            return self.device_map not in {"auto", "balanced", "balanced_low_0", "sequential"}
-        return False
+        return self.device_map is None or self.device_map == "none"
 
     def _torch_dtype(self):
         torch = self._torch
