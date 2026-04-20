@@ -143,22 +143,47 @@ def _build_training_dataset(
 
     eos_token = tokenizer.eos_token or ""
     records = []
+    dropped_all_masked = 0
+
     for example in examples:
         prompt = example.prompt.strip()
         response = example.target_text.strip()
-        text = f"{prompt}\n{response}{eos_token}"
+
         prompt_only = f"{prompt}\n"
-        prompt_ids = tokenizer(prompt_only, add_special_tokens=False)["input_ids"]
+        text = f"{prompt}\n{response}{eos_token}"
+
+        prompt_ids = tokenizer(
+            prompt_only,
+            truncation=True,
+            max_length=max_seq_length,
+            padding=False,
+            add_special_tokens=False,
+        )["input_ids"]
+
         full_ids = tokenizer(
             text,
             truncation=True,
             max_length=max_seq_length,
             padding=False,
+            add_special_tokens=False,
         )["input_ids"]
         labels = full_ids[:]
         prompt_length = min(len(prompt_ids), len(labels))
         labels[:prompt_length] = [-100] * prompt_length
+
+        if all(token_id == -100 for token_id in labels):
+            dropped_all_masked += 1
+            continue
+
         records.append({"input_ids": full_ids, "labels": labels})
+
+    if not records:
+        raise ValueError(
+            "All training examples were truncated into fully masked labels. "
+            "Increase max_seq_length or shorten the prompt."
+        )
+
+    print(f"[lora_rank_trainer] dropped fully-masked samples: {dropped_all_masked}")
 
     dataset = Dataset.from_list(records)
 
@@ -167,7 +192,6 @@ def _build_training_dataset(
         return batch
 
     dataset = dataset.map(_with_attention_mask, batched=True)
-    dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
     return dataset
 
 
@@ -188,7 +212,7 @@ def _write_adapter_manifest(ctx: TrainingRunContext, *, train_count: int, valid_
         "training": ctx.training_cfg,
         "evaluation": ctx.evaluation_cfg,
         "support_signals": ctx.support_signals,
-        "created_at": _utc_now_iso(),
+        "created_at": utc_now_iso(),
     }
     (ctx.adapter_output_dir / "adapter_manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2),
@@ -269,7 +293,7 @@ def _run_startup_check(
             2,
         ),
         "dry_run": bool(ctx.training_cfg.get("dry_run", False)),
-        "created_at": _utc_now_iso(),
+        "created_at": utc_now_iso(),
     }
     ctx.startup_check_path.write_text(json.dumps(check, ensure_ascii=False, indent=2), encoding="utf-8")
     return check
@@ -356,7 +380,6 @@ def _run_actual_training(
 
     training_args = TrainingArguments(
         output_dir=str(ctx.logs_dir / "trainer_outputs"),
-        overwrite_output_dir=True,
         num_train_epochs=float(ctx.training_cfg.get("num_train_epochs", 1.0)),
         per_device_train_batch_size=int(ctx.training_cfg.get("per_device_train_batch_size", 1)),
         per_device_eval_batch_size=int(ctx.training_cfg.get("per_device_eval_batch_size", 1)),
@@ -365,7 +388,7 @@ def _run_actual_training(
         warmup_ratio=float(ctx.training_cfg.get("warmup_ratio", 0.03)),
         logging_steps=int(ctx.training_cfg.get("logging_steps", 10)),
         save_strategy=str(ctx.training_cfg.get("save_strategy", "no")),
-        evaluation_strategy=str(ctx.training_cfg.get("eval_strategy", "epoch")),
+        eval_strategy=str(ctx.training_cfg.get("eval_strategy", "epoch")),
         bf16=bool(ctx.training_cfg.get("bf16", True)),
         fp16=bool(ctx.training_cfg.get("fp16", False)),
         gradient_checkpointing=bool(ctx.training_cfg.get("gradient_checkpointing", True)),
@@ -475,8 +498,8 @@ def run_lora_rank_training(
                 "logs_dir": str(ctx.logs_dir),
                 "startup_check_path": str(ctx.startup_check_path),
                 "dataset_preview_path": str(ctx.dataset_preview_path),
-                "started_at": _utc_now_iso(),
-                "finished_at": _utc_now_iso(),
+                "started_at": utc_now_iso(),
+                "finished_at": utc_now_iso(),
                 "notes": "Startup-only validation for the Week7.5 ranking LoRA framework.",
             },
             ctx.train_status_path,
@@ -517,7 +540,7 @@ def run_lora_rank_training(
         "strongest_handcrafted_baseline": str(ctx.support_signals.get("structured_risk_exp_name", "")),
         "direct_ranking_baseline": str(ctx.support_signals.get("direct_ranking_exp_name", "")),
         "pointwise_signal_path": str(ctx.support_signals.get("pointwise_uncertainty_path", "")),
-        "created_at": _utc_now_iso(),
+        "created_at": utc_now_iso(),
     }
     save_training_summary(summary, ctx.training_summary_path)
     update_framework_manifest(
@@ -564,8 +587,8 @@ def run_lora_rank_training(
             "logs_dir": str(ctx.logs_dir),
             "startup_check_path": str(ctx.startup_check_path),
             "dataset_preview_path": str(ctx.dataset_preview_path),
-            "started_at": _utc_now_iso(),
-            "finished_at": _utc_now_iso(),
+            "started_at": utc_now_iso(),
+            "finished_at": utc_now_iso(),
             "notes": "Week7.5 Day1 ranking-only LoRA framework skeleton. Pointwise and pairwise remain supporting layers.",
         },
         ctx.train_status_path,
