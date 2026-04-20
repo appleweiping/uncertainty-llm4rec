@@ -6,8 +6,10 @@ from pathlib import Path
 from src.analysis.aggregate_framework_compare import (
     FRAMEWORK_COMPARE_COLUMNS,
     build_framework_compare_rows,
+    summarize_framework_compare,
     write_framework_compare,
 )
+from src.training.framework_artifacts import append_stage_status, update_framework_manifest, utc_now_iso, write_compare_markdown
 from src.utils.exp_io import load_yaml
 
 
@@ -22,11 +24,17 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     config = load_yaml(args.config)
-    default_output_path = (
-        config.get("summary", {}) or {}
-    ).get("framework_compare_path", "outputs/summary/week7_5_framework_compare.csv")
+    summary_cfg = config.get("summary", {}) or {}
+    default_output_path = summary_cfg.get("framework_compare_path", "outputs/summary/week7_5_framework_compare.csv")
     output_path = Path(args.output_path or default_output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    compare_markdown_path = Path(
+        str(summary_cfg.get("framework_compare_markdown_path", "outputs/summary/week7_5_framework_compare.md"))
+    )
+    train_status_path = Path(str(summary_cfg.get("train_status_path", "outputs/summary/week7_5_train_status.csv")))
+    framework_manifest_path = Path(
+        str(summary_cfg.get("framework_manifest_path", "outputs/beauty_qwen3_rank_framework_v1/framework_run_manifest.json"))
+    )
 
     if args.init_only and output_path.exists():
         print(f"Week7.5 framework compare already exists: {output_path}")
@@ -36,6 +44,48 @@ def main() -> None:
     if not rows:
         rows = []
     write_framework_compare(rows, output_path)
+    write_compare_markdown(rows, compare_markdown_path)
+    compare_summary = summarize_framework_compare(rows)
+    append_stage_status(
+        {
+            "run_name": str(config.get("run_name", "week7_5_framework")),
+            "domain": str(config.get("domain", "beauty")),
+            "task": "candidate_ranking_compare",
+            "method_family": str(config.get("method_family", "trainable_lora_framework")),
+            "method_variant": str(config.get("method_variant", config.get("run_name", "framework_v1"))),
+            "model": str(config.get("model_name", "qwen3_8b_local")),
+            "stage": "framework_compare",
+            "status": "compare_ready",
+            "dry_run": False,
+            "startup_check_only": False,
+            "framework_compare_path": str(output_path),
+            "framework_compare_markdown_path": str(compare_markdown_path),
+            "started_at": utc_now_iso(),
+            "finished_at": utc_now_iso(),
+            "notes": "Framework compare refreshed from direct ranking, structured risk, literature baselines, and any available framework metrics.",
+        },
+        train_status_path,
+    )
+    update_framework_manifest(
+        path=framework_manifest_path,
+        run_name=str(config.get("run_name", "week7_5_framework")),
+        domain=str(config.get("domain", "beauty")),
+        model=str(config.get("model_name", "qwen3_8b_local")),
+        method_family=str(config.get("method_family", "trainable_lora_framework")),
+        method_variant=str(config.get("method_variant", config.get("run_name", "framework_v1"))),
+        adapter_output_dir=str(config.get("adapter_output_dir", "")),
+        framework_output_dir=str(config.get("framework_output_dir", "")),
+        compare_csv_path=str(output_path),
+        compare_markdown_path=str(compare_markdown_path),
+        training_summary_path=str(
+            summary_cfg.get("training_summary_path", "artifacts/logs/qwen3_rank_beauty_framework_v1/training_summary.csv")
+        ),
+        startup_check_path=str(summary_cfg.get("startup_check_path", "outputs/summary/week7_5_startup_check.json")),
+        dataset_preview_path=str(summary_cfg.get("dataset_preview_path", "outputs/summary/week7_5_dataset_preview.csv")),
+        latest_stage="framework_compare",
+        latest_status="compare_ready",
+        extra_fields=compare_summary,
+    )
     print(f"Saved Week7.5 framework compare to: {output_path}")
     print(f"Rows: {len(rows)}")
 

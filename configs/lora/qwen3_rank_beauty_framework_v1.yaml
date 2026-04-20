@@ -29,7 +29,7 @@ model:
   trust_remote_code: true
 
 training:
-  dry_run: true
+  dry_run: false
   max_train_samples: 200
   max_valid_samples: 200
   num_train_epochs: 1.0
@@ -80,6 +80,11 @@ support_signals:
 summary:
   train_status_path: outputs/summary/week7_5_train_status.csv
   framework_compare_path: outputs/summary/week7_5_framework_compare.csv
+  framework_compare_markdown_path: outputs/summary/week7_5_framework_compare.md
+  startup_check_path: outputs/summary/week7_5_startup_check.json
+  dataset_preview_path: outputs/summary/week7_5_dataset_preview.csv
+  training_summary_path: artifacts/logs/qwen3_rank_beauty_framework_v1/training_summary.csv
+  framework_manifest_path: outputs/beauty_qwen3_rank_framework_v1/framework_run_manifest.json
   framework_metrics_path: outputs/beauty_qwen3_rank_framework_v1/tables/ranking_metrics.csv
   direct_ranking_metrics_path: outputs/beauty_qwen3_local_rank_medium/tables/ranking_metrics.csv
   structured_risk_metrics_path: outputs/beauty_qwen3_local_structured_risk_medium/tables/rerank_results.csv

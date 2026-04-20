@@ -1,0 +1,47 @@
+batch_name: week7_5_rank_train
+default_run: false
+
+experiments:
+  - exp_name: qwen3_rank_beauty_framework_v1_startup_check
+    task: candidate_ranking_train
+    domain: beauty
+    model: qwen3_8b_local
+    method_family: trainable_lora_framework
+    method_variant: qwen3_rank_beauty_framework_v1
+    is_current_best_family: false
+    command: python main_lora_train_rank.py --config configs/lora/qwen3_rank_beauty_framework_v1.yaml --startup_check
+    output_dir: outputs/summary
+    notes: Week7.5 Day2 startup validation for the Beauty ranking LoRA framework.
+
+  - exp_name: qwen3_rank_beauty_framework_v1_train
+    task: candidate_ranking_train
+    domain: beauty
+    model: qwen3_8b_local
+    method_family: trainable_lora_framework
+    method_variant: qwen3_rank_beauty_framework_v1
+    is_current_best_family: false
+    command: python main_lora_train_rank.py --config configs/lora/qwen3_rank_beauty_framework_v1.yaml
+    output_dir: artifacts/adapters/qwen3_rank_beauty_framework_v1
+    notes: First Beauty-domain LoRA framework training run.
+
+  - exp_name: qwen3_rank_beauty_framework_v1_eval
+    task: candidate_ranking
+    domain: beauty
+    model: qwen3_8b_local
+    method_family: trainable_lora_framework
+    method_variant: qwen3_rank_beauty_framework_v1
+    is_current_best_family: false
+    command: python main_eval_lora_rank.py --config configs/lora/qwen3_rank_beauty_framework_v1.yaml --overwrite
+    output_dir: outputs/beauty_qwen3_rank_framework_v1
+    notes: Evaluate the first LoRA-adapted framework checkpoint under the standard ranking metrics.
+
+  - exp_name: qwen3_rank_beauty_framework_v1_compare
+    task: candidate_ranking_compare
+    domain: beauty
+    model: qwen3_8b_local
+    method_family: trainable_lora_framework
+    method_variant: qwen3_rank_beauty_framework_v1
+    is_current_best_family: false
+    command: python main_compare_framework.py --config configs/lora/qwen3_rank_beauty_framework_v1.yaml
+    output_dir: outputs/summary
+    notes: Refresh the framework compare CSV and markdown summary after evaluation.

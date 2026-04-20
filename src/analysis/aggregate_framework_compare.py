@@ -193,3 +193,15 @@ def write_framework_compare(rows: list[dict[str, Any]], output_path: str | Path)
         writer.writeheader()
         for row in rows:
             writer.writerow({column: row.get(column, "") for column in FRAMEWORK_COMPARE_COLUMNS})
+
+
+def summarize_framework_compare(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    framework_rows = [row for row in rows if str(row.get("is_trainable_framework", "")).lower() == "true"]
+    current_best_rows = [row for row in rows if str(row.get("is_current_best_family", "")).lower() == "true"]
+    return {
+        "row_count": len(rows),
+        "framework_row_count": len(framework_rows),
+        "current_best_row_count": len(current_best_rows),
+        "framework_metrics_ready": bool(framework_rows),
+        "compare_ready_for_server_demo": bool(current_best_rows),
+    }

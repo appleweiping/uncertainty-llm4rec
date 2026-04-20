@@ -23,6 +23,34 @@ def load_rank_samples(path: str | Path, max_samples: int | None = None) -> list[
     return load_jsonl(path, max_samples=max_samples)
 
 
+def summarize_rank_samples(samples: list[dict[str, Any]]) -> dict[str, Any]:
+    if not samples:
+        return {
+            "sample_count": 0,
+            "avg_candidates": 0.0,
+            "min_candidates": 0,
+            "max_candidates": 0,
+            "positive_in_candidate_rate": 0.0,
+        }
+
+    candidate_counts: list[int] = []
+    positive_hits = 0
+    for sample in samples:
+        candidate_ids = [str(item_id) for item_id in sample.get("candidate_item_ids", [])]
+        candidate_counts.append(len(candidate_ids))
+        positive_item_id = str(sample.get("positive_item_id", "")).strip()
+        if positive_item_id and positive_item_id in candidate_ids:
+            positive_hits += 1
+
+    return {
+        "sample_count": len(samples),
+        "avg_candidates": sum(candidate_counts) / len(candidate_counts),
+        "min_candidates": min(candidate_counts),
+        "max_candidates": max(candidate_counts),
+        "positive_in_candidate_rate": positive_hits / len(samples),
+    }
+
+
 def _normalize_target_ranking(sample: dict[str, Any], topk: int) -> list[str]:
     candidate_ids = [str(item_id) for item_id in sample.get("candidate_item_ids", [])]
     positive_item_id = str(sample.get("positive_item_id", "")).strip()

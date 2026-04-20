@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +9,9 @@ from src.training.rank_dataset import (
     RankSupervisedExample,
     build_rank_supervised_examples,
     load_rank_samples,
+    summarize_rank_samples,
 )
+from src.training.framework_artifacts import update_framework_manifest, utc_now_iso
 from src.training.training_log import append_training_status, save_training_summary
 from src.utils.exp_io import load_yaml
 
@@ -40,10 +41,11 @@ class TrainingRunContext:
     evaluation_cfg: dict[str, Any]
     support_signals: dict[str, Any]
     model_cfg: dict[str, Any]
-
-
-def _utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    startup_check_path: Path
+    dataset_preview_path: Path
+    training_summary_path: Path
+    framework_manifest_path: Path
+    compare_markdown_path: Path
 
 
 def build_training_run_context(config: dict[str, Any]) -> TrainingRunContext:
@@ -78,6 +80,15 @@ def build_training_run_context(config: dict[str, Any]) -> TrainingRunContext:
         evaluation_cfg=evaluation_cfg,
         support_signals=config.get("support_signals", {}) or {},
         model_cfg=model_cfg,
+        startup_check_path=Path(str(summary_cfg.get("startup_check_path", "outputs/summary/week7_5_startup_check.json"))),
+        dataset_preview_path=Path(str(summary_cfg.get("dataset_preview_path", "outputs/summary/week7_5_dataset_preview.csv"))),
+        training_summary_path=Path(str(summary_cfg.get("training_summary_path", "artifacts/logs/qwen3_rank_beauty_framework_v1/training_summary.csv"))),
+        framework_manifest_path=Path(
+            str(summary_cfg.get("framework_manifest_path", "outputs/beauty_qwen3_rank_framework_v1/framework_run_manifest.json"))
+        ),
+        compare_markdown_path=Path(
+            str(summary_cfg.get("framework_compare_markdown_path", "outputs/summary/week7_5_framework_compare.md"))
+        ),
     )
 
 
@@ -90,6 +101,10 @@ def _ensure_run_dirs(ctx: TrainingRunContext) -> None:
         ctx.logs_dir,
         ctx.train_status_path.parent,
         ctx.framework_compare_path.parent,
+        ctx.startup_check_path.parent,
+        ctx.dataset_preview_path.parent,
+        ctx.framework_manifest_path.parent,
+        ctx.compare_markdown_path.parent,
     ]:
         path.mkdir(parents=True, exist_ok=True)
 
@@ -179,6 +194,85 @@ def _write_adapter_manifest(ctx: TrainingRunContext, *, train_count: int, valid_
         json.dumps(manifest, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+
+
+def _write_dataset_preview(
+    *,
+    ctx: TrainingRunContext,
+    train_rows: list[dict[str, Any]],
+    valid_rows: list[dict[str, Any]],
+) -> None:
+    preview_rows = [
+        {"split": "train", **summarize_rank_samples(train_rows)},
+        {"split": "valid", **summarize_rank_samples(valid_rows)},
+    ]
+    header = list(preview_rows[0].keys())
+    with ctx.dataset_preview_path.open("w", encoding="utf-8", newline="") as f:
+        import csv
+
+        writer = csv.DictWriter(f, fieldnames=header)
+        writer.writeheader()
+        for row in preview_rows:
+            writer.writerow(row)
+
+
+def _run_startup_check(
+    *,
+    ctx: TrainingRunContext,
+    train_rows: list[dict[str, Any]],
+    valid_rows: list[dict[str, Any]],
+    train_examples: list[RankSupervisedExample],
+    valid_examples: list[RankSupervisedExample],
+) -> dict[str, Any]:
+    model_name_or_path = str(
+        ctx.model_cfg.get("model_name_or_path")
+        or ctx.model_cfg.get("tokenizer_name_or_path")
+        or ""
+    ).strip()
+    tokenizer_name_or_path = str(
+        ctx.model_cfg.get("tokenizer_name_or_path")
+        or ctx.model_cfg.get("model_name_or_path")
+        or ""
+    ).strip()
+    target_modules = list(
+        ctx.training_cfg.get(
+            "target_modules",
+            ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+        )
+    )
+    check = {
+        "run_name": ctx.run_name,
+        "domain": ctx.domain,
+        "task": ctx.task,
+        "train_input_exists": ctx.train_input_path.exists(),
+        "valid_input_exists": ctx.valid_input_path.exists(),
+        "eval_input_exists": ctx.eval_input_path.exists(),
+        "prompt_path_exists": ctx.prompt_path.exists(),
+        "base_model_config_exists": ctx.base_model_config.exists(),
+        "model_name_or_path": model_name_or_path,
+        "tokenizer_name_or_path": tokenizer_name_or_path,
+        "uses_local_model_path": bool(model_name_or_path.startswith("/") or ":" in model_name_or_path),
+        "target_module_count": len(target_modules),
+        "adapter_output_dir": str(ctx.adapter_output_dir),
+        "framework_output_dir": str(ctx.framework_output_dir),
+        "logs_dir": str(ctx.logs_dir),
+        "train_sample_count": len(train_rows),
+        "valid_sample_count": len(valid_rows),
+        "train_example_count": len(train_examples),
+        "valid_example_count": len(valid_examples),
+        "avg_train_prompt_chars": round(
+            sum(len(example.prompt) for example in train_examples) / max(len(train_examples), 1),
+            2,
+        ),
+        "avg_valid_prompt_chars": round(
+            sum(len(example.prompt) for example in valid_examples) / max(len(valid_examples), 1),
+            2,
+        ),
+        "dry_run": bool(ctx.training_cfg.get("dry_run", False)),
+        "created_at": _utc_now_iso(),
+    }
+    ctx.startup_check_path.write_text(json.dumps(check, ensure_ascii=False, indent=2), encoding="utf-8")
+    return check
 
 
 def _run_actual_training(
@@ -295,6 +389,7 @@ def run_lora_rank_training(
     config_path: str | Path,
     *,
     dry_run: bool = False,
+    startup_check: bool = False,
     max_train_samples: int | None = None,
     max_valid_samples: int | None = None,
 ) -> dict[str, Any]:
@@ -327,6 +422,74 @@ def run_lora_rank_training(
     _write_example_preview(train_examples, ctx.logs_dir / "train_supervised_examples.jsonl")
     _write_example_preview(valid_examples, ctx.logs_dir / "valid_supervised_examples.jsonl")
     _write_adapter_manifest(ctx, train_count=len(train_examples), valid_count=len(valid_examples))
+    _write_dataset_preview(ctx=ctx, train_rows=train_rows, valid_rows=valid_rows)
+    startup_report = _run_startup_check(
+        ctx=ctx,
+        train_rows=train_rows,
+        valid_rows=valid_rows,
+        train_examples=train_examples,
+        valid_examples=valid_examples,
+    )
+
+    if startup_check:
+        update_framework_manifest(
+            path=ctx.framework_manifest_path,
+            run_name=ctx.run_name,
+            domain=ctx.domain,
+            model=ctx.model_name,
+            method_family=ctx.method_family,
+            method_variant=ctx.method_variant,
+            adapter_output_dir=str(ctx.adapter_output_dir),
+            framework_output_dir=str(ctx.framework_output_dir),
+            compare_csv_path=str(ctx.framework_compare_path),
+            compare_markdown_path=str(ctx.compare_markdown_path),
+            training_summary_path=str(ctx.training_summary_path),
+            startup_check_path=str(ctx.startup_check_path),
+            dataset_preview_path=str(ctx.dataset_preview_path),
+            latest_stage="startup_check",
+            latest_status="startup_ready",
+            extra_fields={
+                "train_samples": len(train_examples),
+                "valid_samples": len(valid_examples),
+                "startup_report": startup_report,
+                "adapter_ready": False,
+                "framework_metrics_ready": False,
+            },
+        )
+        append_training_status(
+            {
+                "run_name": ctx.run_name,
+                "domain": ctx.domain,
+                "task": ctx.task,
+                "method_family": ctx.method_family,
+                "method_variant": ctx.method_variant,
+                "model": ctx.model_name,
+                "stage": "startup_check",
+                "status": "startup_ready",
+                "dry_run": True,
+                "startup_check_only": True,
+                "train_samples": len(train_examples),
+                "valid_samples": len(valid_examples),
+                "adapter_output_dir": str(ctx.adapter_output_dir),
+                "framework_output_dir": str(ctx.framework_output_dir),
+                "logs_dir": str(ctx.logs_dir),
+                "startup_check_path": str(ctx.startup_check_path),
+                "dataset_preview_path": str(ctx.dataset_preview_path),
+                "started_at": _utc_now_iso(),
+                "finished_at": _utc_now_iso(),
+                "notes": "Startup-only validation for the Week7.5 ranking LoRA framework.",
+            },
+            ctx.train_status_path,
+        )
+        return {
+            "run_name": ctx.run_name,
+            "adapter_output_dir": str(ctx.adapter_output_dir),
+            "framework_output_dir": str(ctx.framework_output_dir),
+            "logs_dir": str(ctx.logs_dir),
+            "startup_check_path": str(ctx.startup_check_path),
+            "dataset_preview_path": str(ctx.dataset_preview_path),
+            "startup_report": startup_report,
+        }
 
     if not resolved_dry_run:
         _run_actual_training(ctx=ctx, train_examples=train_examples, valid_examples=valid_examples)
@@ -356,7 +519,31 @@ def run_lora_rank_training(
         "pointwise_signal_path": str(ctx.support_signals.get("pointwise_uncertainty_path", "")),
         "created_at": _utc_now_iso(),
     }
-    save_training_summary(summary, ctx.logs_dir / "training_summary.csv")
+    save_training_summary(summary, ctx.training_summary_path)
+    update_framework_manifest(
+        path=ctx.framework_manifest_path,
+        run_name=ctx.run_name,
+        domain=ctx.domain,
+        model=ctx.model_name,
+        method_family=ctx.method_family,
+        method_variant=ctx.method_variant,
+        adapter_output_dir=str(ctx.adapter_output_dir),
+        framework_output_dir=str(ctx.framework_output_dir),
+        compare_csv_path=str(ctx.framework_compare_path),
+        compare_markdown_path=str(ctx.compare_markdown_path),
+        training_summary_path=str(ctx.training_summary_path),
+        startup_check_path=str(ctx.startup_check_path),
+        dataset_preview_path=str(ctx.dataset_preview_path),
+        latest_stage="lora_train_rank",
+        latest_status="dry_run_ready" if resolved_dry_run else "artifact_ready",
+        extra_fields={
+            "train_samples": len(train_examples),
+            "valid_samples": len(valid_examples),
+            "startup_report": startup_report,
+            "adapter_ready": not resolved_dry_run,
+            "framework_metrics_ready": False,
+        },
+    )
 
     append_training_status(
         {
@@ -369,11 +556,14 @@ def run_lora_rank_training(
             "stage": "lora_train_rank",
             "status": "dry_run_ready" if resolved_dry_run else "artifact_ready",
             "dry_run": resolved_dry_run,
+            "startup_check_only": False,
             "train_samples": len(train_examples),
             "valid_samples": len(valid_examples),
             "adapter_output_dir": str(ctx.adapter_output_dir),
             "framework_output_dir": str(ctx.framework_output_dir),
             "logs_dir": str(ctx.logs_dir),
+            "startup_check_path": str(ctx.startup_check_path),
+            "dataset_preview_path": str(ctx.dataset_preview_path),
             "started_at": _utc_now_iso(),
             "finished_at": _utc_now_iso(),
             "notes": "Week7.5 Day1 ranking-only LoRA framework skeleton. Pointwise and pairwise remain supporting layers.",

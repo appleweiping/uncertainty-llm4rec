@@ -14,6 +14,7 @@ from src.eval.ranking_task_metrics import (
 from src.llm import build_backend_from_dict, load_model_config
 from src.llm.inference import run_candidate_ranking_inference
 from src.llm.prompt_builder import PromptBuilder
+from src.training.framework_artifacts import append_stage_status, update_framework_manifest, utc_now_iso
 from src.utils.exp_io import load_jsonl, load_yaml, save_jsonl
 from src.utils.paths import ensure_exp_dirs
 from src.utils.reproducibility import set_global_seed
@@ -50,6 +51,20 @@ def main() -> None:
     output_root = str(config.get("output_root", "outputs"))
     paths = ensure_exp_dirs(framework_exp_name, output_root)
     set_global_seed(args.seed if args.seed is not None else config.get("seed"))
+    summary_cfg = config.get("summary", {}) or {}
+    train_status_path = Path(str(summary_cfg.get("train_status_path", "outputs/summary/week7_5_train_status.csv")))
+    framework_manifest_path = Path(
+        str(summary_cfg.get("framework_manifest_path", f"{paths.root}/framework_run_manifest.json"))
+    )
+    compare_csv_path = str(summary_cfg.get("framework_compare_path", "outputs/summary/week7_5_framework_compare.csv"))
+    compare_markdown_path = str(
+        summary_cfg.get("framework_compare_markdown_path", "outputs/summary/week7_5_framework_compare.md")
+    )
+    training_summary_path = str(
+        summary_cfg.get("training_summary_path", "artifacts/logs/qwen3_rank_beauty_framework_v1/training_summary.csv")
+    )
+    startup_check_path = str(summary_cfg.get("startup_check_path", "outputs/summary/week7_5_startup_check.json"))
+    dataset_preview_path = str(summary_cfg.get("dataset_preview_path", "outputs/summary/week7_5_dataset_preview.csv"))
 
     input_path = Path(args.input_path or config.get("eval_input_path"))
     prediction_path = paths.predictions_dir / "rank_predictions.jsonl"
@@ -92,6 +107,72 @@ def main() -> None:
     _save_summary_dict(metrics, paths.tables_dir / "ranking_metrics.csv")
     _save_table(exposure_df, paths.tables_dir / "ranking_exposure_distribution.csv")
     _save_table(eval_df, paths.tables_dir / "ranking_eval_records.csv")
+    eval_summary = {
+        "run_name": framework_exp_name,
+        "domain": str(config.get("domain", "beauty")),
+        "task": "candidate_ranking",
+        "method_family": str(config.get("method_family", "trainable_lora_framework")),
+        "method_variant": str(config.get("method_variant", framework_exp_name)),
+        "model": str(config.get("model_name", "qwen3_8b_local")),
+        "adapter_path": str(args.adapter_path or config.get("adapter_output_dir")),
+        "prediction_path": str(prediction_path),
+        "metrics_path": str(paths.tables_dir / "ranking_metrics.csv"),
+        "sample_count": len(eval_df),
+        "HR@10": metrics.get("HR@10"),
+        "NDCG@10": metrics.get("NDCG@10"),
+        "MRR": metrics.get("MRR"),
+        "parse_success_rate": metrics.get("parse_success_rate"),
+        "coverage@10": metrics.get("coverage@10"),
+        "head_exposure_ratio@10": metrics.get("head_exposure_ratio@10"),
+        "longtail_coverage@10": metrics.get("longtail_coverage@10"),
+        "created_at": utc_now_iso(),
+    }
+    _save_summary_dict(eval_summary, paths.tables_dir / "framework_eval_summary.csv")
+    append_stage_status(
+        {
+            "run_name": framework_exp_name,
+            "domain": str(config.get("domain", "beauty")),
+            "task": "candidate_ranking",
+            "method_family": str(config.get("method_family", "trainable_lora_framework")),
+            "method_variant": str(config.get("method_variant", framework_exp_name)),
+            "model": str(config.get("model_name", "qwen3_8b_local")),
+            "stage": "framework_eval",
+            "status": "artifact_ready",
+            "dry_run": False,
+            "startup_check_only": False,
+            "adapter_output_dir": str(args.adapter_path or config.get("adapter_output_dir")),
+            "framework_output_dir": str(paths.root),
+            "prediction_path": str(prediction_path),
+            "metrics_path": str(paths.tables_dir / "ranking_metrics.csv"),
+            "started_at": utc_now_iso(),
+            "finished_at": utc_now_iso(),
+            "notes": "Framework ranking evaluation completed and aligned to the standard ranking metrics schema.",
+        },
+        train_status_path,
+    )
+    update_framework_manifest(
+        path=framework_manifest_path,
+        run_name=framework_exp_name,
+        domain=str(config.get("domain", "beauty")),
+        model=str(config.get("model_name", "qwen3_8b_local")),
+        method_family=str(config.get("method_family", "trainable_lora_framework")),
+        method_variant=str(config.get("method_variant", framework_exp_name)),
+        adapter_output_dir=str(args.adapter_path or config.get("adapter_output_dir")),
+        framework_output_dir=str(paths.root),
+        compare_csv_path=compare_csv_path,
+        compare_markdown_path=compare_markdown_path,
+        training_summary_path=training_summary_path,
+        startup_check_path=startup_check_path,
+        dataset_preview_path=dataset_preview_path,
+        latest_stage="framework_eval",
+        latest_status="artifact_ready",
+        extra_fields={
+            "framework_prediction_path": str(prediction_path),
+            "framework_metrics_path": str(paths.tables_dir / "ranking_metrics.csv"),
+            "framework_eval_summary_path": str(paths.tables_dir / "framework_eval_summary.csv"),
+            "framework_metrics_ready": True,
+        },
+    )
 
     print(f"[{framework_exp_name}] LoRA ranking evaluation done.")
     print(f"[{framework_exp_name}] Predictions saved to: {prediction_path}")
