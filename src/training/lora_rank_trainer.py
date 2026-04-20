@@ -188,7 +188,7 @@ def _write_adapter_manifest(ctx: TrainingRunContext, *, train_count: int, valid_
         "training": ctx.training_cfg,
         "evaluation": ctx.evaluation_cfg,
         "support_signals": ctx.support_signals,
-        "created_at": _utc_now_iso(),
+        "created_at": utc_now_iso(),
     }
     (ctx.adapter_output_dir / "adapter_manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2),
@@ -269,7 +269,7 @@ def _run_startup_check(
             2,
         ),
         "dry_run": bool(ctx.training_cfg.get("dry_run", False)),
-        "created_at": _utc_now_iso(),
+        "created_at": utc_now_iso(),
     }
     ctx.startup_check_path.write_text(json.dumps(check, ensure_ascii=False, indent=2), encoding="utf-8")
     return check
@@ -475,8 +475,8 @@ def run_lora_rank_training(
                 "logs_dir": str(ctx.logs_dir),
                 "startup_check_path": str(ctx.startup_check_path),
                 "dataset_preview_path": str(ctx.dataset_preview_path),
-                "started_at": _utc_now_iso(),
-                "finished_at": _utc_now_iso(),
+                "started_at": utc_now_iso(),
+                "finished_at": utc_now_iso(),
                 "notes": "Startup-only validation for the Week7.5 ranking LoRA framework.",
             },
             ctx.train_status_path,
@@ -517,7 +517,7 @@ def run_lora_rank_training(
         "strongest_handcrafted_baseline": str(ctx.support_signals.get("structured_risk_exp_name", "")),
         "direct_ranking_baseline": str(ctx.support_signals.get("direct_ranking_exp_name", "")),
         "pointwise_signal_path": str(ctx.support_signals.get("pointwise_uncertainty_path", "")),
-        "created_at": _utc_now_iso(),
+        "created_at": utc_now_iso(),
     }
     save_training_summary(summary, ctx.training_summary_path)
     update_framework_manifest(
@@ -564,8 +564,8 @@ def run_lora_rank_training(
             "logs_dir": str(ctx.logs_dir),
             "startup_check_path": str(ctx.startup_check_path),
             "dataset_preview_path": str(ctx.dataset_preview_path),
-            "started_at": _utc_now_iso(),
-            "finished_at": _utc_now_iso(),
+            "started_at": utc_now_iso(),
+            "finished_at": utc_now_iso(),
             "notes": "Week7.5 Day1 ranking-only LoRA framework skeleton. Pointwise and pairwise remain supporting layers.",
         },
         ctx.train_status_path,
