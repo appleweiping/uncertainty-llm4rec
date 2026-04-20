@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import inspect
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -169,6 +170,37 @@ def _build_training_dataset(
     dataset = dataset.map(_with_attention_mask, batched=True)
     dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
     return dataset
+
+
+def _build_training_arguments(training_arguments_cls, ctx: TrainingRunContext):
+    eval_strategy = str(ctx.training_cfg.get("eval_strategy", "epoch"))
+    requested_args = {
+        "output_dir": str(ctx.logs_dir / "trainer_outputs"),
+        "overwrite_output_dir": True,
+        "num_train_epochs": float(ctx.training_cfg.get("num_train_epochs", 1.0)),
+        "per_device_train_batch_size": int(ctx.training_cfg.get("per_device_train_batch_size", 1)),
+        "per_device_eval_batch_size": int(ctx.training_cfg.get("per_device_eval_batch_size", 1)),
+        "gradient_accumulation_steps": int(ctx.training_cfg.get("gradient_accumulation_steps", 8)),
+        "learning_rate": float(ctx.training_cfg.get("learning_rate", 2e-4)),
+        "warmup_ratio": float(ctx.training_cfg.get("warmup_ratio", 0.03)),
+        "logging_steps": int(ctx.training_cfg.get("logging_steps", 10)),
+        "save_strategy": str(ctx.training_cfg.get("save_strategy", "no")),
+        "evaluation_strategy": eval_strategy,
+        "eval_strategy": eval_strategy,
+        "bf16": bool(ctx.training_cfg.get("bf16", True)),
+        "fp16": bool(ctx.training_cfg.get("fp16", False)),
+        "gradient_checkpointing": bool(ctx.training_cfg.get("gradient_checkpointing", True)),
+        "report_to": [],
+        "seed": ctx.seed,
+    }
+    supported_args = set(inspect.signature(training_arguments_cls.__init__).parameters)
+    if "eval_strategy" in supported_args and "evaluation_strategy" not in supported_args:
+        requested_args.pop("evaluation_strategy", None)
+    elif "evaluation_strategy" in supported_args and "eval_strategy" not in supported_args:
+        requested_args.pop("eval_strategy", None)
+    return training_arguments_cls(
+        **{key: value for key, value in requested_args.items() if key in supported_args}
+    )
 
 
 def _write_adapter_manifest(ctx: TrainingRunContext, *, train_count: int, valid_count: int) -> None:
@@ -354,24 +386,7 @@ def _run_actual_training(
     train_dataset = _build_training_dataset(train_examples, tokenizer=tokenizer, max_seq_length=max_seq_length)
     valid_dataset = _build_training_dataset(valid_examples, tokenizer=tokenizer, max_seq_length=max_seq_length)
 
-    training_args = TrainingArguments(
-        output_dir=str(ctx.logs_dir / "trainer_outputs"),
-        overwrite_output_dir=True,
-        num_train_epochs=float(ctx.training_cfg.get("num_train_epochs", 1.0)),
-        per_device_train_batch_size=int(ctx.training_cfg.get("per_device_train_batch_size", 1)),
-        per_device_eval_batch_size=int(ctx.training_cfg.get("per_device_eval_batch_size", 1)),
-        gradient_accumulation_steps=int(ctx.training_cfg.get("gradient_accumulation_steps", 8)),
-        learning_rate=float(ctx.training_cfg.get("learning_rate", 2e-4)),
-        warmup_ratio=float(ctx.training_cfg.get("warmup_ratio", 0.03)),
-        logging_steps=int(ctx.training_cfg.get("logging_steps", 10)),
-        save_strategy=str(ctx.training_cfg.get("save_strategy", "no")),
-        evaluation_strategy=str(ctx.training_cfg.get("eval_strategy", "epoch")),
-        bf16=bool(ctx.training_cfg.get("bf16", True)),
-        fp16=bool(ctx.training_cfg.get("fp16", False)),
-        gradient_checkpointing=bool(ctx.training_cfg.get("gradient_checkpointing", True)),
-        report_to=[],
-        seed=ctx.seed,
-    )
+    training_args = _build_training_arguments(TrainingArguments, ctx)
 
     trainer = Trainer(
         model=model,
