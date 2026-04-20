@@ -184,6 +184,8 @@ This handoff is no longer only a dry-run shell. The current server-local Qwen3 m
 
 Before continuing server-side Week7 runs, the server data layer should be aligned with the local processed pony data rather than the old partial `data/` upload. The upload manifest in `docs/week7_server_data_upload_manifest.md` defines the minimal Beauty processed directory for immediate Qwen3 smoke / medium-scale runs and the recommended compact four-domain processed upload for the next validation stage.
 
+The next engineering step is now formalized as Week7.5 rather than a premature jump into Week8. This stage does not reopen the ranking-family search and does not expand into a four-domain matrix yet. Instead, it adds a training-stage center object: a Beauty-only, candidate-ranking-only `Qwen3-8B + LoRA` framework skeleton driven by `configs/lora/qwen3_rank_beauty_framework_v1.yaml`, `main_lora_train_rank.py`, `main_eval_lora_rank.py`, and `main_compare_framework.py`. The role split remains unchanged: pointwise stays the diagnosis/calibration layer, pairwise stays the mechanism line, and candidate ranking is the only first-round trainable task. In that setup, the current structured-risk rerank line is preserved explicitly as the strongest hand-crafted baseline that the future trainable framework must face rather than silently replace.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:

@@ -34,11 +34,10 @@ def load_model_config(path: str | Path) -> dict[str, Any]:
         return yaml.safe_load(f) or {}
 
 
-def build_backend_from_config(model_cfg_path: str | Path):
-    model_cfg = load_model_config(model_cfg_path)
+def build_backend_from_dict(model_cfg: dict[str, Any]):
     backend_name = str(model_cfg.get("backend_name", "")).strip().lower()
     if not backend_name:
-        raise ValueError(f"backend_name is required in model config: {model_cfg_path}")
+        raise ValueError("backend_name is required in model config.")
 
     backend_cls = BACKEND_REGISTRY.get(backend_name)
     if backend_cls is None:
@@ -64,7 +63,7 @@ def build_backend_from_config(model_cfg_path: str | Path):
             model_cfg.get("model_name"),
         )
         if not model_name_or_path:
-            raise ValueError(f"model_name_or_path is required in local HF model config: {model_cfg_path}")
+            raise ValueError("model_name_or_path is required in local HF model config.")
         tokenizer_name_or_path = _first_present(
             model_cfg.get("tokenizer_name_or_path"),
             runtime_cfg.get("tokenizer_name_or_path"),
@@ -94,7 +93,7 @@ def build_backend_from_config(model_cfg_path: str | Path):
 
     model_name = _first_present(model_cfg.get("model_name"), generation_cfg.get("model_name"))
     if not model_name:
-        raise ValueError(f"model_name is required in model config: {model_cfg_path}")
+        raise ValueError("model_name is required in model config.")
 
     temperature = float(_first_present(generation_cfg.get("temperature"), model_cfg.get("temperature"), 0.0))
     max_tokens = int(_first_present(generation_cfg.get("max_tokens"), model_cfg.get("max_tokens"), 300))
@@ -103,7 +102,7 @@ def build_backend_from_config(model_cfg_path: str | Path):
     timeout = _first_present(connection_cfg.get("timeout"), model_cfg.get("timeout"))
 
     if not api_key_env:
-        raise ValueError(f"api_key_env is required in model config: {model_cfg_path}")
+        raise ValueError("api_key_env is required in model config.")
 
     if backend_name in {"api", "openai_compatible"}:
         return backend_cls(
@@ -129,3 +128,8 @@ def build_backend_from_config(model_cfg_path: str | Path):
         )
 
     raise ValueError(f"Unsupported backend_name: {backend_name}")
+
+
+def build_backend_from_config(model_cfg_path: str | Path):
+    model_cfg = load_model_config(model_cfg_path)
+    return build_backend_from_dict(model_cfg)

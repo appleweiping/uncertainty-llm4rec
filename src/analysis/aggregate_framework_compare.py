@@ -1,0 +1,195 @@
+from __future__ import annotations
+
+import csv
+from pathlib import Path
+from typing import Any
+
+from src.utils.exp_io import load_yaml
+
+
+FRAMEWORK_COMPARE_COLUMNS = [
+    "domain",
+    "model",
+    "task",
+    "method_family",
+    "method_variant",
+    "baseline_family",
+    "is_current_best_family",
+    "is_trainable_framework",
+    "samples",
+    "HR@10",
+    "NDCG@10",
+    "MRR",
+    "pairwise_accuracy",
+    "ECE",
+    "Brier",
+    "coverage",
+    "head_exposure",
+    "longtail_coverage",
+    "parse_success_rate",
+    "training_stage_role",
+    "source_file",
+    "notes",
+]
+
+
+def _read_csv_rows(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        return []
+    with path.open("r", encoding="utf-8", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def _load_single_row(path: Path) -> dict[str, Any] | None:
+    rows = _read_csv_rows(path)
+    if not rows:
+        return None
+    return rows[0]
+
+
+def _normalize_compare_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    for row in rows:
+        normalized.append({column: row.get(column, "") for column in FRAMEWORK_COMPARE_COLUMNS})
+    return normalized
+
+
+def build_framework_compare_rows(config_path: str | Path) -> list[dict[str, Any]]:
+    config = load_yaml(config_path)
+    summary_cfg = config.get("summary", {}) or {}
+    support_signals = config.get("support_signals", {}) or {}
+
+    rows: list[dict[str, Any]] = []
+    domain = str(config.get("domain", "beauty"))
+    model = str(config.get("model_name", "qwen3_8b_local"))
+
+    direct_metrics = _load_single_row(Path(str(summary_cfg.get("direct_ranking_metrics_path", ""))))
+    if direct_metrics:
+        rows.append(
+            {
+                "domain": domain,
+                "model": model,
+                "task": "candidate_ranking",
+                "method_family": "local_hf_base_only",
+                "method_variant": "direct_candidate_ranking_medium_scale",
+                "baseline_family": "decision_formulation",
+                "is_current_best_family": False,
+                "is_trainable_framework": False,
+                "samples": direct_metrics.get("sample_count", ""),
+                "HR@10": direct_metrics.get("HR@10", ""),
+                "NDCG@10": direct_metrics.get("NDCG@10", ""),
+                "MRR": direct_metrics.get("MRR", ""),
+                "pairwise_accuracy": "",
+                "ECE": "",
+                "Brier": "",
+                "coverage": direct_metrics.get("coverage@10", ""),
+                "head_exposure": direct_metrics.get("head_exposure_ratio@10", ""),
+                "longtail_coverage": direct_metrics.get("longtail_coverage@10", ""),
+                "parse_success_rate": direct_metrics.get("parse_success_rate", ""),
+                "training_stage_role": "direct_ranking_baseline",
+                "source_file": str(summary_cfg.get("direct_ranking_metrics_path", "")),
+                "notes": "Direct candidate ranking baseline inherited from Week7 medium-scale server run.",
+            }
+        )
+
+    structured_risk_metrics = _load_single_row(Path(str(summary_cfg.get("structured_risk_metrics_path", ""))))
+    if structured_risk_metrics:
+        rows.append(
+            {
+                "domain": domain,
+                "model": model,
+                "task": "candidate_ranking_rerank",
+                "method_family": "structured_risk_family",
+                "method_variant": str(support_signals.get("structured_risk_variant", "nonlinear_structured_risk_rerank")),
+                "baseline_family": "decision_formulation",
+                "is_current_best_family": True,
+                "is_trainable_framework": False,
+                "samples": structured_risk_metrics.get("sample_count", structured_risk_metrics.get("samples", "")),
+                "HR@10": structured_risk_metrics.get("HR@10", ""),
+                "NDCG@10": structured_risk_metrics.get("NDCG@10", ""),
+                "MRR": structured_risk_metrics.get("MRR", ""),
+                "pairwise_accuracy": "",
+                "ECE": "",
+                "Brier": "",
+                "coverage": structured_risk_metrics.get("coverage", ""),
+                "head_exposure": structured_risk_metrics.get("head_exposure", ""),
+                "longtail_coverage": structured_risk_metrics.get("longtail_coverage", ""),
+                "parse_success_rate": structured_risk_metrics.get("parse_success_rate", ""),
+                "training_stage_role": "strongest_handcrafted_baseline",
+                "source_file": str(summary_cfg.get("structured_risk_metrics_path", "")),
+                "notes": "Current best structured-risk family carried into Week7.5 as the strongest hand-crafted baseline.",
+            }
+        )
+
+    framework_metrics = _load_single_row(Path(str(summary_cfg.get("framework_metrics_path", ""))))
+    if framework_metrics:
+        rows.append(
+            {
+                "domain": domain,
+                "model": model,
+                "task": "candidate_ranking",
+                "method_family": "trainable_lora_framework",
+                "method_variant": str(config.get("method_variant", config.get("run_name", "framework_v1"))),
+                "baseline_family": "trainable_framework",
+                "is_current_best_family": False,
+                "is_trainable_framework": True,
+                "samples": framework_metrics.get("sample_count", ""),
+                "HR@10": framework_metrics.get("HR@10", ""),
+                "NDCG@10": framework_metrics.get("NDCG@10", ""),
+                "MRR": framework_metrics.get("MRR", ""),
+                "pairwise_accuracy": "",
+                "ECE": "",
+                "Brier": "",
+                "coverage": framework_metrics.get("coverage@10", ""),
+                "head_exposure": framework_metrics.get("head_exposure_ratio@10", ""),
+                "longtail_coverage": framework_metrics.get("longtail_coverage@10", ""),
+                "parse_success_rate": framework_metrics.get("parse_success_rate", ""),
+                "training_stage_role": "trainable_framework_candidate",
+                "source_file": str(summary_cfg.get("framework_metrics_path", "")),
+                "notes": "LoRA-adapted ranking framework result. Day1 initializes the compare row even before the first adapter is trained.",
+            }
+        )
+
+    literature_summary_path = Path(str(summary_cfg.get("literature_baseline_summary_path", "")))
+    if literature_summary_path.exists():
+        for row in _read_csv_rows(literature_summary_path):
+            if str(row.get("task", "")) != "candidate_ranking":
+                continue
+            rows.append(
+                {
+                    "domain": row.get("domain", domain),
+                    "model": row.get("model", model),
+                    "task": row.get("task", "candidate_ranking"),
+                    "method_family": row.get("baseline_family", "literature_aligned_rank"),
+                    "method_variant": row.get("baseline_name", ""),
+                    "baseline_family": "literature_aligned",
+                    "is_current_best_family": False,
+                    "is_trainable_framework": False,
+                    "samples": row.get("samples", ""),
+                    "HR@10": row.get("HR@10", ""),
+                    "NDCG@10": row.get("NDCG@10", ""),
+                    "MRR": row.get("MRR", ""),
+                    "pairwise_accuracy": row.get("pairwise_accuracy", ""),
+                    "ECE": "",
+                    "Brier": "",
+                    "coverage": "",
+                    "head_exposure": "",
+                    "longtail_coverage": "",
+                    "parse_success_rate": row.get("parse_success_rate", ""),
+                    "training_stage_role": "literature_aligned_reference",
+                    "source_file": str(literature_summary_path),
+                    "notes": row.get("notes", ""),
+                }
+            )
+
+    return _normalize_compare_rows(rows)
+
+
+def write_framework_compare(rows: list[dict[str, Any]], output_path: str | Path) -> None:
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=FRAMEWORK_COMPARE_COLUMNS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({column: row.get(column, "") for column in FRAMEWORK_COMPARE_COLUMNS})

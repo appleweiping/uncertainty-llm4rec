@@ -1,0 +1,86 @@
+run_name: qwen3_rank_beauty_framework_v1
+domain: beauty
+task: candidate_ranking
+method_family: trainable_lora_framework
+method_variant: qwen3_rank_beauty_framework_v1
+model_name: qwen3_8b_local
+base_model_config: configs/model/qwen3_8b_local.yaml
+prompt_path: prompts/candidate_ranking.txt
+
+train_input_path: data/processed/amazon_beauty/ranking_valid.jsonl
+valid_input_path: data/processed/amazon_beauty/ranking_test.jsonl
+eval_input_path: data/processed/amazon_beauty/ranking_test.jsonl
+
+adapter_output_dir: artifacts/adapters/qwen3_rank_beauty_framework_v1
+framework_output_dir: outputs/beauty_qwen3_rank_framework_v1
+logs_dir: artifacts/logs/qwen3_rank_beauty_framework_v1
+output_root: outputs
+
+topk: 10
+seed: 42
+
+model:
+  model_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+  tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+  device: cuda
+  device_map: auto
+  dtype: bfloat16
+  local_files_only: true
+  trust_remote_code: true
+
+training:
+  dry_run: true
+  max_train_samples: 200
+  max_valid_samples: 200
+  num_train_epochs: 1.0
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8
+  learning_rate: 0.0002
+  warmup_ratio: 0.03
+  max_seq_length: 1024
+  logging_steps: 10
+  save_strategy: "no"
+  eval_strategy: "epoch"
+  gradient_checkpointing: true
+  bf16: true
+  fp16: false
+  include_reason: false
+  bias: none
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+evaluation:
+  framework_exp_name: beauty_qwen3_rank_framework_v1
+  run_inference_after_train: true
+  max_eval_samples: 300
+  batch_size: 4
+  max_new_tokens: 300
+  metrics_output_path: outputs/beauty_qwen3_rank_framework_v1/tables/ranking_metrics.csv
+
+support_signals:
+  pointwise_uncertainty_path: outputs/beauty_qwen3_local_pointwise_medium/calibrated/test_calibrated.jsonl
+  direct_ranking_exp_name: beauty_qwen3_local_rank_medium
+  direct_ranking_metrics_path: outputs/beauty_qwen3_local_rank_medium/tables/ranking_metrics.csv
+  structured_risk_exp_name: beauty_qwen3_local_structured_risk_medium
+  structured_risk_variant: nonlinear_structured_risk_rerank
+  structured_risk_metrics_path: outputs/beauty_qwen3_local_structured_risk_medium/tables/rerank_results.csv
+  pairwise_exp_name: beauty_qwen3_local_pairwise_medium
+  pairwise_metrics_path: outputs/beauty_qwen3_local_pairwise_medium/tables/pairwise_metrics.csv
+
+summary:
+  train_status_path: outputs/summary/week7_5_train_status.csv
+  framework_compare_path: outputs/summary/week7_5_framework_compare.csv
+  framework_metrics_path: outputs/beauty_qwen3_rank_framework_v1/tables/ranking_metrics.csv
+  direct_ranking_metrics_path: outputs/beauty_qwen3_local_rank_medium/tables/ranking_metrics.csv
+  structured_risk_metrics_path: outputs/beauty_qwen3_local_structured_risk_medium/tables/rerank_results.csv
+  literature_baseline_summary_path: outputs/summary/week7_day3_literature_baseline_summary.csv
