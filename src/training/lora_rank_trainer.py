@@ -168,7 +168,9 @@ def _build_training_dataset(
         return batch
 
     dataset = dataset.map(_with_attention_mask, batched=True)
-    dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
+    # Keep plain Python lists here. Some server images have a torchvision build
+    # that breaks Hugging Face Datasets' torch formatter, while the Transformers
+    # data collator can tensorize these text-only records directly.
     return dataset
 
 
