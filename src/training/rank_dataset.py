@@ -56,6 +56,20 @@ def _normalize_target_ranking(sample: dict[str, Any], topk: int) -> list[str]:
     positive_item_id = str(sample.get("positive_item_id", "")).strip()
     if not candidate_ids:
         raise ValueError("Ranking training sample is missing candidate_item_ids.")
+
+    for teacher_key in (
+        "srpd_teacher_ranked_item_ids",
+        "teacher_ranked_item_ids",
+        "target_ranked_item_ids",
+        "pred_ranked_item_ids",
+    ):
+        teacher_order = sample.get(teacher_key)
+        if isinstance(teacher_order, list):
+            ordered = [str(item_id) for item_id in teacher_order if str(item_id) in candidate_ids]
+            ordered.extend([item_id for item_id in candidate_ids if item_id not in ordered])
+            if ordered:
+                return ordered[:topk]
+
     if positive_item_id and positive_item_id in candidate_ids:
         ordered = [positive_item_id] + [item_id for item_id in candidate_ids if item_id != positive_item_id]
     else:

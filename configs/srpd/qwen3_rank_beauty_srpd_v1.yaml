@@ -1,0 +1,18 @@
+run_name: qwen3_rank_beauty_srpd_v1
+domain: beauty
+task: candidate_ranking
+srpd_stage: v1
+method_variant: SRPD-v1_structured_risk_teacher_sft
+
+base_input_path: data/processed/amazon_beauty/ranking_test.jsonl
+structured_risk_teacher_path: outputs/beauty_deepseek_rank_structured_risk/reranked/rank_reranked.jsonl
+train_ratio: 0.8
+
+output_train_path: data/processed/amazon_beauty/srpd/qwen3_rank_beauty_srpd_v1_train.jsonl
+output_valid_path: data/processed/amazon_beauty/srpd/qwen3_rank_beauty_srpd_v1_valid.jsonl
+summary_path: outputs/summary/week7_6_srpd_v1_data_summary.csv
+markdown_path: outputs/summary/week7_6_srpd_v1_data_summary.md
+
+notes: >
+  SRPD-v1 prepares structured-risk teacher SFT targets from existing DeepSeek Beauty compact artifacts.
+  This is a teacher-data alignment artifact, not a completed model result.
