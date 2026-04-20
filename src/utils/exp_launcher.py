@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import subprocess
+import shlex
 import time
 from pathlib import Path
 from typing import Any
@@ -109,10 +110,27 @@ def build_experiment_row(
     cfg = load_yaml(config_path)
     exp_name = str(spec.get("exp_name") or cfg.get("exp_name") or config_path.stem)
     task = str(spec.get("task") or infer_task(cfg, exp_name))
-    output_dir = Path(str(spec.get("output_dir") or cfg.get("output_dir") or Path(cfg.get("output_root", "outputs")) / exp_name))
-    input_path = Path(str(spec.get("input_path") or cfg.get("input_path", "")))
+    output_dir = Path(
+        str(
+            spec.get("output_dir")
+            or cfg.get("output_dir")
+            or cfg.get("framework_output_dir")
+            or cfg.get("adapter_output_dir")
+            or Path(cfg.get("output_root", "outputs")) / exp_name
+        )
+    )
+    input_path = Path(
+        str(
+            spec.get("input_path")
+            or cfg.get("input_path")
+            or cfg.get("train_input_path")
+            or cfg.get("eval_input_path")
+            or config_path
+        )
+    )
     model_config = str(spec.get("model_config") or cfg.get("model_config", ""))
-    command = [python_bin, script_for_task(task), "--config", str(config_path)]
+    explicit_command = str(spec.get("command", "")).strip()
+    command = shlex.split(explicit_command) if explicit_command else [python_bin, script_for_task(task), "--config", str(config_path)]
     return {
         "batch_name": batch_name,
         "exp_name": exp_name,
@@ -127,7 +145,7 @@ def build_experiment_row(
         "output_dir": str(output_dir),
         "eval_ready": expected_eval_ready(output_dir, task),
         "prediction_ready": expected_prediction_ready(output_dir, task),
-        "command": " ".join(command),
+        "command": explicit_command or " ".join(command),
         "_command_list": command,
         "_input_exists": input_path.exists() if str(input_path) else False,
     }

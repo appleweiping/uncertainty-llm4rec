@@ -1,0 +1,11 @@
+run_name: week7_6_4domain_inner_compare
+model: deepseek
+sample_scope: 100_sample_compact
+domains:
+  - beauty
+  - books
+  - movies
+  - electronics
+output_csv: outputs/summary/week7_6_4domain_inner_compare.csv
+output_md: outputs/summary/week7_6_4domain_inner_compare.md
+status_csv: outputs/summary/week7_6_4domain_inner_compare_status.csv

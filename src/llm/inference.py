@@ -53,6 +53,22 @@ def _generate_with_backend(
     )
 
 
+def _batch_generate_with_backend(
+    *,
+    llm_backend,
+    prompts: list[str],
+) -> list[dict[str, Any]]:
+    raw_results = llm_backend.batch_generate(prompts)
+    return [
+        normalize_generation_result(
+            result,
+            default_provider=getattr(llm_backend, "provider", None),
+            default_model_name=getattr(llm_backend, "model_name", "unknown"),
+        )
+        for result in raw_results
+    ]
+
+
 def _attach_generation_fields(
     record: dict[str, Any],
     *,
@@ -170,37 +186,52 @@ def run_candidate_ranking_inference(
     topk: int | None = None,
 ) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = []
+    batch_size = int(getattr(llm_backend, "batch_size", 1) or 1)
 
-    for sample in tqdm(samples, desc="Running candidate ranking inference"):
-        candidate_item_ids = [str(item_id) for item_id in sample.get("candidate_item_ids", [])]
-        prompt = prompt_builder.build_candidate_ranking_prompt(sample, topk=topk)
-        generation = _generate_with_backend(llm_backend=llm_backend, prompt=prompt)
-        parsed = parse_candidate_ranking_response(
-            generation["raw_text"],
-            allowed_item_ids=candidate_item_ids,
-            topk=topk,
-        )
+    progress = tqdm(total=len(samples), desc="Running candidate ranking inference")
+    try:
+        for start_idx in range(0, len(samples), batch_size):
+            batch_samples = samples[start_idx : start_idx + batch_size]
+            batch_prompts = [
+                prompt_builder.build_candidate_ranking_prompt(sample, topk=topk)
+                for sample in batch_samples
+            ]
+            batch_generations = _batch_generate_with_backend(
+                llm_backend=llm_backend,
+                prompts=batch_prompts,
+            )
 
-        record = {
-            "user_id": sample.get("user_id", ""),
-            "source_event_id": sample.get("source_event_id", ""),
-            "positive_item_id": sample.get("positive_item_id", ""),
-            "positive_item_index": sample.get("positive_item_index", -1),
-            "split_name": sample.get("split_name", ""),
-            "timestamp": sample.get("timestamp"),
-            "candidate_item_ids": sample.get("candidate_item_ids", []),
-            "candidate_titles": sample.get("candidate_titles", []),
-            "candidate_popularity_groups": sample.get("candidate_popularity_groups", []),
-            "pred_ranked_item_ids": parsed.get("ranked_item_ids", []),
-            "topk_item_ids": parsed.get("topk_item_ids", []),
-            "confidence": parsed.get("confidence", -1.0),
-            "reason": parsed.get("reason", ""),
-            "parse_mode": parsed.get("parse_mode", "failed"),
-            "parse_success": bool(parsed.get("parse_success", False)),
-            "contains_out_of_candidate_item": bool(parsed.get("contains_out_of_candidate_item", False)),
-            "out_of_candidate_item_ids": parsed.get("out_of_candidate_item_ids", []),
-        }
-        results.append(_attach_generation_fields(record, prompt=prompt, generation=generation))
+            for sample, prompt, generation in zip(batch_samples, batch_prompts, batch_generations):
+                candidate_item_ids = [str(item_id) for item_id in sample.get("candidate_item_ids", [])]
+                parsed = parse_candidate_ranking_response(
+                    generation["raw_text"],
+                    allowed_item_ids=candidate_item_ids,
+                    topk=topk,
+                )
+
+                record = {
+                    "user_id": sample.get("user_id", ""),
+                    "source_event_id": sample.get("source_event_id", ""),
+                    "positive_item_id": sample.get("positive_item_id", ""),
+                    "positive_item_index": sample.get("positive_item_index", -1),
+                    "split_name": sample.get("split_name", ""),
+                    "timestamp": sample.get("timestamp"),
+                    "candidate_item_ids": sample.get("candidate_item_ids", []),
+                    "candidate_titles": sample.get("candidate_titles", []),
+                    "candidate_popularity_groups": sample.get("candidate_popularity_groups", []),
+                    "pred_ranked_item_ids": parsed.get("ranked_item_ids", []),
+                    "topk_item_ids": parsed.get("topk_item_ids", []),
+                    "confidence": parsed.get("confidence", -1.0),
+                    "reason": parsed.get("reason", ""),
+                    "parse_mode": parsed.get("parse_mode", "failed"),
+                    "parse_success": bool(parsed.get("parse_success", False)),
+                    "contains_out_of_candidate_item": bool(parsed.get("contains_out_of_candidate_item", False)),
+                    "out_of_candidate_item_ids": parsed.get("out_of_candidate_item_ids", []),
+                }
+                results.append(_attach_generation_fields(record, prompt=prompt, generation=generation))
+            progress.update(len(batch_samples))
+    finally:
+        progress.close()
 
     return results
 

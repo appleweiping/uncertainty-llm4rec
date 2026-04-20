@@ -1,0 +1,157 @@
+batch_name: week7_6_4domain_pairwise_api
+experiments:
+  - exp_name: books_pairwise_coverage_build
+    domain: books
+    task: pairwise_preference_data_build
+    model: none
+    method_family: pairwise_coverage_builder
+    method_variant: event_balanced_positive_vs_negative
+    is_current_best_family: false
+    command: python main_build_multitask_samples.py --config configs/data/amazon_books_small.yaml --pairwise_task_config configs/task/pairwise_preference_coverage.yaml --summary_path outputs/summary/week7_6_books_pairwise_coverage_build.csv
+    output_dir: data/processed/amazon_books_small
+    input_path: data/processed/amazon_books_small/test.jsonl
+    eval_ready: false
+    prediction_ready: true
+
+  - exp_name: books_deepseek_pairwise_coverage
+    domain: books
+    task: pairwise_preference
+    model: deepseek
+    method_family: pairwise_to_rank
+    method_variant: deepseek_pairwise_coverage
+    is_current_best_family: false
+    command: python main_pairwise.py --config configs/exp/books_deepseek_pairwise_coverage.yaml
+    output_dir: outputs/books_deepseek_pairwise_coverage
+    input_path: data/processed/amazon_books_small/pairwise_coverage_test.jsonl
+    eval_ready: false
+    prediction_ready: true
+
+  - exp_name: books_deepseek_pairwise_plain_to_rank
+    domain: books
+    task: candidate_ranking
+    model: deepseek
+    method_family: pairwise_to_rank
+    method_variant: plain_win_count
+    is_current_best_family: false
+    command: python main_pairwise_rank.py --pairwise_exp_name books_deepseek_pairwise_coverage --ranking_exp_name books_deepseek_rank --new_exp_name books_deepseek_pairwise_coverage_plain_to_rank --uncertainty_exp_name books_small_deepseek --aggregation_variant plain_win_count
+    output_dir: outputs/books_deepseek_pairwise_coverage_plain_to_rank
+    input_path: outputs/books_deepseek_pairwise_coverage/predictions/pairwise_predictions.jsonl
+    eval_ready: true
+    prediction_ready: true
+
+  - exp_name: books_deepseek_pairwise_to_rank
+    domain: books
+    task: candidate_ranking
+    model: deepseek
+    method_family: pairwise_to_rank
+    method_variant: weighted_win_count
+    is_current_best_family: false
+    command: python main_pairwise_rank.py --pairwise_exp_name books_deepseek_pairwise_coverage --ranking_exp_name books_deepseek_rank --new_exp_name books_deepseek_pairwise_coverage_to_rank --uncertainty_exp_name books_small_deepseek --aggregation_variant weighted_win_count
+    output_dir: outputs/books_deepseek_pairwise_coverage_to_rank
+    input_path: outputs/books_deepseek_pairwise_coverage/predictions/pairwise_predictions.jsonl
+    eval_ready: true
+    prediction_ready: true
+
+  - exp_name: movies_pairwise_coverage_build
+    domain: movies
+    task: pairwise_preference_data_build
+    model: none
+    method_family: pairwise_coverage_builder
+    method_variant: event_balanced_positive_vs_negative
+    is_current_best_family: false
+    command: python main_build_multitask_samples.py --config configs/data/amazon_movies_small.yaml --pairwise_task_config configs/task/pairwise_preference_coverage.yaml --summary_path outputs/summary/week7_6_movies_pairwise_coverage_build.csv
+    output_dir: data/processed/amazon_movies_small
+    input_path: data/processed/amazon_movies_small/test.jsonl
+    eval_ready: false
+    prediction_ready: true
+
+  - exp_name: movies_deepseek_pairwise_coverage
+    domain: movies
+    task: pairwise_preference
+    model: deepseek
+    method_family: pairwise_to_rank
+    method_variant: deepseek_pairwise_coverage
+    is_current_best_family: false
+    command: python main_pairwise.py --config configs/exp/movies_deepseek_pairwise_coverage.yaml
+    output_dir: outputs/movies_deepseek_pairwise_coverage
+    input_path: data/processed/amazon_movies_small/pairwise_coverage_test.jsonl
+    eval_ready: false
+    prediction_ready: true
+
+  - exp_name: movies_deepseek_pairwise_plain_to_rank
+    domain: movies
+    task: candidate_ranking
+    model: deepseek
+    method_family: pairwise_to_rank
+    method_variant: plain_win_count
+    is_current_best_family: false
+    command: python main_pairwise_rank.py --pairwise_exp_name movies_deepseek_pairwise_coverage --ranking_exp_name movies_deepseek_rank --new_exp_name movies_deepseek_pairwise_coverage_plain_to_rank --uncertainty_exp_name movies_small_deepseek --aggregation_variant plain_win_count
+    output_dir: outputs/movies_deepseek_pairwise_coverage_plain_to_rank
+    input_path: outputs/movies_deepseek_pairwise_coverage/predictions/pairwise_predictions.jsonl
+    eval_ready: true
+    prediction_ready: true
+
+  - exp_name: movies_deepseek_pairwise_to_rank
+    domain: movies
+    task: candidate_ranking
+    model: deepseek
+    method_family: pairwise_to_rank
+    method_variant: weighted_win_count
+    is_current_best_family: false
+    command: python main_pairwise_rank.py --pairwise_exp_name movies_deepseek_pairwise_coverage --ranking_exp_name movies_deepseek_rank --new_exp_name movies_deepseek_pairwise_coverage_to_rank --uncertainty_exp_name movies_small_deepseek --aggregation_variant weighted_win_count
+    output_dir: outputs/movies_deepseek_pairwise_coverage_to_rank
+    input_path: outputs/movies_deepseek_pairwise_coverage/predictions/pairwise_predictions.jsonl
+    eval_ready: true
+    prediction_ready: true
+
+  - exp_name: electronics_pairwise_coverage_build
+    domain: electronics
+    task: pairwise_preference_data_build
+    model: none
+    method_family: pairwise_coverage_builder
+    method_variant: event_balanced_positive_vs_negative
+    is_current_best_family: false
+    command: python main_build_multitask_samples.py --config configs/data/amazon_electronics_small.yaml --pairwise_task_config configs/task/pairwise_preference_coverage.yaml --summary_path outputs/summary/week7_6_electronics_pairwise_coverage_build.csv
+    output_dir: data/processed/amazon_electronics_small
+    input_path: data/processed/amazon_electronics_small/test.jsonl
+    eval_ready: false
+    prediction_ready: true
+
+  - exp_name: electronics_deepseek_pairwise_coverage
+    domain: electronics
+    task: pairwise_preference
+    model: deepseek
+    method_family: pairwise_to_rank
+    method_variant: deepseek_pairwise_coverage
+    is_current_best_family: false
+    command: python main_pairwise.py --config configs/exp/electronics_deepseek_pairwise_coverage.yaml
+    output_dir: outputs/electronics_deepseek_pairwise_coverage
+    input_path: data/processed/amazon_electronics_small/pairwise_coverage_test.jsonl
+    eval_ready: false
+    prediction_ready: true
+
+  - exp_name: electronics_deepseek_pairwise_plain_to_rank
+    domain: electronics
+    task: candidate_ranking
+    model: deepseek
+    method_family: pairwise_to_rank
+    method_variant: plain_win_count
+    is_current_best_family: false
+    command: python main_pairwise_rank.py --pairwise_exp_name electronics_deepseek_pairwise_coverage --ranking_exp_name electronics_deepseek_rank --new_exp_name electronics_deepseek_pairwise_coverage_plain_to_rank --uncertainty_exp_name electronics_small_deepseek --aggregation_variant plain_win_count
+    output_dir: outputs/electronics_deepseek_pairwise_coverage_plain_to_rank
+    input_path: outputs/electronics_deepseek_pairwise_coverage/predictions/pairwise_predictions.jsonl
+    eval_ready: true
+    prediction_ready: true
+
+  - exp_name: electronics_deepseek_pairwise_to_rank
+    domain: electronics
+    task: candidate_ranking
+    model: deepseek
+    method_family: pairwise_to_rank
+    method_variant: weighted_win_count
+    is_current_best_family: false
+    command: python main_pairwise_rank.py --pairwise_exp_name electronics_deepseek_pairwise_coverage --ranking_exp_name electronics_deepseek_rank --new_exp_name electronics_deepseek_pairwise_coverage_to_rank --uncertainty_exp_name electronics_small_deepseek --aggregation_variant weighted_win_count
+    output_dir: outputs/electronics_deepseek_pairwise_coverage_to_rank
+    input_path: outputs/electronics_deepseek_pairwise_coverage/predictions/pairwise_predictions.jsonl
+    eval_ready: true
+    prediction_ready: true
