@@ -90,7 +90,9 @@ def write_compare_markdown(rows: list[dict[str, Any]], path: str | Path) -> None
     lines: list[str] = []
     lines.append("# Week7.5 Framework Compare")
     lines.append("")
-    lines.append("这份 compare 不是新的论文结论，而是 week7.5 Beauty 单域最小训练闭环的工程视图。它把 direct ranking、structured risk strongest hand-crafted baseline、literature-aligned ranking baselines 和未来的 LoRA-adapted framework 放在同一条结果路径里，确保后续服务器闭环完成后不需要再回头补 compare 结构。")
+    lines.append(
+        "这份 compare 不是新的论文结论，而是 week7.5 Beauty 单域最小训练闭环的工程视图。它把 direct ranking、structured risk strongest hand-crafted baseline、literature-aligned ranking baselines 和未来的 LoRA-adapted framework 放在同一条结果路径里，确保后续服务器闭环完成后不需要再回头补 compare 结构。"
+    )
     lines.append("")
     if not rows:
         lines.append("当前 compare 仍处于 schema 初始化阶段，尚未接收到真实 framework metrics。")
@@ -103,8 +105,14 @@ def write_compare_markdown(rows: list[dict[str, Any]], path: str | Path) -> None
             )
         framework_rows = [row for row in rows if str(row.get("is_trainable_framework", "")).lower() == "true"]
         lines.append("")
-        if framework_rows:
-            lines.append("当前 compare 已经包含 trainable framework 行；如果后续服务器训练完成并写入 framework metrics，这些行会成为 Beauty 单域最小训练闭环的中心结果。")
+        if framework_rows and any(str(row.get("compare_status", "")) == "framework_result_ready" for row in framework_rows):
+            lines.append(
+                "当前 compare 已经包含真实 framework metrics；服务器训练闭环完成后，这些行将成为 Beauty 单域 trainable framework 与 strongest hand-crafted baseline 的直接对照证据。"
+            )
+        elif framework_rows:
+            lines.append(
+                "当前 compare 已经预留 trainable framework 行，但它仍处于待服务器回填结果的状态；这说明本地 compare 接口已经准备好，下一步只需要把真实训练与评估产物填进来。"
+            )
         else:
-            lines.append("当前 compare 仍未包含真实 framework metrics，这说明本地工程准备已完成，但真正的 Beauty LoRA 闭环仍等待服务器训练与评估产物回填。")
+            lines.append("当前 compare 仍未包含 trainable framework 行，这说明本地 compare 结构尚未完整。")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")

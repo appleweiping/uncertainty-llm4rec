@@ -45,3 +45,14 @@ experiments:
     command: python main_compare_framework.py --config configs/lora/qwen3_rank_beauty_framework_v1.yaml
     output_dir: outputs/summary
     notes: Refresh the framework compare CSV and markdown summary after evaluation.
+
+  - exp_name: qwen3_rank_beauty_framework_v1_speed_upgrade
+    task: candidate_ranking_speed_upgrade
+    domain: beauty
+    model: qwen3_8b_local
+    method_family: trainable_lora_framework
+    method_variant: qwen3_rank_beauty_framework_v1
+    is_current_best_family: false
+    command: python main_prepare_speed_upgrade.py --config configs/lora/qwen3_rank_beauty_framework_v1.yaml
+    output_dir: outputs/summary
+    notes: Refresh the non-destructive speed-up plan after compare so that week8 entry keeps the same research scope.

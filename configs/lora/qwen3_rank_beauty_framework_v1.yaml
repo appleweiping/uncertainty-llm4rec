@@ -67,6 +67,39 @@ evaluation:
   max_new_tokens: 300
   metrics_output_path: outputs/beauty_qwen3_rank_framework_v1/tables/ranking_metrics.csv
 
+speed_upgrade:
+  bottleneck_task: candidate_ranking
+  preserve_components:
+    - pointwise_diagnosis
+    - pairwise_mechanism
+    - calibration
+    - three_layer_baseline_compare
+  output_contract:
+    json_only: true
+    include_reason_by_default: false
+    max_new_tokens_target: 96
+  batching:
+    must_verify_batch_generate: true
+    target_batch_size: 4
+    verify_entrypoints:
+      - main_rank.py
+      - src/llm/local_hf_backend.py
+  reuse_and_resume:
+    reduce_repeated_model_loads: true
+    shard_eval_enabled: true
+    shard_size: 100
+    registry_resume_required: true
+  serving_readiness:
+    current_mode: transformers_local
+    future_mode: vllm_reserved
+    trigger_condition: larger_than_beauty_single_domain_medium
+  week8_entry_conditions:
+    - framework_minimal_result_ready
+    - framework_compare_role_fixed
+    - strongest_handcrafted_baseline_fixed
+    - ranking_speed_path_documented
+    - shard_resume_plan_ready
+
 support_signals:
   pointwise_uncertainty_path: outputs/beauty_qwen3_local_pointwise_medium/calibrated/test_calibrated.jsonl
   direct_ranking_exp_name: beauty_qwen3_local_rank_medium
@@ -81,6 +114,11 @@ summary:
   train_status_path: outputs/summary/week7_5_train_status.csv
   framework_compare_path: outputs/summary/week7_5_framework_compare.csv
   framework_compare_markdown_path: outputs/summary/week7_5_framework_compare.md
+  baseline_matrix_source_path: outputs/summary/week7_day4_baseline_matrix.csv
+  framework_baseline_bridge_path: outputs/summary/week7_5_baseline_matrix.csv
+  framework_baseline_bridge_markdown_path: outputs/summary/week7_5_baseline_matrix.md
+  speed_upgrade_plan_path: outputs/summary/week7_5_speed_upgrade_plan.csv
+  speed_upgrade_markdown_path: outputs/summary/week7_5_speed_upgrade.md
   startup_check_path: outputs/summary/week7_5_startup_check.json
   dataset_preview_path: outputs/summary/week7_5_dataset_preview.csv
   training_summary_path: artifacts/logs/qwen3_rank_beauty_framework_v1/training_summary.csv
