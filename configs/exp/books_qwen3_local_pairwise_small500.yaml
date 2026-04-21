@@ -1,0 +1,16 @@
+exp_name: books_qwen3_local_pairwise_small500
+domain: books
+data_config: configs/data/amazon_books_small.yaml
+task_config: configs/task/pairwise_preference_coverage.yaml
+task_type: pairwise_preference
+model_config: configs/model/qwen3_8b_local.yaml
+input_path: data/processed/amazon_books_small/pairwise_coverage_test.jsonl
+output_dir: outputs/books_qwen3_local_pairwise_small500
+output_root: outputs
+prompt_path: prompts/pairwise_preference.txt
+max_samples: 500
+method_family: local_hf_base_only
+method_variant: pairwise_small500
+is_current_best_family: false
+overwrite: false
+seed: 42

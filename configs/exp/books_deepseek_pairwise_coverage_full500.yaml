@@ -1,0 +1,13 @@
+exp_name: books_deepseek_pairwise_coverage_full500
+domain: books
+data_config: configs/data/amazon_books_small.yaml
+task_config: configs/task/pairwise_preference_coverage.yaml
+task_type: pairwise_preference
+model_config: configs/model/deepseek.yaml
+input_path: data/processed/amazon_books_small/pairwise_coverage_test.jsonl
+output_dir: outputs/books_deepseek_pairwise_coverage_full500
+output_root: outputs
+prompt_path: prompts/pairwise_preference.txt
+max_samples: 500
+overwrite: false
+seed: 42

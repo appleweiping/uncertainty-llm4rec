@@ -1,0 +1,95 @@
+run_name: qwen3_rank_electronics_srpd_v2_small500
+domain: electronics
+task: candidate_ranking
+method_family: SRPD
+method_variant: SRPD-v2_uncertainty_weighted_sft_small500
+model_name: qwen3_8b_local
+base_model_config: configs/model/qwen3_8b_local.yaml
+prompt_path: prompts/candidate_ranking.txt
+
+train_input_path: data/processed/amazon_electronics_small/srpd/qwen3_rank_electronics_srpd_v2_small500_train.jsonl
+valid_input_path: data/processed/amazon_electronics_small/srpd/qwen3_rank_electronics_srpd_v2_small500_valid.jsonl
+eval_input_path: data/processed/amazon_electronics_small/ranking_test.jsonl
+
+adapter_output_dir: artifacts/adapters/qwen3_rank_electronics_srpd_v2_small500
+framework_output_dir: outputs/electronics_qwen3_rank_srpd_v2_small500
+logs_dir: artifacts/logs/qwen3_rank_electronics_srpd_v2_small500
+output_root: outputs
+
+topk: 10
+seed: 42
+
+model:
+  model_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+  tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+  device: cuda
+  device_map: cuda:0
+  dtype: bfloat16
+  local_files_only: true
+  trust_remote_code: true
+
+training:
+  dry_run: false
+  max_train_samples: 400
+  max_valid_samples: 100
+  num_train_epochs: 1.0
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8
+  learning_rate: 0.0002
+  warmup_ratio: 0.03
+  max_seq_length: 1024
+  logging_steps: 10
+  save_strategy: "no"
+  eval_strategy: "epoch"
+  gradient_checkpointing: true
+  bf16: true
+  fp16: false
+  include_reason: false
+  bias: none
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
+
+evaluation:
+  framework_exp_name: electronics_qwen3_rank_srpd_v2_small500
+  run_inference_after_train: true
+  max_eval_samples: 500
+  batch_size: 4
+  max_new_tokens: 96
+  metrics_output_path: outputs/electronics_qwen3_rank_srpd_v2_small500/tables/ranking_metrics.csv
+
+support_signals:
+  structured_risk_teacher_data_config: configs/srpd/qwen3_rank_electronics_srpd_v2_small500.yaml
+  pointwise_uncertainty_path: outputs/electronics_qwen3_local_pointwise_small3000/calibrated/test_calibrated.jsonl
+  direct_ranking_exp_name: electronics_qwen3_local_rank_small500
+  direct_ranking_metrics_path: outputs/electronics_qwen3_local_rank_small500/tables/ranking_metrics.csv
+  structured_risk_exp_name: electronics_qwen3_local_structured_risk_small500
+  structured_risk_variant: nonlinear_structured_risk_rerank
+  structured_risk_metrics_path: outputs/electronics_qwen3_local_structured_risk_small500/tables/rerank_results.csv
+  pairwise_exp_name: electronics_qwen3_local_pairwise_small500
+  pairwise_metrics_path: outputs/electronics_qwen3_local_pairwise_small500/tables/pairwise_metrics.csv
+
+summary:
+  train_status_path: outputs/summary/electronics_srpd_train_status_small500.csv
+  framework_compare_path: outputs/summary/electronics_srpd_framework_compare_small500.csv
+  framework_compare_markdown_path: outputs/summary/electronics_srpd_framework_compare_small500.md
+  baseline_matrix_source_path: outputs/summary/week7_day4_baseline_matrix.csv
+  framework_baseline_bridge_path: outputs/summary/electronics_srpd_baseline_matrix_small500.csv
+  framework_baseline_bridge_markdown_path: outputs/summary/electronics_srpd_baseline_matrix_small500.md
+  startup_check_path: outputs/summary/electronics_srpd_v2_small500_startup_check.json
+  dataset_preview_path: outputs/summary/electronics_srpd_v2_small500_dataset_preview.csv
+  training_summary_path: artifacts/logs/qwen3_rank_electronics_srpd_v2_small500/training_summary.csv
+  framework_manifest_path: outputs/electronics_qwen3_rank_srpd_v2_small500/framework_run_manifest.json
+  framework_metrics_path: outputs/electronics_qwen3_rank_srpd_v2_small500/tables/ranking_metrics.csv
+  direct_ranking_metrics_path: outputs/electronics_qwen3_local_rank_small500/tables/ranking_metrics.csv
+  structured_risk_metrics_path: outputs/electronics_qwen3_local_structured_risk_small500/tables/rerank_results.csv
+  literature_baseline_summary_path: outputs/summary/week7_day3_literature_baseline_summary.csv

@@ -1,0 +1,12 @@
+exp_name: books_deepseek_pointwise_full3000
+domain: books
+data_config: configs/data/amazon_books_small.yaml
+task_type: pointwise_yesno
+model_config: configs/model/deepseek.yaml
+input_path: data/processed/amazon_books_small/test.jsonl
+output_dir: outputs/books_deepseek_pointwise_full3000
+output_root: outputs
+prompt_path: prompts/pointwise_yesno.txt
+max_samples: 3000
+overwrite: false
+seed: 42

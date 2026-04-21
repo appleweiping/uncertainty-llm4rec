@@ -1,0 +1,26 @@
+run_name: qwen3_rank_movies_srpd_v2_small500
+domain: movies
+task: candidate_ranking
+srpd_stage: v2
+method_variant: SRPD-v2_uncertainty_weighted_sft_small500
+
+base_input_path: data/processed/amazon_movies_small/ranking_test.jsonl
+structured_risk_teacher_path: outputs/movies_deepseek_rank_full500_structured_risk/reranked/rank_reranked.jsonl
+train_ratio: 0.8
+
+weighting:
+  base: 1.0
+  disagreement_bonus: 0.25
+  uncertainty_scale: 0.5
+  risk_scale: 0.1
+  min_weight: 0.5
+  max_weight: 2.0
+
+output_train_path: data/processed/amazon_movies_small/srpd/qwen3_rank_movies_srpd_v2_small500_train.jsonl
+output_valid_path: data/processed/amazon_movies_small/srpd/qwen3_rank_movies_srpd_v2_small500_valid.jsonl
+summary_path: outputs/summary/movies_srpd_v2_small500_data_summary.csv
+markdown_path: outputs/summary/movies_srpd_v2_small500_data_summary.md
+
+notes: >
+  Movies small-full SRPD-v2 teacher-data alignment with uncertainty-aware sample weights on the
+  500-row ranking split.

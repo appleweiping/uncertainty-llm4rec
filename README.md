@@ -742,6 +742,8 @@ Week2 and the current Week3 Beauty-first writing phase have already extended thi
 
 The current natural next step is not to add more raw experiments immediately, but to use the summary layer and docs layer to support paper writing and later larger-scale reruns.
 
+The repository now also carries a parallel cross-domain small-scope configuration family for `Books`, `Electronics`, and `Movies` under the local Qwen3 and SRPD routes. These configs keep pointwise, ranking, pairwise, teacher-data, and LoRA outputs on separate paths from the main Beauty artifacts so that cross-domain validation can be expanded without overwriting the current Beauty evidence line.
+
 ## Notes
 
 - Current small-scale runs are useful for validating methodology, not for claiming final large-scale empirical conclusions.
