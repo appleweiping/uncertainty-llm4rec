@@ -9,5 +9,7 @@ output_dir: outputs/movies_deepseek_pairwise_coverage_full500
 output_root: outputs
 prompt_path: prompts/pairwise_preference.txt
 max_samples: 500
+resume_partial: true
+checkpoint_every_batches: 1
 overwrite: false
 seed: 42

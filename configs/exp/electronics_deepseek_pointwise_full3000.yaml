@@ -8,5 +8,7 @@ output_dir: outputs/electronics_deepseek_pointwise_full3000
 output_root: outputs
 prompt_path: prompts/pointwise_yesno.txt
 max_samples: 3000
+resume_partial: true
+checkpoint_every_batches: 1
 overwrite: false
 seed: 42

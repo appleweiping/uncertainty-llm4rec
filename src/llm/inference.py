@@ -132,9 +132,14 @@ def run_pointwise_inference(
     samples: list[dict[str, Any]],
     llm_backend,
     prompt_builder,
+    *,
+    checkpoint_path=None,
+    checkpoint_every_batches: int = 1,
+    existing_records: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
-    results: list[dict[str, Any]] = []
+    results: list[dict[str, Any]] = list(existing_records or [])
     batch_size = int(getattr(llm_backend, "batch_size", 1) or 1)
+    checkpoint_every_batches = max(1, int(checkpoint_every_batches))
 
     pointwise_jobs: list[dict[str, Any]] = []
     for sample in samples:
@@ -166,8 +171,13 @@ def run_pointwise_inference(
             }
         )
 
+    if existing_records:
+        resume_count = min(len(existing_records), len(pointwise_jobs))
+        pointwise_jobs = pointwise_jobs[resume_count:]
+
     progress = tqdm(total=len(pointwise_jobs), desc="Running pointwise inference")
     try:
+        batch_counter = 0
         for start_idx in range(0, len(pointwise_jobs), batch_size):
             batch_jobs = pointwise_jobs[start_idx : start_idx + batch_size]
             batch_prompts = [
@@ -209,6 +219,9 @@ def run_pointwise_inference(
                     )
                 )
             progress.update(len(batch_jobs))
+            batch_counter += 1
+            if checkpoint_path is not None and batch_counter % checkpoint_every_batches == 0:
+                save_jsonl(results, checkpoint_path)
     finally:
         progress.close()
 

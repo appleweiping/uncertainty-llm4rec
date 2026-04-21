@@ -10,5 +10,8 @@ output_root: outputs
 prompt_path: prompts/candidate_ranking.txt
 max_samples: 500
 topk: 10
+max_new_tokens: 96
+resume_partial: true
+checkpoint_every_batches: 1
 overwrite: false
 seed: 42

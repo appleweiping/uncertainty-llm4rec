@@ -9,6 +9,8 @@ output_dir: outputs/books_qwen3_local_pairwise_small500
 output_root: outputs
 prompt_path: prompts/pairwise_preference.txt
 max_samples: 500
+resume_partial: true
+checkpoint_every_batches: 1
 method_family: local_hf_base_only
 method_variant: pairwise_small500
 is_current_best_family: false

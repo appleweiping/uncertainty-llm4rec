@@ -8,6 +8,8 @@ output_dir: outputs/electronics_qwen3_local_pointwise_small3000
 output_root: outputs
 prompt_path: prompts/pointwise_yesno.txt
 max_samples: 3000
+resume_partial: true
+checkpoint_every_batches: 1
 method_family: local_hf_base_only
 method_variant: pointwise_small3000
 is_current_best_family: false
