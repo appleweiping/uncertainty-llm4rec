@@ -1,0 +1,14 @@
+exp_name: beauty_deepseek_rank_full973
+data_config: configs/data/amazon_beauty.yaml
+task_config: configs/task/candidate_ranking.yaml
+task_type: candidate_ranking
+model_config: configs/model/deepseek.yaml
+input_path: data/processed/amazon_beauty/ranking_test.jsonl
+output_dir: outputs/beauty_deepseek_rank_full973
+output_root: outputs
+prompt_path: prompts/candidate_ranking.txt
+max_samples: 973
+topk: 10
+overwrite: false
+seed: 42
+

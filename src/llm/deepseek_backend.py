@@ -13,6 +13,8 @@ class DeepSeekBackend(APIBackend):
         base_url: str = "https://api.deepseek.com",
         api_key_env: str = "DEEPSEEK_API_KEY",
         timeout: float | None = None,
+        batch_size: int = 1,
+        max_concurrency: int | None = None,
     ) -> None:
         super().__init__(
             provider="deepseek",
@@ -22,4 +24,6 @@ class DeepSeekBackend(APIBackend):
             temperature=temperature,
             max_tokens=max_tokens,
             timeout=timeout,
+            batch_size=batch_size,
+            max_concurrency=max_concurrency,
         )

@@ -13,6 +13,8 @@ class OpenAIBackend(APIBackend):
         temperature: float = 0.0,
         max_tokens: int = 300,
         timeout: float | None = None,
+        batch_size: int = 1,
+        max_concurrency: int | None = None,
     ) -> None:
         super().__init__(
             provider="openai",
@@ -22,4 +24,6 @@ class OpenAIBackend(APIBackend):
             temperature=temperature,
             max_tokens=max_tokens,
             timeout=timeout,
+            batch_size=batch_size,
+            max_concurrency=max_concurrency,
         )

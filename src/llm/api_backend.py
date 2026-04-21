@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from openai import OpenAI
+from openai import APIConnectionError, APITimeoutError, OpenAI
 
 from src.llm.base import GenerationResult, LLMBackend
 
@@ -53,6 +54,8 @@ class APIBackend(LLMBackend):
         temperature: float = 0.0,
         max_tokens: int = 300,
         timeout: float | None = None,
+        batch_size: int = 1,
+        max_concurrency: int | None = None,
         extra_body: dict[str, Any] | None = None,
         extra_headers: dict[str, str] | None = None,
     ) -> None:
@@ -61,6 +64,9 @@ class APIBackend(LLMBackend):
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.timeout = timeout
+        self.batch_size = max(1, int(batch_size))
+        resolved_concurrency = max_concurrency if max_concurrency is not None else self.batch_size
+        self.max_concurrency = max(1, int(resolved_concurrency))
         self.extra_body = extra_body or {}
         self.extra_headers = extra_headers or {}
         self.max_retries = 8
@@ -103,7 +109,11 @@ class APIBackend(LLMBackend):
                 return self.client.chat.completions.create(**request_kwargs)
             except Exception as exc:
                 status_code = getattr(exc, "status_code", None)
-                is_retryable = status_code == 429 or (isinstance(status_code, int) and 500 <= status_code < 600)
+                is_retryable = (
+                    status_code == 429
+                    or (isinstance(status_code, int) and 500 <= status_code < 600)
+                    or isinstance(exc, (APIConnectionError, APITimeoutError, TimeoutError))
+                )
                 if not is_retryable or attempt >= max_retries:
                     raise
 
@@ -136,3 +146,11 @@ class APIBackend(LLMBackend):
         response = self.call_api(prompt, **kwargs)
         latency = time.perf_counter() - start
         return self.normalize_response(response, latency=latency)
+
+    def batch_generate(self, prompts: list[str], **kwargs) -> list[dict[str, Any]]:
+        if len(prompts) <= 1 or self.max_concurrency <= 1:
+            return [self.generate(prompt, **kwargs) for prompt in prompts]
+
+        max_workers = min(self.max_concurrency, len(prompts))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            return list(executor.map(lambda prompt: self.generate(prompt, **kwargs), prompts))

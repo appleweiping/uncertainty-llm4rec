@@ -1,0 +1,16 @@
+exp_name: beauty_qwen3_local_pointwise_full
+domain: beauty
+data_config: configs/data/amazon_beauty.yaml
+task_type: pointwise_yesno
+model_config: configs/model/qwen3_8b_local.yaml
+input_path: data/processed/amazon_beauty/test.jsonl
+output_dir: outputs/beauty_qwen3_local_pointwise_full
+output_root: outputs
+prompt_path: prompts/pointwise_yesno.txt
+max_samples: 5838
+method_family: local_hf_base_only
+method_variant: pointwise_full_coverage
+is_current_best_family: false
+overwrite: false
+seed: 42
+

@@ -24,6 +24,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max_samples", type=int, default=None, help="Optional sample cap.")
     parser.add_argument("--output_path", type=str, default=None, help="Prediction output jsonl path.")
     parser.add_argument("--topk", type=int, default=10, help="Requested top-k size inside the ranking prompt.")
+    parser.add_argument("--resume_partial", action="store_true", help="Resume from an existing partial ranking prediction file when possible.")
+    parser.add_argument("--checkpoint_every_batches", type=int, default=1, help="Save partial ranking predictions every N batches during inference.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing prediction file.")
     parser.add_argument("--seed", type=int, default=None, help="Optional global random seed.")
     return parser.parse_args()
@@ -45,6 +47,8 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
         "max_samples": args.max_samples if args.max_samples is not None else cfg.get("max_samples"),
         "output_path": args.output_path if args.output_path is not None else cfg.get("output_path"),
         "topk": args.topk if args.topk is not None else cfg.get("topk", 10),
+        "resume_partial": bool(args.resume_partial or cfg.get("resume_partial", False)),
+        "checkpoint_every_batches": args.checkpoint_every_batches if args.checkpoint_every_batches is not None else cfg.get("checkpoint_every_batches", 1),
         "overwrite": bool(args.overwrite or cfg.get("overwrite", False)),
         "seed": args.seed if args.seed is not None else cfg.get("seed"),
     }
@@ -77,6 +81,8 @@ def main() -> None:
     max_samples = cfg["max_samples"]
     output_path = cfg["output_path"]
     topk = int(cfg["topk"]) if cfg["topk"] is not None else 10
+    resume_partial = bool(cfg["resume_partial"])
+    checkpoint_every_batches = int(cfg["checkpoint_every_batches"]) if cfg["checkpoint_every_batches"] is not None else 1
     overwrite = cfg["overwrite"]
     seed = cfg["seed"]
 
@@ -108,13 +114,23 @@ def main() -> None:
     if seed is not None:
         print(f"[{exp_name}] Seed: {seed}")
 
-    if output_path.exists() and not overwrite:
+    if output_path.exists() and not overwrite and not resume_partial:
         print(f"[{exp_name}] Output already exists: {output_path}")
         print(f"[{exp_name}] Use overwrite=true in config or --overwrite to rerun.")
         return
 
     samples = load_jsonl(input_path, max_samples=max_samples)
     print(f"[{exp_name}] Loaded {len(samples)} samples.")
+    existing_predictions: list[dict[str, Any]] = []
+    if output_path.exists() and resume_partial:
+        existing_predictions = load_jsonl(output_path)
+        resume_count = min(len(existing_predictions), len(samples))
+        if resume_count:
+            print(f"[{exp_name}] Resuming from existing partial output: {resume_count} rows already saved.")
+            samples = samples[resume_count:]
+        if not samples:
+            print(f"[{exp_name}] Partial output already covers all requested samples.")
+            return
 
     llm_backend = build_backend_from_config(model_config)
     prompt_builder = get_prompt_builder(prompt_path)
@@ -124,6 +140,9 @@ def main() -> None:
         llm_backend=llm_backend,
         prompt_builder=prompt_builder,
         topk=topk,
+        checkpoint_path=output_path,
+        checkpoint_every_batches=checkpoint_every_batches,
+        existing_records=existing_predictions,
     )
 
     save_jsonl(predictions, output_path)

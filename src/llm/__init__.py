@@ -100,6 +100,8 @@ def build_backend_from_dict(model_cfg: dict[str, Any]):
     base_url = _first_present(connection_cfg.get("base_url"), model_cfg.get("base_url"))
     api_key_env = str(_first_present(connection_cfg.get("api_key_env"), model_cfg.get("api_key_env"), "") or "").strip()
     timeout = _first_present(connection_cfg.get("timeout"), model_cfg.get("timeout"))
+    batch_size = int(_first_present(runtime_cfg.get("batch_size"), model_cfg.get("batch_size"), 1))
+    max_concurrency = _first_present(runtime_cfg.get("max_concurrency"), model_cfg.get("max_concurrency"))
 
     if not api_key_env:
         raise ValueError("api_key_env is required in model config.")
@@ -113,6 +115,8 @@ def build_backend_from_dict(model_cfg: dict[str, Any]):
             temperature=temperature,
             max_tokens=max_tokens,
             timeout=float(timeout) if timeout is not None else None,
+            batch_size=batch_size,
+            max_concurrency=int(max_concurrency) if max_concurrency is not None else None,
             extra_body=model_cfg.get("extra_body"),
             extra_headers=model_cfg.get("extra_headers"),
         )
@@ -125,6 +129,8 @@ def build_backend_from_dict(model_cfg: dict[str, Any]):
             temperature=temperature,
             max_tokens=max_tokens,
             timeout=float(timeout) if timeout is not None else None,
+            batch_size=batch_size,
+            max_concurrency=int(max_concurrency) if max_concurrency is not None else None,
         )
 
     raise ValueError(f"Unsupported backend_name: {backend_name}")
