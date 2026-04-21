@@ -350,6 +350,7 @@ def _run_actual_training(
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "left"
 
     dtype_name = str(ctx.model_cfg.get("dtype", "bfloat16")).strip().lower()
     torch_dtype = {
@@ -363,7 +364,7 @@ def _run_actual_training(
 
     model = AutoModelForCausalLM.from_pretrained(
         model_name_or_path,
-        torch_dtype=torch_dtype,
+        dtype=torch_dtype,
         device_map=ctx.model_cfg.get("device_map", "auto"),
         trust_remote_code=bool(ctx.model_cfg.get("trust_remote_code", True)),
         local_files_only=bool(ctx.model_cfg.get("local_files_only", True)),

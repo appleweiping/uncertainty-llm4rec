@@ -56,7 +56,17 @@ class LocalHFBackend(LLMBackend):
         self._model = None
 
     def _uses_single_device(self) -> bool:
-        return self.device_map is None or self.device_map == "none"
+        if self.device_map is None:
+            return True
+        if isinstance(self.device_map, str):
+            normalized = self.device_map.strip().lower()
+            if normalized in {"", "none"}:
+                return True
+            if normalized in {"auto", "balanced", "balanced_low_0", "sequential"}:
+                return False
+            if normalized.startswith(("cuda", "cpu", "mps", "xpu")):
+                return True
+        return False
 
     def _torch_dtype(self):
         torch = self._torch
@@ -91,6 +101,7 @@ class LocalHFBackend(LLMBackend):
         )
         if tokenizer.pad_token_id is None:
             tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.padding_side = "left"
 
         model_kwargs: dict[str, Any] = {
             "trust_remote_code": self.trust_remote_code,
@@ -100,9 +111,9 @@ class LocalHFBackend(LLMBackend):
             model_kwargs["device_map"] = self.device_map
         torch_dtype = self._torch_dtype()
         if torch_dtype != "auto":
-            model_kwargs["torch_dtype"] = torch_dtype
+            model_kwargs["dtype"] = torch_dtype
         else:
-            model_kwargs["torch_dtype"] = "auto"
+            model_kwargs["dtype"] = "auto"
         if self.load_in_4bit:
             model_kwargs["load_in_4bit"] = True
         if self.load_in_8bit:
