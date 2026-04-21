@@ -220,6 +220,7 @@ def run_candidate_ranking_inference(
     prompt_builder,
     *,
     topk: int | None = None,
+    max_new_tokens: int | None = None,
     checkpoint_path=None,
     checkpoint_every_batches: int = 1,
     existing_records: list[dict[str, Any]] | None = None,
@@ -240,6 +241,7 @@ def run_candidate_ranking_inference(
             batch_generations = _batch_generate_with_backend(
                 llm_backend=llm_backend,
                 prompts=batch_prompts,
+                max_new_tokens=max_new_tokens,
             )
 
             for sample, prompt, generation in zip(batch_samples, batch_prompts, batch_generations):

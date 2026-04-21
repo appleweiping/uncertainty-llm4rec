@@ -64,7 +64,7 @@ evaluation:
   run_inference_after_train: true
   max_eval_samples: 973
   batch_size: 4
-  max_new_tokens: 160
+  max_new_tokens: 96
   metrics_output_path: outputs/beauty_qwen3_rank_srpd_v3_full973/tables/ranking_metrics.csv
 
 support_signals:
@@ -93,4 +93,3 @@ summary:
   direct_ranking_metrics_path: outputs/beauty_qwen3_local_rank_full973/tables/ranking_metrics.csv
   structured_risk_metrics_path: outputs/beauty_qwen3_local_structured_risk_full973/tables/rerank_results.csv
   literature_baseline_summary_path: outputs/summary/week7_day3_literature_baseline_summary.csv
-

@@ -37,6 +37,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input_path", type=str, default=None, help="Optional manual ranking input override.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite predictions if they already exist.")
     parser.add_argument("--skip_inference", action="store_true", help="Reuse an existing framework prediction file.")
+    parser.add_argument("--resume_partial", action="store_true", help="Resume from an existing partial ranking prediction file when possible.")
+    parser.add_argument("--checkpoint_every_batches", type=int, default=1, help="Save partial ranking predictions every N batches during inference.")
     parser.add_argument("--max_samples", type=int, default=None, help="Optional eval sample override.")
     parser.add_argument("--seed", type=int, default=None, help="Optional global random seed.")
     parser.add_argument("--k", type=int, default=10, help="Top-k cutoff for ranking evaluation.")
@@ -68,10 +70,10 @@ def main() -> None:
 
     input_path = Path(args.input_path or config.get("eval_input_path"))
     prediction_path = paths.predictions_dir / "rank_predictions.jsonl"
-    if prediction_path.exists() and not args.overwrite and not args.skip_inference:
+    if prediction_path.exists() and not args.overwrite and not args.skip_inference and not args.resume_partial:
         raise FileExistsError(
             f"Framework ranking predictions already exist: {prediction_path}. "
-            "Use --overwrite to regenerate or --skip_inference to evaluate the existing file."
+            "Use --overwrite to regenerate, --resume_partial to continue, or --skip_inference to evaluate the existing file."
         )
 
     if not args.skip_inference:
@@ -87,13 +89,28 @@ def main() -> None:
         llm_backend = build_backend_from_dict(base_model_cfg)
         prompt_builder = PromptBuilder(template_path=str(config["prompt_path"]))
         samples = load_jsonl(input_path, max_samples=args.max_samples or eval_cfg.get("max_eval_samples"))
-        results = run_candidate_ranking_inference(
-            samples=samples,
-            llm_backend=llm_backend,
-            prompt_builder=prompt_builder,
-            topk=int(config.get("topk", 10)),
-        )
-        save_jsonl(results, prediction_path)
+        existing_predictions: list[dict[str, Any]] = []
+        if prediction_path.exists() and args.resume_partial:
+            existing_predictions = load_jsonl(prediction_path)
+            resume_count = min(len(existing_predictions), len(samples))
+            if resume_count:
+                print(f"[{framework_exp_name}] Resuming from existing partial output: {resume_count} rows already saved.")
+                samples = samples[resume_count:]
+            if not samples:
+                print(f"[{framework_exp_name}] Partial output already covers all requested samples.")
+                args.skip_inference = True
+        if not args.skip_inference:
+            results = run_candidate_ranking_inference(
+                samples=samples,
+                llm_backend=llm_backend,
+                prompt_builder=prompt_builder,
+                topk=int(config.get("topk", 10)),
+                max_new_tokens=eval_cfg.get("max_new_tokens", generation_cfg.get("max_new_tokens", 300)),
+                checkpoint_path=prediction_path,
+                checkpoint_every_batches=args.checkpoint_every_batches,
+                existing_records=existing_predictions,
+            )
+            save_jsonl(results, prediction_path)
 
     print(f"[{framework_exp_name}] Loading ranking predictions from: {prediction_path}")
     raw_records = load_jsonl(prediction_path)

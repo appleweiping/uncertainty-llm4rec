@@ -10,17 +10,14 @@ Candidates:
 
 Task:
 Return the top {topk} most suitable items for this user from the given candidate set.
-Return a complete candidate ordering in `ranked_item_ids`, and return the top-{topk} prefix again in `topk_item_ids`.
+Return a complete candidate ordering only once in `ranked_item_ids`.
 
 Allowed item ids:
 {allowed_item_ids}
 
-Do not wrap the answer in markdown fences. Do not output hidden reasoning, chain-of-thought, analysis, or any <think>...</think> block. If you are uncertain, still return valid JSON and keep every item inside the allowed list.
+Do not wrap the answer in markdown fences. Do not output hidden reasoning, chain-of-thought, analysis, explanations, or any <think>...</think> block. If you are uncertain, still return valid JSON and keep every item inside the allowed list.
 
 Return your answer strictly in JSON format:
 {{
-  "ranked_item_ids": ["item_id_1", "item_id_2", "..."],
-  "topk_item_ids": ["top1_id", "top2_id", "..."],
-  "confidence": 0.0,
-  "reason": "one short sentence"
+  "ranked_item_ids": ["item_id_1", "item_id_2", "..."]
 }}

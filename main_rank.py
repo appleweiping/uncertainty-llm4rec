@@ -24,6 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max_samples", type=int, default=None, help="Optional sample cap.")
     parser.add_argument("--output_path", type=str, default=None, help="Prediction output jsonl path.")
     parser.add_argument("--topk", type=int, default=10, help="Requested top-k size inside the ranking prompt.")
+    parser.add_argument("--max_new_tokens", type=int, default=None, help="Optional generation length override for ranking inference.")
     parser.add_argument("--resume_partial", action="store_true", help="Resume from an existing partial ranking prediction file when possible.")
     parser.add_argument("--checkpoint_every_batches", type=int, default=1, help="Save partial ranking predictions every N batches during inference.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing prediction file.")
@@ -47,6 +48,7 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
         "max_samples": args.max_samples if args.max_samples is not None else cfg.get("max_samples"),
         "output_path": args.output_path if args.output_path is not None else cfg.get("output_path"),
         "topk": args.topk if args.topk is not None else cfg.get("topk", 10),
+        "max_new_tokens": args.max_new_tokens if args.max_new_tokens is not None else cfg.get("max_new_tokens"),
         "resume_partial": bool(args.resume_partial or cfg.get("resume_partial", False)),
         "checkpoint_every_batches": args.checkpoint_every_batches if args.checkpoint_every_batches is not None else cfg.get("checkpoint_every_batches", 1),
         "overwrite": bool(args.overwrite or cfg.get("overwrite", False)),
@@ -81,6 +83,7 @@ def main() -> None:
     max_samples = cfg["max_samples"]
     output_path = cfg["output_path"]
     topk = int(cfg["topk"]) if cfg["topk"] is not None else 10
+    max_new_tokens = int(cfg["max_new_tokens"]) if cfg["max_new_tokens"] is not None else None
     resume_partial = bool(cfg["resume_partial"])
     checkpoint_every_batches = int(cfg["checkpoint_every_batches"]) if cfg["checkpoint_every_batches"] is not None else 1
     overwrite = cfg["overwrite"]
@@ -111,6 +114,8 @@ def main() -> None:
     print(f"[{exp_name}] Output path: {output_path}")
     print(f"[{exp_name}] Model config: {model_config}")
     print(f"[{exp_name}] Top-k request: {topk}")
+    if max_new_tokens is not None:
+        print(f"[{exp_name}] Max new tokens: {max_new_tokens}")
     if seed is not None:
         print(f"[{exp_name}] Seed: {seed}")
 
@@ -140,6 +145,7 @@ def main() -> None:
         llm_backend=llm_backend,
         prompt_builder=prompt_builder,
         topk=topk,
+        max_new_tokens=max_new_tokens,
         checkpoint_path=output_path,
         checkpoint_every_batches=checkpoint_every_batches,
         existing_records=existing_predictions,
