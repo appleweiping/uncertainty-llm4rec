@@ -1,0 +1,7 @@
+popularity_group,fraction,method
+mid,0.40013337779259756,direct_candidate_ranking
+tail,0.3711237079026342,direct_candidate_ranking
+head,0.22874291430476826,direct_candidate_ranking
+mid,0.4,uncertainty_aware_rank_rerank_nonlinear_structured_risk_rerank
+tail,0.37133333333333335,uncertainty_aware_rank_rerank_nonlinear_structured_risk_rerank
+head,0.22866666666666666,uncertainty_aware_rank_rerank_nonlinear_structured_risk_rerank

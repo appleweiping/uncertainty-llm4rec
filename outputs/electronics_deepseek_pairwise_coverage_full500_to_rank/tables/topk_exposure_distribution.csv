@@ -1,0 +1,7 @@
+popularity_group,fraction,method
+mid,0.40026729034413633,direct_candidate_ranking
+tail,0.3711994654193117,direct_candidate_ranking
+head,0.22853324423655194,direct_candidate_ranking
+mid,0.4001336005344021,pairwise_to_rank_weighted_win_count
+tail,0.37140948563794257,pairwise_to_rank_weighted_win_count
+head,0.22845691382765532,pairwise_to_rank_weighted_win_count
