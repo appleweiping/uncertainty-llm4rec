@@ -58,8 +58,9 @@ def _batch_generate_with_backend(
     *,
     llm_backend,
     prompts: list[str],
+    **kwargs,
 ) -> list[dict[str, Any]]:
-    raw_results = llm_backend.batch_generate(prompts)
+    raw_results = llm_backend.batch_generate(prompts, **kwargs)
     return [
         normalize_generation_result(
             result,
