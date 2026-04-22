@@ -180,7 +180,7 @@ def _sample_weight(
             pairwise_preferences
         )
 
-    if stage == "v4":
+    if stage in {"v4", "v5"}:
         gate_cfg = weight_cfg.get("gate", {}) or {}
         gate_mode = str(gate_cfg.get("mode", "teacher_gap")).strip().lower()
         min_effective_uncertainty = float(gate_cfg.get("min_effective_uncertainty", 0.0))
@@ -234,10 +234,40 @@ def _split_records(records: list[dict[str, Any]], train_ratio: float) -> tuple[l
     return records[:split_idx], records[split_idx:]
 
 
+def _positive_position(ranked_item_ids: list[str], positive_item_id: str) -> int:
+    if not positive_item_id:
+        return len(ranked_item_ids) + 1
+    try:
+        return ranked_item_ids.index(positive_item_id)
+    except ValueError:
+        return len(ranked_item_ids) + 1
+
+
+def _select_target_ranking(
+    *,
+    stage: str,
+    teacher_ranked: list[str],
+    direct_ranked: list[str],
+    positive_item_id: str,
+) -> tuple[list[str], str, bool]:
+    if stage != "v5":
+        return teacher_ranked, "teacher", False
+
+    if not direct_ranked:
+        return teacher_ranked, "teacher_fallback_no_direct", False
+
+    teacher_pos = _positive_position(teacher_ranked, positive_item_id)
+    direct_pos = _positive_position(direct_ranked, positive_item_id)
+    teacher_improves_positive = teacher_pos < direct_pos
+    if teacher_improves_positive:
+        return teacher_ranked, "teacher_gap_positive_gain", True
+    return direct_ranked, "direct_anchor_preserved", False
+
+
 def build_srpd_rank_data(config_path: str | Path) -> dict[str, Any]:
     config = _load_yaml_config(config_path)
     stage = str(config.get("srpd_stage", "v1")).strip().lower()
-    if stage not in {"v1", "v2", "v3", "v4"}:
+    if stage not in {"v1", "v2", "v3", "v4", "v5"}:
         raise ValueError(f"Unsupported srpd_stage: {stage}")
 
     base_rows = load_jsonl(config["base_input_path"])
@@ -268,12 +298,23 @@ def build_srpd_rank_data(config_path: str | Path) -> dict[str, Any]:
         pairwise_preferences = pairwise_by_event.get(event_id, [])[:max_pairwise_preferences]
         uncertainty_summary = _candidate_score_summary(teacher_row)
         disagreement = bool(teacher_ranked != direct_ranked)
+        positive_item_id = str(base_row.get("positive_item_id", "")).strip()
+        target_ranked, target_source, teacher_improves_positive = _select_target_ranking(
+            stage=stage,
+            teacher_ranked=teacher_ranked,
+            direct_ranked=direct_ranked,
+            positive_item_id=positive_item_id,
+        )
+        teacher_positive_position = _positive_position(teacher_ranked, positive_item_id)
+        direct_positive_position = _positive_position(direct_ranked, positive_item_id)
+        target_positive_position = _positive_position(target_ranked, positive_item_id)
         record = dict(base_row)
         record.update(
             {
                 "teacher_ranked_item_ids": teacher_ranked,
-                "target_ranked_item_ids": teacher_ranked,
+                "target_ranked_item_ids": target_ranked,
                 "srpd_teacher_ranked_item_ids": teacher_ranked,
+                "srpd_target_ranked_item_ids": target_ranked,
                 "srpd_direct_ranked_item_ids": direct_ranked,
                 "srpd_stage": stage,
                 "srpd_method_family": "SRPD",
@@ -281,6 +322,11 @@ def build_srpd_rank_data(config_path: str | Path) -> dict[str, Any]:
                 "srpd_teacher_source": str(config["structured_risk_teacher_path"]),
                 "srpd_teacher_variant": str(teacher_row.get("rerank_variant", "nonlinear_structured_risk_rerank")),
                 "srpd_disagree_with_direct": disagreement,
+                "srpd_target_source": target_source,
+                "srpd_teacher_improves_positive": teacher_improves_positive,
+                "srpd_teacher_positive_position": teacher_positive_position,
+                "srpd_direct_positive_position": direct_positive_position,
+                "srpd_target_positive_position": target_positive_position,
                 "srpd_mean_uncertainty": round(uncertainty_summary["mean_uncertainty"], 6),
                 "srpd_mean_effective_uncertainty": round(uncertainty_summary["mean_effective_uncertainty"], 6),
                 "srpd_mean_risk_weight": round(uncertainty_summary["mean_risk_weight"], 6),
