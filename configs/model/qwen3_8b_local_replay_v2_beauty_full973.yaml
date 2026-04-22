@@ -1,0 +1,25 @@
+backend_name: local_hf
+provider: local_hf
+model_name: qwen3-8b-local-replay-v2-beauty-full973
+download_source: modelscope
+modelscope_model_id: Qwen/Qwen3-8B
+model_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+
+runtime:
+  device: cuda
+  device_map: auto
+  dtype: bfloat16
+  batch_size: 4
+  local_files_only: true
+  trust_remote_code: true
+  load_in_4bit: false
+  load_in_8bit: false
+  adapter_path: artifacts/adapters/qwen3_rank_beauty_srpd_v2_full973
+
+generation:
+  temperature: 0.0
+  top_p: 1.0
+  max_new_tokens: 300
+  use_chat_template: true
+  enable_thinking: false

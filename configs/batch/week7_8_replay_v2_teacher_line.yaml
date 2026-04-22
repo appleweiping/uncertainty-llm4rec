@@ -1,0 +1,136 @@
+batch_name: week7_8_replay_v2_teacher_line
+description: Day1 skeleton for the teacher-requested local 8B plus LoRA replay mainline.
+default_run: false
+
+experiments:
+  - exp_name: beauty_qwen3_local_replay_v2_pointwise_full
+    task: pointwise_yesno
+    domain: beauty
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_pointwise_full
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_pointwise_beauty_full.yaml
+    enabled: false
+    notes: Day1 skeleton. Structurally ready once replay run is scheduled.
+
+  - exp_name: books_qwen3_local_replay_v2_pointwise_full
+    task: pointwise_yesno
+    domain: books
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_pointwise_full
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_pointwise_books_full.yaml
+    enabled: false
+    notes: Waiting for full-domain processed runtime files and full-domain v2 adapter materialization.
+
+  - exp_name: electronics_qwen3_local_replay_v2_pointwise_full
+    task: pointwise_yesno
+    domain: electronics
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_pointwise_full
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_pointwise_electronics_full.yaml
+    enabled: false
+    notes: Waiting for full-domain processed runtime files and full-domain v2 adapter materialization.
+
+  - exp_name: movies_qwen3_local_replay_v2_pointwise_full
+    task: pointwise_yesno
+    domain: movies
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_pointwise_full
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_pointwise_movies_full.yaml
+    enabled: false
+    notes: Waiting for full-domain processed runtime files and full-domain v2 adapter materialization.
+
+  - exp_name: beauty_qwen3_local_replay_v2_rank_full973
+    task: candidate_ranking
+    domain: beauty
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_direct_candidate_ranking_full973
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_rank_beauty_full973.yaml
+    enabled: false
+    notes: Day1 skeleton for replay ranking on beauty full973.
+
+  - exp_name: books_qwen3_local_replay_v2_rank_full
+    task: candidate_ranking
+    domain: books
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_direct_candidate_ranking_full
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_rank_books_full.yaml
+    enabled: false
+    notes: Waiting for full-domain processed runtime files and full-domain v2 adapter materialization.
+
+  - exp_name: electronics_qwen3_local_replay_v2_rank_full
+    task: candidate_ranking
+    domain: electronics
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_direct_candidate_ranking_full
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_rank_electronics_full.yaml
+    enabled: false
+    notes: Waiting for full-domain processed runtime files and full-domain v2 adapter materialization.
+
+  - exp_name: movies_qwen3_local_replay_v2_rank_full
+    task: candidate_ranking
+    domain: movies
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_direct_candidate_ranking_full
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_rank_movies_full.yaml
+    enabled: false
+    notes: Waiting for full-domain processed runtime files and full-domain v2 adapter materialization.
+
+  - exp_name: beauty_qwen3_local_replay_v2_structured_risk_full973
+    task: candidate_ranking_rerank
+    domain: beauty
+    model: qwen3_8b_local_replay_v2
+    method_family: structured_risk_family
+    method_variant: replay_v2_nonlinear_structured_risk_rerank
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_rerank_beauty_full973.yaml
+    enabled: false
+    notes: Day1 skeleton for replay rerank on beauty full973.
+
+  - exp_name: books_qwen3_local_replay_v2_structured_risk_full
+    task: candidate_ranking_rerank
+    domain: books
+    model: qwen3_8b_local_replay_v2
+    method_family: structured_risk_family
+    method_variant: replay_v2_nonlinear_structured_risk_rerank
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_rerank_books_full.yaml
+    enabled: false
+    notes: Waiting for full-domain processed runtime files and full-domain v2 adapter materialization.
+
+  - exp_name: electronics_qwen3_local_replay_v2_structured_risk_full
+    task: candidate_ranking_rerank
+    domain: electronics
+    model: qwen3_8b_local_replay_v2
+    method_family: structured_risk_family
+    method_variant: replay_v2_nonlinear_structured_risk_rerank
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_rerank_electronics_full.yaml
+    enabled: false
+    notes: Waiting for full-domain processed runtime files and full-domain v2 adapter materialization.
+
+  - exp_name: movies_qwen3_local_replay_v2_structured_risk_full
+    task: candidate_ranking_rerank
+    domain: movies
+    model: qwen3_8b_local_replay_v2
+    method_family: structured_risk_family
+    method_variant: replay_v2_nonlinear_structured_risk_rerank
+    is_current_best_family: false
+    config_path: configs/exp/replay_v2_rerank_movies_full.yaml
+    enabled: false
+    notes: Waiting for full-domain processed runtime files and full-domain v2 adapter materialization.

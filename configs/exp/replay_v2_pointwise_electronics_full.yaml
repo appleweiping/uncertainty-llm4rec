@@ -1,0 +1,17 @@
+exp_name: electronics_qwen3_local_replay_v2_pointwise_full
+week_stage: week7_8_replay
+domain: electronics
+data_config: configs/data/amazon_electronics.yaml
+task_type: pointwise_yesno
+model_config: configs/model/qwen3_8b_local_replay_v2_electronics_full.yaml
+input_path: data/processed/amazon_electronics/test.jsonl
+output_dir: outputs/electronics_qwen3_local_replay_v2_pointwise_full
+output_root: outputs
+prompt_path: prompts/pointwise_yesno.txt
+resume_partial: true
+checkpoint_every_batches: 1
+method_family: local_hf_lora_replay
+method_variant: replay_v2_pointwise_full
+is_current_best_family: false
+overwrite: false
+seed: 42
