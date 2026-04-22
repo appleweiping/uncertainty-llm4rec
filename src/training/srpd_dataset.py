@@ -180,6 +180,40 @@ def _sample_weight(
             pairwise_preferences
         )
 
+    if stage == "v4":
+        gate_cfg = weight_cfg.get("gate", {}) or {}
+        gate_mode = str(gate_cfg.get("mode", "teacher_gap")).strip().lower()
+        min_effective_uncertainty = float(gate_cfg.get("min_effective_uncertainty", 0.0))
+        min_risk_weight = float(gate_cfg.get("min_risk_weight", 0.0))
+        uncertainty_trigger = (
+            uncertainty_summary["mean_effective_uncertainty"] >= min_effective_uncertainty
+            and uncertainty_summary["mean_risk_weight"] >= min_risk_weight
+        )
+        if gate_mode == "teacher_gap_or_uncertainty":
+            gate_active = disagreement or uncertainty_trigger
+        elif gate_mode == "teacher_gap_and_uncertainty":
+            gate_active = disagreement and uncertainty_trigger
+        else:
+            gate_active = disagreement
+
+        if not gate_active:
+            fallback_weight = float(gate_cfg.get("fallback_weight", base))
+            min_weight = float(weight_cfg.get("min_weight", 0.5))
+            max_weight = float(weight_cfg.get("max_weight", 2.0))
+            return round(max(min_weight, min(max_weight, fallback_weight)), 6)
+
+        gate_boost = float(gate_cfg.get("gate_boost", 0.0))
+        weight = (
+            base
+            + gate_boost
+            + disagreement_bonus
+            + uncertainty_scale * uncertainty_summary["mean_effective_uncertainty"]
+            + risk_scale * uncertainty_summary["mean_risk_weight"]
+        )
+        min_weight = float(weight_cfg.get("min_weight", 0.5))
+        max_weight = float(weight_cfg.get("max_weight", 2.0))
+        return round(max(min_weight, min(max_weight, weight)), 6)
+
     weight = (
         base
         + disagreement_bonus
@@ -203,7 +237,7 @@ def _split_records(records: list[dict[str, Any]], train_ratio: float) -> tuple[l
 def build_srpd_rank_data(config_path: str | Path) -> dict[str, Any]:
     config = _load_yaml_config(config_path)
     stage = str(config.get("srpd_stage", "v1")).strip().lower()
-    if stage not in {"v1", "v2", "v3"}:
+    if stage not in {"v1", "v2", "v3", "v4"}:
         raise ValueError(f"Unsupported srpd_stage: {stage}")
 
     base_rows = load_jsonl(config["base_input_path"])
