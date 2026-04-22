@@ -8,6 +8,7 @@ from typing import Any
 
 from src.training.rank_dataset import (
     RankSupervisedExample,
+    build_rank_preference_examples,
     build_rank_supervised_examples,
     load_rank_samples,
     summarize_rank_samples,
@@ -420,22 +421,53 @@ def run_lora_rank_training(
     resolved_train_samples = max_train_samples or training_cfg.get("max_train_samples")
     resolved_valid_samples = max_valid_samples or training_cfg.get("max_valid_samples")
     include_reason = bool(training_cfg.get("include_reason", False))
+    preference_cfg = training_cfg.get("preference_sft", {}) or {}
 
     train_rows = load_rank_samples(ctx.train_input_path, max_samples=resolved_train_samples)
     valid_rows = load_rank_samples(ctx.valid_input_path, max_samples=resolved_valid_samples)
 
-    train_examples = build_rank_supervised_examples(
-        train_rows,
-        prompt_path=ctx.prompt_path,
-        topk=ctx.topk,
-        include_reason=include_reason,
+    include_ranking_examples = bool(preference_cfg.get("include_ranking_examples", True))
+    train_examples = (
+        build_rank_supervised_examples(
+            train_rows,
+            prompt_path=ctx.prompt_path,
+            topk=ctx.topk,
+            include_reason=include_reason,
+        )
+        if include_ranking_examples
+        else []
     )
-    valid_examples = build_rank_supervised_examples(
-        valid_rows,
-        prompt_path=ctx.prompt_path,
-        topk=ctx.topk,
-        include_reason=include_reason,
+    valid_examples = (
+        build_rank_supervised_examples(
+            valid_rows,
+            prompt_path=ctx.prompt_path,
+            topk=ctx.topk,
+            include_reason=include_reason,
+        )
+        if include_ranking_examples
+        else []
     )
+
+    if bool(preference_cfg.get("enabled", False)):
+        preference_prompt_path = Path(str(preference_cfg.get("prompt_path", "prompts/pairwise_preference.txt")))
+        max_pairs_per_sample = preference_cfg.get("max_pairs_per_sample")
+        max_pairs = int(max_pairs_per_sample) if max_pairs_per_sample not in (None, "") else None
+        train_examples.extend(
+            build_rank_preference_examples(
+                train_rows,
+                prompt_path=preference_prompt_path,
+                include_reason=bool(preference_cfg.get("include_reason", include_reason)),
+                max_pairs_per_sample=max_pairs,
+            )
+        )
+        valid_examples.extend(
+            build_rank_preference_examples(
+                valid_rows,
+                prompt_path=preference_prompt_path,
+                include_reason=bool(preference_cfg.get("include_reason", include_reason)),
+                max_pairs_per_sample=max_pairs,
+            )
+        )
 
     _write_example_preview(train_examples, ctx.logs_dir / "train_supervised_examples.jsonl")
     _write_example_preview(valid_examples, ctx.logs_dir / "valid_supervised_examples.jsonl")

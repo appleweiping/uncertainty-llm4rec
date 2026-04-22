@@ -180,7 +180,7 @@ def _sample_weight(
             pairwise_preferences
         )
 
-    if stage in {"v4", "v5"}:
+    if stage in {"v4", "v5", "v6"}:
         gate_cfg = weight_cfg.get("gate", {}) or {}
         gate_mode = str(gate_cfg.get("mode", "teacher_gap")).strip().lower()
         min_effective_uncertainty = float(gate_cfg.get("min_effective_uncertainty", 0.0))
@@ -264,10 +264,135 @@ def _select_target_ranking(
     return direct_ranked, "direct_anchor_preserved", False
 
 
+def _candidate_title_map(base_row: dict[str, Any]) -> dict[str, str]:
+    item_ids = [str(item_id) for item_id in base_row.get("candidate_item_ids", [])]
+    titles = base_row.get("candidate_titles", [])
+    return {
+        item_id: str(titles[idx]).strip()
+        for idx, item_id in enumerate(item_ids)
+        if isinstance(titles, list) and idx < len(titles)
+    }
+
+
+def _candidate_score(row: dict[str, Any], item_id: str, key: str, default: float = 0.0) -> float:
+    scores = row.get("candidate_scores")
+    if not isinstance(scores, dict):
+        return default
+    item_score = scores.get(item_id)
+    if not isinstance(item_score, dict):
+        return default
+    return _as_float(item_score.get(key), default=default)
+
+
+def _append_preference_pair(
+    pairs: list[dict[str, Any]],
+    *,
+    chosen: str,
+    rejected: str,
+    source: str,
+    teacher_ranked: list[str],
+    title_by_id: dict[str, str],
+    weight: float,
+) -> None:
+    if not chosen or not rejected or chosen == rejected:
+        return
+    existing = {(pair["chosen_item_id"], pair["rejected_item_id"]) for pair in pairs}
+    if (chosen, rejected) in existing:
+        return
+    pairs.append(
+        {
+            "chosen_item_id": chosen,
+            "rejected_item_id": rejected,
+            "chosen_item_title": title_by_id.get(chosen, ""),
+            "rejected_item_title": title_by_id.get(rejected, ""),
+            "preference_source": source,
+            "preference_weight": round(weight, 6),
+            "chosen_teacher_rank": _positive_position(teacher_ranked, chosen),
+            "rejected_teacher_rank": _positive_position(teacher_ranked, rejected),
+        }
+    )
+
+
+def _build_dpo_style_preferences(
+    *,
+    stage: str,
+    base_row: dict[str, Any],
+    teacher_row: dict[str, Any],
+    teacher_ranked: list[str],
+    direct_ranked: list[str],
+    target_ranked: list[str],
+    positive_item_id: str,
+    disagreement: bool,
+    uncertainty_summary: dict[str, float],
+    preference_cfg: dict[str, Any],
+) -> list[dict[str, Any]]:
+    if stage != "v6" or not bool(preference_cfg.get("enabled", True)):
+        return []
+
+    max_pairs = int(preference_cfg.get("max_pairs_per_event", 4))
+    if max_pairs <= 0:
+        return []
+
+    min_effective_uncertainty = float(preference_cfg.get("min_effective_uncertainty", 0.0))
+    min_risk_weight = float(preference_cfg.get("min_risk_weight", 0.0))
+    require_gap_or_uncertainty = bool(preference_cfg.get("require_gap_or_uncertainty", True))
+    uncertainty_trigger = (
+        uncertainty_summary["mean_effective_uncertainty"] >= min_effective_uncertainty
+        and uncertainty_summary["mean_risk_weight"] >= min_risk_weight
+    )
+    if require_gap_or_uncertainty and not (disagreement or uncertainty_trigger):
+        return []
+
+    pairs: list[dict[str, Any]] = []
+    title_by_id = _candidate_title_map(base_row)
+    base_weight = float(preference_cfg.get("base_pair_weight", 1.0))
+
+    if bool(preference_cfg.get("include_positive_gain_pair", True)) and positive_item_id:
+        teacher_pos = _positive_position(teacher_ranked, positive_item_id)
+        direct_pos = _positive_position(direct_ranked, positive_item_id)
+        if teacher_pos < direct_pos and direct_ranked:
+            rejected = direct_ranked[max(0, min(direct_pos - 1, len(direct_ranked) - 1))]
+            _append_preference_pair(
+                pairs,
+                chosen=positive_item_id,
+                rejected=rejected,
+                source="teacher_positive_gap_gain",
+                teacher_ranked=teacher_ranked,
+                title_by_id=title_by_id,
+                weight=base_weight + 0.2,
+            )
+
+    if bool(preference_cfg.get("include_teacher_order_pairs", True)):
+        topn = min(int(preference_cfg.get("teacher_topn", 4)), len(target_ranked))
+        min_score_gap = float(preference_cfg.get("min_score_gap", 0.0))
+        for left_idx in range(topn):
+            for right_idx in range(left_idx + 1, min(len(target_ranked), topn + 2)):
+                chosen = target_ranked[left_idx]
+                rejected = target_ranked[right_idx]
+                chosen_score = _candidate_score(teacher_row, chosen, "final_score")
+                rejected_score = _candidate_score(teacher_row, rejected, "final_score")
+                if chosen_score and rejected_score and chosen_score - rejected_score < min_score_gap:
+                    continue
+                risk_weight = _candidate_score(teacher_row, chosen, "risk_weight")
+                _append_preference_pair(
+                    pairs,
+                    chosen=chosen,
+                    rejected=rejected,
+                    source="structured_risk_teacher_order",
+                    teacher_ranked=teacher_ranked,
+                    title_by_id=title_by_id,
+                    weight=base_weight + 0.1 * risk_weight,
+                )
+                if len(pairs) >= max_pairs:
+                    return pairs[:max_pairs]
+
+    return pairs[:max_pairs]
+
+
 def build_srpd_rank_data(config_path: str | Path) -> dict[str, Any]:
     config = _load_yaml_config(config_path)
     stage = str(config.get("srpd_stage", "v1")).strip().lower()
-    if stage not in {"v1", "v2", "v3", "v4", "v5"}:
+    if stage not in {"v1", "v2", "v3", "v4", "v5", "v6"}:
         raise ValueError(f"Unsupported srpd_stage: {stage}")
 
     base_rows = load_jsonl(config["base_input_path"])
@@ -305,6 +430,18 @@ def build_srpd_rank_data(config_path: str | Path) -> dict[str, Any]:
             direct_ranked=direct_ranked,
             positive_item_id=positive_item_id,
         )
+        dpo_style_preferences = _build_dpo_style_preferences(
+            stage=stage,
+            base_row=base_row,
+            teacher_row=teacher_row,
+            teacher_ranked=teacher_ranked,
+            direct_ranked=direct_ranked,
+            target_ranked=target_ranked,
+            positive_item_id=positive_item_id,
+            disagreement=disagreement,
+            uncertainty_summary=uncertainty_summary,
+            preference_cfg=config.get("preference_training", {}) or {},
+        )
         teacher_positive_position = _positive_position(teacher_ranked, positive_item_id)
         direct_positive_position = _positive_position(direct_ranked, positive_item_id)
         target_positive_position = _positive_position(target_ranked, positive_item_id)
@@ -336,6 +473,8 @@ def build_srpd_rank_data(config_path: str | Path) -> dict[str, Any]:
                 ),
                 "srpd_pairwise_preferences": pairwise_preferences if stage == "v3" else [],
                 "srpd_pairwise_preference_count": len(pairwise_preferences) if stage == "v3" else 0,
+                "srpd_dpo_style_preferences": dpo_style_preferences,
+                "srpd_dpo_style_preference_count": len(dpo_style_preferences),
             }
         )
         record["srpd_sample_weight"] = _sample_weight(
@@ -354,6 +493,7 @@ def build_srpd_rank_data(config_path: str | Path) -> dict[str, Any]:
     save_jsonl(valid_rows, output_valid_path)
 
     total_pairwise = sum(int(row.get("srpd_pairwise_preference_count", 0)) for row in records)
+    total_dpo_style = sum(int(row.get("srpd_dpo_style_preference_count", 0)) for row in records)
     avg_weight = sum(float(row.get("srpd_sample_weight", 0.0)) for row in records) / max(len(records), 1)
     summary = {
         "run_name": str(config.get("run_name", f"qwen3_rank_beauty_srpd_{stage}")),
@@ -372,6 +512,7 @@ def build_srpd_rank_data(config_path: str | Path) -> dict[str, Any]:
         "teacher_match_rate": round(len(records) / max(len(teacher_rows), 1), 6),
         "avg_sample_weight": round(avg_weight, 6),
         "avg_pairwise_preferences": round(total_pairwise / max(len(records), 1), 6),
+        "avg_dpo_style_preferences": round(total_dpo_style / max(len(records), 1), 6),
         "output_train_path": str(output_train_path),
         "output_valid_path": str(output_valid_path),
         "status": "srpd_teacher_data_ready" if records else "no_matched_teacher_rows",
@@ -392,6 +533,7 @@ def build_srpd_rank_data(config_path: str | Path) -> dict[str, Any]:
                 f"Train rows: {summary['train_rows']}; valid rows: {summary['valid_rows']}.",
                 f"Average sample weight: {summary['avg_sample_weight']}.",
                 f"Average pairwise preferences per event: {summary['avg_pairwise_preferences']}.",
+                f"Average DPO-style preferences per event: {summary['avg_dpo_style_preferences']}.",
                 "",
                 "This artifact prepares the trainable SRPD path; it is not itself a completed model result.",
             ]

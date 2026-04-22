@@ -3,22 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import yaml
-
-from src.llm.api_backend import APIBackend
-from src.llm.deepseek_backend import DeepSeekBackend
-from src.llm.local_hf_backend import LocalHFBackend
-from src.llm.openai_backend import OpenAIBackend
-
-
 BACKEND_REGISTRY = {
-    "api": APIBackend,
-    "openai_compatible": APIBackend,
-    "deepseek": DeepSeekBackend,
-    "hf": LocalHFBackend,
-    "local_hf": LocalHFBackend,
-    "transformers": LocalHFBackend,
-    "openai": OpenAIBackend,
+    "api": ("src.llm.api_backend", "APIBackend"),
+    "openai_compatible": ("src.llm.api_backend", "APIBackend"),
+    "deepseek": ("src.llm.deepseek_backend", "DeepSeekBackend"),
+    "hf": ("src.llm.local_hf_backend", "LocalHFBackend"),
+    "local_hf": ("src.llm.local_hf_backend", "LocalHFBackend"),
+    "transformers": ("src.llm.local_hf_backend", "LocalHFBackend"),
+    "openai": ("src.llm.openai_backend", "OpenAIBackend"),
 }
 
 
@@ -29,9 +21,59 @@ def _first_present(*values):
     return None
 
 
+def _load_backend_cls(backend_name: str):
+    import importlib
+
+    module_name, class_name = BACKEND_REGISTRY[backend_name]
+    return getattr(importlib.import_module(module_name), class_name)
+
+
+def _parse_scalar(value: str) -> Any:
+    value = value.strip()
+    if value.lower() in {"true", "false"}:
+        return value.lower() == "true"
+    if value.lower() in {"null", "none"}:
+        return None
+    try:
+        if "." in value:
+            return float(value)
+        return int(value)
+    except ValueError:
+        return value.strip('"').strip("'")
+
+
+def _load_yaml_without_pyyaml(path: str | Path) -> dict[str, Any]:
+    root: dict[str, Any] = {}
+    stack: list[tuple[int, dict[str, Any]]] = [(-1, root)]
+    lines = Path(path).read_text(encoding="utf-8").splitlines()
+    for raw in lines:
+        if not raw.strip() or raw.lstrip().startswith("#"):
+            continue
+        indent = len(raw) - len(raw.lstrip(" "))
+        stripped = raw.strip()
+        if ":" not in stripped:
+            continue
+        key, value = stripped.split(":", 1)
+        while stack and indent <= stack[-1][0]:
+            stack.pop()
+        current = stack[-1][1]
+        if value.strip() == "":
+            child: dict[str, Any] = {}
+            current[key.strip()] = child
+            stack.append((indent, child))
+        else:
+            current[key.strip()] = _parse_scalar(value)
+    return root
+
+
 def load_model_config(path: str | Path) -> dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    try:
+        import yaml
+
+        with open(path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except ModuleNotFoundError:
+        return _load_yaml_without_pyyaml(path)
 
 
 def build_backend_from_dict(model_cfg: dict[str, Any]):
@@ -39,9 +81,9 @@ def build_backend_from_dict(model_cfg: dict[str, Any]):
     if not backend_name:
         raise ValueError("backend_name is required in model config.")
 
-    backend_cls = BACKEND_REGISTRY.get(backend_name)
-    if backend_cls is None:
+    if backend_name not in BACKEND_REGISTRY:
         raise ValueError(f"Unsupported backend_name: {backend_name}")
+    backend_cls = _load_backend_cls(backend_name)
 
     provider = str(
         _first_present(

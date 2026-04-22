@@ -3,15 +3,89 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from src.utils.io import load_jsonl as load_jsonl_rows
 from src.utils.io import save_jsonl as save_jsonl_rows
 
 
+def _parse_scalar(value: str) -> Any:
+    value = value.strip()
+    if value.lower() in {"true", "false"}:
+        return value.lower() == "true"
+    if value.lower() in {"null", "none"}:
+        return None
+    try:
+        if "." in value:
+            return float(value)
+        return int(value)
+    except ValueError:
+        return value.strip('"').strip("'")
+
+
+def _load_yaml_without_pyyaml(path: str | Path) -> dict[str, Any]:
+    root: dict[str, Any] = {}
+    stack: list[tuple[int, Any, str | None]] = [(-1, root, None)]
+    lines = Path(path).read_text(encoding="utf-8").splitlines()
+    idx = 0
+    while idx < len(lines):
+        raw = lines[idx]
+        idx += 1
+        if not raw.strip() or raw.lstrip().startswith("#"):
+            continue
+        indent = len(raw) - len(raw.lstrip(" "))
+        stripped = raw.strip()
+
+        while stack and indent <= stack[-1][0]:
+            stack.pop()
+        parent = stack[-1][1]
+
+        if stripped.startswith("- "):
+            if isinstance(parent, list):
+                parent.append(_parse_scalar(stripped[2:]))
+            continue
+
+        if ":" not in stripped or not isinstance(parent, dict):
+            continue
+        key, value = stripped.split(":", 1)
+        key = key.strip()
+        value = value.strip()
+        if value == "":
+            next_is_list = False
+            lookahead = idx
+            while lookahead < len(lines):
+                nxt = lines[lookahead]
+                if not nxt.strip() or nxt.lstrip().startswith("#"):
+                    lookahead += 1
+                    continue
+                next_indent = len(nxt) - len(nxt.lstrip(" "))
+                next_is_list = next_indent > indent and nxt.strip().startswith("- ")
+                break
+            child: Any = [] if next_is_list else {}
+            parent[key] = child
+            stack.append((indent, child, key))
+        elif value == ">":
+            collected: list[str] = []
+            while idx < len(lines):
+                follow = lines[idx]
+                follow_indent = len(follow) - len(follow.lstrip(" "))
+                if follow.strip() and follow_indent <= indent:
+                    break
+                if follow.strip():
+                    collected.append(follow.strip())
+                idx += 1
+            parent[key] = " ".join(collected)
+        else:
+            parent[key] = _parse_scalar(value)
+    return root
+
+
 def load_yaml(path: str | Path) -> dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+    try:
+        import yaml
+
+        with open(path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except ModuleNotFoundError:
+        return _load_yaml_without_pyyaml(path)
 
 
 class FunctionPromptBuilderAdapter:
