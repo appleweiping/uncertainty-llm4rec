@@ -122,6 +122,35 @@ Day4 reuses the same teacher-requested summary entrypoint but switches to robust
 
 The Day4 summary is intentionally conservative. It only claims a formal clean/noisy replay robustness row when both the replay clean rerank output and the replay robustness compare output exist. Otherwise it still records the intended compare name and marks the row as missing, so that the remaining server-side execution work stays explicit.
 
+## New Day5 Files
+
+### Final handoff batch shell
+
+- `configs/batch/week7_8_replay_v2_day5_final.yaml`
+
+This batch shell freezes the final Week7.8 output into a single teacher-requested local-mainline handoff. It does not introduce new experiment logic. Instead it joins the three existing weekly replay summaries:
+
+- Day2 pointwise diagnosis and calibration summary
+- Day3 ranking/rerank compare summary
+- Day4 coverage/exposure/robustness summary
+
+### Final teacher-requested local mainline summary
+
+- `main_compare_teacher_requested_line.py --mode final`
+
+Day5 reuses the same summary entrypoint one last time and produces:
+
+- `outputs/summary/teacher_requested_local8b_lora_mainline_final.csv`
+- `outputs/summary/teacher_requested_local8b_lora_mainline_final.md`
+
+The Day5 table makes the replay stack readable in one place:
+
+- preserved historical official-API teacher evidence
+- local-v2 replay pointwise readiness
+- local-v2 replay decision-layer readiness
+- local-v2 replay robustness readiness
+- preserved strongest hand-crafted structured-risk reference
+
 ## Readiness Status
 
 ### Beauty
@@ -180,3 +209,7 @@ Day3 then formalizes the decision-layer compare shell. Even before all replay ru
 ## Day4 Decision
 
 Day4 extends the same logic to side metrics and robustness. Coverage, head exposure, and long-tail coverage are now explicitly attached to the teacher-requested replay summary path, and the clean/noisy compare interface is fixed in the batch shell before the server run begins. The remaining blocker is therefore no longer how Day4 should be summarized, but the actual replay clean/noisy outputs that will later populate the summary table.
+
+## Day5 Decision
+
+Day5 does not search for new methods. It closes Week7.8 by joining the three replay layers into a single final handoff table. At this point the remaining execution gap is explicit and narrow: the replay shell, summary structure, and bridge narrative all exist; what is still missing is the actual server-side local-v2 pointwise, direct ranking, rerank, and clean/noisy robustness outputs on the formal four-domain route.

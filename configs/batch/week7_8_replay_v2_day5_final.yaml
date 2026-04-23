@@ -1,0 +1,15 @@
+batch_name: week7_8_replay_v2_day5_final
+description: Day5 formal final handoff batch for the teacher-requested local-v2 replay mainline.
+default_run: false
+
+experiments:
+  - exp_name: week7_8_replay_v2_mainline_final
+    task: summary_aggregation
+    domain: four_domain
+    model: summary_only
+    method_family: local_hf_lora_replay
+    method_variant: teacher_requested_local8b_lora_mainline_final
+    command: python main_compare_teacher_requested_line.py --mode final
+    output_dir: outputs/summary
+    enabled: true
+    notes: Build the formal Week7.8 final handoff table by joining the Day2 pointwise, Day3 rerank, and Day4 robustness summaries.

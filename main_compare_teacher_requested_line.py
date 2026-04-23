@@ -89,7 +89,7 @@ def parse_args() -> argparse.Namespace:
         "--mode",
         type=str,
         default="pointwise",
-        choices=["pointwise", "rerank", "robustness"],
+        choices=["pointwise", "rerank", "robustness", "final"],
         help="Current supported summary mode.",
     )
     parser.add_argument("--output_root", type=str, default="outputs", help="Experiment output root.")
@@ -234,6 +234,19 @@ def _load_robustness_summary(output_root: Path, clean_exp_name: str, noisy_exp_n
     }
 
 
+def _load_summary_rows(path: Path) -> list[dict[str, Any]]:
+    return _multi_row_csv(path)
+
+
+def _rows_by_domain(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    mapping: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        domain = str(row.get("domain", "")).strip().lower()
+        if domain:
+            mapping[domain] = row
+    return mapping
+
+
 def _load_direct_bundle(output_root: Path, exp_name: str) -> dict[str, Any]:
     rows = _multi_row_csv(output_root / exp_name / "tables" / "ranking_metrics.csv")
     if not rows:
@@ -337,6 +350,72 @@ def _robustness_row_from_spec(output_root: Path, spec: dict[str, str]) -> dict[s
     return row
 
 
+def _final_rows(output_root: Path) -> list[dict[str, Any]]:
+    summary_dir = output_root / "summary"
+    pointwise_rows = _rows_by_domain(
+        _load_summary_rows(summary_dir / "week7_8_replay_v2_week1_week2_pointwise_summary.csv")
+    )
+    rerank_rows = _rows_by_domain(
+        _load_summary_rows(summary_dir / "week7_8_replay_v2_week3_rerank_compare.csv")
+    )
+    robustness_rows = _rows_by_domain(
+        _load_summary_rows(summary_dir / "week7_8_replay_v2_week4_robustness_summary.csv")
+    )
+
+    final_rows: list[dict[str, Any]] = []
+    for domain in ["beauty", "books", "electronics", "movies"]:
+        pointwise = pointwise_rows.get(domain, {})
+        rerank = rerank_rows.get(domain, {})
+        robustness = robustness_rows.get(domain, {})
+
+        replay_pointwise_status = str(pointwise.get("replay_status", "missing") or "missing")
+        replay_direct_status = str(rerank.get("replay_direct_status", "missing") or "missing")
+        replay_rerank_status = str(rerank.get("replay_rerank_status", "missing") or "missing")
+        replay_robustness_status = str(robustness.get("robustness_status", "missing") or "missing")
+        historical_status = str(pointwise.get("historical_status", "missing") or "missing")
+        reference_status = str(rerank.get("reference_status", "missing") or "missing")
+
+        all_replay_ready = all(
+            status == "ready"
+            for status in [
+                replay_pointwise_status,
+                replay_direct_status,
+                replay_rerank_status,
+                replay_robustness_status,
+            ]
+        )
+
+        final_rows.append(
+            {
+                "week_stage": "week7_8_replay",
+                "route_role": "teacher_requested_local_mainline",
+                "domain": domain,
+                "historical_teacher_status": historical_status,
+                "replay_pointwise_status": replay_pointwise_status,
+                "replay_direct_status": replay_direct_status,
+                "replay_rerank_status": replay_rerank_status,
+                "replay_robustness_status": replay_robustness_status,
+                "structured_risk_reference_status": reference_status,
+                "all_replay_layers_ready": "ready" if all_replay_ready else "missing",
+                "historical_accuracy": pointwise.get("historical_accuracy", ""),
+                "historical_ece": pointwise.get("historical_ece", ""),
+                "historical_brier_score": pointwise.get("historical_brier_score", ""),
+                "reference_ndcg_at_10": rerank.get("reference_ndcg_at_10", ""),
+                "reference_mrr": rerank.get("reference_mrr", ""),
+                "reference_coverage_at_10": rerank.get("reference_coverage_at_10", ""),
+                "reference_head_exposure_ratio_at_10": rerank.get("reference_head_exposure_ratio_at_10", ""),
+                "reference_longtail_coverage_at_10": rerank.get("reference_longtail_coverage_at_10", ""),
+                "replay_pointwise_exp_name": pointwise.get("replay_exp_name", ""),
+                "replay_rank_exp_name": rerank.get("replay_rank_exp_name", ""),
+                "replay_rerank_exp_name": rerank.get("replay_rerank_exp_name", ""),
+                "replay_robustness_compare_name": robustness.get("robustness_compare_name", ""),
+                "replay_clean_exp_name": robustness.get("clean_exp_name", ""),
+                "replay_noisy_exp_name": robustness.get("noisy_exp_name", ""),
+            }
+        )
+    return final_rows
+
+
 def _write_pointwise_md(summary_rows: list[dict[str, Any]], output_path: Path) -> Path:
     md_path = output_path.with_suffix(".md")
     lines = [
@@ -427,6 +506,39 @@ def _write_robustness_md(summary_rows: list[dict[str, Any]], output_path: Path) 
     return md_path
 
 
+def _write_final_md(summary_rows: list[dict[str, Any]], output_path: Path) -> Path:
+    md_path = output_path.with_suffix(".md")
+    lines = [
+        "# Teacher Requested Local 8B LoRA Mainline Final",
+        "",
+        "This table is the Week7.8 final handoff for the teacher-requested local-v2 replay mainline. It preserves the historical official-API teacher evidence, the structured-risk strongest hand-crafted reference, and the current readiness state of the replay pointwise, decision, and robustness layers.",
+        "",
+        "| domain | historical_teacher_status | replay_pointwise_status | replay_direct_status | replay_rerank_status | replay_robustness_status | structured_risk_reference_status | all_replay_layers_ready | reference_ndcg@10 | historical_ece |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | ---: | ---: |",
+    ]
+    for row in summary_rows:
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(row.get("domain", "")),
+                    str(row.get("historical_teacher_status", "")),
+                    str(row.get("replay_pointwise_status", "")),
+                    str(row.get("replay_direct_status", "")),
+                    str(row.get("replay_rerank_status", "")),
+                    str(row.get("replay_robustness_status", "")),
+                    str(row.get("structured_risk_reference_status", "")),
+                    str(row.get("all_replay_layers_ready", "")),
+                    _fmt(row.get("reference_ndcg_at_10")),
+                    _fmt(row.get("historical_ece")),
+                ]
+            )
+            + " |"
+        )
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return md_path
+
+
 def _fmt(value: Any) -> str:
     if value is None or value == "":
         return ""
@@ -471,17 +583,23 @@ def main() -> None:
         if output_path.as_posix() == default_pointwise_output.as_posix():
             output_path = Path("outputs/summary/week7_8_replay_v2_week3_rerank_compare.csv")
         rows = [_rerank_row_from_spec(output_root, spec) for spec in DEFAULT_RERANK_SPECS]
-    else:
+    elif args.mode == "robustness":
         if output_path.as_posix() == default_pointwise_output.as_posix():
             output_path = Path("outputs/summary/week7_8_replay_v2_week4_robustness_summary.csv")
         rows = [_robustness_row_from_spec(output_root, spec) for spec in DEFAULT_ROBUSTNESS_SPECS]
+    else:
+        if output_path.as_posix() == default_pointwise_output.as_posix():
+            output_path = Path("outputs/summary/teacher_requested_local8b_lora_mainline_final.csv")
+        rows = _final_rows(output_root)
     _write_csv(rows, output_path)
     if args.mode == "pointwise":
         md_path = _write_pointwise_md(rows, output_path)
     elif args.mode == "rerank":
         md_path = _write_rerank_md(rows, output_path)
-    else:
+    elif args.mode == "robustness":
         md_path = _write_robustness_md(rows, output_path)
+    else:
+        md_path = _write_final_md(rows, output_path)
     print(f"Saved Week7.8 teacher-requested summary to: {output_path}")
     print(f"Saved markdown handoff to: {md_path}")
     for row in rows:
@@ -499,12 +617,20 @@ def main() -> None:
                 f"reference={row['reference_status']} "
                 f"rerank_ndcg={_fmt(row.get('replay_rerank_ndcg_at_10'))}"
             )
-        else:
+        elif args.mode == "robustness":
             print(
                 f"{row['domain']}: clean={row['clean_status']} "
                 f"robustness={row['robustness_status']} "
                 f"clean_ndcg={_fmt(row.get('clean_ndcg_at_10'))} "
                 f"ndcg_drop={_fmt(row.get('ndcg_at_10_drop'))}"
+            )
+        else:
+            print(
+                f"{row['domain']}: pointwise={row['replay_pointwise_status']} "
+                f"direct={row['replay_direct_status']} "
+                f"rerank={row['replay_rerank_status']} "
+                f"robustness={row['replay_robustness_status']} "
+                f"final={row['all_replay_layers_ready']}"
             )
 
 

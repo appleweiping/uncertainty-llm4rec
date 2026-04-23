@@ -72,3 +72,22 @@ The intended project logic is:
 3. keep structured risk as the strongest hand-crafted baseline
 4. keep SRPD as the trainable enhancement family
 5. move to Week8 compare and Week9 system on top of this clarified stack
+
+## Week7.8 final handoff meaning
+
+By the end of Week7.8, the project should be readable as a completed execution stack rather than a loose intention:
+
+- Day2 formalizes the replay pointwise diagnosis and calibration layer
+- Day3 formalizes the replay candidate-ranking and structured-risk rerank layer
+- Day4 formalizes the replay coverage, exposure, and clean/noisy robustness layer
+- Day5 joins them into a single teacher-requested local-8B LoRA mainline handoff
+
+This means the question is no longer whether the teacher-requested line has a formal place in the project. Its place is fixed. The only remaining difference between the shell and the final evidence is the server-side materialization of the replay outputs themselves.
+
+## Why this matters before Week8 and Week9
+
+This Day5 closure is important because it lets the later weeks inherit a cleaner stack:
+
+- Week7.9 can focus on fairness and confidence alignment instead of explaining what the local-v2 replay line is.
+- Week8 can focus on outer compare instead of retroactively proving that the teacher-requested local-mainline exists.
+- Week9 can focus on system integration instead of mixing execution repair with architecture narrative.
