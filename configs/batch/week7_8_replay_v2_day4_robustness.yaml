@@ -1,0 +1,59 @@
+batch_name: week7_8_replay_v2_day4_robustness
+description: Day4 coverage, exposure, and minimal clean-noisy robustness replay batch for the teacher-requested local-v2 mainline.
+default_run: false
+
+experiments:
+  - exp_name: beauty_qwen3_local_replay_v2_structured_risk_full973_vs_noisy_nl10
+    task: robustness_compare
+    domain: beauty
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_clean_noisy_robustness_nl10
+    command: python main_robustness.py --clean_exp beauty_qwen3_local_replay_v2_structured_risk_full973 --noisy_exp beauty_qwen3_local_replay_v2_structured_risk_full973_noisy_nl10 --output_root outputs
+    output_dir: outputs/robustness/beauty_qwen3_local_replay_v2_structured_risk_full973_vs_beauty_qwen3_local_replay_v2_structured_risk_full973_noisy_nl10
+    enabled: false
+    notes: Wait for replay clean rerank plus replay noisy rerank outputs on Beauty full973.
+
+  - exp_name: books_qwen3_local_replay_v2_structured_risk_full_vs_noisy_nl10
+    task: robustness_compare
+    domain: books
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_clean_noisy_robustness_nl10
+    command: python main_robustness.py --clean_exp books_qwen3_local_replay_v2_structured_risk_full --noisy_exp books_qwen3_local_replay_v2_structured_risk_full_noisy_nl10 --output_root outputs
+    output_dir: outputs/robustness/books_qwen3_local_replay_v2_structured_risk_full_vs_books_qwen3_local_replay_v2_structured_risk_full_noisy_nl10
+    enabled: false
+    notes: Wait for full-domain replay clean and noisy rerank outputs on Books.
+
+  - exp_name: electronics_qwen3_local_replay_v2_structured_risk_full_vs_noisy_nl10
+    task: robustness_compare
+    domain: electronics
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_clean_noisy_robustness_nl10
+    command: python main_robustness.py --clean_exp electronics_qwen3_local_replay_v2_structured_risk_full --noisy_exp electronics_qwen3_local_replay_v2_structured_risk_full_noisy_nl10 --output_root outputs
+    output_dir: outputs/robustness/electronics_qwen3_local_replay_v2_structured_risk_full_vs_electronics_qwen3_local_replay_v2_structured_risk_full_noisy_nl10
+    enabled: false
+    notes: Wait for full-domain replay clean and noisy rerank outputs on Electronics.
+
+  - exp_name: movies_qwen3_local_replay_v2_structured_risk_full_vs_noisy_nl10
+    task: robustness_compare
+    domain: movies
+    model: qwen3_8b_local_replay_v2
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_clean_noisy_robustness_nl10
+    command: python main_robustness.py --clean_exp movies_qwen3_local_replay_v2_structured_risk_full --noisy_exp movies_qwen3_local_replay_v2_structured_risk_full_noisy_nl10 --output_root outputs
+    output_dir: outputs/robustness/movies_qwen3_local_replay_v2_structured_risk_full_vs_movies_qwen3_local_replay_v2_structured_risk_full_noisy_nl10
+    enabled: false
+    notes: Wait for full-domain replay clean and noisy rerank outputs on Movies.
+
+  - exp_name: week7_8_replay_v2_week4_robustness_summary
+    task: robustness_summary
+    domain: four_domain
+    model: summary_only
+    method_family: local_hf_lora_replay
+    method_variant: replay_v2_week4_robustness_summary
+    command: python main_compare_teacher_requested_line.py --mode robustness
+    output_dir: outputs/summary
+    enabled: true
+    notes: Refresh the formal Day4 replay summary after any clean-noisy compare outputs land.

@@ -98,6 +98,30 @@ The Day3 compare table is intentionally structured around three roles:
 - replay local-v2 structured-risk rerank
 - strongest preserved hand-crafted reference
 
+## New Day4 Files
+
+### Coverage and robustness batch shell
+
+- `configs/batch/week7_8_replay_v2_day4_robustness.yaml`
+
+This batch shell records the minimal Day4 replay order without polluting the preserved Week7.7 or Week8 routes:
+
+- replay clean structured-risk rerank output
+- replay noisy structured-risk rerank output
+- clean/noisy robustness compare via `main_robustness.py`
+- week-level Day4 summary refresh via `main_compare_teacher_requested_line.py --mode robustness`
+
+### Coverage and robustness summary
+
+- `main_compare_teacher_requested_line.py --mode robustness`
+
+Day4 reuses the same teacher-requested summary entrypoint but switches to robustness mode, producing:
+
+- `outputs/summary/week7_8_replay_v2_week4_robustness_summary.csv`
+- `outputs/summary/week7_8_replay_v2_week4_robustness_summary.md`
+
+The Day4 summary is intentionally conservative. It only claims a formal clean/noisy replay robustness row when both the replay clean rerank output and the replay robustness compare output exist. Otherwise it still records the intended compare name and marks the row as missing, so that the remaining server-side execution work stays explicit.
+
 ## Readiness Status
 
 ### Beauty
@@ -130,6 +154,12 @@ The Day3 compare table is intentionally structured around three roles:
 - full-domain pointwise/ranking runtime files can now be materialized under `data/processed/amazon_movies/`
 - full-domain replay-v2 adapter is still not yet materialized
 
+### Noisy replay readiness
+
+- Beauty local noisy processed data already exists, but replay noisy-v2 outputs are not yet materialized.
+- Books, Electronics, and Movies still need formal noisy replay runtime materialization before Day4 can move from shell to full execution.
+- Day4 therefore freezes the compare interface first and keeps the execution blocker explicit instead of hiding it behind a partial pilot.
+
 ## Intended Output Families
 
 - Week1-Week2 replay summary:
@@ -146,3 +176,7 @@ The Day3 compare table is intentionally structured around three roles:
 Day2 moves the main blocker one layer lower. The processed full-domain directories can now be aligned to the runtime file shape used by the current pointwise and candidate-ranking entrypoints, and the formal pointwise/calibration summary entrypoint also exists.
 
 Day3 then formalizes the decision-layer compare shell. Even before all replay runs are materialized, the compare table can already show a stable three-column structure across domains: replay direct, replay rerank, and strongest preserved hand-crafted reference. The remaining execution blocker is no longer compare structure, but full-domain replay-v2 adapter materialization for Books, Electronics, and Movies, together with the actual server-side replay outputs.
+
+## Day4 Decision
+
+Day4 extends the same logic to side metrics and robustness. Coverage, head exposure, and long-tail coverage are now explicitly attached to the teacher-requested replay summary path, and the clean/noisy compare interface is fixed in the batch shell before the server run begins. The remaining blocker is therefore no longer how Day4 should be summarized, but the actual replay clean/noisy outputs that will later populate the summary table.

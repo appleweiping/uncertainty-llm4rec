@@ -57,6 +57,29 @@ DEFAULT_RERANK_SPECS: list[dict[str, str]] = [
     },
 ]
 
+DEFAULT_ROBUSTNESS_SPECS: list[dict[str, str]] = [
+    {
+        "domain": "beauty",
+        "clean_exp_name": "beauty_qwen3_local_replay_v2_structured_risk_full973",
+        "noisy_exp_name": "beauty_qwen3_local_replay_v2_structured_risk_full973_noisy_nl10",
+    },
+    {
+        "domain": "books",
+        "clean_exp_name": "books_qwen3_local_replay_v2_structured_risk_full",
+        "noisy_exp_name": "books_qwen3_local_replay_v2_structured_risk_full_noisy_nl10",
+    },
+    {
+        "domain": "electronics",
+        "clean_exp_name": "electronics_qwen3_local_replay_v2_structured_risk_full",
+        "noisy_exp_name": "electronics_qwen3_local_replay_v2_structured_risk_full_noisy_nl10",
+    },
+    {
+        "domain": "movies",
+        "clean_exp_name": "movies_qwen3_local_replay_v2_structured_risk_full",
+        "noisy_exp_name": "movies_qwen3_local_replay_v2_structured_risk_full_noisy_nl10",
+    },
+]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -66,7 +89,7 @@ def parse_args() -> argparse.Namespace:
         "--mode",
         type=str,
         default="pointwise",
-        choices=["pointwise", "rerank"],
+        choices=["pointwise", "rerank", "robustness"],
         help="Current supported summary mode.",
     )
     parser.add_argument("--output_root", type=str, default="outputs", help="Experiment output root.")
@@ -200,6 +223,17 @@ def _find_method_row(rows: list[dict[str, Any]], method_name: str) -> dict[str, 
     return {}
 
 
+def _load_robustness_summary(output_root: Path, clean_exp_name: str, noisy_exp_name: str) -> dict[str, Any]:
+    compare_name = f"{clean_exp_name}_vs_{noisy_exp_name}"
+    path = output_root / "robustness" / compare_name / "tables" / "robustness_summary.csv"
+    row = _single_row_csv(path)
+    return {
+        "status": "ready" if row else "missing",
+        "compare_name": compare_name,
+        "row": row,
+    }
+
+
 def _load_direct_bundle(output_root: Path, exp_name: str) -> dict[str, Any]:
     rows = _multi_row_csv(output_root / exp_name / "tables" / "ranking_metrics.csv")
     if not rows:
@@ -269,6 +303,40 @@ def _rerank_row_from_spec(output_root: Path, spec: dict[str, str]) -> dict[str, 
     return row
 
 
+def _robustness_row_from_spec(output_root: Path, spec: dict[str, str]) -> dict[str, Any]:
+    clean_bundle = _load_rerank_bundle(output_root, spec["clean_exp_name"])
+    robustness_bundle = _load_robustness_summary(output_root, spec["clean_exp_name"], spec["noisy_exp_name"])
+    clean_row = clean_bundle["rerank_row"]
+    robustness_row = robustness_bundle["row"]
+
+    row: dict[str, Any] = {
+        "week_stage": "week7_8_replay",
+        "route_role": "teacher_requested_local_mainline",
+        "domain": spec["domain"],
+        "clean_exp_name": spec["clean_exp_name"],
+        "noisy_exp_name": spec["noisy_exp_name"],
+        "robustness_compare_name": robustness_bundle["compare_name"],
+        "clean_status": clean_bundle["status"],
+        "robustness_status": robustness_bundle["status"],
+        "clean_hr_at_10": _metric_from_row(clean_row, "HR@10"),
+        "clean_ndcg_at_10": _metric_from_row(clean_row, "NDCG@10"),
+        "clean_mrr": _metric_from_row(clean_row, "MRR"),
+        "clean_coverage_at_10": _metric_from_row(clean_row, "coverage@10", "coverage"),
+        "clean_head_exposure_ratio_at_10": _metric_from_row(clean_row, "head_exposure_ratio@10", "head_exposure_ratio"),
+        "clean_longtail_coverage_at_10": _metric_from_row(clean_row, "longtail_coverage@10", "longtail_coverage"),
+        "clean_parse_success_rate": _metric_from_row(clean_row, "parse_success_rate"),
+        "clean_out_of_candidate_rate": _metric_from_row(clean_row, "out_of_candidate_rate"),
+        "noise_level": _metric_from_row(robustness_row, "noise_level"),
+        "hr_at_10_drop": _metric_from_row(robustness_row, "rerank_HR@10_drop"),
+        "ndcg_at_10_drop": _metric_from_row(robustness_row, "rerank_NDCG@10_drop"),
+        "mrr_drop": _metric_from_row(robustness_row, "rerank_MRR@10_drop"),
+        "head_exposure_ratio_at_10_drop": _metric_from_row(robustness_row, "rerank_head_exposure_ratio@10_drop"),
+        "long_tail_coverage_at_10_drop": _metric_from_row(robustness_row, "rerank_long_tail_coverage@10_drop"),
+        "lambda_penalty_drop": _metric_from_row(robustness_row, "rerank_lambda_penalty_drop"),
+    }
+    return row
+
+
 def _write_pointwise_md(summary_rows: list[dict[str, Any]], output_path: Path) -> Path:
     md_path = output_path.with_suffix(".md")
     lines = [
@@ -329,6 +397,36 @@ def _write_rerank_md(summary_rows: list[dict[str, Any]], output_path: Path) -> P
     return md_path
 
 
+def _write_robustness_md(summary_rows: list[dict[str, Any]], output_path: Path) -> Path:
+    md_path = output_path.with_suffix(".md")
+    lines = [
+        "# Week7.8 Replay Day4 Robustness Summary",
+        "",
+        "This table tracks the teacher-requested local-v2 clean robustness baseline and the status of the minimal clean/noisy replay compare.",
+        "",
+        "| domain | clean_status | robustness_status | clean_ndcg@10 | clean_coverage@10 | clean_head_exposure_ratio@10 | ndcg@10_drop |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: |",
+    ]
+    for row in summary_rows:
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(row.get("domain", "")),
+                    str(row.get("clean_status", "")),
+                    str(row.get("robustness_status", "")),
+                    _fmt(row.get("clean_ndcg_at_10")),
+                    _fmt(row.get("clean_coverage_at_10")),
+                    _fmt(row.get("clean_head_exposure_ratio_at_10")),
+                    _fmt(row.get("ndcg_at_10_drop")),
+                ]
+            )
+            + " |"
+        )
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return md_path
+
+
 def _fmt(value: Any) -> str:
     if value is None or value == "":
         return ""
@@ -369,12 +467,21 @@ def main() -> None:
     default_pointwise_output = Path("outputs/summary/week7_8_replay_v2_week1_week2_pointwise_summary.csv")
     if args.mode == "pointwise":
         rows = [_row_from_spec(output_root, spec) for spec in DEFAULT_POINTWISE_SPECS]
-    else:
+    elif args.mode == "rerank":
         if output_path.as_posix() == default_pointwise_output.as_posix():
             output_path = Path("outputs/summary/week7_8_replay_v2_week3_rerank_compare.csv")
         rows = [_rerank_row_from_spec(output_root, spec) for spec in DEFAULT_RERANK_SPECS]
+    else:
+        if output_path.as_posix() == default_pointwise_output.as_posix():
+            output_path = Path("outputs/summary/week7_8_replay_v2_week4_robustness_summary.csv")
+        rows = [_robustness_row_from_spec(output_root, spec) for spec in DEFAULT_ROBUSTNESS_SPECS]
     _write_csv(rows, output_path)
-    md_path = _write_pointwise_md(rows, output_path) if args.mode == "pointwise" else _write_rerank_md(rows, output_path)
+    if args.mode == "pointwise":
+        md_path = _write_pointwise_md(rows, output_path)
+    elif args.mode == "rerank":
+        md_path = _write_rerank_md(rows, output_path)
+    else:
+        md_path = _write_robustness_md(rows, output_path)
     print(f"Saved Week7.8 teacher-requested summary to: {output_path}")
     print(f"Saved markdown handoff to: {md_path}")
     for row in rows:
@@ -385,12 +492,19 @@ def main() -> None:
                 f"replay_acc={_fmt(row.get('replay_accuracy'))} "
                 f"replay_ece={_fmt(row.get('replay_ece'))}"
             )
-        else:
+        elif args.mode == "rerank":
             print(
                 f"{row['domain']}: direct={row['replay_direct_status']} "
                 f"rerank={row['replay_rerank_status']} "
                 f"reference={row['reference_status']} "
                 f"rerank_ndcg={_fmt(row.get('replay_rerank_ndcg_at_10'))}"
+            )
+        else:
+            print(
+                f"{row['domain']}: clean={row['clean_status']} "
+                f"robustness={row['robustness_status']} "
+                f"clean_ndcg={_fmt(row.get('clean_ndcg_at_10'))} "
+                f"ndcg_drop={_fmt(row.get('ndcg_at_10_drop'))}"
             )
 
 
