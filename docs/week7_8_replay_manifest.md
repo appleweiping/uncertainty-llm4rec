@@ -54,6 +54,27 @@ This manifest records the Week7.8 local-v2 replay shell that replays the origina
 
 - `configs/batch/week7_8_replay_v2_teacher_line.yaml`
 
+## New Day2 Files
+
+### Runtime materialization
+
+- `main_build_replay_runtime.py`
+
+This script materializes the current full-domain replay runtime shape directly under each processed directory:
+
+- `train.jsonl`
+- `valid.jsonl`
+- `test.jsonl`
+- `ranking_valid.jsonl`
+- `ranking_test.jsonl`
+
+### Pointwise replay summary
+
+- `main_compare_teacher_requested_line.py`
+- `configs/batch/week7_8_replay_v2_day2_pointwise.yaml`
+
+This summary entrypoint is scoped to the Week7.8 Day2 replay target: local-v2 pointwise diagnosis and calibration on the formal four-domain route, together with the preserved historical teacher-observation reference.
+
 ## Readiness Status
 
 ### Beauty
@@ -66,19 +87,25 @@ This manifest records the Week7.8 local-v2 replay shell that replays the origina
 
 - full-domain data config exists
 - replay configs added
-- runtime files for `test.jsonl` and `ranking_test.jsonl` still need to be materialized under `data/processed/amazon_books/`
+- Day2 runtime builder now exists
+- full-domain pointwise/ranking runtime files can now be materialized under `data/processed/amazon_books/`
+- full-domain replay-v2 adapter is still not yet materialized
 
 ### Electronics
 
 - full-domain data config exists
 - replay configs added
-- runtime files for `test.jsonl` and `ranking_test.jsonl` still need to be materialized under `data/processed/amazon_electronics/`
+- Day2 runtime builder now exists
+- full-domain pointwise/ranking runtime files can now be materialized under `data/processed/amazon_electronics/`
+- full-domain replay-v2 adapter is still not yet materialized
 
 ### Movies
 
 - full-domain data config exists
 - replay configs added
-- runtime files for `test.jsonl` and `ranking_test.jsonl` still need to be materialized under `data/processed/amazon_movies/`
+- Day2 runtime builder now exists
+- full-domain pointwise/ranking runtime files can now be materialized under `data/processed/amazon_movies/`
+- full-domain replay-v2 adapter is still not yet materialized
 
 ## Intended Output Families
 
@@ -91,6 +118,6 @@ This manifest records the Week7.8 local-v2 replay shell that replays the origina
 - Final teacher-requested local mainline summary:
   `outputs/summary/teacher_requested_local8b_lora_mainline_final.csv`
 
-## Day1 Decision
+## Day2 Decision
 
-Day1 does not attempt to force execution before the full-domain processed runtime files are aligned. The current goal is a clean, explicit, non-destructive replay shell.
+Day2 moves the main blocker one layer lower. The processed full-domain directories can now be aligned to the runtime file shape used by the current pointwise and candidate-ranking entrypoints, and the formal pointwise/calibration summary entrypoint also exists. The remaining execution blocker is no longer runtime file shape, but full-domain replay-v2 adapter materialization for Books, Electronics, and Movies.
