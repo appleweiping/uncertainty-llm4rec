@@ -68,6 +68,22 @@ class LocalHFBackend(LLMBackend):
                 return True
         return False
 
+    def _get_input_device(self):
+        assert self._model is not None
+        embedding_layer = getattr(self._model, "get_input_embeddings", None)
+        if callable(embedding_layer):
+            try:
+                embeddings = embedding_layer()
+                if embeddings is not None and getattr(embeddings, "weight", None) is not None:
+                    return embeddings.weight.device
+            except Exception:  # noqa: BLE001 - fall back to parameter device if embeddings are unavailable
+                pass
+
+        try:
+            return next(self._model.parameters()).device
+        except StopIteration as exc:
+            raise RuntimeError("Unable to determine LocalHFBackend input device.") from exc
+
     def _torch_dtype(self):
         torch = self._torch
         dtype = self.dtype.lower()
@@ -185,8 +201,11 @@ class LocalHFBackend(LLMBackend):
                 padding=True,
                 truncation=True,
             )
-            if self._uses_single_device() and self.device != "auto":
-                inputs = {key: value.to(self.device) for key, value in inputs.items()}
+            input_device = self._get_input_device()
+            inputs = {
+                key: value.to(input_device) if hasattr(value, "to") else value
+                for key, value in inputs.items()
+            }
 
             generation_kwargs: dict[str, Any] = {
                 "max_new_tokens": max_new_tokens,
