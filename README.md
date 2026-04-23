@@ -48,9 +48,36 @@ The current method layer includes:
 
 This repository intentionally favors standard, interpretable baselines before more complex uncertainty modeling.
 
+## Current Project Positioning (April 2026)
+
+The project now has two closely related, but distinct, layers.
+
+The first layer is the teacher-requested execution line. The original practical goal was to move the uncertainty-aware recommendation pipeline away from heavy dependence on official API calls and toward a local, server-runnable `8B + LoRA` small-model setup. In the current roadmap, this corresponds to `week7.8` and `week7.9`. The purpose of this line is not to invent a new method family first, but to make the original uncertainty pipeline run at larger scale with a local model:
+
+- `week7.8`: replay the true `week1-week4` uncertainty pipeline on full-domain local-`v2`
+- `week7.9`: tighten fairness, baseline-confidence alignment, and metric/protocol auditing before formal comparison
+
+The second layer is the later paper-facing research line. Once the local `8B + LoRA` execution path became stable, the project naturally evolved into a deeper question: if a stronger teacher provides recommendation corrections together with uncertainty signals, when should a smaller model learn from them, how strongly should it learn, and how should it avoid learning harmful corrections? This is the line that leads into `week8` and `week9`:
+
+- `week8`: formal outer comparison and same-schema baseline/proxy comparison
+- `week9`: system integration, where teacher reliability, correction selection, preference construction, and student adaptation are collected into one framework
+
+This distinction matters because the repository should not be read as "a LoRA fine-tuning project" alone. The local `8B + LoRA` student is the execution carrier. The central research question is about uncertainty-aware recommendation and, later, uncertainty-aware conditional student learning.
+
+## Current Weekly Roadmap
+
+The near-term roadmap is intentionally layered rather than flat:
+
+1. `week7.8` finishes the teacher-requested local execution line on full-domain data.
+2. `week7.9` builds the fairness bridge so that confidence-related claims are not evaluated only on our own mainline.
+3. `week8` performs formal outer comparison between direct baselines, structured-risk baselines, SRPD variants, and literature-motivated proxies under a controlled schema.
+4. `week9` turns the accumulated mechanisms into a system-level narrative rather than leaving them as a list of variants.
+
+Another important clarification is that `pointwise_yesno` is still present, but no longer acts as the project's final task formulation. It is now the diagnosis and calibration layer. The main recommendation decision layer has been upgraded to candidate ranking and reranking, while pairwise preference serves as a mechanism/supporting layer.
+
 ## Current Research Direction
 
-The repository is now being expanded from a single-task pointwise pipeline into a unified multi-decision framework:
+The repository is no longer a single-task pointwise project. It is being expanded into a unified multi-decision framework in which pointwise remains the diagnosis layer, ranking is the main decision layer, and pairwise acts as the mechanism/supporting layer:
 
 - `pointwise_yesno` remains the diagnostic layer for uncertainty elicitation and calibration
 - `pairwise_preference` is being introduced as the local preference-mechanism layer
