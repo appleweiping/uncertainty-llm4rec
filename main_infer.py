@@ -68,6 +68,15 @@ def infer_prediction_filename(input_path: str | Path) -> str:
     return f"{stem}_raw.jsonl"
 
 
+def resolve_split_input_path(cfg: dict[str, Any], split_name: str | None) -> str | None:
+    if not split_name:
+        return None
+    split_input_paths = cfg.get("split_input_paths") or {}
+    if not isinstance(split_input_paths, dict):
+        return None
+    return split_input_paths.get(str(split_name).strip().lower())
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default=None, help="Experiment config path.")
@@ -103,7 +112,10 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
 
     merged = {
         "exp_name": args.exp_name if args.exp_name is not None else cfg.get("exp_name", "clean"),
-        "input_path": args.input_path if args.input_path is not None else cfg.get("input_path"),
+        "input_path": args.input_path
+        if args.input_path is not None
+        else resolve_split_input_path(cfg, args.split_name if args.split_name is not None else cfg.get("split_name"))
+        or cfg.get("input_path"),
         "data_root": args.data_root if args.data_root is not None else cfg.get("data_root"),
         "output_root": args.output_root if args.output_root is not None else cfg.get("output_root", "outputs"),
         "prompt_path": args.prompt_path if args.prompt_path is not None else cfg.get("prompt_path", "prompts/pointwise_yesno.txt"),
