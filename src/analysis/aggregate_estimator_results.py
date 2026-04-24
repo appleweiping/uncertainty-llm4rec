@@ -139,6 +139,9 @@ def aggregate_experiment(exp_dir: Path) -> list[dict[str, Any]]:
             "fusion_alpha": record.get("fusion_alpha"),
             "num_eval_samples": record.get("num_eval_samples"),
             "num_eval_users": record.get("num_eval_users"),
+            "parse_success_rate": record.get("parse_success_rate"),
+            "high_conf_threshold": record.get("high_conf_threshold"),
+            "high_conf_error_rate": record.get("high_conf_error_rate"),
         }
         row.update(normalize_metric_columns(record.to_dict()))
         rows.append(row)
@@ -160,6 +163,8 @@ def build_beauty_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
         "lambda",
         "fusion_alpha",
         "num_eval_samples",
+        "parse_success_rate",
+        "high_conf_error_rate",
         "calibration_ece",
         "calibration_brier_score",
         "calibration_auroc",
@@ -199,6 +204,8 @@ def build_beauty_supporting_summary(summary_df: pd.DataFrame) -> pd.DataFrame:
         "lambda",
         "fusion_alpha",
         "num_eval_samples",
+        "parse_success_rate",
+        "high_conf_error_rate",
         "calibration_ece",
         "calibration_brier_score",
         "calibration_auroc",

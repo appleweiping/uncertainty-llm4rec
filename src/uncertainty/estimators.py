@@ -16,6 +16,18 @@ def add_calibrated_confidence(df: pd.DataFrame) -> pd.Series:
     return df["calibrated_confidence"].astype(float).clip(0.0, 1.0)
 
 
+def add_raw_evidence_confidence(df: pd.DataFrame) -> pd.Series:
+    return df["raw_confidence"].astype(float).clip(0.0, 1.0)
+
+
+def add_raw_evidence_calibrated_confidence(df: pd.DataFrame) -> pd.Series:
+    return df["raw_calibrated_confidence"].astype(float).clip(0.0, 1.0)
+
+
+def add_evidence_posterior_confidence(df: pd.DataFrame, column: str) -> pd.Series:
+    return df[column].astype(float).clip(0.0, 1.0)
+
+
 def add_consistency_confidence(df: pd.DataFrame) -> pd.Series:
     return df["consistency_confidence"].astype(float).clip(0.0, 1.0)
 
@@ -108,6 +120,38 @@ def ensure_estimator_columns(df: pd.DataFrame, fused_alpha: float = 0.5) -> pd.D
         out["verbalized_confidence"] = add_verbalized_confidence(out)
         out["verbalized_uncertainty"] = 1.0 - out["verbalized_confidence"]
 
+    if "raw_confidence" in out.columns:
+        out["evidence_raw_confidence"] = add_raw_evidence_confidence(out)
+        out["evidence_raw_uncertainty"] = 1.0 - out["evidence_raw_confidence"]
+
+    if "raw_calibrated_confidence" in out.columns:
+        out["evidence_raw_calibrated_confidence"] = add_raw_evidence_calibrated_confidence(out)
+        out["evidence_raw_calibrated_uncertainty"] = 1.0 - out["evidence_raw_calibrated_confidence"]
+
+    if "minimal_repaired_confidence" in out.columns:
+        out["evidence_posterior_minimal_confidence"] = add_evidence_posterior_confidence(
+            out,
+            "minimal_repaired_confidence",
+        )
+        if "minimal_evidence_uncertainty" in out.columns:
+            out["evidence_posterior_minimal_uncertainty"] = (
+                out["minimal_evidence_uncertainty"].astype(float).clip(0.0, 1.0)
+            )
+        else:
+            out["evidence_posterior_minimal_uncertainty"] = 1.0 - out["evidence_posterior_minimal_confidence"]
+
+    if "full_repaired_confidence" in out.columns:
+        out["evidence_posterior_full_confidence"] = add_evidence_posterior_confidence(
+            out,
+            "full_repaired_confidence",
+        )
+        if "full_evidence_uncertainty" in out.columns:
+            out["evidence_posterior_full_uncertainty"] = (
+                out["full_evidence_uncertainty"].astype(float).clip(0.0, 1.0)
+            )
+        else:
+            out["evidence_posterior_full_uncertainty"] = 1.0 - out["evidence_posterior_full_confidence"]
+
     if "calibrated_confidence" in out.columns:
         out["verbalized_calibrated_confidence"] = add_calibrated_confidence(out)
         if "uncertainty" in out.columns:
@@ -140,6 +184,30 @@ def get_available_estimators(df: pd.DataFrame, fused_alpha: float = 0.5) -> dict
         estimators["verbalized_raw"] = {
             "confidence_col": "verbalized_confidence",
             "uncertainty_col": "verbalized_uncertainty",
+        }
+
+    if {"evidence_raw_confidence", "evidence_raw_uncertainty"}.issubset(df.columns):
+        estimators["evidence_raw"] = {
+            "confidence_col": "evidence_raw_confidence",
+            "uncertainty_col": "evidence_raw_uncertainty",
+        }
+
+    if {"evidence_raw_calibrated_confidence", "evidence_raw_calibrated_uncertainty"}.issubset(df.columns):
+        estimators["evidence_raw_calibrated"] = {
+            "confidence_col": "evidence_raw_calibrated_confidence",
+            "uncertainty_col": "evidence_raw_calibrated_uncertainty",
+        }
+
+    if {"evidence_posterior_minimal_confidence", "evidence_posterior_minimal_uncertainty"}.issubset(df.columns):
+        estimators["evidence_posterior_minimal"] = {
+            "confidence_col": "evidence_posterior_minimal_confidence",
+            "uncertainty_col": "evidence_posterior_minimal_uncertainty",
+        }
+
+    if {"evidence_posterior_full_confidence", "evidence_posterior_full_uncertainty"}.issubset(df.columns):
+        estimators["evidence_posterior_full"] = {
+            "confidence_col": "evidence_posterior_full_confidence",
+            "uncertainty_col": "evidence_posterior_full_uncertainty",
         }
 
     if {"verbalized_calibrated_confidence", "verbalized_calibrated_uncertainty"}.issubset(df.columns):
