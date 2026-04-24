@@ -48,6 +48,12 @@ The current method layer includes:
 
 This repository intentionally favors standard, interpretable baselines before more complex uncertainty modeling.
 
+### Evidence Posterior Confidence Repair
+
+The `codex/week4-confidence-repair` branch adds an experimental repair path for the pointwise confidence formulation. Instead of relying only on a single model-reported confidence score, the new path asks the model to expose `positive_evidence`, `negative_evidence`, `ambiguity`, and `missing_information`, then fits a valid-set calibrated posterior over these evidence features.
+
+This branch keeps the original yes/no pipeline intact. The evidence posterior path is enabled explicitly through `output_schema: evidence_confidence` and can be evaluated with `main_calibrate_evidence_posterior.py` and `main_eval_evidence_posterior.py`. The purpose is to test whether confidence can become more task-grounded and discriminative before migrating the same idea to richer candidate relevance scoring.
+
 ## What Is Implemented
 
 The codebase already supports the core week-one research loop:
