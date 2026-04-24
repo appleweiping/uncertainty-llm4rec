@@ -48,6 +48,35 @@ def high_conf_error_rate(
     return float((high_conf & wrong).sum() / high_conf.sum())
 
 
+def usable_metric_rows(
+    df: pd.DataFrame,
+    confidence_col: str,
+    target_col: str = "is_correct",
+) -> pd.DataFrame:
+    out = df.copy()
+    if "parse_success" in out.columns:
+        out = out[out["parse_success"].astype(bool)].copy()
+    required = [confidence_col, target_col, "recommend", "label"]
+    available_required = [column for column in required if column in out.columns]
+    out = out.dropna(subset=available_required).copy()
+    if confidence_col in out.columns:
+        out[confidence_col] = pd.to_numeric(out[confidence_col], errors="coerce")
+        out = out.dropna(subset=[confidence_col]).copy()
+    return out.reset_index(drop=True)
+
+
+def _parse_success_rate(df: pd.DataFrame) -> float:
+    if "parse_success" not in df.columns or len(df) == 0:
+        return float("nan")
+    return float(df["parse_success"].astype(bool).mean())
+
+
+def _parse_failed_count(df: pd.DataFrame) -> int:
+    if "parse_success" not in df.columns:
+        return 0
+    return int((~df["parse_success"].astype(bool)).sum())
+
+
 def metrics_row(
     *,
     split: str,
@@ -59,7 +88,27 @@ def metrics_row(
     notes: str = "",
     high_conf_threshold: float = 0.8,
 ) -> dict[str, Any]:
-    eval_df = df.copy()
+    total_rows = int(len(df))
+    parse_success_rate = _parse_success_rate(df)
+    parse_failed_count = _parse_failed_count(df)
+    eval_df = usable_metric_rows(df, confidence_col=confidence_col)
+    if eval_df.empty:
+        return {
+            "split": split,
+            "variant": variant,
+            "confidence_col": confidence_col,
+            "status": "no_usable_rows",
+            "feature_set": model.feature_set if model is not None else "",
+            "uses_fallback": bool(model.uses_fallback) if model is not None else False,
+            "fallback_reason": model.fallback_reason if model is not None else "",
+            "total_rows": total_rows,
+            "usable_rows": 0,
+            "parse_success_rate": parse_success_rate,
+            "parse_failed_count": parse_failed_count,
+            "high_conf_threshold": float(high_conf_threshold),
+            "high_conf_error_rate": float("nan"),
+            "notes": notes,
+        }
     eval_df["confidence"] = eval_df[confidence_col].astype(float).clip(0.0, 1.0)
     metrics = compute_calibration_metrics(
         eval_df,
@@ -76,6 +125,10 @@ def metrics_row(
             "feature_set": model.feature_set if model is not None else "",
             "uses_fallback": bool(model.uses_fallback) if model is not None else False,
             "fallback_reason": model.fallback_reason if model is not None else "",
+            "total_rows": total_rows,
+            "usable_rows": int(len(eval_df)),
+            "parse_success_rate": parse_success_rate,
+            "parse_failed_count": parse_failed_count,
             "high_conf_threshold": float(high_conf_threshold),
             "high_conf_error_rate": high_conf_error_rate(
                 eval_df,
@@ -89,25 +142,53 @@ def metrics_row(
 
 
 def calibrate_raw_confidence(valid_df: pd.DataFrame, test_df: pd.DataFrame, method: str):
+    valid_fit = usable_metric_rows(valid_df, confidence_col="raw_confidence")
+    if valid_fit.empty:
+        raise ValueError("No usable valid rows for raw confidence calibration.")
     calibrator = fit_calibrator(
-        valid_df=valid_df,
+        valid_df=valid_fit,
         method=method,
         confidence_col="raw_confidence",
         target_col="is_correct",
     )
-    valid_out = apply_calibrator(
-        valid_df,
-        calibrator,
-        input_col="raw_confidence",
-        output_col="raw_calibrated_confidence",
-    )
-    test_out = apply_calibrator(
-        test_df,
-        calibrator,
-        input_col="raw_confidence",
-        output_col="raw_calibrated_confidence",
-    )
+    valid_out = apply_calibrator_to_usable(valid_df, calibrator, input_col="raw_confidence", output_col="raw_calibrated_confidence")
+    test_out = apply_calibrator_to_usable(test_df, calibrator, input_col="raw_confidence", output_col="raw_calibrated_confidence")
     return valid_out, test_out
+
+
+def apply_calibrator_to_usable(
+    df: pd.DataFrame,
+    calibrator,
+    input_col: str,
+    output_col: str,
+) -> pd.DataFrame:
+    out = df.copy()
+    out[output_col] = float("nan")
+    mask = pd.to_numeric(out[input_col], errors="coerce").notna()
+    if "parse_success" in out.columns:
+        mask = mask & out["parse_success"].astype(bool)
+    if not bool(mask.any()):
+        return out
+    calibrated = apply_calibrator(
+        out.loc[mask].copy(),
+        calibrator,
+        input_col=input_col,
+        output_col=output_col,
+    )
+    out.loc[mask, output_col] = calibrated[output_col].to_numpy()
+    return out
+
+
+def mask_failed_repaired_rows(
+    df: pd.DataFrame,
+    confidence_col: str,
+    uncertainty_col: str,
+) -> pd.DataFrame:
+    out = df.copy()
+    if "parse_success" in out.columns:
+        failed_mask = ~out["parse_success"].astype(bool)
+        out.loc[failed_mask, [confidence_col, uncertainty_col, "evidence_uncertainty"]] = float("nan")
+    return out
 
 
 def parse_args() -> argparse.Namespace:
@@ -184,6 +265,11 @@ def main() -> None:
         valid_repaired[f"{feature_set}_evidence_uncertainty"] = (
             1.0 - valid_repaired[f"{feature_set}_repaired_confidence"]
         )
+        valid_repaired = mask_failed_repaired_rows(
+            valid_repaired,
+            confidence_col=f"{feature_set}_repaired_confidence",
+            uncertainty_col=f"{feature_set}_evidence_uncertainty",
+        )
         test_repaired = apply_evidence_posterior(
             test_df,
             model,
@@ -191,6 +277,11 @@ def main() -> None:
         )
         test_repaired[f"{feature_set}_evidence_uncertainty"] = (
             1.0 - test_repaired[f"{feature_set}_repaired_confidence"]
+        )
+        test_repaired = mask_failed_repaired_rows(
+            test_repaired,
+            confidence_col=f"{feature_set}_repaired_confidence",
+            uncertainty_col=f"{feature_set}_evidence_uncertainty",
         )
         repaired_outputs[feature_set] = (model, valid_repaired, test_repaired)
         print(f"[{args.exp_name}] Fitted {feature_set} evidence posterior: status={model.status}; fallback={model.fallback_reason or 'none'}")
@@ -268,6 +359,10 @@ def main() -> None:
         "test_path": str(test_path),
         "num_valid_samples": int(len(valid_df)),
         "num_test_samples": int(len(test_df)),
+        "valid_usable_rows": int(len(usable_metric_rows(valid_df, confidence_col="raw_confidence"))),
+        "test_usable_rows": int(len(usable_metric_rows(test_df, confidence_col="raw_confidence"))),
+        "valid_parse_failed_count": _parse_failed_count(valid_df),
+        "test_parse_failed_count": _parse_failed_count(test_df),
         "valid_parse_success_rate": float(valid_df["parse_success"].mean()),
         "test_parse_success_rate": float(test_df["parse_success"].mean()),
         "raw_calibration_method": args.raw_calibration_method,

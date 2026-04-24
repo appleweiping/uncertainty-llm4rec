@@ -43,6 +43,18 @@ def _with_confidence(df: pd.DataFrame, confidence_col: str) -> pd.DataFrame:
     return out
 
 
+def usable_eval_rows(df: pd.DataFrame, confidence_col: str) -> pd.DataFrame:
+    out = df.copy()
+    if "parse_success" in out.columns:
+        out = out[out["parse_success"].astype(bool)].copy()
+    required = [confidence_col, "is_correct", "recommend", "label"]
+    available = [column for column in required if column in out.columns]
+    out = out.dropna(subset=available).copy()
+    out[confidence_col] = pd.to_numeric(out[confidence_col], errors="coerce")
+    out = out.dropna(subset=[confidence_col]).copy()
+    return out.reset_index(drop=True)
+
+
 def plot_reliability(raw_rel: pd.DataFrame, repaired_rel: pd.DataFrame, output_path: str | Path) -> None:
     _ensure_parent(output_path)
     raw_plot = raw_rel.dropna(subset=["avg_confidence", "accuracy"])
@@ -65,9 +77,10 @@ def plot_reliability(raw_rel: pd.DataFrame, repaired_rel: pd.DataFrame, output_p
 
 def plot_confidence_histogram(df: pd.DataFrame, output_path: str | Path) -> None:
     _ensure_parent(output_path)
+    plot_df = df.dropna(subset=["raw_confidence", "repaired_confidence"]).copy()
     plt.figure(figsize=(8, 5))
-    plt.hist(df["raw_confidence"], bins=10, alpha=0.55, label="raw_confidence")
-    plt.hist(df["repaired_confidence"], bins=10, alpha=0.55, label="repaired_confidence")
+    plt.hist(plot_df["raw_confidence"], bins=10, alpha=0.55, label="raw_confidence")
+    plt.hist(plot_df["repaired_confidence"], bins=10, alpha=0.55, label="repaired_confidence")
     plt.xlabel("Confidence")
     plt.ylabel("Count")
     plt.title("Raw vs Repaired Confidence Distribution")
@@ -79,6 +92,7 @@ def plot_confidence_histogram(df: pd.DataFrame, output_path: str | Path) -> None
 
 def plot_raw_vs_repaired_scatter(df: pd.DataFrame, output_path: str | Path) -> None:
     _ensure_parent(output_path)
+    df = df.dropna(subset=["raw_confidence", "repaired_confidence", "is_correct"]).copy()
     colors = df["is_correct"].map({1: "tab:green", 0: "tab:red"}).fillna("tab:gray")
     plt.figure(figsize=(6, 6))
     plt.scatter(df["raw_confidence"], df["repaired_confidence"], c=colors, alpha=0.75)
@@ -142,24 +156,26 @@ def build_signal_bin_table(df: pd.DataFrame, signal_col: str, n_bins: int = 5) -
 
 
 def diagnostics_summary(df: pd.DataFrame, high_conf_threshold: float) -> pd.DataFrame:
-    raw_high = df["raw_confidence"] >= high_conf_threshold
-    repaired_high = df["repaired_confidence"] >= high_conf_threshold
-    wrong = df["is_correct"].astype(int) == 0
+    usable = usable_eval_rows(df, confidence_col="repaired_confidence")
+    raw_high = usable["raw_confidence"] >= high_conf_threshold
+    repaired_high = usable["repaired_confidence"] >= high_conf_threshold
+    wrong = usable["is_correct"].astype(int) == 0
 
     rows: list[dict[str, Any]] = [
         {
             "num_samples": int(len(df)),
+            "usable_samples": int(len(usable)),
             "parse_success_rate": float(df["parse_success"].mean()) if "parse_success" in df.columns else float("nan"),
             "parse_failed_count": _safe_count(~df["parse_success"].astype(bool)) if "parse_success" in df.columns else 0,
-            "raw_confidence_mean": _safe_mean(df, "raw_confidence"),
-            "raw_confidence_min": float(df["raw_confidence"].min()),
-            "raw_confidence_max": float(df["raw_confidence"].max()),
-            "repaired_confidence_mean": _safe_mean(df, "repaired_confidence"),
-            "repaired_confidence_min": float(df["repaired_confidence"].min()),
-            "repaired_confidence_max": float(df["repaired_confidence"].max()),
-            "abs_evidence_margin_mean": _safe_mean(df, "abs_evidence_margin"),
-            "ambiguity_mean": _safe_mean(df, "ambiguity"),
-            "missing_information_mean": _safe_mean(df, "missing_information"),
+            "raw_confidence_mean": _safe_mean(usable, "raw_confidence"),
+            "raw_confidence_min": float(usable["raw_confidence"].min()) if len(usable) else float("nan"),
+            "raw_confidence_max": float(usable["raw_confidence"].max()) if len(usable) else float("nan"),
+            "repaired_confidence_mean": _safe_mean(usable, "repaired_confidence"),
+            "repaired_confidence_min": float(usable["repaired_confidence"].min()) if len(usable) else float("nan"),
+            "repaired_confidence_max": float(usable["repaired_confidence"].max()) if len(usable) else float("nan"),
+            "abs_evidence_margin_mean": _safe_mean(usable, "abs_evidence_margin"),
+            "ambiguity_mean": _safe_mean(usable, "ambiguity"),
+            "missing_information_mean": _safe_mean(usable, "missing_information"),
             "high_conf_threshold": float(high_conf_threshold),
             "raw_high_conf_count": _safe_count(raw_high),
             "raw_high_conf_wrong_count": _safe_count(raw_high & wrong),
@@ -171,7 +187,7 @@ def diagnostics_summary(df: pd.DataFrame, high_conf_threshold: float) -> pd.Data
 
 
 def high_conf_wrong_cases(df: pd.DataFrame, threshold: float, top_n: int) -> pd.DataFrame:
-    work = df.copy()
+    work = usable_eval_rows(df, confidence_col="repaired_confidence")
     work["raw_over_repaired_gap"] = work["raw_confidence"] - work["repaired_confidence"]
     wrong = work["is_correct"].astype(int) == 0
     high_raw_wrong = work[(work["raw_confidence"] >= threshold) & wrong].copy()
@@ -239,8 +255,10 @@ def main() -> None:
     eval_df["raw_confidence"] = pd.to_numeric(eval_df["raw_confidence"], errors="coerce").clip(0.0, 1.0)
     eval_df["repaired_confidence"] = pd.to_numeric(eval_df["repaired_confidence"], errors="coerce").clip(0.0, 1.0)
 
-    raw_eval = _with_confidence(raw_df, "raw_confidence")
-    repaired_eval = _with_confidence(eval_df, "repaired_confidence")
+    raw_eval = _with_confidence(usable_eval_rows(raw_df, "raw_confidence"), "raw_confidence")
+    repaired_eval = _with_confidence(usable_eval_rows(eval_df, "repaired_confidence"), "repaired_confidence")
+    if raw_eval.empty or repaired_eval.empty:
+        raise ValueError("No usable parsed rows are available for evidence posterior diagnosis.")
     raw_metrics = compute_calibration_metrics(raw_eval, confidence_col="confidence")
     repaired_metrics = compute_calibration_metrics(repaired_eval, confidence_col="confidence")
     metrics_df = pd.DataFrame(
