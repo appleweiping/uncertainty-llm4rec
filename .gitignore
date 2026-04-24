@@ -216,6 +216,7 @@ baseline/
 !configs/baseline/
 !configs/baseline/**
 docs/version3/
+docs/
 tmp_outputs/
 tmp_pycache/
 docs.zip
