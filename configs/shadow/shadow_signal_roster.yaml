@@ -1,0 +1,37 @@
+week_stage: week7_9_shadow_bridge
+route_role: task_grounded_uncertainty_signal
+notes: >
+  Shadow variants are code-prepared as task-grounded uncertainty signals. The
+  first five variants are pointwise signal candidates; shadow_v6 is the bridge
+  from a winning signal into rerank/preference/LoRA decision adaptation.
+variants:
+  shadow_v1:
+    method_name: C-CRP
+    prompt_path: prompts/shadow_v1_relevance_probability.txt
+    primary_score_field: relevance_probability
+    lora_stage: Signal LoRA first
+  shadow_v2:
+    method_name: T-KIP
+    prompt_path: prompts/shadow_v2_topk_inclusion_probability.txt
+    primary_score_field: topk_inclusion_probability
+    lora_stage: Listwise-aware Signal LoRA
+  shadow_v3:
+    method_name: U-PFS
+    prompt_path: prompts/shadow_v3_preference_strength.txt
+    primary_score_field: preference_strength
+    lora_stage: Facet-aware Signal LoRA
+  shadow_v4:
+    method_name: RPD-ERU
+    prompt_path: prompts/shadow_v4_rank_position_distribution.txt
+    primary_score_field: expected_rank_percentile
+    lora_stage: Rank-distribution Signal LoRA
+  shadow_v5:
+    method_name: IGMP
+    prompt_path: prompts/shadow_v5_intent_prototype_match.txt
+    primary_score_field: match_probability
+    lora_stage: Prototype-and-match Signal LoRA
+  shadow_v6:
+    method_name: SCARF
+    prompt_path: prompts/shadow_v6_signal_to_decision.txt
+    primary_score_field: decision_score
+    lora_stage: Decision LoRA bridge

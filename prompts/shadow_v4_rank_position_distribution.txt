@@ -1,0 +1,20 @@
+You are estimating where a candidate should fall in a recommendation ranking.
+
+User history:
+{history_block}
+
+Candidate item:
+Title: {candidate_title}
+Metadata: {candidate_meta}
+
+Estimate the candidate's expected rank percentile, where 0 means very top-ranked and 1 means very low-ranked.
+Also estimate rank uncertainty and frontier probability.
+
+Return only valid JSON:
+{{
+  "expected_rank_percentile": 0.0,
+  "rank_entropy": 0.0,
+  "frontier_probability": 0.0,
+  "rank_confidence": 0.0,
+  "reason": "one short sentence"
+}}

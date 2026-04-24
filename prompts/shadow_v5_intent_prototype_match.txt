@@ -1,0 +1,21 @@
+You are inferring a compact user intent prototype and scoring candidate match.
+
+User history:
+{history_block}
+
+Candidate item:
+Title: {candidate_title}
+Metadata: {candidate_meta}
+
+First infer a short recommendation-intent prototype from the user's history.
+Then score how well this candidate matches that prototype.
+
+Return only valid JSON:
+{{
+  "intent_prototype": "short user intent prototype",
+  "match_probability": 0.0,
+  "prototype_confidence": 0.0,
+  "match_evidence": 0.0,
+  "mismatch_strength": 0.0,
+  "reason": "one short sentence"
+}}

@@ -1,0 +1,124 @@
+week_stage: week7_9_shadow
+output_root: outputs
+seed: 42
+default_topk: 10
+default_rank_max_new_tokens: 96
+default_rerank_variant: nonlinear_structured_risk_rerank
+default_lambda_penalty: 0.5
+scenarios:
+  small_prior:
+    description: Small-scale prior for screening all shadow signals before expensive full replay.
+    domains:
+      beauty:
+        pointwise_valid_path: data/processed/amazon_beauty/valid.jsonl
+        pointwise_test_path: data/processed/amazon_beauty/test.jsonl
+        ranking_test_path: data/processed/amazon_beauty/ranking_test.jsonl
+        noisy_valid_path: data/processed/amazon_beauty_noisy_nl10/valid.jsonl
+        noisy_test_path: data/processed/amazon_beauty_noisy_nl10/test.jsonl
+        noisy_ranking_test_path: data/processed/amazon_beauty_noisy_nl10/ranking_test.jsonl
+        model_config: configs/model/qwen3_8b_local_replay_v2_beauty_full973.yaml
+        rank_model_config: configs/model/qwen3_8b_local_replay_v2_beauty_full973.yaml
+        max_pointwise_samples: 1200
+        max_rank_samples: 300
+      books:
+        pointwise_valid_path: data/processed/amazon_books_small/valid.jsonl
+        pointwise_test_path: data/processed/amazon_books_small/test.jsonl
+        ranking_test_path: data/processed/amazon_books_small/ranking_test.jsonl
+        noisy_valid_path: data/processed/amazon_books_small_noisy_nl10/valid.jsonl
+        noisy_test_path: data/processed/amazon_books_small_noisy_nl10/test.jsonl
+        noisy_ranking_test_path: data/processed/amazon_books_small_noisy_nl10/ranking_test.jsonl
+        model_config: configs/model/qwen3_8b_local.yaml
+        rank_model_config: configs/model/qwen3_8b_local.yaml
+        max_pointwise_samples: 1200
+        max_rank_samples: 300
+  full_replay:
+    description: Full week1-week4 shadow replay for the selected variants or all six variants.
+    domains:
+      beauty:
+        pointwise_valid_path: data/processed/amazon_beauty/valid.jsonl
+        pointwise_test_path: data/processed/amazon_beauty/test.jsonl
+        ranking_test_path: data/processed/amazon_beauty/ranking_test.jsonl
+        noisy_valid_path: data/processed/amazon_beauty_noisy_nl10/valid.jsonl
+        noisy_test_path: data/processed/amazon_beauty_noisy_nl10/test.jsonl
+        noisy_ranking_test_path: data/processed/amazon_beauty_noisy_nl10/ranking_test.jsonl
+        model_config: configs/model/qwen3_8b_local_replay_v2_beauty_full973.yaml
+        rank_model_config: configs/model/qwen3_8b_local_replay_v2_beauty_full973.yaml
+      books:
+        pointwise_valid_path: data/processed/amazon_books_small/valid.jsonl
+        pointwise_test_path: data/processed/amazon_books_small/test.jsonl
+        ranking_test_path: data/processed/amazon_books_small/ranking_test.jsonl
+        noisy_valid_path: data/processed/amazon_books_small_noisy_nl10/valid.jsonl
+        noisy_test_path: data/processed/amazon_books_small_noisy_nl10/test.jsonl
+        noisy_ranking_test_path: data/processed/amazon_books_small_noisy_nl10/ranking_test.jsonl
+        model_config: configs/model/qwen3_8b_local.yaml
+        rank_model_config: configs/model/qwen3_8b_local.yaml
+      electronics:
+        pointwise_valid_path: data/processed/amazon_electronics_small/valid.jsonl
+        pointwise_test_path: data/processed/amazon_electronics_small/test.jsonl
+        ranking_test_path: data/processed/amazon_electronics_small/ranking_test.jsonl
+        noisy_valid_path: data/processed/amazon_electronics_small_noisy_nl10/valid.jsonl
+        noisy_test_path: data/processed/amazon_electronics_small_noisy_nl10/test.jsonl
+        noisy_ranking_test_path: data/processed/amazon_electronics_small_noisy_nl10/ranking_test.jsonl
+        model_config: configs/model/qwen3_8b_local.yaml
+        rank_model_config: configs/model/qwen3_8b_local.yaml
+      movies:
+        pointwise_valid_path: data/processed/amazon_movies_small/valid.jsonl
+        pointwise_test_path: data/processed/amazon_movies_small/test.jsonl
+        ranking_test_path: data/processed/amazon_movies_small/ranking_test.jsonl
+        noisy_valid_path: data/processed/amazon_movies_small_noisy_nl10/valid.jsonl
+        noisy_test_path: data/processed/amazon_movies_small_noisy_nl10/test.jsonl
+        noisy_ranking_test_path: data/processed/amazon_movies_small_noisy_nl10/ranking_test.jsonl
+        model_config: configs/model/qwen3_8b_local.yaml
+        rank_model_config: configs/model/qwen3_8b_local.yaml
+  formal_full_domains:
+    description: Formal non-small four-domain replay once Books/Electronics/Movies runtime jsonl files are materialized.
+    domains:
+      beauty:
+        pointwise_valid_path: data/processed/amazon_beauty/valid.jsonl
+        pointwise_test_path: data/processed/amazon_beauty/test.jsonl
+        ranking_test_path: data/processed/amazon_beauty/ranking_test.jsonl
+        noisy_valid_path: data/processed/amazon_beauty_noisy_nl10/valid.jsonl
+        noisy_test_path: data/processed/amazon_beauty_noisy_nl10/test.jsonl
+        noisy_ranking_test_path: data/processed/amazon_beauty_noisy_nl10/ranking_test.jsonl
+        model_config: configs/model/qwen3_8b_local_replay_v2_beauty_full973.yaml
+        rank_model_config: configs/model/qwen3_8b_local_replay_v2_beauty_full973.yaml
+      books:
+        pointwise_valid_path: data/processed/amazon_books/valid.jsonl
+        pointwise_test_path: data/processed/amazon_books/test.jsonl
+        ranking_test_path: data/processed/amazon_books/ranking_test.jsonl
+        noisy_valid_path: data/processed/amazon_books_noisy_nl10/valid.jsonl
+        noisy_test_path: data/processed/amazon_books_noisy_nl10/test.jsonl
+        noisy_ranking_test_path: data/processed/amazon_books_noisy_nl10/ranking_test.jsonl
+        model_config: configs/model/qwen3_8b_local.yaml
+        rank_model_config: configs/model/qwen3_8b_local.yaml
+      electronics:
+        pointwise_valid_path: data/processed/amazon_electronics/valid.jsonl
+        pointwise_test_path: data/processed/amazon_electronics/test.jsonl
+        ranking_test_path: data/processed/amazon_electronics/ranking_test.jsonl
+        noisy_valid_path: data/processed/amazon_electronics_noisy_nl10/valid.jsonl
+        noisy_test_path: data/processed/amazon_electronics_noisy_nl10/test.jsonl
+        noisy_ranking_test_path: data/processed/amazon_electronics_noisy_nl10/ranking_test.jsonl
+        model_config: configs/model/qwen3_8b_local.yaml
+        rank_model_config: configs/model/qwen3_8b_local.yaml
+      movies:
+        pointwise_valid_path: data/processed/amazon_movies/valid.jsonl
+        pointwise_test_path: data/processed/amazon_movies/test.jsonl
+        ranking_test_path: data/processed/amazon_movies/ranking_test.jsonl
+        noisy_valid_path: data/processed/amazon_movies_noisy_nl10/valid.jsonl
+        noisy_test_path: data/processed/amazon_movies_noisy_nl10/test.jsonl
+        noisy_ranking_test_path: data/processed/amazon_movies_noisy_nl10/ranking_test.jsonl
+        model_config: configs/model/qwen3_8b_local.yaml
+        rank_model_config: configs/model/qwen3_8b_local.yaml
+variants:
+  shadow_v1:
+    prompt_path: prompts/shadow_v1_relevance_probability.txt
+  shadow_v2:
+    prompt_path: prompts/shadow_v2_topk_inclusion_probability.txt
+  shadow_v3:
+    prompt_path: prompts/shadow_v3_preference_strength.txt
+  shadow_v4:
+    prompt_path: prompts/shadow_v4_rank_position_distribution.txt
+  shadow_v5:
+    prompt_path: prompts/shadow_v5_intent_prototype_match.txt
+  shadow_v6:
+    prompt_path: prompts/shadow_v6_signal_to_decision.txt

@@ -1,0 +1,23 @@
+You are converting a task-grounded uncertainty signal into a cautious recommendation decision signal.
+
+User history:
+{history_block}
+
+Candidate item:
+Title: {candidate_title}
+Metadata: {candidate_meta}
+
+Use the available signal evidence to decide whether the signal is reliable enough to guide ranking.
+Prefer fallback when the signal is uncertain or conflicts with the anchor.
+
+Return only valid JSON:
+{{
+  "decision_score": 0.0,
+  "signal_score": 0.0,
+  "signal_uncertainty": 0.0,
+  "correction_gate": 0.0,
+  "fallback_flag": false,
+  "pair_type": "shadow_preferred_over_anchor",
+  "pair_weight": 0.0,
+  "reason": "one short sentence"
+}}

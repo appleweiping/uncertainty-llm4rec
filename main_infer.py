@@ -38,6 +38,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checkpoint_every_batches", type=int, default=1, help="Save partial pointwise predictions every N batches during inference.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing prediction file.")
     parser.add_argument("--seed", type=int, default=None, help="Optional global random seed.")
+    parser.add_argument("--response_schema", type=str, default=None, choices=["pointwise_yesno", "shadow"], help="Pointwise response schema.")
+    parser.add_argument("--shadow_variant", type=str, default=None, help="shadow_v1..shadow_v6 when response_schema=shadow.")
+    parser.add_argument("--decision_threshold", type=float, default=None, help="Threshold used to derive a compatibility recommend label from shadow score.")
     return parser.parse_args()
 
 
@@ -60,6 +63,9 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
         "checkpoint_every_batches": args.checkpoint_every_batches if args.checkpoint_every_batches is not None else cfg.get("checkpoint_every_batches", 1),
         "overwrite": bool(args.overwrite or cfg.get("overwrite", False)),
         "seed": args.seed if args.seed is not None else cfg.get("seed"),
+        "response_schema": args.response_schema if args.response_schema is not None else cfg.get("response_schema", "pointwise_yesno"),
+        "shadow_variant": args.shadow_variant if args.shadow_variant is not None else cfg.get("shadow_variant"),
+        "decision_threshold": args.decision_threshold if args.decision_threshold is not None else cfg.get("decision_threshold", 0.5),
     }
     return merged
 
@@ -81,6 +87,9 @@ def main() -> None:
     checkpoint_every_batches = int(cfg["checkpoint_every_batches"]) if cfg["checkpoint_every_batches"] is not None else 1
     overwrite = cfg["overwrite"]
     seed = cfg["seed"]
+    response_schema = str(cfg["response_schema"]).strip().lower()
+    shadow_variant = cfg["shadow_variant"]
+    decision_threshold = float(cfg["decision_threshold"])
 
     set_global_seed(seed)
 
@@ -105,6 +114,9 @@ def main() -> None:
     print(f"[{exp_name}] Input path: {input_path}")
     print(f"[{exp_name}] Output path: {output_path}")
     print(f"[{exp_name}] Model config: {model_config}")
+    print(f"[{exp_name}] Response schema: {response_schema}")
+    if shadow_variant:
+        print(f"[{exp_name}] Shadow variant: {shadow_variant}")
     if seed is not None:
         print(f"[{exp_name}] Seed: {seed}")
 
@@ -138,6 +150,9 @@ def main() -> None:
         checkpoint_path=output_path,
         checkpoint_every_batches=checkpoint_every_batches,
         existing_records=existing_predictions,
+        response_schema=response_schema,
+        shadow_variant=shadow_variant,
+        decision_threshold=decision_threshold,
     )
 
     save_jsonl(predictions, output_path)

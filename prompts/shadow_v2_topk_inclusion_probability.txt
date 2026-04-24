@@ -1,0 +1,21 @@
+You are estimating whether a candidate belongs near the front of a recommendation list.
+
+User history:
+{history_block}
+
+Candidate item:
+Title: {candidate_title}
+Metadata: {candidate_meta}
+
+Estimate the probability that this candidate should be included in the user's effective recommendation frontier.
+Use a fine-grained value between 0 and 1. Also estimate how close it is to the cutoff boundary.
+
+Return only valid JSON:
+{{
+  "topk_inclusion_probability": 0.0,
+  "cutoff_margin_estimate": 0.0,
+  "competitive_pressure": 0.0,
+  "evidence_support": 0.0,
+  "counterevidence_strength": 0.0,
+  "reason": "one short sentence"
+}}

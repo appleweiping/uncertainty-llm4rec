@@ -10,6 +10,7 @@ from src.llm.parser import (
     parse_pairwise_preference_response,
     parse_pointwise_response,
 )
+from src.shadow import compute_shadow_scores, parse_shadow_response
 from src.utils.io import save_jsonl
 
 
@@ -128,6 +129,45 @@ def _build_pointwise_result_record(
     return _attach_generation_fields(record, prompt=prompt, generation=generation)
 
 
+def _build_shadow_pointwise_result_record(
+    *,
+    sample: dict[str, Any],
+    candidate: dict[str, Any],
+    prompt: str,
+    generation: dict[str, Any],
+    parsed: dict[str, Any],
+    label: int,
+    shadow_variant: str,
+    decision_threshold: float = 0.5,
+) -> dict[str, Any]:
+    user_id = sample.get("user_id", "")
+    target_item_id = (
+        sample.get("target_item_id")
+        or sample.get("candidate_item_id")
+        or candidate.get("item_id", "")
+    )
+    popularity_group = sample.get("target_popularity_group", "unknown")
+    score_fields = compute_shadow_scores(parsed, variant=shadow_variant)
+    shadow_score = float(score_fields.get("shadow_score", parsed.get("shadow_primary_score", 0.0)))
+    recommend = "yes" if shadow_score >= float(decision_threshold) else "no"
+
+    record = {
+        "user_id": user_id,
+        "target_item_id": target_item_id,
+        "candidate_item_id": candidate.get("item_id", ""),
+        "label": int(label),
+        "target_popularity_group": popularity_group,
+        "recommend": recommend,
+        # Keep confidence as the task-grounded score for legacy table compatibility.
+        "confidence": shadow_score,
+        "reason": parsed.get("reason", ""),
+        "parse_success": bool(parsed.get("parse_success", False)),
+        **parsed,
+        **score_fields,
+    }
+    return _attach_generation_fields(record, prompt=prompt, generation=generation)
+
+
 def run_pointwise_inference(
     samples: list[dict[str, Any]],
     llm_backend,
@@ -136,6 +176,9 @@ def run_pointwise_inference(
     checkpoint_path=None,
     checkpoint_every_batches: int = 1,
     existing_records: list[dict[str, Any]] | None = None,
+    response_schema: str = "pointwise_yesno",
+    shadow_variant: str | None = None,
+    decision_threshold: float = 0.5,
 ) -> list[dict[str, Any]]:
     results: list[dict[str, Any]] = list(existing_records or [])
     batch_size = int(getattr(llm_backend, "batch_size", 1) or 1)
@@ -190,6 +233,45 @@ def run_pointwise_inference(
             )
 
             for job, prompt, generation in zip(batch_jobs, batch_prompts, batch_generations):
+                if response_schema == "shadow":
+                    if not shadow_variant:
+                        raise ValueError("shadow_variant must be provided when response_schema=shadow.")
+                    parsed = parse_shadow_response(generation["raw_text"], variant=shadow_variant)
+                    if job["legacy_candidate_mode"]:
+                        record = {
+                            "user_id": job["user_id"],
+                            "target_item_id": job["target_item_id"],
+                            "candidate_item_id": job["candidate"]["item_id"],
+                            "label": job["label"],
+                            "target_popularity_group": job["target_popularity_group"],
+                        }
+                        shadow_record = _build_shadow_pointwise_result_record(
+                            sample=record,
+                            candidate=job["candidate"],
+                            prompt=prompt,
+                            generation=generation,
+                            parsed=parsed,
+                            label=job["label"],
+                            shadow_variant=shadow_variant,
+                            decision_threshold=decision_threshold,
+                        )
+                        results.append(shadow_record)
+                        continue
+
+                    results.append(
+                        _build_shadow_pointwise_result_record(
+                            sample=job["sample"],
+                            candidate=job["candidate"],
+                            prompt=prompt,
+                            generation=generation,
+                            parsed=parsed,
+                            label=job["label"],
+                            shadow_variant=shadow_variant,
+                            decision_threshold=decision_threshold,
+                        )
+                    )
+                    continue
+
                 parsed = parse_pointwise_response(generation["raw_text"])
                 if job["legacy_candidate_mode"]:
                     record = {

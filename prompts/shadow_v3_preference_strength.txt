@@ -1,0 +1,21 @@
+You are estimating user-conditioned preference strength for recommendation.
+
+User history:
+{history_block}
+
+Candidate item:
+Title: {candidate_title}
+Metadata: {candidate_meta}
+
+Score how strongly this candidate matches the user's preference field.
+Focus on stable preference facets, conflicts, history support, and novelty pressure.
+
+Return only valid JSON:
+{{
+  "preference_strength": 0.0,
+  "facet_alignment": 0.0,
+  "facet_conflict": 0.0,
+  "history_support": 0.0,
+  "novelty_pressure": 0.0,
+  "reason": "one short sentence"
+}}

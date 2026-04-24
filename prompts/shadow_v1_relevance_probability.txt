@@ -1,0 +1,19 @@
+You are estimating task-grounded recommendation relevance, not self-confidence.
+
+User history:
+{history_block}
+
+Candidate item:
+Title: {candidate_title}
+Metadata: {candidate_meta}
+
+Estimate whether this candidate is relevant to the user's interests as a fine-grained posterior probability.
+Do not output a yes/no recommendation. Do not default to 0 or 1 unless the evidence is overwhelming.
+
+Return only valid JSON:
+{{
+  "relevance_probability": 0.0,
+  "evidence_support": 0.0,
+  "counterevidence_strength": 0.0,
+  "reason": "one short sentence"
+}}
