@@ -74,14 +74,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--exp_name", type=str, default=None, help="Experiment name.")
     parser.add_argument("--input_path", type=str, default=None, help="Input pointwise jsonl path.")
     parser.add_argument("--data_root", type=str, default=None, help="Optional default data directory.")
-    parser.add_argument("--output_root", type=str, default="outputs", help="Output root directory.")
-    parser.add_argument("--prompt_path", type=str, default="prompts/pointwise_yesno.txt", help="Prompt template path.")
+    parser.add_argument("--output_root", type=str, default=None, help="Output root directory.")
+    parser.add_argument("--prompt_path", type=str, default=None, help="Prompt template path.")
     parser.add_argument("--model_config", type=str, default=None, help="Model config path.")
     parser.add_argument("--max_samples", type=int, default=None, help="Optional sample cap.")
     parser.add_argument("--output_path", type=str, default=None, help="Prediction output jsonl path.")
     parser.add_argument("--split_name", type=str, default=None, help="Optional split name, e.g. train/valid/test.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing prediction file.")
     parser.add_argument("--seed", type=int, default=None, help="Optional global random seed.")
+    parser.add_argument("--output_schema", type=str, default=None, help="Optional parser/output schema.")
+    parser.add_argument("--method_variant", type=str, default=None, help="Optional method variant tag.")
     return parser.parse_args()
 
 
@@ -102,6 +104,8 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
         "split_name": args.split_name if args.split_name is not None else cfg.get("split_name"),
         "overwrite": bool(args.overwrite or cfg.get("overwrite", False)),
         "seed": args.seed if args.seed is not None else cfg.get("seed"),
+        "output_schema": args.output_schema if args.output_schema is not None else cfg.get("output_schema"),
+        "method_variant": args.method_variant if args.method_variant is not None else cfg.get("method_variant"),
     }
     return merged
 
@@ -121,6 +125,8 @@ def main() -> None:
     split_name = cfg["split_name"]
     overwrite = cfg["overwrite"]
     seed = cfg["seed"]
+    output_schema = cfg["output_schema"]
+    method_variant = cfg["method_variant"]
 
     set_global_seed(seed)
 
@@ -145,6 +151,10 @@ def main() -> None:
     print(f"[{exp_name}] Input path: {input_path}")
     print(f"[{exp_name}] Output path: {output_path}")
     print(f"[{exp_name}] Model config: {model_config}")
+    if output_schema:
+        print(f"[{exp_name}] Output schema: {output_schema}")
+    if method_variant:
+        print(f"[{exp_name}] Method variant: {method_variant}")
     if seed is not None:
         print(f"[{exp_name}] Seed: {seed}")
 
@@ -166,6 +176,8 @@ def main() -> None:
         samples=samples,
         llm_backend=llm_backend,
         prompt_builder=prompt_builder,
+        output_schema=output_schema,
+        method_variant=method_variant,
     )
 
     save_jsonl(predictions, output_path)
