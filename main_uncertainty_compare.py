@@ -157,7 +157,7 @@ def evaluate_estimator(
         "confidence_col": confidence_col,
         "uncertainty_col": uncertainty_col,
         "lambda_penalty": float(lambda_penalty),
-        "fusion_alpha": fusion_alpha if estimator_name == "fused" else pd.NA,
+        "fusion_alpha": fusion_alpha if "fused" in estimator_name else pd.NA,
         "num_eval_samples": int(len(eval_df)),
         "num_eval_users": int(eval_df["user_id"].nunique()),
         "parse_success_rate": float(eval_df["parse_success"].mean()) if "parse_success" in eval_df.columns else pd.NA,

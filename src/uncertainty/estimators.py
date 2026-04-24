@@ -105,10 +105,34 @@ def add_fused_confidence(df: pd.DataFrame, alpha: float = 0.5) -> pd.Series:
     )
 
 
+def add_evidence_fused_confidence(
+    evidence_confidence: pd.Series,
+    consistency_confidence: pd.Series,
+    alpha: float = 0.5,
+) -> pd.Series:
+    return fuse_confidence(
+        evidence_confidence,
+        consistency_confidence,
+        alpha=alpha,
+    )
+
+
 def add_fused_uncertainty(df: pd.DataFrame, alpha: float = 0.5) -> pd.Series:
     return fuse_uncertainty(
         df["uncertainty"],
         df["consistency_uncertainty"],
+        alpha=alpha,
+    )
+
+
+def add_evidence_fused_uncertainty(
+    evidence_uncertainty: pd.Series,
+    consistency_uncertainty: pd.Series,
+    alpha: float = 0.5,
+) -> pd.Series:
+    return fuse_uncertainty(
+        evidence_uncertainty,
+        consistency_uncertainty,
         alpha=alpha,
     )
 
@@ -174,6 +198,42 @@ def ensure_estimator_columns(df: pd.DataFrame, fused_alpha: float = 0.5) -> pd.D
         out["fused_uncertainty"] = add_fused_uncertainty(out, alpha=fused_alpha)
         out["fused_alpha"] = fused_alpha
 
+    if {
+        "evidence_posterior_minimal_confidence",
+        "evidence_posterior_minimal_uncertainty",
+        "consistency_confidence",
+        "consistency_uncertainty",
+    }.issubset(out.columns):
+        out["evidence_fused_minimal_confidence"] = add_evidence_fused_confidence(
+            out["evidence_posterior_minimal_confidence"],
+            out["consistency_confidence"],
+            alpha=fused_alpha,
+        )
+        out["evidence_fused_minimal_uncertainty"] = add_evidence_fused_uncertainty(
+            out["evidence_posterior_minimal_uncertainty"],
+            out["consistency_uncertainty"],
+            alpha=fused_alpha,
+        )
+        out["evidence_fused_minimal_alpha"] = fused_alpha
+
+    if {
+        "evidence_posterior_full_confidence",
+        "evidence_posterior_full_uncertainty",
+        "consistency_confidence",
+        "consistency_uncertainty",
+    }.issubset(out.columns):
+        out["evidence_fused_full_confidence"] = add_evidence_fused_confidence(
+            out["evidence_posterior_full_confidence"],
+            out["consistency_confidence"],
+            alpha=fused_alpha,
+        )
+        out["evidence_fused_full_uncertainty"] = add_evidence_fused_uncertainty(
+            out["evidence_posterior_full_uncertainty"],
+            out["consistency_uncertainty"],
+            alpha=fused_alpha,
+        )
+        out["evidence_fused_full_alpha"] = fused_alpha
+
     return out
 
 
@@ -226,6 +286,20 @@ def get_available_estimators(df: pd.DataFrame, fused_alpha: float = 0.5) -> dict
         estimators["fused"] = {
             "confidence_col": "fused_confidence",
             "uncertainty_col": "fused_uncertainty",
+            "fusion_alpha": _normalize_alpha(fused_alpha),
+        }
+
+    if {"evidence_fused_minimal_confidence", "evidence_fused_minimal_uncertainty"}.issubset(df.columns):
+        estimators["evidence_fused_minimal"] = {
+            "confidence_col": "evidence_fused_minimal_confidence",
+            "uncertainty_col": "evidence_fused_minimal_uncertainty",
+            "fusion_alpha": _normalize_alpha(fused_alpha),
+        }
+
+    if {"evidence_fused_full_confidence", "evidence_fused_full_uncertainty"}.issubset(df.columns):
+        estimators["evidence_fused_full"] = {
+            "confidence_col": "evidence_fused_full_confidence",
+            "uncertainty_col": "evidence_fused_full_uncertainty",
             "fusion_alpha": _normalize_alpha(fused_alpha),
         }
 
