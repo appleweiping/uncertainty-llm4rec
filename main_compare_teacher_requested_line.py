@@ -353,7 +353,11 @@ def _rerank_row_from_spec(output_root: Path, spec: dict[str, str]) -> dict[str, 
     replay_rerank = _load_rerank_bundle(output_root, spec["replay_rerank_exp_name"])
     reference = _load_rerank_bundle(output_root, spec["reference_exp_name"])
 
+    replay_direct_status = replay_direct["status"]
     replay_direct_row = replay_direct["row"]
+    if replay_direct_status == "missing" and replay_rerank["direct_row"]:
+        replay_direct_status = "ready_from_rerank_baseline"
+        replay_direct_row = replay_rerank["direct_row"]
     replay_rerank_row = replay_rerank["rerank_row"]
     reference_rerank_row = reference["rerank_row"]
 
@@ -364,7 +368,7 @@ def _rerank_row_from_spec(output_root: Path, spec: dict[str, str]) -> dict[str, 
         "replay_rank_exp_name": spec["replay_rank_exp_name"],
         "replay_rerank_exp_name": spec["replay_rerank_exp_name"],
         "reference_exp_name": spec["reference_exp_name"],
-        "replay_direct_status": replay_direct["status"],
+        "replay_direct_status": replay_direct_status,
         "replay_rerank_status": replay_rerank["status"],
         "reference_status": reference["status"],
         "replay_direct_hr_at_10": _metric_from_row(replay_direct_row, "HR@10"),
