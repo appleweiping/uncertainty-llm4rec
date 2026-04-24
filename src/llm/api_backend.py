@@ -78,6 +78,9 @@ class APIBackend(LLMBackend):
             "temperature": float(kwargs.get("temperature", self.temperature)),
             "max_tokens": int(kwargs.get("max_tokens", self.max_tokens)),
         }
+        timeout = kwargs.get("timeout", self.timeout)
+        if timeout is not None:
+            request_kwargs["timeout"] = float(timeout)
 
         extra_body = kwargs.get("extra_body")
         merged_extra_body = dict(self.extra_body)

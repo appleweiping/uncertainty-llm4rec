@@ -298,6 +298,12 @@ def _append_checkpoint_record(output_path: str | Path, record: dict[str, Any]) -
             f.flush()
 
 
+def _is_failed_record(record: dict[str, Any]) -> bool:
+    error_type = str(record.get("error_type", "") or "").strip()
+    parse_success = bool(record.get("parse_success", False))
+    return bool(error_type) or not parse_success
+
+
 def _write_sorted_records(output_path: str | Path, records: list[dict[str, Any]]) -> None:
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -325,6 +331,7 @@ def _run_single_task_with_retries(
     split_name: str | None,
     max_retries: int,
     retry_backoff_seconds: float,
+    timeout_seconds: float | None = None,
     rate_limiter: _RateLimiter | None = None,
 ) -> dict[str, Any]:
     prompt = prompt_builder.build_pointwise_prompt(task["sample"], task["candidate"])
@@ -336,7 +343,11 @@ def _run_single_task_with_retries(
             if rate_limiter is not None:
                 rate_limiter.wait()
             generation = normalize_generation_result(
-                llm_backend.generate(prompt),
+                llm_backend.generate(
+                    prompt,
+                    timeout=timeout_seconds,
+                    max_retries=0,
+                ),
                 default_provider=getattr(llm_backend, "provider", None),
                 default_model_name=getattr(llm_backend, "model_name", "unknown"),
             )
@@ -358,6 +369,10 @@ def _run_single_task_with_retries(
             )
             if not result["parse_success"]:
                 result["error_type"] = result.get("error_type") or "parse_failed"
+                if attempt < max_retries:
+                    sleep_seconds = retry_backoff_seconds * (2 ** attempt)
+                    time.sleep(sleep_seconds)
+                    continue
             return result
         except Exception as exc:
             last_exc = exc
@@ -468,13 +483,20 @@ def run_pointwise_inference_concurrent(
     requests_per_minute: int | None = None,
     max_retries: int = 3,
     retry_backoff_seconds: float = 2.0,
+    timeout_seconds: float | None = None,
     checkpoint_every: int = 1,
     resume: bool = True,
     overwrite: bool = False,
+    failed_output_path: str | Path | None = None,
 ) -> list[dict]:
     output_path = Path(output_path)
-    if overwrite and output_path.exists():
+    failed_output_path = Path(failed_output_path) if failed_output_path else output_path.parent / "failed_samples.jsonl"
+    # In resume mode the existing JSONL is the checkpoint, so preserve it even
+    # when an older experiment config still has overwrite=true.
+    if overwrite and not resume and output_path.exists():
         output_path.unlink()
+    if overwrite and not resume and failed_output_path.exists():
+        failed_output_path.unlink()
 
     tasks = _flatten_pointwise_tasks(samples)
     finished_sample_ids = _read_finished_sample_ids(output_path) if resume else set()
@@ -500,6 +522,7 @@ def run_pointwise_inference_concurrent(
                     split_name=split_name,
                     max_retries=max_retries,
                     retry_backoff_seconds=retry_backoff_seconds,
+                    timeout_seconds=timeout_seconds,
                     rate_limiter=rate_limiter,
                 ): task
                 for task in pending_tasks
@@ -512,8 +535,15 @@ def run_pointwise_inference_concurrent(
             ):
                 record = future.result()
                 _append_checkpoint_record(output_path, record)
+                if _is_failed_record(record):
+                    _append_checkpoint_record(failed_output_path, record)
 
     records = _load_jsonl_records(output_path)
     _write_sorted_records(output_path, records)
     sorted_records = _load_jsonl_records(output_path)
+    failed_count = sum(1 for record in sorted_records if _is_failed_record(record))
+    print(
+        f"Concurrent inference complete: rows={len(sorted_records)} "
+        f"failed_or_parse_failed={failed_count} failed_output={failed_output_path}"
+    )
     return sorted_records

@@ -89,6 +89,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--requests_per_minute", type=int, default=None, help="Optional global concurrent request rate limit.")
     parser.add_argument("--max_retries", type=int, default=None, help="Per-sample retry count for concurrent inference.")
     parser.add_argument("--retry_backoff_seconds", type=float, default=None, help="Initial retry backoff for concurrent inference.")
+    parser.add_argument("--timeout_seconds", type=float, default=None, help="Optional per-request timeout for API backends.")
     parser.add_argument("--checkpoint_every", type=int, default=None, help="Checkpoint frequency for concurrent inference.")
     parser.add_argument("--resume", action="store_true", help="Resume concurrent inference from existing checkpoint output.")
     parser.add_argument("--no_resume", action="store_true", help="Disable concurrent inference resume even if config enables it.")
@@ -119,6 +120,7 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
         "requests_per_minute": args.requests_per_minute if args.requests_per_minute is not None else cfg.get("requests_per_minute"),
         "max_retries": args.max_retries if args.max_retries is not None else cfg.get("max_retries", 3),
         "retry_backoff_seconds": args.retry_backoff_seconds if args.retry_backoff_seconds is not None else cfg.get("retry_backoff_seconds", 2.0),
+        "timeout_seconds": args.timeout_seconds if args.timeout_seconds is not None else cfg.get("timeout_seconds"),
         "checkpoint_every": args.checkpoint_every if args.checkpoint_every is not None else cfg.get("checkpoint_every", 1),
         "resume": bool((args.resume or cfg.get("resume", True)) and not args.no_resume),
     }
@@ -147,6 +149,7 @@ def main() -> None:
     requests_per_minute = cfg["requests_per_minute"]
     max_retries = int(cfg["max_retries"])
     retry_backoff_seconds = float(cfg["retry_backoff_seconds"])
+    timeout_seconds = cfg["timeout_seconds"]
     checkpoint_every = int(cfg["checkpoint_every"])
     resume = bool(cfg["resume"])
 
@@ -182,6 +185,8 @@ def main() -> None:
             f"[{exp_name}] Concurrent inference enabled: max_workers={max_workers}, "
             f"requests_per_minute={requests_per_minute or 'unlimited'}, resume={resume}"
         )
+    if timeout_seconds is not None:
+        print(f"[{exp_name}] Timeout seconds: {timeout_seconds}")
     if seed is not None:
         print(f"[{exp_name}] Seed: {seed}")
 
@@ -212,6 +217,7 @@ def main() -> None:
             requests_per_minute=int(requests_per_minute) if requests_per_minute else None,
             max_retries=max_retries,
             retry_backoff_seconds=retry_backoff_seconds,
+            timeout_seconds=float(timeout_seconds) if timeout_seconds is not None else None,
             checkpoint_every=checkpoint_every,
             resume=resume,
             overwrite=overwrite,
