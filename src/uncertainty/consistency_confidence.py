@@ -22,7 +22,7 @@ def _extract_votes(predictions: Iterable[dict]) -> list[int]:
 def _extract_confidences(predictions: Iterable[dict]) -> list[float]:
     confidences: list[float] = []
     for pred in predictions:
-        value = pred.get("confidence", -1.0)
+        value = pred.get("confidence", pred.get("raw_confidence", -1.0))
         try:
             conf = float(value)
         except Exception:
@@ -30,6 +30,18 @@ def _extract_confidences(predictions: Iterable[dict]) -> list[float]:
         if conf >= 0.0:
             confidences.append(max(0.0, min(1.0, conf)))
     return confidences
+
+
+def _extract_unit_values(predictions: Iterable[dict], field_name: str) -> list[float]:
+    values: list[float] = []
+    for pred in predictions:
+        value = pred.get(field_name)
+        try:
+            number = float(value)
+        except Exception:
+            continue
+        values.append(max(0.0, min(1.0, number)))
+    return values
 
 
 def compute_yes_ratio(predictions: Iterable[dict]) -> float:
@@ -73,6 +85,20 @@ def compute_confidence_variance(predictions: Iterable[dict]) -> float:
     return float(np.var(confidences))
 
 
+def compute_mean_field(predictions: Iterable[dict], field_name: str, default: float = 0.0) -> float:
+    values = _extract_unit_values(predictions, field_name)
+    if not values:
+        return float(default)
+    return float(np.mean(values))
+
+
+def compute_field_variance(predictions: Iterable[dict], field_name: str, default: float = 0.0) -> float:
+    values = _extract_unit_values(predictions, field_name)
+    if not values:
+        return float(default)
+    return float(np.var(values))
+
+
 def compute_consistency_confidence(predictions: Iterable[dict]) -> float:
     yes_ratio = compute_yes_ratio(predictions)
     no_ratio = 1.0 - yes_ratio
@@ -111,6 +137,12 @@ def compute_consistency_summary(predictions: Iterable[dict]) -> dict[str, float 
         "vote_variance": compute_vote_variance(predictions),
         "mean_confidence": compute_mean_confidence(predictions),
         "confidence_variance": compute_confidence_variance(predictions),
+        "mean_evidence_margin": compute_mean_field(predictions, "abs_evidence_margin", default=0.0),
+        "margin_variance": compute_field_variance(predictions, "abs_evidence_margin", default=0.0),
+        "mean_ambiguity": compute_mean_field(predictions, "ambiguity", default=0.0),
+        "ambiguity_variance": compute_field_variance(predictions, "ambiguity", default=0.0),
+        "mean_missing_information": compute_mean_field(predictions, "missing_information", default=0.0),
+        "missing_information_variance": compute_field_variance(predictions, "missing_information", default=0.0),
         "consistency_confidence": compute_consistency_confidence(predictions),
         "consistency_uncertainty": compute_consistency_uncertainty(predictions),
     }

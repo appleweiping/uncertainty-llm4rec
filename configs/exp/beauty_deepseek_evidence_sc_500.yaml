@@ -1,0 +1,25 @@
+exp_name: beauty_deepseek_evidence_sc_500
+
+data_root: data/processed/amazon_beauty
+split_input_paths:
+  test: data/processed/amazon_beauty/test.jsonl
+
+output_root: output-repaired
+prompt_path: prompts/pointwise_evidence_confidence.txt
+
+model_config: configs/model/deepseek.yaml
+
+max_samples: 500
+overwrite: false
+seed: 42
+
+output_schema: evidence_confidence
+method_variant: evidence_self_consistency_500
+
+enable_concurrent: true
+max_workers: 4
+requests_per_minute: 120
+max_retries: 2
+retry_backoff_seconds: 2.0
+timeout_seconds: 60
+resume: true
