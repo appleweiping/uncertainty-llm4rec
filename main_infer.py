@@ -8,7 +8,7 @@ import pandas as pd
 import yaml
 
 from src.llm import build_backend_from_config
-from src.llm.inference import run_pointwise_inference
+from src.llm.inference import run_pointwise_inference, run_pointwise_inference_concurrent
 from src.utils.paths import default_input_path_for_exp, ensure_exp_dirs
 from src.utils.reproducibility import set_global_seed
 
@@ -84,6 +84,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=None, help="Optional global random seed.")
     parser.add_argument("--output_schema", type=str, default=None, help="Optional parser/output schema.")
     parser.add_argument("--method_variant", type=str, default=None, help="Optional method variant tag.")
+    parser.add_argument("--concurrent", action="store_true", help="Use concurrent API inference with checkpoint/resume.")
+    parser.add_argument("--max_workers", type=int, default=None, help="Concurrent inference worker count.")
+    parser.add_argument("--requests_per_minute", type=int, default=None, help="Optional global concurrent request rate limit.")
+    parser.add_argument("--max_retries", type=int, default=None, help="Per-sample retry count for concurrent inference.")
+    parser.add_argument("--retry_backoff_seconds", type=float, default=None, help="Initial retry backoff for concurrent inference.")
+    parser.add_argument("--checkpoint_every", type=int, default=None, help="Checkpoint frequency for concurrent inference.")
+    parser.add_argument("--resume", action="store_true", help="Resume concurrent inference from existing checkpoint output.")
+    parser.add_argument("--no_resume", action="store_true", help="Disable concurrent inference resume even if config enables it.")
     return parser.parse_args()
 
 
@@ -106,6 +114,13 @@ def merge_config(args: argparse.Namespace) -> dict[str, Any]:
         "seed": args.seed if args.seed is not None else cfg.get("seed"),
         "output_schema": args.output_schema if args.output_schema is not None else cfg.get("output_schema"),
         "method_variant": args.method_variant if args.method_variant is not None else cfg.get("method_variant"),
+        "concurrent": bool(args.concurrent or cfg.get("concurrent", cfg.get("enable_concurrent", False))),
+        "max_workers": args.max_workers if args.max_workers is not None else cfg.get("max_workers", 4),
+        "requests_per_minute": args.requests_per_minute if args.requests_per_minute is not None else cfg.get("requests_per_minute"),
+        "max_retries": args.max_retries if args.max_retries is not None else cfg.get("max_retries", 3),
+        "retry_backoff_seconds": args.retry_backoff_seconds if args.retry_backoff_seconds is not None else cfg.get("retry_backoff_seconds", 2.0),
+        "checkpoint_every": args.checkpoint_every if args.checkpoint_every is not None else cfg.get("checkpoint_every", 1),
+        "resume": bool((args.resume or cfg.get("resume", True)) and not args.no_resume),
     }
     return merged
 
@@ -127,6 +142,13 @@ def main() -> None:
     seed = cfg["seed"]
     output_schema = cfg["output_schema"]
     method_variant = cfg["method_variant"]
+    concurrent = cfg["concurrent"]
+    max_workers = int(cfg["max_workers"])
+    requests_per_minute = cfg["requests_per_minute"]
+    max_retries = int(cfg["max_retries"])
+    retry_backoff_seconds = float(cfg["retry_backoff_seconds"])
+    checkpoint_every = int(cfg["checkpoint_every"])
+    resume = bool(cfg["resume"])
 
     set_global_seed(seed)
 
@@ -155,13 +177,18 @@ def main() -> None:
         print(f"[{exp_name}] Output schema: {output_schema}")
     if method_variant:
         print(f"[{exp_name}] Method variant: {method_variant}")
+    if concurrent:
+        print(
+            f"[{exp_name}] Concurrent inference enabled: max_workers={max_workers}, "
+            f"requests_per_minute={requests_per_minute or 'unlimited'}, resume={resume}"
+        )
     if seed is not None:
         print(f"[{exp_name}] Seed: {seed}")
 
     if not input_path.exists():
         raise FileNotFoundError(f"[{exp_name}] Input file not found: {input_path}")
 
-    if output_path.exists() and not overwrite:
+    if output_path.exists() and not overwrite and not (concurrent and resume):
         print(f"[{exp_name}] Output already exists: {output_path}")
         print(f"[{exp_name}] Use overwrite=true in config or --overwrite to rerun.")
         return
@@ -172,15 +199,32 @@ def main() -> None:
     llm_backend = build_backend_from_config(model_config)
     prompt_builder = get_prompt_builder(prompt_path)
 
-    predictions = run_pointwise_inference(
-        samples=samples,
-        llm_backend=llm_backend,
-        prompt_builder=prompt_builder,
-        output_schema=output_schema,
-        method_variant=method_variant,
-    )
-
-    save_jsonl(predictions, output_path)
+    if concurrent:
+        predictions = run_pointwise_inference_concurrent(
+            samples=samples,
+            llm_backend=llm_backend,
+            prompt_builder=prompt_builder,
+            output_path=output_path,
+            output_schema=output_schema,
+            method_variant=method_variant,
+            split_name=split_name,
+            max_workers=max_workers,
+            requests_per_minute=int(requests_per_minute) if requests_per_minute else None,
+            max_retries=max_retries,
+            retry_backoff_seconds=retry_backoff_seconds,
+            checkpoint_every=checkpoint_every,
+            resume=resume,
+            overwrite=overwrite,
+        )
+    else:
+        predictions = run_pointwise_inference(
+            samples=samples,
+            llm_backend=llm_backend,
+            prompt_builder=prompt_builder,
+            output_schema=output_schema,
+            method_variant=method_variant,
+        )
+        save_jsonl(predictions, output_path)
     print(f"[{exp_name}] Saved {len(predictions)} predictions to {output_path}")
 
 
