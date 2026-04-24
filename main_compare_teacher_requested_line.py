@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import math
+import re
 from pathlib import Path
 from typing import Any
 
@@ -316,6 +317,21 @@ def _load_robustness_summary(output_root: Path, clean_exp_name: str, noisy_exp_n
     }
 
 
+def _infer_noise_level(exp_name: str) -> str:
+    match = re.search(r"(?:^|_)nl(\d+)(?:_|$)", exp_name.strip().lower())
+    if not match:
+        return ""
+    return str(float(match.group(1)) / 100.0)
+
+
+def _metric_drop(clean_row: dict[str, Any], noisy_row: dict[str, Any], metric_name: str) -> float | str:
+    clean_value = _to_float(_metric_from_row(clean_row, metric_name))
+    noisy_value = _to_float(_metric_from_row(noisy_row, metric_name))
+    if clean_value is None or noisy_value is None:
+        return ""
+    return clean_value - noisy_value
+
+
 def _load_summary_rows(path: Path) -> list[dict[str, Any]]:
     return _multi_row_csv(path)
 
@@ -404,9 +420,14 @@ def _rerank_row_from_spec(output_root: Path, spec: dict[str, str]) -> dict[str, 
 
 def _robustness_row_from_spec(output_root: Path, spec: dict[str, str]) -> dict[str, Any]:
     clean_bundle = _load_rerank_bundle(output_root, spec["clean_exp_name"])
+    noisy_bundle = _load_rerank_bundle(output_root, spec["noisy_exp_name"])
     robustness_bundle = _load_robustness_summary(output_root, spec["clean_exp_name"], spec["noisy_exp_name"])
     clean_row = clean_bundle["rerank_row"]
+    noisy_row = noisy_bundle["rerank_row"]
     robustness_row = robustness_bundle["row"]
+    robustness_status = robustness_bundle["status"]
+    if robustness_status == "missing" and clean_row and noisy_row:
+        robustness_status = "ready_from_clean_noisy_rerank"
 
     row: dict[str, Any] = {
         "week_stage": "week7_8_replay",
@@ -416,7 +437,8 @@ def _robustness_row_from_spec(output_root: Path, spec: dict[str, str]) -> dict[s
         "noisy_exp_name": spec["noisy_exp_name"],
         "robustness_compare_name": robustness_bundle["compare_name"],
         "clean_status": clean_bundle["status"],
-        "robustness_status": robustness_bundle["status"],
+        "noisy_status": noisy_bundle["status"],
+        "robustness_status": robustness_status,
         "clean_hr_at_10": _metric_from_row(clean_row, "HR@10"),
         "clean_ndcg_at_10": _metric_from_row(clean_row, "NDCG@10"),
         "clean_mrr": _metric_from_row(clean_row, "MRR"),
@@ -425,12 +447,21 @@ def _robustness_row_from_spec(output_root: Path, spec: dict[str, str]) -> dict[s
         "clean_longtail_coverage_at_10": _metric_from_row(clean_row, "longtail_coverage@10", "longtail_coverage"),
         "clean_parse_success_rate": _metric_from_row(clean_row, "parse_success_rate"),
         "clean_out_of_candidate_rate": _metric_from_row(clean_row, "out_of_candidate_rate"),
-        "noise_level": _metric_from_row(robustness_row, "noise_level"),
-        "hr_at_10_drop": _metric_from_row(robustness_row, "rerank_HR@10_drop"),
-        "ndcg_at_10_drop": _metric_from_row(robustness_row, "rerank_NDCG@10_drop"),
-        "mrr_drop": _metric_from_row(robustness_row, "rerank_MRR@10_drop"),
-        "head_exposure_ratio_at_10_drop": _metric_from_row(robustness_row, "rerank_head_exposure_ratio@10_drop"),
-        "long_tail_coverage_at_10_drop": _metric_from_row(robustness_row, "rerank_long_tail_coverage@10_drop"),
+        "noisy_hr_at_10": _metric_from_row(noisy_row, "HR@10"),
+        "noisy_ndcg_at_10": _metric_from_row(noisy_row, "NDCG@10"),
+        "noisy_mrr": _metric_from_row(noisy_row, "MRR"),
+        "noisy_coverage_at_10": _metric_from_row(noisy_row, "coverage@10", "coverage"),
+        "noisy_head_exposure_ratio_at_10": _metric_from_row(noisy_row, "head_exposure_ratio@10", "head_exposure_ratio"),
+        "noisy_longtail_coverage_at_10": _metric_from_row(noisy_row, "longtail_coverage@10", "longtail_coverage"),
+        "noisy_parse_success_rate": _metric_from_row(noisy_row, "parse_success_rate"),
+        "noisy_out_of_candidate_rate": _metric_from_row(noisy_row, "out_of_candidate_rate"),
+        "noise_level": _metric_from_row(robustness_row, "noise_level") or _infer_noise_level(spec["noisy_exp_name"]),
+        "hr_at_10_drop": _metric_from_row(robustness_row, "rerank_HR@10_drop") or _metric_drop(clean_row, noisy_row, "HR@10"),
+        "ndcg_at_10_drop": _metric_from_row(robustness_row, "rerank_NDCG@10_drop") or _metric_drop(clean_row, noisy_row, "NDCG@10"),
+        "mrr_drop": _metric_from_row(robustness_row, "rerank_MRR@10_drop") or _metric_drop(clean_row, noisy_row, "MRR"),
+        "coverage_at_10_drop": _metric_drop(clean_row, noisy_row, "coverage@10"),
+        "head_exposure_ratio_at_10_drop": _metric_from_row(robustness_row, "rerank_head_exposure_ratio@10_drop") or _metric_drop(clean_row, noisy_row, "head_exposure_ratio@10"),
+        "long_tail_coverage_at_10_drop": _metric_from_row(robustness_row, "rerank_long_tail_coverage@10_drop") or _metric_drop(clean_row, noisy_row, "longtail_coverage@10"),
         "lambda_penalty_drop": _metric_from_row(robustness_row, "rerank_lambda_penalty_drop"),
     }
     return row
