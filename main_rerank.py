@@ -83,6 +83,18 @@ def main() -> None:
         help="Penalty coefficient for uncertainty-aware reranking."
     )
     parser.add_argument(
+        "--score_column",
+        type=str,
+        default="calibrated_confidence",
+        help="Confidence/score column used by the baseline ranker and reranker."
+    )
+    parser.add_argument(
+        "--uncertainty_column",
+        type=str,
+        default="uncertainty",
+        help="Uncertainty column used by the reranker."
+    )
+    parser.add_argument(
         "--seed",
         type=int,
         default=None,
@@ -107,13 +119,16 @@ def main() -> None:
     if args.seed is not None:
         print(f"[{args.exp_name}] Seed: {args.seed}")
 
+    score_column = str(args.score_column)
+    uncertainty_column = str(args.uncertainty_column)
+
     required_cols = [
         "user_id",
         "candidate_item_id",
         "label",
         "target_popularity_group",
-        "calibrated_confidence",
-        "uncertainty",
+        score_column,
+        uncertainty_column,
     ]
     for col in required_cols:
         if col not in df.columns:
@@ -121,7 +136,7 @@ def main() -> None:
 
     baseline_df = add_baseline_score(
         df,
-        score_col="calibrated_confidence",
+        score_col=score_column,
         output_col="baseline_score"
     )
     baseline_ranked = rank_by_score(
@@ -135,8 +150,8 @@ def main() -> None:
     rerank_ranked = rerank_candidates(
         df=df,
         user_col="user_id",
-        confidence_col="calibrated_confidence",
-        uncertainty_col="uncertainty",
+        confidence_col=score_column,
+        uncertainty_col=uncertainty_column,
         lambda_penalty=args.lambda_penalty,
         score_col="final_score",
         rank_col="rank",
