@@ -80,6 +80,79 @@ DEFAULT_ROBUSTNESS_SPECS: list[dict[str, str]] = [
     },
 ]
 
+LIGHT_EXECUTABLE_POINTWISE_SPECS: list[dict[str, str]] = [
+    {
+        "domain": "beauty",
+        "replay_exp_name": "beauty_qwen3_local_replay_v2_pointwise_full",
+        "historical_exp_name": "beauty_deepseek_pointwise_full",
+    },
+    {
+        "domain": "books",
+        "replay_exp_name": "books_qwen3_local_pointwise_small3000",
+        "historical_exp_name": "books_deepseek_pointwise_full3000",
+    },
+    {
+        "domain": "electronics",
+        "replay_exp_name": "electronics_qwen3_local_pointwise_small3000",
+        "historical_exp_name": "electronics_deepseek_pointwise_full3000",
+    },
+    {
+        "domain": "movies",
+        "replay_exp_name": "movies_qwen3_local_pointwise_small3000",
+        "historical_exp_name": "movies_deepseek_pointwise_full3000",
+    },
+]
+
+LIGHT_EXECUTABLE_RERANK_SPECS: list[dict[str, str]] = [
+    {
+        "domain": "beauty",
+        "replay_rank_exp_name": "beauty_qwen3_local_replay_v2_rank_full973",
+        "replay_rerank_exp_name": "beauty_qwen3_local_replay_v2_structured_risk_full973",
+        "reference_exp_name": "beauty_deepseek_rank_full973_structured_risk",
+    },
+    {
+        "domain": "books",
+        "replay_rank_exp_name": "books_qwen3_local_rank_small500",
+        "replay_rerank_exp_name": "books_qwen3_local_structured_risk_small500",
+        "reference_exp_name": "books_deepseek_rank_full500_structured_risk",
+    },
+    {
+        "domain": "electronics",
+        "replay_rank_exp_name": "electronics_qwen3_local_rank_small500",
+        "replay_rerank_exp_name": "electronics_qwen3_local_structured_risk_small500",
+        "reference_exp_name": "electronics_deepseek_rank_full500_structured_risk",
+    },
+    {
+        "domain": "movies",
+        "replay_rank_exp_name": "movies_qwen3_local_rank_small500",
+        "replay_rerank_exp_name": "movies_qwen3_local_structured_risk_small500",
+        "reference_exp_name": "movies_deepseek_rank_full500_structured_risk",
+    },
+]
+
+LIGHT_EXECUTABLE_ROBUSTNESS_SPECS: list[dict[str, str]] = [
+    {
+        "domain": "beauty",
+        "clean_exp_name": "beauty_qwen3_local_replay_v2_structured_risk_full973",
+        "noisy_exp_name": "beauty_qwen3_local_replay_v2_structured_risk_full973_noisy_nl10",
+    },
+    {
+        "domain": "books",
+        "clean_exp_name": "books_qwen3_local_structured_risk_small500",
+        "noisy_exp_name": "books_qwen3_local_structured_risk_small500_noisy_nl10",
+    },
+    {
+        "domain": "electronics",
+        "clean_exp_name": "electronics_qwen3_local_structured_risk_small500",
+        "noisy_exp_name": "electronics_qwen3_local_structured_risk_small500_noisy_nl10",
+    },
+    {
+        "domain": "movies",
+        "clean_exp_name": "movies_qwen3_local_structured_risk_small500",
+        "noisy_exp_name": "movies_qwen3_local_structured_risk_small500_noisy_nl10",
+    },
+]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -89,7 +162,16 @@ def parse_args() -> argparse.Namespace:
         "--mode",
         type=str,
         default="pointwise",
-        choices=["pointwise", "rerank", "robustness", "final"],
+        choices=[
+            "pointwise",
+            "rerank",
+            "robustness",
+            "final",
+            "light_pointwise",
+            "light_rerank",
+            "light_robustness",
+            "light_final",
+        ],
         help="Current supported summary mode.",
     )
     parser.add_argument("--output_root", type=str, default="outputs", help="Experiment output root.")
@@ -350,16 +432,22 @@ def _robustness_row_from_spec(output_root: Path, spec: dict[str, str]) -> dict[s
     return row
 
 
-def _final_rows(output_root: Path) -> list[dict[str, Any]]:
+def _final_rows(
+    output_root: Path,
+    *,
+    pointwise_summary_filename: str = "week7_8_replay_v2_week1_week2_pointwise_summary.csv",
+    rerank_summary_filename: str = "week7_8_replay_v2_week3_rerank_compare.csv",
+    robustness_summary_filename: str = "week7_8_replay_v2_week4_robustness_summary.csv",
+) -> list[dict[str, Any]]:
     summary_dir = output_root / "summary"
     pointwise_rows = _rows_by_domain(
-        _load_summary_rows(summary_dir / "week7_8_replay_v2_week1_week2_pointwise_summary.csv")
+        _load_summary_rows(summary_dir / pointwise_summary_filename)
     )
     rerank_rows = _rows_by_domain(
-        _load_summary_rows(summary_dir / "week7_8_replay_v2_week3_rerank_compare.csv")
+        _load_summary_rows(summary_dir / rerank_summary_filename)
     )
     robustness_rows = _rows_by_domain(
-        _load_summary_rows(summary_dir / "week7_8_replay_v2_week4_robustness_summary.csv")
+        _load_summary_rows(summary_dir / robustness_summary_filename)
     )
 
     final_rows: list[dict[str, Any]] = []
@@ -579,45 +667,66 @@ def main() -> None:
     default_pointwise_output = Path("outputs/summary/week7_8_replay_v2_week1_week2_pointwise_summary.csv")
     if args.mode == "pointwise":
         rows = [_row_from_spec(output_root, spec) for spec in DEFAULT_POINTWISE_SPECS]
+    elif args.mode == "light_pointwise":
+        if output_path.as_posix() == default_pointwise_output.as_posix():
+            output_path = Path("outputs/summary/week7_8_light_week1_week2_pointwise_summary.csv")
+        rows = [_row_from_spec(output_root, spec) for spec in LIGHT_EXECUTABLE_POINTWISE_SPECS]
     elif args.mode == "rerank":
         if output_path.as_posix() == default_pointwise_output.as_posix():
             output_path = Path("outputs/summary/week7_8_replay_v2_week3_rerank_compare.csv")
         rows = [_rerank_row_from_spec(output_root, spec) for spec in DEFAULT_RERANK_SPECS]
+    elif args.mode == "light_rerank":
+        if output_path.as_posix() == default_pointwise_output.as_posix():
+            output_path = Path("outputs/summary/week7_8_light_week3_rerank_compare.csv")
+        rows = [_rerank_row_from_spec(output_root, spec) for spec in LIGHT_EXECUTABLE_RERANK_SPECS]
     elif args.mode == "robustness":
         if output_path.as_posix() == default_pointwise_output.as_posix():
             output_path = Path("outputs/summary/week7_8_replay_v2_week4_robustness_summary.csv")
         rows = [_robustness_row_from_spec(output_root, spec) for spec in DEFAULT_ROBUSTNESS_SPECS]
-    else:
+    elif args.mode == "light_robustness":
+        if output_path.as_posix() == default_pointwise_output.as_posix():
+            output_path = Path("outputs/summary/week7_8_light_week4_robustness_summary.csv")
+        rows = [_robustness_row_from_spec(output_root, spec) for spec in LIGHT_EXECUTABLE_ROBUSTNESS_SPECS]
+    elif args.mode == "final":
         if output_path.as_posix() == default_pointwise_output.as_posix():
             output_path = Path("outputs/summary/teacher_requested_local8b_lora_mainline_final.csv")
         rows = _final_rows(output_root)
+    else:
+        if output_path.as_posix() == default_pointwise_output.as_posix():
+            output_path = Path("outputs/summary/week7_8_light_teacher_requested_mainline_final.csv")
+        rows = _final_rows(
+            output_root,
+            pointwise_summary_filename="week7_8_light_week1_week2_pointwise_summary.csv",
+            rerank_summary_filename="week7_8_light_week3_rerank_compare.csv",
+            robustness_summary_filename="week7_8_light_week4_robustness_summary.csv",
+        )
     _write_csv(rows, output_path)
-    if args.mode == "pointwise":
+    if args.mode in {"pointwise", "light_pointwise"}:
         md_path = _write_pointwise_md(rows, output_path)
-    elif args.mode == "rerank":
+    elif args.mode in {"rerank", "light_rerank"}:
         md_path = _write_rerank_md(rows, output_path)
-    elif args.mode == "robustness":
+    elif args.mode in {"robustness", "light_robustness"}:
         md_path = _write_robustness_md(rows, output_path)
     else:
         md_path = _write_final_md(rows, output_path)
     print(f"Saved Week7.8 teacher-requested summary to: {output_path}")
     print(f"Saved markdown handoff to: {md_path}")
     for row in rows:
-        if args.mode == "pointwise":
+        if args.mode in {"pointwise", "light_pointwise"}:
             print(
                 f"{row['domain']}: replay={row['replay_status']} "
                 f"historical={row['historical_status']} "
                 f"replay_acc={_fmt(row.get('replay_accuracy'))} "
                 f"replay_ece={_fmt(row.get('replay_ece'))}"
             )
-        elif args.mode == "rerank":
+        elif args.mode in {"rerank", "light_rerank"}:
             print(
                 f"{row['domain']}: direct={row['replay_direct_status']} "
                 f"rerank={row['replay_rerank_status']} "
                 f"reference={row['reference_status']} "
                 f"rerank_ndcg={_fmt(row.get('replay_rerank_ndcg_at_10'))}"
             )
-        elif args.mode == "robustness":
+        elif args.mode in {"robustness", "light_robustness"}:
             print(
                 f"{row['domain']}: clean={row['clean_status']} "
                 f"robustness={row['robustness_status']} "
