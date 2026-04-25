@@ -180,3 +180,72 @@ def parse_evidence_response(text: str) -> dict[str, Any]:
         "parse_success": parse_success,
         "parse_error": "" if parse_success else "missing_or_invalid_evidence_fields",
     }
+
+
+def parse_relevance_evidence_response(text: str) -> dict[str, Any]:
+    raw = text.strip()
+    clean = _strip_code_fence(raw)
+    obj = _extract_json_object(clean)
+
+    if obj is not None:
+        relevance_probability = _normalize_optional_unit_float(obj.get("relevance_probability"))
+        positive_evidence = _normalize_optional_unit_float(obj.get("positive_evidence"))
+        negative_evidence = _normalize_optional_unit_float(obj.get("negative_evidence"))
+        ambiguity = _normalize_optional_unit_float(obj.get("ambiguity"))
+        missing_information = _normalize_optional_unit_float(obj.get("missing_information"))
+        recommend = _normalize_recommend(obj.get("recommend"))
+        reason = str(obj.get("reason", "")).strip()
+    else:
+        relevance_probability = _normalize_optional_unit_float(
+            _regex_number_field(clean, "relevance_probability")
+        )
+        positive_evidence = _normalize_optional_unit_float(
+            _regex_number_field(clean, "positive_evidence")
+        )
+        negative_evidence = _normalize_optional_unit_float(
+            _regex_number_field(clean, "negative_evidence")
+        )
+        ambiguity = _normalize_optional_unit_float(_regex_number_field(clean, "ambiguity"))
+        missing_information = _normalize_optional_unit_float(
+            _regex_number_field(clean, "missing_information")
+        )
+        rec_match = re.search(r'"?recommend"?\s*[:=]\s*"?(yes|no|true|false|recommend|reject)"?', clean, re.I)
+        recommend = _normalize_recommend(rec_match.group(1) if rec_match else None)
+        reason = _regex_field(clean, "reason") or ""
+
+    evidence_values = [
+        relevance_probability,
+        positive_evidence,
+        negative_evidence,
+        ambiguity,
+        missing_information,
+    ]
+    parse_success = recommend in {"yes", "no"} and all(value is not None for value in evidence_values)
+    evidence_margin = (
+        positive_evidence - negative_evidence
+        if positive_evidence is not None and negative_evidence is not None
+        else None
+    )
+    abs_evidence_margin = abs(evidence_margin) if evidence_margin is not None else None
+    evidence_risk = (
+        (1.0 - abs_evidence_margin + ambiguity + missing_information) / 3.0
+        if abs_evidence_margin is not None
+        and ambiguity is not None
+        and missing_information is not None
+        else None
+    )
+
+    return {
+        "relevance_probability": relevance_probability,
+        "positive_evidence": positive_evidence,
+        "negative_evidence": negative_evidence,
+        "evidence_margin": evidence_margin,
+        "abs_evidence_margin": abs_evidence_margin,
+        "ambiguity": ambiguity,
+        "missing_information": missing_information,
+        "evidence_risk": evidence_risk,
+        "recommend": recommend if recommend in {"yes", "no"} else "unknown",
+        "reason": reason,
+        "parse_success": parse_success,
+        "parse_error": "" if parse_success else "missing_or_invalid_relevance_evidence_fields",
+    }

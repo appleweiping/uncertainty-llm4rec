@@ -10,7 +10,7 @@ from typing import Any
 from tqdm import tqdm
 
 from src.llm.base import normalize_generation_result
-from src.llm.parser import parse_evidence_response, parse_response
+from src.llm.parser import parse_evidence_response, parse_relevance_evidence_response, parse_response
 
 
 EVIDENCE_OUTPUT_SCHEMAS = {
@@ -20,13 +20,21 @@ EVIDENCE_OUTPUT_SCHEMAS = {
     "calibrated_evidence_posterior",
 }
 
+RELEVANCE_EVIDENCE_OUTPUT_SCHEMAS = {
+    "relevance_evidence",
+    "candidate_relevance_evidence",
+    "candidate_relevance_evidence_posterior",
+}
+
 EVIDENCE_RESULT_KEYS = (
+    "relevance_probability",
     "positive_evidence",
     "negative_evidence",
     "evidence_margin",
     "abs_evidence_margin",
     "ambiguity",
     "missing_information",
+    "evidence_risk",
     "raw_confidence",
     "parse_success",
     "parse_error",
@@ -87,6 +95,8 @@ def _normalize_candidate_from_pointwise_sample(sample: dict[str, Any]) -> dict[s
 
 def _parse_pointwise_response(raw_text: str, output_schema: str | None) -> dict[str, Any]:
     schema = str(output_schema or "verbalized_confidence").strip().lower()
+    if schema in RELEVANCE_EVIDENCE_OUTPUT_SCHEMAS:
+        return parse_relevance_evidence_response(raw_text)
     if schema in EVIDENCE_OUTPUT_SCHEMAS:
         return parse_evidence_response(raw_text)
     return parse_response(raw_text)

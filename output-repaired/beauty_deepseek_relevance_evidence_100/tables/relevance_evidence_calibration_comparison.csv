@@ -1,0 +1,9 @@
+num_samples,accuracy,avg_confidence,avg_correctness,brier_score,ece,mce,auroc,split,variant,score_col,status,feature_set,uses_fallback,fallback_reason,total_rows,usable_rows,parse_success_rate,high_conf_threshold,high_conf_error_rate
+100,0.63,0.42890000000000006,0.63,0.222443,0.2619,0.5627272727272727,0.6474131821403261,valid,raw_relevance_probability,relevance_probability,ready,,False,,100,100,1.0,0.8,0.0
+100,0.84,0.16999999999999996,0.84,0.12829841269841272,3.9968028886505634e-17,5.551115123125783e-17,0.6562721474131822,valid,calibrated_relevance_probability,calibrated_relevance_probability,ready,,False,,100,100,1.0,0.8,0.0
+100,0.53,0.44470000000000004,0.53,0.269209,0.3007,0.7457142857142857,0.48263642806520196,test,raw_relevance_probability,relevance_probability,ready,,False,,100,100,1.0,0.8,0.3333333333333333
+100,0.84,0.1819333333333333,0.84,0.14446982010582007,0.0887333333333333,0.33333333333333337,0.5049610205527995,test,calibrated_relevance_probability,calibrated_relevance_probability,ready,,False,,100,100,1.0,0.8,0.3333333333333333
+100,0.84,0.17,0.84,0.12733903724829315,8.049116928532384e-18,2.7755575615628914e-17,0.6782423812898654,valid,evidence_posterior_relevance_minimal,minimal_calibrated_relevance_probability,ready,minimal,False,,100,100,1.0,0.8,0.0
+100,0.84,0.1678662172673062,0.84,0.14476778273273863,0.1310992999740731,0.18423645320197046,0.4500354358610914,test,evidence_posterior_relevance_minimal,minimal_calibrated_relevance_probability,ready,minimal,False,,100,100,1.0,0.8,0.0
+100,0.83,0.17,0.83,0.12870262664165102,0.0,0.0,0.7072997873848335,valid,evidence_posterior_relevance_full,full_calibrated_relevance_probability,ready,full,False,,100,100,1.0,0.8,0.0
+100,0.82,0.16690806754221388,0.82,0.1509198721175406,0.10232270168855535,0.1858974358974359,0.498582565556343,test,evidence_posterior_relevance_full,full_calibrated_relevance_probability,ready,full,False,,100,100,1.0,0.8,0.0

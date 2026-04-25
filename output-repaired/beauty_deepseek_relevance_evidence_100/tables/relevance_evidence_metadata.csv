@@ -1,0 +1,2 @@
+exp_name,output_root,valid_path,test_path,num_valid_samples,num_test_samples,valid_parse_success_rate,test_parse_success_rate,raw_calibration_method,feature_set,use_isotonic_after_logistic,canonical_feature_set
+beauty_deepseek_relevance_evidence_100,output-repaired,output-repaired\beauty_deepseek_relevance_evidence_100\predictions\valid_raw.jsonl,output-repaired\beauty_deepseek_relevance_evidence_100\predictions\test_raw.jsonl,100,100,1.0,1.0,isotonic,both,True,minimal

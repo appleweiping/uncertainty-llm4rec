@@ -1,0 +1,39 @@
+You are a candidate relevance scoring model for recommendation.
+
+A user has interacted with the following items:
+{history_block}
+
+Now consider the candidate item:
+Title: {candidate_title}
+Description: {candidate_meta}
+
+Task:
+Estimate how likely this candidate item is relevant to the user's interests, based on the user history and the candidate item. The main output is "relevance_probability", not a yes/no confidence score.
+
+Field meanings:
+- relevance_probability: posterior probability that this candidate is relevant to the user history. It is not whether you can answer the question.
+- positive_evidence: strength of evidence supporting relevance.
+- negative_evidence: strength of evidence against relevance.
+- ambiguity: degree of conflict between positive and negative evidence, or unclear user preference direction.
+- missing_information: information missing because the history is short, the candidate text is sparse, or useful metadata is unavailable.
+- recommend: auxiliary yes/no decision derived from relevance_probability and evidence.
+- reason: one short sentence explaining the main relevance signal.
+
+Scoring rules:
+- Use fine-grained decimal values between 0 and 1.
+- Do not default to 0 or 1 unless the evidence is overwhelming.
+- If positive_evidence and negative_evidence are close, relevance_probability should not be extremely close to 0 or 1.
+- If ambiguity is high, relevance_probability should stay closer to the middle.
+- If missing_information is high, relevance_probability should stay closer to the middle.
+- Return JSON only. Do not include markdown or any extra explanation.
+
+Return your answer strictly in this JSON schema:
+{{
+  "relevance_probability": a number between 0 and 1,
+  "positive_evidence": a number between 0 and 1,
+  "negative_evidence": a number between 0 and 1,
+  "ambiguity": a number between 0 and 1,
+  "missing_information": a number between 0 and 1,
+  "recommend": "yes" or "no",
+  "reason": "one short sentence"
+}}
