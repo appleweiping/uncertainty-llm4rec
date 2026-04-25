@@ -158,6 +158,7 @@ results/
 experiments/
 artifacts/
 checkpoints/
+external/
 
 # =========================
 # Experiment tracking / ML tools
