@@ -1,0 +1,4 @@
+backbone,source_file,num_rows,num_users,candidate_pool_size_mean,has_backbone_score,has_label,has_valid_split,has_test_split,notes
+SASRec-style,output-repaired\backbone\sasrec_beauty_full\candidate_scores.csv,5838,973,6.0,True,True,False,True,fixed/full candidate_scores; used for local diagnostic only
+GRU4Rec,output-repaired\backbone\llmesr_gru4rec_beauty_full\candidate_scores.csv,5838,973,6.0,True,True,False,True,fixed/full candidate_scores; used for local diagnostic only
+Bert4Rec,output-repaired\backbone\llmesr_bert4rec_beauty_full\candidate_scores.csv,5838,973,6.0,True,True,False,True,fixed/full candidate_scores; used for local diagnostic only

@@ -1,0 +1,4 @@
+backbone,calibration_method,fit_split,eval_split,raw_or_proxy_ECE,calibrated_ECE,raw_or_proxy_Brier,calibrated_Brier,raw_or_proxy_AUROC,calibrated_AUROC,notes
+SASRec-style,not_run,valid,test,,,,,,,valid split candidate_scores are not available; no test-fit/test-eval calibration was performed
+GRU4Rec,not_run,valid,test,,,,,,,valid split candidate_scores are not available; no test-fit/test-eval calibration was performed
+Bert4Rec,not_run,valid,test,,,,,,,valid split candidate_scores are not available; no test-fit/test-eval calibration was performed

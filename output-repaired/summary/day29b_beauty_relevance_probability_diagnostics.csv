@@ -1,0 +1,5 @@
+score_type,ECE,Brier,AUROC,high_conf_error_rate,notes
+raw_relevance_probability,0.2603614251455978,0.2317954607742377,0.6007391766809721,0.527363184079602,test split from output-repaired\summary\beauty_day9_relevance_evidence_full_calibration_comparison.csv; valid split was used for fitting
+calibrated_relevance_probability,0.00951241845408,0.1346859695874719,0.5985809032996771,0.0,test split from output-repaired\summary\beauty_day9_relevance_evidence_full_calibration_comparison.csv; valid split was used for fitting
+evidence_posterior_relevance_minimal,0.0095905255665129,0.1348676958783988,0.6010137008584294,0.0,test split from output-repaired\summary\beauty_day9_relevance_evidence_full_calibration_comparison.csv; valid split was used for fitting
+evidence_posterior_relevance_full,0.0115505395245907,0.1348094267877603,0.6037781667193041,0.0,test split from output-repaired\summary\beauty_day9_relevance_evidence_full_calibration_comparison.csv; valid split was used for fitting
