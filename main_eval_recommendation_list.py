@@ -6,6 +6,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import yaml
 
 from main_rerank import save_table
 from src.analysis.rerank_diagnostics import add_user_normalized_column, compute_rank_change_diagnostics
@@ -283,6 +284,18 @@ def build_report(
     ev_vs_plain = comparison[comparison["method"] == "evidence_guided_list"]
     ndcg_rel = float(ev_vs_plain.iloc[0]["relative_NDCG_improvement_vs_plain"]) if not ev_vs_plain.empty else float("nan")
     mrr_rel = float(ev_vs_plain.iloc[0]["relative_MRR_improvement_vs_plain"]) if not ev_vs_plain.empty else float("nan")
+    is_full_beauty = max_samples >= 900
+    run_scope = "full Beauty" if is_full_beauty else f"{max_samples}-user smoke test"
+    limitation_scope = (
+        "This is full Beauty for the current closed-catalog candidate pools, but it is still not external SOTA and not Qwen-LoRA."
+        if is_full_beauty
+        else "This is a limited-user smoke test, not full Beauty, not external SOTA, and not Qwen-LoRA."
+    )
+    next_step = (
+        "Because the full run is complete, the next step is to decide whether Qwen-LoRA should distill the Day9 pointwise relevance schema, the Day10 list schema, or both."
+        if is_full_beauty
+        else "If this smoke test is stable, the next Day10-full run should keep the same plain-vs-evidence control and then decide whether Qwen-LoRA should distill the evidence list schema, the Day9 pointwise schema, or both."
+    )
     lines = [
         "# Day10 Plain Vs Evidence List Recommendation Report",
         "",
@@ -312,44 +325,72 @@ def build_report(
         "",
         "## 7. Findings",
         "",
-        f"The best method in this smoke test is `{best['method']}` with NDCG@10 `{float(best['NDCG@10']):.4f}` and MRR@10 `{float(best['MRR@10']):.4f}`. If evidence-guided generation does not dominate plain directly, the result should be read as evidence decomposition helping mainly through calibrated/risk-aware decision modules rather than automatically improving the first-pass list prompt.",
+        f"The best method in this {run_scope} run is `{best['method']}` with NDCG@10 `{float(best['NDCG@10']):.4f}` and MRR@10 `{float(best['MRR@10']):.4f}`. If evidence-guided generation does not dominate plain directly, the result should be read as evidence decomposition helping mainly through calibrated/risk-aware decision modules rather than automatically improving the first-pass list prompt.",
         "",
         "## 8. Limitations",
         "",
-        "This is a 100/200-user smoke test, not full Beauty, not external SOTA, and not Qwen-LoRA. HR@10 is less informative because each Beauty candidate pool is small; NDCG/MRR are the primary list-order signals.",
+        f"{limitation_scope} HR@10 is less informative because each Beauty candidate pool is small; NDCG/MRR are the primary list-order signals.",
         "",
         "## 9. Next Step",
         "",
-        "If this smoke test is stable, the next Day10-full run should keep the same plain-vs-evidence control and then decide whether Qwen-LoRA should distill the evidence list schema, the Day9 pointwise schema, or both.",
+        next_step,
     ]
     return "\n".join(lines) + "\n"
 
 
+def load_config(path: str | Path) -> dict[str, Any]:
+    return yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
+
+
+def output_paths_from_config(cfg: dict[str, Any]):
+    return ensure_exp_dirs(str(cfg.get("exp_name")), str(cfg.get("output_root", "output-repaired")))
+
+
+def output_name(prefix: str, suffix: str) -> str:
+    return f"{prefix}_{suffix}" if prefix else suffix
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", required=True)
+    parser.add_argument("--config", default=None)
+    parser.add_argument("--plain_config", default=None)
+    parser.add_argument("--evidence_config", default=None)
     parser.add_argument("--summary_dir", default="output-repaired/summary")
+    parser.add_argument("--output_prefix", default="beauty_day10")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    import yaml
+    if args.config:
+        cfg = load_config(args.config)
+        plain_cfg = cfg
+        evidence_cfg = cfg
+        paths = output_paths_from_config(cfg)
+        plain_paths = paths
+        evidence_paths = paths
+    elif args.plain_config and args.evidence_config:
+        plain_cfg = load_config(args.plain_config)
+        evidence_cfg = load_config(args.evidence_config)
+        cfg = plain_cfg
+        plain_paths = output_paths_from_config(plain_cfg)
+        evidence_paths = output_paths_from_config(evidence_cfg)
+    else:
+        raise ValueError("Provide --config or both --plain_config and --evidence_config.")
 
-    cfg = yaml.safe_load(Path(args.config).read_text(encoding="utf-8")) or {}
-    exp_name = str(cfg.get("exp_name", "beauty_day10_recommendation_list_200"))
-    output_root = str(cfg.get("output_root", "output-repaired"))
-    paths = ensure_exp_dirs(exp_name, output_root)
     summary_dir = Path(args.summary_dir)
     summary_dir.mkdir(parents=True, exist_ok=True)
 
-    max_samples = int(cfg.get("max_samples", 200))
+    max_samples_cfg = cfg.get("max_samples")
     k = int(cfg.get("top_k", 10))
-    samples = read_jsonl(cfg["input_path"]).head(max_samples).copy()
+    samples = read_jsonl(cfg["input_path"]).copy()
+    if max_samples_cfg is not None and int(max_samples_cfg) > 0:
+        samples = samples.head(int(max_samples_cfg)).copy()
     samples["sample_id"] = range(len(samples))
+    max_samples = len(samples)
 
-    plain_predictions = read_jsonl(paths.predictions_dir / "plain_list_raw.jsonl")
-    evidence_predictions = read_jsonl(paths.predictions_dir / "evidence_list_raw.jsonl")
+    plain_predictions = read_jsonl(plain_paths.predictions_dir / "plain_list_raw.jsonl")
+    evidence_predictions = read_jsonl(evidence_paths.predictions_dir / "evidence_list_raw.jsonl")
 
     plain_ranked = flatten_list_predictions(plain_predictions, samples, setting="plain_direct_list")
     evidence_ranked = flatten_list_predictions(evidence_predictions, samples, setting="evidence_guided_list")
@@ -377,15 +418,16 @@ def main() -> None:
         include_evidence=True,
     )
 
-    save_table(pd.DataFrame([plain_row]), summary_dir / "beauty_day10_plain_list_eval.csv")
-    save_table(pd.DataFrame([evidence_row]), summary_dir / "beauty_day10_evidence_list_eval.csv")
+    prefix = str(args.output_prefix).strip()
+    save_table(pd.DataFrame([plain_row]), summary_dir / output_name(prefix, "plain_list_eval.csv"))
+    save_table(pd.DataFrame([evidence_row]), summary_dir / output_name(prefix, "evidence_list_eval.csv"))
 
     comparison = add_relative_improvements(pd.DataFrame([plain_row, evidence_row, evidence_rerank_row]))
-    save_table(comparison, summary_dir / "beauty_day10_plain_vs_evidence_comparison.csv")
+    save_table(comparison, summary_dir / output_name(prefix, "plain_vs_evidence_comparison.csv"))
 
     pointwise_paths = ensure_exp_dirs(
         str(cfg.get("pointwise_exp_name", "beauty_deepseek_relevance_evidence_full")),
-        str(cfg.get("pointwise_output_root", output_root)),
+        str(cfg.get("pointwise_output_root", cfg.get("output_root", "output-repaired"))),
     )
     bridge = build_pointwise_bridge(
         samples,
@@ -402,7 +444,7 @@ def main() -> None:
         if col not in bridge.columns:
             bridge[col] = np.nan
     bridge_comparison = pd.concat([bridge[list_bridge_rows.columns], list_bridge_rows], ignore_index=True)
-    save_table(bridge_comparison, summary_dir / "beauty_day10_list_vs_pointwise_comparison.csv")
+    save_table(bridge_comparison, summary_dir / output_name(prefix, "list_vs_day9_pointwise_comparison.csv"))
 
     report = build_report(
         plain_row=plain_row,
@@ -411,13 +453,13 @@ def main() -> None:
         bridge=bridge_comparison,
         max_samples=max_samples,
     )
-    (summary_dir / "beauty_day10_plain_vs_evidence_list_report.md").write_text(report, encoding="utf-8")
+    (summary_dir / output_name(prefix, "report.md")).write_text(report, encoding="utf-8")
 
-    print(f"Saved {summary_dir / 'beauty_day10_plain_list_eval.csv'}")
-    print(f"Saved {summary_dir / 'beauty_day10_evidence_list_eval.csv'}")
-    print(f"Saved {summary_dir / 'beauty_day10_plain_vs_evidence_comparison.csv'}")
-    print(f"Saved {summary_dir / 'beauty_day10_list_vs_pointwise_comparison.csv'}")
-    print(f"Saved {summary_dir / 'beauty_day10_plain_vs_evidence_list_report.md'}")
+    print(f"Saved {summary_dir / output_name(prefix, 'plain_list_eval.csv')}")
+    print(f"Saved {summary_dir / output_name(prefix, 'evidence_list_eval.csv')}")
+    print(f"Saved {summary_dir / output_name(prefix, 'plain_vs_evidence_comparison.csv')}")
+    print(f"Saved {summary_dir / output_name(prefix, 'list_vs_day9_pointwise_comparison.csv')}")
+    print(f"Saved {summary_dir / output_name(prefix, 'report.md')}")
     best = comparison.sort_values(["NDCG@10", "MRR@10"], ascending=[False, False]).iloc[0]
     print(
         "BEST_DAY10_LIST "

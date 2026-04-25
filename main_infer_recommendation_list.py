@@ -159,6 +159,9 @@ def run_one(
             )
             raw_text = generation["raw_text"]
             parsed = parse_response(raw_text, setting, candidate_item_ids)
+            if not bool(parsed.get("parse_success", False)) and attempt < max_retries:
+                time.sleep(retry_backoff_seconds * (2 ** attempt))
+                continue
             return {
                 "sample_id": sample_id,
                 "source_event_id": sample.get("source_event_id", ""),

@@ -1,0 +1,18 @@
+check,passed,detail
+same_input_path,True,data/processed/amazon_beauty/ranking_test.jsonl
+same_user_count,True,973
+same_user_id_order,True,973
+same_candidate_pool_hash,True,ea3fca636ec44ec4
+same_top_k,True,10
+same_model_config,True,configs/model/deepseek_list.yaml
+plain_prompt,True,prompts/recommendation_list_plain.txt
+evidence_prompt,True,prompts/recommendation_list_evidence.txt
+parser_reuses_day10,True,parse_recommendation_list_plain_response / parse_recommendation_list_evidence_response
+resume_enabled,True,resume=true
+concurrent_api_controlled,True,workers=4 rpm=120
+separate_output_dirs,True,output-repaired\beauty_deepseek_recommendation_list_full_plain vs output-repaired\beauty_deepseek_recommendation_list_full_evidence
+does_not_cover_day10_200,True,separate full exp_names
+full_sample_count,True,973
+candidate_pool_size_is_6,True,{6: 973}
+plain_smoke_or_full_status,True,"{'exists': True, 'rows': 973, 'parse_success_rate': 0.998972250770812, 'schema_valid_rate': 0.998972250770812}"
+evidence_smoke_or_full_status,True,"{'exists': True, 'rows': 973, 'parse_success_rate': 0.998972250770812, 'schema_valid_rate': 0.998972250770812}"

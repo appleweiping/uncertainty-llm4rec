@@ -1,0 +1,25 @@
+exp_name: beauty_deepseek_recommendation_list_full_evidence
+
+input_path: data/processed/amazon_beauty/ranking_test.jsonl
+output_root: output-repaired
+model_config: configs/model/deepseek_list.yaml
+
+plain_prompt_path: prompts/recommendation_list_plain.txt
+evidence_prompt_path: prompts/recommendation_list_evidence.txt
+
+max_samples:
+top_k: 10
+seed: 42
+
+concurrent: true
+resume: true
+max_workers: 4
+requests_per_minute: 120
+max_retries: 3
+retry_backoff_seconds: 2.0
+checkpoint_every: 1
+
+pointwise_exp_name: beauty_deepseek_relevance_evidence_full
+pointwise_output_root: output-repaired
+bridge_lambda: 0.1
+bridge_normalization: zscore

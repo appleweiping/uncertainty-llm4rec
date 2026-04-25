@@ -1,0 +1,2 @@
+method,HR@10,NDCG@10,MRR@10,Recall@10,parse_success_rate,schema_valid_rate,invalid_item_rate,duplicate_item_rate,head_exposure_ratio@10,tail_exposure_ratio@10,long_tail_coverage@10,topk_total_items@10,mean_global_uncertainty,mean_item_evidence_risk,mean_evidence_risk
+evidence_guided_list,1.0,0.6232808744498345,0.5030147310722851,1.0,0.998972250770812,0.998972250770812,0.0001721763085399449,0.0,0.2144570058239123,0.37050359712230213,1.0,5838,0.32646454265159297,0.3760834624878015,0.3760834624878015
