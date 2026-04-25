@@ -1,0 +1,13 @@
+backbone,method,NDCG@10_mean,MRR@10_mean,relative_NDCG_vs_backbone_mean,relative_MRR_vs_backbone_mean,B_exceeds_A,C_weaker_than_B,D_exceeds_B,main_contributor
+SASRec-style,Backbone only,0.5446339551000305,0.399571771154505,0.0,0.0,True,True,True,baseline
+SASRec-style,Backbone + calibrated relevance,0.6052841046994109,0.4789768185451639,0.1113886028932815,0.198831509665873,True,True,True,calibrated_relevance_posterior
+SASRec-style,Backbone + evidence risk,0.5560325835622358,0.4146340070800502,0.0209634034307321,0.0378126162966916,True,True,True,evidence_risk
+SASRec-style,Backbone + calibrated relevance + evidence risk,0.6098952985924221,0.4853146054584903,0.1198559329720144,0.2146954843909826,True,True,True,combined
+LLM-ESR GRU4Rec,Backbone only,0.5347038252309285,0.3872559095580678,0.0,0.0,True,True,True,baseline
+LLM-ESR GRU4Rec,Backbone + calibrated relevance,0.5919794995363593,0.4622130866735183,0.107174612473646,0.1937782853391896,True,True,True,calibrated_relevance_posterior
+LLM-ESR GRU4Rec,Backbone + evidence risk,0.5453996583443498,0.401809980586959,0.0200589391127372,0.0377725823673066,True,True,True,evidence_risk
+LLM-ESR GRU4Rec,Backbone + calibrated relevance + evidence risk,0.6037383473477781,0.4778348749571772,0.1291888065208568,0.2342083844539518,True,True,True,combined
+LLM-ESR Bert4Rec,Backbone only,0.5230836197575035,0.3728160328879753,0.0,0.0,True,True,True,baseline
+LLM-ESR Bert4Rec,Backbone + calibrated relevance,0.5844328586952764,0.4521125956377754,0.1178436184072371,0.214843557721468,True,True,True,calibrated_relevance_posterior
+LLM-ESR Bert4Rec,Backbone + evidence risk,0.5364423634924916,0.3902934795021126,0.0257845762380463,0.0477738278187872,True,True,True,evidence_risk
+LLM-ESR Bert4Rec,Backbone + calibrated relevance + evidence risk,0.593122520330362,0.4642286171063149,0.1346181830090922,0.2479174460727637,True,True,True,combined
