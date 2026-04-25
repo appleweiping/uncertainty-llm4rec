@@ -1,0 +1,5 @@
+method,NDCG@10_mean,MRR@10_mean,relative_NDCG_vs_gru4rec_mean,relative_MRR_vs_gru4rec_mean,delta_NDCG_vs_A_mean,delta_MRR_vs_A_mean,interpretation
+A_GRU4Rec_only,0.5347038252309285,0.3872559095580678,0.0,0.0,0.0,0.0,external GRU4Rec backbone only
+B_GRU4Rec_plus_calibrated_relevance,0.5919794995363593,0.46221308667351835,0.10717461247364601,0.19377828533918964,0.05727567430543079,0.07495717711545052,calibrated relevance posterior contribution
+C_GRU4Rec_plus_evidence_risk,0.5453996583443498,0.401809980586959,0.020058939112737297,0.03777258236730669,0.01069583311342126,0.014554071028891169,evidence risk as standalone regularizer
+D_GRU4Rec_plus_calibrated_relevance_plus_evidence_risk,0.6037383473477781,0.4778348749571772,0.12918880652085685,0.23420838445395184,0.06903452211684957,0.09057896539910937,posterior plus evidence-risk regularization
