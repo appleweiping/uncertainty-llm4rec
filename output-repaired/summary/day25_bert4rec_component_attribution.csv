@@ -1,0 +1,5 @@
+method,NDCG@10_mean,MRR@10_mean,relative_NDCG_vs_bert4rec_mean,relative_MRR_vs_bert4rec_mean,delta_NDCG_vs_A_mean,delta_MRR_vs_A_mean,interpretation
+A_Bert4Rec_only,0.5230836197575035,0.3728160328879753,0.0,0.0,0.0,0.0,external Bert4Rec backbone only
+B_Bert4Rec_plus_calibrated_relevance,0.5844328586952764,0.45211259563777545,0.11784361840723713,0.214843557721468,0.06134923893777289,0.07929656274980013,calibrated relevance posterior contribution
+C_Bert4Rec_plus_evidence_risk,0.5364423634924916,0.39029347950211263,0.025784576238046326,0.04777382781878723,0.013358743734988132,0.017477446614137304,evidence risk as standalone regularizer
+D_Bert4Rec_plus_calibrated_relevance_plus_evidence_risk,0.593122520330362,0.46422861710631497,0.1346181830090922,0.2479174460727637,0.07003890057285844,0.09141258421833964,posterior plus evidence-risk regularization
