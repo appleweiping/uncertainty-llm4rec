@@ -1,0 +1,4 @@
+domain,medium_users,negatives_per_positive,valid_rows,test_rows,total_api_rows,relative_to_beauty_day9,recommended_run_mode,reason
+movies,2000,20,42000,42000,84000,7.194244604316546,movies_medium_20neg_2000_first,medium_20neg_2000 is the formal cross-domain medium benchmark: enough users and 21 candidates per user; run one domain at a time.
+books,2000,20,42000,42000,84000,7.194244604316546,books_medium_20neg_2000_hold,medium_20neg_2000 is the formal cross-domain medium benchmark: enough users and 21 candidates per user; run one domain at a time.
+electronics,2000,20,42000,42000,84000,7.194244604316546,electronics_medium_20neg_2000_hold,medium_20neg_2000 is the formal cross-domain medium benchmark: enough users and 21 candidates per user; run one domain at a time.

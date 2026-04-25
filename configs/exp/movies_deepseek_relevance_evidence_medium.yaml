@@ -1,0 +1,21 @@
+exp_name: movies_deepseek_relevance_evidence_medium
+domain: movies
+train_input_path: data/processed/amazon_movies_medium/train.jsonl
+split_input_paths:
+  valid: data/processed/amazon_movies_medium/valid.jsonl
+  test: data/processed/amazon_movies_medium/test.jsonl
+prompt_path: prompts/candidate_relevance_evidence.txt
+output_root: output-repaired
+output_dir: output-repaired/movies_deepseek_relevance_evidence_medium
+model_config: configs/model/deepseek.yaml
+output_schema: relevance_evidence
+method_variant: candidate_relevance_evidence_posterior_medium
+resume: true
+concurrent: true
+max_workers: 4
+requests_per_minute: 120
+max_retries: 3
+retry_backoff_seconds: 2.0
+checkpoint_every: 1
+max_samples: null
+notes: Day28 medium config only. Do not launch automatically.

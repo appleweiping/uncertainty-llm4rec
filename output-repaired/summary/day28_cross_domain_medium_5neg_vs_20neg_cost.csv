@@ -1,0 +1,7 @@
+domain,variant,medium_users,valid_rows,test_rows,total_api_rows,relative_to_beauty_day9,recommended_day29_mode,reason
+movies,medium_5neg,2000,12000,12000,24000,2.055498458376156,do_not_use_hr10_as_primary,"5-negative medium keeps more users at controlled cost, but HR@10 is trivial because each user has 6 candidates."
+books,medium_5neg,2000,12000,12000,24000,2.055498458376156,do_not_use_hr10_as_primary,"5-negative medium keeps more users at controlled cost, but HR@10 is trivial because each user has 6 candidates."
+electronics,medium_5neg,2000,12000,12000,24000,2.055498458376156,do_not_use_hr10_as_primary,"5-negative medium keeps more users at controlled cost, but HR@10 is trivial because each user has 6 candidates."
+movies,medium_20neg,500,10500,10500,21000,1.7985611510791366,movies_medium_20neg_first,20-negative medium gives non-trivial HR@10 with API rows close to the 5neg medium.
+books,medium_20neg,500,10500,10500,21000,1.7985611510791366,books_medium_20neg_later,20-negative medium gives non-trivial HR@10 with API rows close to the 5neg medium.
+electronics,medium_20neg,500,10500,10500,21000,1.7985611510791366,electronics_medium_20neg_later,20-negative medium gives non-trivial HR@10 with API rows close to the 5neg medium.

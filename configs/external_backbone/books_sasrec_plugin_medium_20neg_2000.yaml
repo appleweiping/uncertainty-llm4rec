@@ -1,0 +1,42 @@
+backbone_name: sasrec
+domain: books
+stage: cross_domain_medium_20neg_2000
+train_input_path: data/processed/amazon_books_medium_20neg_2000/train.jsonl
+valid_input_path: data/processed/amazon_books_medium_20neg_2000/valid.jsonl
+test_input_path: data/processed/amazon_books_medium_20neg_2000/test.jsonl
+score_output_path: output-repaired/backbone/sasrec_books_medium_20neg_2000/candidate_scores.csv
+evidence_table:
+  path: output-repaired/books_deepseek_relevance_evidence_medium_20neg_2000/calibrated/relevance_evidence_posterior_test.jsonl
+  join_keys:
+  - user_id
+  - candidate_item_id
+  fields:
+  - relevance_probability
+  - calibrated_relevance_probability
+  - evidence_risk
+  - ambiguity
+  - missing_information
+  - abs_evidence_margin
+  - positive_evidence
+  - negative_evidence
+rerank:
+  top_k: 10
+  normalizations:
+  - minmax
+  - zscore
+  lambdas:
+  - 0.0
+  - 0.05
+  - 0.1
+  - 0.2
+  - 0.5
+  alphas:
+  - 0.5
+  - 0.75
+  - 0.9
+  settings:
+  - Backbone only
+  - Backbone + calibrated relevance
+  - Backbone + evidence risk
+  - Backbone + calibrated relevance + evidence risk
+  metric_note: medium_20neg_2000 has 21 candidates per user, so HR@10 is non-trivial.

@@ -1,0 +1,10 @@
+domain,processed_path,split,num_rows,num_users,num_items,positive_rows,negative_rows,avg_candidates_per_user,min_candidates_per_user,max_candidates_per_user,has_user_id,has_history,has_candidate_item_id,has_candidate_text,has_candidate_title,has_label,schema_compatible_with_beauty,missing_fields,notes,benchmark_variant
+movies,data\processed\amazon_movies_medium_20neg,train,34524,324,32254,1644,32880,106.55555555555556,21.0,1491.0,True,True,True,True,True,True,True,,medium split from regular processed domain,medium_20neg
+movies,data\processed\amazon_movies_medium_20neg,valid,10500,500,10278,500,10000,21.0,21.0,21.0,True,True,True,True,True,True,True,,medium split from regular processed domain,medium_20neg
+movies,data\processed\amazon_movies_medium_20neg,test,10500,500,10271,500,10000,21.0,21.0,21.0,True,True,True,True,True,True,True,,medium split from regular processed domain,medium_20neg
+books,data\processed\amazon_books_medium_20neg,train,41811,330,40881,1991,39820,126.7,21.0,3339.0,True,True,True,True,True,True,True,,medium split from regular processed domain,medium_20neg
+books,data\processed\amazon_books_medium_20neg,valid,10500,500,10446,500,10000,21.0,21.0,21.0,True,True,True,True,True,True,True,,medium split from regular processed domain,medium_20neg
+books,data\processed\amazon_books_medium_20neg,test,10500,500,10446,500,10000,21.0,21.0,21.0,True,True,True,True,True,True,True,,medium split from regular processed domain,medium_20neg
+electronics,data\processed\amazon_electronics_medium_20neg,train,31353,315,30413,1493,29860,99.53333333333333,21.0,1008.0,True,True,True,True,True,True,True,,medium split from regular processed domain,medium_20neg
+electronics,data\processed\amazon_electronics_medium_20neg,valid,10500,500,10389,500,10000,21.0,21.0,21.0,True,True,True,True,True,True,True,,medium split from regular processed domain,medium_20neg
+electronics,data\processed\amazon_electronics_medium_20neg,test,10500,500,10388,500,10000,21.0,21.0,21.0,True,True,True,True,True,True,True,,medium split from regular processed domain,medium_20neg

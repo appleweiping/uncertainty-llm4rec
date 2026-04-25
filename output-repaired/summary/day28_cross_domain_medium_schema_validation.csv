@@ -1,0 +1,10 @@
+domain,processed_path,split,num_rows,num_users,num_items,positive_rows,negative_rows,avg_candidates_per_user,min_candidates_per_user,max_candidates_per_user,has_user_id,has_history,has_candidate_item_id,has_candidate_text,has_candidate_title,has_label,schema_compatible_with_beauty,missing_fields,notes
+movies,data\processed\amazon_movies_medium,train,45324,1296,40848,7554,37770,34.97222222222222,6.0,1344.0,True,True,True,True,True,True,True,,medium split from regular processed domain
+movies,data\processed\amazon_movies_medium,valid,12000,2000,11549,2000,10000,6.0,6.0,6.0,True,True,True,True,True,True,True,,medium split from regular processed domain
+movies,data\processed\amazon_movies_medium,test,12000,2000,11480,2000,10000,6.0,6.0,6.0,True,True,True,True,True,True,True,,medium split from regular processed domain
+books,data\processed\amazon_books_medium,train,50088,1278,48541,8348,41740,39.1924882629108,6.0,1458.0,True,True,True,True,True,True,True,,medium split from regular processed domain
+books,data\processed\amazon_books_medium,valid,12000,2000,11895,2000,10000,6.0,6.0,6.0,True,True,True,True,True,True,True,,medium split from regular processed domain
+books,data\processed\amazon_books_medium,test,12000,2000,11863,2000,10000,6.0,6.0,6.0,True,True,True,True,True,True,True,,medium split from regular processed domain
+electronics,data\processed\amazon_electronics_medium,train,36084,1242,34297,6014,30070,29.053140096618357,6.0,1332.0,True,True,True,True,True,True,True,,medium split from regular processed domain
+electronics,data\processed\amazon_electronics_medium,valid,12000,2000,11700,2000,10000,6.0,6.0,6.0,True,True,True,True,True,True,True,,medium split from regular processed domain
+electronics,data\processed\amazon_electronics_medium,test,12000,2000,11733,2000,10000,6.0,6.0,6.0,True,True,True,True,True,True,True,,medium split from regular processed domain
