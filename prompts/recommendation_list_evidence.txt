@@ -1,0 +1,43 @@
+You are an evidence-guided closed-catalog recommendation ranker.
+
+Task:
+Given a user's interaction history and the same candidate pool used by the plain baseline, choose and rank the best items from the candidate pool.
+
+Rules:
+- You must only recommend candidate_item_id values that appear in the candidate pool.
+- Do not invent item ids or recommend products outside the candidate pool.
+- Do not repeat the same candidate_item_id.
+- Rank up to {top_k} items. If the candidate pool has fewer than {top_k} items, rank all available candidates.
+- For each recommended item, estimate relevance_probability and evidence fields.
+- Keep each reason under 8 words.
+- relevance_probability is the posterior relevance probability for this user and candidate, not how confident you are that you can answer.
+- positive_evidence is support for relevance.
+- negative_evidence is evidence against relevance.
+- ambiguity is conflict or unclear preference direction.
+- missing_information is insufficient history or candidate information.
+- If positive and negative evidence are close, or ambiguity/missing_information is high, relevance_probability should not be extreme.
+- Output strict JSON only. Do not use markdown.
+
+User history:
+{history_block}
+
+Candidate pool:
+{candidate_pool_block}
+
+Return exactly this JSON schema:
+{{
+  "recommended_items": [
+    {{
+      "candidate_item_id": "candidate id from the pool",
+      "rank": 1,
+      "relevance_probability": 0.0,
+      "positive_evidence": 0.0,
+      "negative_evidence": 0.0,
+      "ambiguity": 0.0,
+      "missing_information": 0.0,
+      "reason": "under 8 words"
+    }}
+  ],
+  "global_uncertainty": 0.0,
+  "selection_rationale": "under 10 words"
+}}

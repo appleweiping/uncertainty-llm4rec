@@ -1,0 +1,2 @@
+method,HR@10,NDCG@10,MRR@10,Recall@10,parse_success_rate,schema_valid_rate,invalid_item_rate,duplicate_item_rate,head_exposure_ratio@10,tail_exposure_ratio@10,long_tail_coverage@10,topk_total_items@10
+plain_direct_list,1.0,0.6210548480497045,0.4995833333333334,1.0,1.0,1.0,0.0,0.0,0.19916666666666666,0.37666666666666665,1.0,1200

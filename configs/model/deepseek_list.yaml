@@ -1,0 +1,11 @@
+backend_name: deepseek
+provider: deepseek
+model_name: deepseek-chat
+
+connection:
+  base_url: https://api.deepseek.com
+  api_key_env: DEEPSEEK_API_KEY
+
+generation:
+  temperature: 0.0
+  max_tokens: 1200
