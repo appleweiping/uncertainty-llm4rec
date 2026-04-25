@@ -1,0 +1,6 @@
+setting,lambda,base_score_col,uncertainty_col,normalization,rank_change_rate,top10_change_rate,top10_order_change_rate,mean_kendall_tau,base_uncertainty_spearman,mean_base_score_spread,mean_uncertainty_spread,num_users,num_samples,rerank_is_noop
+monotonic_repaired_confidence_penalty,0.0,minimal_repaired_confidence,minimal_evidence_uncertainty,none,0.0,0.0,0.0,1.0,-1.0,0.5310780716338129,0.5310780716338129,973,5838,True
+monotonic_repaired_confidence_penalty,0.1,minimal_repaired_confidence,minimal_evidence_uncertainty,none,0.0,0.0,0.0,1.0,-1.0,0.5310780716338129,0.5310780716338129,973,5838,True
+monotonic_repaired_confidence_penalty,0.2,minimal_repaired_confidence,minimal_evidence_uncertainty,none,0.0,0.0,0.0,1.0,-1.0,0.5310780716338129,0.5310780716338129,973,5838,True
+monotonic_repaired_confidence_penalty,0.5,minimal_repaired_confidence,minimal_evidence_uncertainty,none,0.0,0.0,0.0,1.0,-1.0,0.5310780716338129,0.5310780716338129,973,5838,True
+monotonic_repaired_confidence_penalty,1.0,minimal_repaired_confidence,minimal_evidence_uncertainty,none,0.0,0.0,0.0,1.0,-1.0,0.5310780716338129,0.5310780716338129,973,5838,True
