@@ -1,0 +1,25 @@
+exp_name: beauty_deepseek_relevance_evidence_full
+
+split_input_paths:
+  valid: data/processed/amazon_beauty/valid.jsonl
+  test: data/processed/amazon_beauty/test.jsonl
+
+output_root: output-repaired
+prompt_path: prompts/candidate_relevance_evidence.txt
+
+model_config: configs/model/deepseek.yaml
+
+max_samples:
+overwrite: false
+seed: 42
+
+output_schema: relevance_evidence
+method_variant: candidate_relevance_evidence_posterior_full
+
+concurrent: true
+resume: true
+max_workers: 4
+requests_per_minute: 120
+max_retries: 3
+retry_backoff_seconds: 2.0
+checkpoint_every: 1
