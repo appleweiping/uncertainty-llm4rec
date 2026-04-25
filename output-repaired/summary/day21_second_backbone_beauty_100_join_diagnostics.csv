@@ -1,0 +1,2 @@
+num_backbone_rows,num_joined_rows,join_coverage,num_users,num_candidates,num_positive_labels,fallback_rate,fallback_rate_positive,fallback_rate_negative,missing_evidence_rows,missing_backbone_score_rows
+600,600,1.0,100,461,100,0.15333333333333332,0.21,0.142,0,0

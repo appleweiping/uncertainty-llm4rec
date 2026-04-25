@@ -1,0 +1,9 @@
+# Day21 Second Backbone Selection Report
+
+| candidate_backbone | repo_url | local_path | has_code | supports_beauty_or_amazon | requires_pretrained_checkpoint | requires_llm_embedding | requires_special_handled_data | can_export_candidate_score | score_export_difficulty | evaluation_metrics | recommended_choice | risk_notes |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OpenP5 | https://github.com/agiresearch/OpenP5 | external/OpenP5 | yes | yes, README lists Beauty | yes for official eval | no direct embedding requirement, but generative checkpoint needed | yes, OpenP5 generated data format | possible via generation likelihood/rank adapter | high | HR/NDCG style platform metrics | no for Day21 smoke | Good platform, but candidate score export would require checkpoint and generative scoring adaptation. Commit `7f110389cd5ab51820e29e94a44b6db83df243fb`. |
+| LLM-ESR GRU4Rec | https://github.com/Applied-Machine-Learning-Lab/LLM-ESR | external/LLM-ESR | yes | yes, README lists beauty | no for base GRU4Rec | no for base GRU4Rec | official full LLM-ESR requires handled data, but GRU4Rec class can train from our split | yes, `models/GRU4Rec.py::predict` returns logits | low-medium | trainer reports HR/NDCG; our evaluator adds MRR/Recall | yes | Uses external repo's conventional sequential backbone without LLM enhancement; good for second plug-in smoke. Commit `e5dc388c12509c88c65536ecd8d231325993d4ef`. |
+| LLMEmb | https://github.com/Applied-Machine-Learning-Lab/LLMEmb | external/LLMEmb | yes | yes | yes | yes | yes | yes in principle | blocked | HR/NDCG | no | Day13 already found missing handled data, embeddings, and checkpoint. |
+
+Selected Day21 backbone: **LLM-ESR GRU4Rec**. It is selected because it is a real external sequential backbone implementation with a direct candidate-logit `predict()` method and does not require LLM embeddings or checkpoints for the base GRU4Rec smoke.
