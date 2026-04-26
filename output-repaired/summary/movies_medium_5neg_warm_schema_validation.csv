@@ -1,0 +1,4 @@
+domain,processed_path,split,num_rows,num_users,num_items,positive_rows,negative_rows,avg_candidates_per_user,min_candidates_per_user,max_candidates_per_user,has_user_id,has_history,has_candidate_item_id,has_candidate_text,has_candidate_title,has_label,schema_compatible_with_beauty,missing_fields,notes
+movies,data\processed\amazon_movies_medium_5neg_warm,train,45324,1296,40848,7554,37770,34.97222222222222,6.0,1344.0,True,True,True,True,True,True,True,,warm negative sampling from train_candidate_vocab - user_seen_items
+movies,data\processed\amazon_movies_medium_5neg_warm,valid,12000,2000,10563,2000,10000,6.0,6.0,6.0,True,True,True,True,True,True,True,,warm negative sampling from train_candidate_vocab - user_seen_items
+movies,data\processed\amazon_movies_medium_5neg_warm,test,12000,2000,10554,2000,10000,6.0,6.0,6.0,True,True,True,True,True,True,True,,warm negative sampling from train_candidate_vocab - user_seen_items
