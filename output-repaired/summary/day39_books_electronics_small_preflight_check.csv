@@ -1,0 +1,3 @@
+domain,train_rows,valid_rows,test_rows,valid_users,test_users,candidate_pool_size_mean,has_user_id,has_history,has_candidate_item_id,has_candidate_text,has_candidate_title,has_label,schema_compatible,hr10_trivial_flag,notes
+books_small,11190,3000,3000,500,500,6.0,True,True,True,True,True,True,True,True,Expected small-domain 500 users x 6 candidates; HR@10 trivial.
+electronics_small,9126,3000,3000,500,500,6.0,True,True,True,True,True,True,True,True,Expected small-domain 500 users x 6 candidates; HR@10 trivial.

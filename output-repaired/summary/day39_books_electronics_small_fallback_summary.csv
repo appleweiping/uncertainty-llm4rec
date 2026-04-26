@@ -1,0 +1,7 @@
+domain,backbone,fallback_rate,positive_fallback_rate,negative_fallback_rate,join_coverage,health_status
+books_small,sasrec,0.444,0.97,0.3388,1.0,caution
+books_small,gru4rec,0.6363333333333333,0.98,0.5676,1.0,fallback_heavy
+books_small,bert4rec,0.6363333333333333,0.98,0.5676,1.0,fallback_heavy
+electronics_small,sasrec,0.48133333333333334,0.948,0.388,1.0,caution
+electronics_small,gru4rec,0.6706666666666666,0.968,0.6112,1.0,fallback_heavy
+electronics_small,bert4rec,0.6706666666666666,0.968,0.6112,1.0,fallback_heavy

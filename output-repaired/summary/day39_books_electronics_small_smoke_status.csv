@@ -1,0 +1,5 @@
+﻿"domain","split","rows","parse_success_rate","raw_response_nonempty_rate","field_complete_rate","status","output_path"
+"books_small","valid","20","1","1","1","success","output-repaired/books_small_deepseek_relevance_evidence/predictions/smoke_valid_20_raw.jsonl"
+"books_small","test","20","1","1","1","success","output-repaired/books_small_deepseek_relevance_evidence/predictions/smoke_test_20_raw.jsonl"
+"electronics_small","valid","20","1","1","1","success","output-repaired/electronics_small_deepseek_relevance_evidence/predictions/smoke_valid_20_raw.jsonl"
+"electronics_small","test","20","1","1","1","success","output-repaired/electronics_small_deepseek_relevance_evidence/predictions/smoke_test_20_raw.jsonl"
