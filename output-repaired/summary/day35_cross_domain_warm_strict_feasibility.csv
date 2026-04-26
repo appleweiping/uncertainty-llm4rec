@@ -1,0 +1,4 @@
+domain,eligible_users_original,max_warm_strict_users,recommended_user_count,positive_cold_rate_valid,positive_cold_rate_test,negative_cold_rate_current,expected_negative_cold_rate_warm,recommended_route
+movies,2000,365,0,0.6025,0.6235,0.8417,,content_carrier_cold
+books,2000,54,0,0.8765,0.875,0.9513,,content_carrier_cold
+electronics,2000,122,0,0.7455,0.764,0.9385,,content_carrier_cold

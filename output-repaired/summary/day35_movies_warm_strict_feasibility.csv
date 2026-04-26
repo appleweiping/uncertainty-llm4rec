@@ -1,0 +1,2 @@
+domain,eligible_users_original,eligible_users_positive_warm_valid,eligible_users_positive_warm_test,eligible_users_positive_warm_both,max_warm_strict_users,recommended_user_count,valid_positive_cold_rate_after_filter,test_positive_cold_rate_after_filter,expected_negative_cold_rate,notes
+movies,2000,795,753,365,365,0,,,,too few users with both valid/test positives in train_backbone_vocab

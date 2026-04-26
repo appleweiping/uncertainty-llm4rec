@@ -1,0 +1,3 @@
+backbone_name,A_backbone_only_NDCG,B_plus_calibrated_relevance_NDCG,C_plus_evidence_risk_NDCG,D_plus_both_NDCG,A_MRR,B_MRR,C_MRR,D_MRR,main_contributor,notes
+bm25,0.6465146446941085,0.6872065693051718,0.6603249765052752,0.6890744671647554,0.5319166666666666,0.585375,0.5501833333333332,0.5878583333333333,calibrated_relevance_primary_evidence_risk_secondary,Content carrier is a cold-aware diagnostic baseline; HR@10 is trivial because candidate pool size is 6.
+tfidf_cosine,0.7074684893399596,0.7371959020707898,0.7157899169334615,0.7377605785239799,0.6130083333333333,0.651975,0.6238416666666667,0.6526833333333334,calibrated_relevance_primary_evidence_risk_secondary,Content carrier is a cold-aware diagnostic baseline; HR@10 is trivial because candidate pool size is 6.
