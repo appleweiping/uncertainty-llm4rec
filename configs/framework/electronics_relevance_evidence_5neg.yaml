@@ -1,0 +1,12 @@
+domain: electronics
+candidate_pool_setting: 5neg
+train_input_path: data_done/electronics/train.jsonl
+valid_input_path: data_done/electronics/valid.jsonl
+test_input_path: data_done/electronics/test.jsonl
+prompt_path: prompts/candidate_relevance_evidence.txt
+output_dir: output-repaired/framework/electronics_relevance_evidence_5neg
+schema: relevance_evidence
+resume: true
+large_api_cost: false
+requires_explicit_confirmation: false
+notes: Template only. Framework-Day2 does not launch API.

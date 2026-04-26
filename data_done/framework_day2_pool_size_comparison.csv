@@ -1,0 +1,9 @@
+domain,candidate_pool_setting,users,valid_rows,test_rows,candidates_per_user,negatives_per_positive,hr10_trivial_flag,estimated_api_rows_valid_test,relative_to_beauty_day9,recommended_usage,notes
+beauty,5neg,622,3732,3732,6,5,True,7464,0.6392600205549845,"low_cost_CEP_continuity, lora_training_candidate, not_for_HR10_claim",Continuity split; HR@10 is trivial.
+beauty,20neg,622,13062,13062,21,20,False,26124,2.237410071942446,"ranking_eval, HR10_valid, high_api_cost",Do not launch DeepSeek without explicit budget confirmation.
+books,5neg,10000,60000,60000,6,5,True,120000,10.277492291880781,"low_cost_CEP_continuity, lora_training_candidate, not_for_HR10_claim",Continuity split; HR@10 is trivial.
+books,20neg,10000,210000,210000,21,20,False,420000,35.97122302158273,"ranking_eval, HR10_valid, high_api_cost",Do not launch DeepSeek without explicit budget confirmation.
+electronics,5neg,10000,60000,60000,6,5,True,120000,10.277492291880781,"low_cost_CEP_continuity, lora_training_candidate, not_for_HR10_claim",Continuity split; HR@10 is trivial.
+electronics,20neg,10000,210000,210000,21,20,False,420000,35.97122302158273,"ranking_eval, HR10_valid, high_api_cost",Do not launch DeepSeek without explicit budget confirmation.
+movies,5neg,10000,60000,60000,6,5,True,120000,10.277492291880781,"low_cost_CEP_continuity, lora_training_candidate, not_for_HR10_claim",Continuity split; HR@10 is trivial.
+movies,20neg,10000,210000,210000,21,20,False,420000,35.97122302158273,"ranking_eval, HR10_valid, high_api_cost",Do not launch DeepSeek without explicit budget confirmation.

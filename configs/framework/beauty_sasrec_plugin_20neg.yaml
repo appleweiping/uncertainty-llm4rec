@@ -1,0 +1,12 @@
+domain: beauty
+candidate_pool_setting: 20neg
+train_input_path: data_done/beauty/train.jsonl
+valid_input_path: data_done/beauty/eval_20neg/valid.jsonl
+test_input_path: data_done/beauty/eval_20neg/test.jsonl
+backbone_name: sasrec
+candidate_score_output_dir: output-repaired/framework/backbone/sasrec_beauty_20neg
+negative_sampling_mode: warm_train_vocab
+large_api_cost: true
+requires_explicit_confirmation: true
+seed: 42
+notes: Template only. Framework-Day2 does not train.

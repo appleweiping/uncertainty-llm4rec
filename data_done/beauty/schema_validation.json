@@ -1,0 +1,34 @@
+{
+  "has_user_id": true,
+  "has_history": true,
+  "has_candidate_item_id": true,
+  "has_candidate_title": true,
+  "has_candidate_text": true,
+  "has_label": true,
+  "history_nonempty_rate": 1.0,
+  "candidate_text_nonempty_rate": 1.0,
+  "label_values": [
+    0,
+    1
+  ],
+  "candidate_pool_size_mean": 6,
+  "candidate_pool_size_min": 6,
+  "candidate_pool_size_max": 6,
+  "hr10_trivial_flag": true,
+  "negative_sampling_mode": {
+    "warm_train_vocab": 1244
+  },
+  "seed": 42,
+  "valid_candidate_pool_size_mean": 6.0,
+  "test_candidate_pool_size_mean": 6.0,
+  "candidate_pool_setting": "5neg",
+  "candidates_per_user_per_split": 6,
+  "recommended_primary_metrics": [
+    "NDCG@10",
+    "MRR",
+    "HR@1",
+    "HR@3",
+    "NDCG@3",
+    "NDCG@5"
+  ]
+}

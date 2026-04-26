@@ -1,0 +1,18 @@
+{
+  "candidate_pool_size_mean": 21.0,
+  "candidate_pool_size_min": 21,
+  "candidate_pool_size_max": 21,
+  "hr10_trivial_flag": false,
+  "num_users": 10000,
+  "valid_rows": 210000,
+  "test_rows": 210000,
+  "positive_rows": 20000,
+  "negative_rows": 400000,
+  "candidate_text_missing_rate": 0.0,
+  "candidate_text_fallback_rate": 0.0,
+  "history_text_missing_rate": 0.0,
+  "fallback_negative_sampling_rate": 0.0,
+  "candidate_pool_setting": "20neg",
+  "negatives_per_positive": 20,
+  "seed": 42
+}

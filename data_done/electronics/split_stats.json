@@ -1,0 +1,34 @@
+{
+  "num_train_users": 10000,
+  "num_valid_users": 10000,
+  "num_test_users": 10000,
+  "train_rows": 10000,
+  "valid_rows": 60000,
+  "test_rows": 60000,
+  "num_items": 44896,
+  "num_interactions": 74725,
+  "avg_history_len": 5.4725,
+  "median_history_len": 3.0,
+  "positive_rows_valid": 10000,
+  "negative_rows_valid": 50000,
+  "positive_rows_test": 10000,
+  "negative_rows_test": 50000,
+  "users_sampled": true,
+  "sampling_seed": 42,
+  "filter_strategy": "user_min4",
+  "negative_sampling_mode": {
+    "warm_train_vocab": 20000
+  },
+  "negatives_per_positive": 5,
+  "candidate_pool_setting": "5neg",
+  "candidates_per_user_per_split": 6,
+  "hr10_trivial_flag": true,
+  "recommended_primary_metrics": [
+    "NDCG@10",
+    "MRR",
+    "HR@1",
+    "HR@3",
+    "NDCG@3",
+    "NDCG@5"
+  ]
+}

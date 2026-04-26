@@ -1,0 +1,9 @@
+domain: books
+train_input_path: data_done/books/train.jsonl
+valid_input_path: data_done/books/valid.jsonl
+test_input_path: data_done/books/test.jsonl
+backbone_name: sasrec
+candidate_score_output_dir: output-repaired/framework/backbone/sasrec_books
+negative_sampling_mode: warm_train_vocab
+seed: 42
+notes: Template only. Do not train from Framework-Day1.

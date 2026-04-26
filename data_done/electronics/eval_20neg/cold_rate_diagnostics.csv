@@ -1,0 +1,3 @@
+split,positive_cold_rate,negative_cold_rate,all_candidate_cold_rate,train_vocab_size,candidate_pool_setting,negative_sampling_mode,fallback_negative_sampling_rate
+valid,0.5091,0.0,0.024242857142857142,34985,20neg,warm_train_vocab_first,0.0
+test,0.5598,0.0,0.02665714285714286,34985,20neg,warm_train_vocab_first,0.0

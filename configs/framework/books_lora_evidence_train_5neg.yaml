@@ -1,0 +1,10 @@
+domain: books
+candidate_pool_setting: 5neg
+source_train_sequences: data_done/books/train.jsonl
+source_valid_candidates: data_done/books/valid.jsonl
+source_test_candidates: data_done/books/test.jsonl
+output_dir: data_done/books/lora_evidence_training
+schema: relevance_evidence
+training_data_mode: derive_prefix_style_from_train_sequences
+seed: 42
+notes: Template only. LoRA data generation/training starts after Framework-Day2.

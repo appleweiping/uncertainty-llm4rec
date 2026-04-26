@@ -1,0 +1,16 @@
+{
+  "domain": "movies",
+  "candidate_pool_setting": "20neg",
+  "negatives_per_positive": 20,
+  "candidates_per_user_per_split": 21,
+  "num_users": 10000,
+  "valid_rows": 210000,
+  "test_rows": 210000,
+  "positive_rows_valid": 10000,
+  "negative_rows_valid": 200000,
+  "positive_rows_test": 10000,
+  "negative_rows_test": 200000,
+  "hr10_trivial_flag": false,
+  "seed": 42,
+  "fallback_negative_sampling_rate": 0.0
+}

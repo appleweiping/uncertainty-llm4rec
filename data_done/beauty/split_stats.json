@@ -1,0 +1,34 @@
+{
+  "num_train_users": 622,
+  "num_valid_users": 622,
+  "num_test_users": 622,
+  "train_rows": 622,
+  "valid_rows": 3732,
+  "test_rows": 3732,
+  "num_items": 1158,
+  "num_interactions": 5473,
+  "avg_history_len": 6.79903536977492,
+  "median_history_len": 4.0,
+  "positive_rows_valid": 622,
+  "negative_rows_valid": 3110,
+  "positive_rows_test": 622,
+  "negative_rows_test": 3110,
+  "users_sampled": false,
+  "sampling_seed": 42,
+  "filter_strategy": "user_min4",
+  "negative_sampling_mode": {
+    "warm_train_vocab": 1244
+  },
+  "negatives_per_positive": 5,
+  "candidate_pool_setting": "5neg",
+  "candidates_per_user_per_split": 6,
+  "hr10_trivial_flag": true,
+  "recommended_primary_metrics": [
+    "NDCG@10",
+    "MRR",
+    "HR@1",
+    "HR@3",
+    "NDCG@3",
+    "NDCG@5"
+  ]
+}

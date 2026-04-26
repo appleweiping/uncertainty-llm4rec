@@ -1,0 +1,7 @@
+split,vocab_definition,train_vocab_size,num_rows,num_positive_rows,num_negative_rows,positive_cold_rows,positive_cold_rate,negative_cold_rows,negative_cold_rate,all_candidate_cold_rows,all_candidate_cold_rate,unique_candidate_items,unique_cold_candidate_items,unique_positive_items,unique_positive_cold_items,unique_negative_items,unique_negative_cold_items
+valid,train_candidate_vocab,62972,60000,10000,50000,6905,0.6905,0,0.0,6905,0.11508333333333333,42443,6793,9318,6793,34504,0
+valid,train_history_vocab,62972,60000,10000,50000,6905,0.6905,0,0.0,6905,0.11508333333333333,42443,6793,9318,6793,34504,0
+valid,train_backbone_vocab,62972,60000,10000,50000,6905,0.6905,0,0.0,6905,0.11508333333333333,42443,6793,9318,6793,34504,0
+test,train_candidate_vocab,62972,60000,10000,50000,7073,0.7073,0,0.0,7073,0.11788333333333334,42420,6893,9224,6893,34444,0
+test,train_history_vocab,62972,60000,10000,50000,7073,0.7073,0,0.0,7073,0.11788333333333334,42420,6893,9224,6893,34444,0
+test,train_backbone_vocab,62972,60000,10000,50000,7073,0.7073,0,0.0,7073,0.11788333333333334,42420,6893,9224,6893,34444,0

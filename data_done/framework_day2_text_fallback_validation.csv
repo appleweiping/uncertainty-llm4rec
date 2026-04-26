@@ -1,0 +1,17 @@
+domain,candidate_pool_setting,split,candidate_text_missing_rate,candidate_text_fallback_rate,history_text_missing_rate,history_text_fallback_rate,text_coverage_status,notes
+beauty,5neg,valid,0.0,0.0,0.0,0.0,ok,metadata text available
+beauty,5neg,test,0.0,0.0,0.0,0.0,ok,metadata text available
+beauty,20neg,valid,0.0,0.0,0.0,0.0,ok,metadata text available
+beauty,20neg,test,0.0,0.0,0.0,0.0,ok,metadata text available
+books,5neg,valid,0.0,0.0,0.0,0.0,ok,metadata text available
+books,5neg,test,0.0,0.0,0.0,0.0,ok,metadata text available
+books,20neg,valid,0.0,0.0,0.0,0.0,ok,metadata text available
+books,20neg,test,0.0,0.0,0.0,0.0,ok,metadata text available
+electronics,5neg,valid,1.6666666666666667e-05,1.6666666666666667e-05,1.827318410232983e-05,1.827318410232983e-05,fallback_present,deterministic missing-metadata fallback is present; do not treat fallback text as semantic description
+electronics,5neg,test,3.3333333333333335e-05,3.3333333333333335e-05,1.827318410232983e-05,1.827318410232983e-05,fallback_present,deterministic missing-metadata fallback is present; do not treat fallback text as semantic description
+electronics,20neg,valid,3.809523809523809e-05,3.809523809523809e-05,1.827318410232983e-05,1.827318410232983e-05,fallback_present,deterministic missing-metadata fallback is present; do not treat fallback text as semantic description
+electronics,20neg,test,1.4285714285714285e-05,1.4285714285714285e-05,1.827318410232983e-05,1.827318410232983e-05,fallback_present,deterministic missing-metadata fallback is present; do not treat fallback text as semantic description
+movies,5neg,valid,0.41146666666666665,0.41146666666666665,0.4525950936743658,0.4525950936743658,fallback_present,deterministic missing-metadata fallback is present; do not treat fallback text as semantic description
+movies,5neg,test,0.4104333333333333,0.4104333333333333,0.4525950936743658,0.4525950936743658,fallback_present,deterministic missing-metadata fallback is present; do not treat fallback text as semantic description
+movies,20neg,valid,0.39025714285714286,0.39025714285714286,0.4525950936743658,0.4525950936743658,fallback_present,deterministic missing-metadata fallback is present; do not treat fallback text as semantic description
+movies,20neg,test,0.3905142857142857,0.3905142857142857,0.4525950936743658,0.4525950936743658,fallback_present,deterministic missing-metadata fallback is present; do not treat fallback text as semantic description

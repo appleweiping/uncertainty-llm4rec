@@ -1,0 +1,16 @@
+{
+  "domain": "beauty",
+  "candidate_pool_setting": "20neg",
+  "negatives_per_positive": 20,
+  "candidates_per_user_per_split": 21,
+  "num_users": 622,
+  "valid_rows": 13062,
+  "test_rows": 13062,
+  "positive_rows_valid": 622,
+  "negative_rows_valid": 12440,
+  "positive_rows_test": 622,
+  "negative_rows_test": 12440,
+  "hr10_trivial_flag": false,
+  "seed": 42,
+  "fallback_negative_sampling_rate": 0.0
+}

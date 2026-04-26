@@ -1,0 +1,9 @@
+domain: electronics
+train_input_path: data_done/electronics/train.jsonl
+valid_input_path: data_done/electronics/valid.jsonl
+test_input_path: data_done/electronics/test.jsonl
+backbone_name: sasrec
+candidate_score_output_dir: output-repaired/framework/backbone/sasrec_electronics
+negative_sampling_mode: warm_train_vocab
+seed: 42
+notes: Template only. Do not train from Framework-Day1.
