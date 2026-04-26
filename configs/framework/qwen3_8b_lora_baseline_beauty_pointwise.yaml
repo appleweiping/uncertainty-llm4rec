@@ -1,9 +1,10 @@
-model_name_or_path: TODO:/home/ajifang/models/Qwen/Qwen3-8B
-tokenizer_name_or_path: TODO:/home/ajifang/models/Qwen/Qwen3-8B
+model_name_or_path: TODO_MODEL_PATH
+tokenizer_name_or_path: TODO_MODEL_PATH
 max_seq_len: 4096
 lora_rank: 16
 lora_alpha: 32
 lora_dropout: 0.05
+target_modules: q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj
 learning_rate: 2e-4
 num_epochs: 3
 batch_size: 1
@@ -13,7 +14,10 @@ seed: 42
 train_file: data_done_lora/beauty/train_pointwise.jsonl
 valid_file: data_done_lora/beauty/valid_pointwise.jsonl
 output_dir: outputs/framework/qwen3_8b_lora_baseline_beauty_pointwise
-task_type: qwen_recommendation_baseline_pointwise
+task_type: candidate_relevance_pointwise
 prompt_template: prompts/framework/qwen_candidate_relevance_baseline.txt
 evaluation_mode: binary_relevance
-notes: Scaffold only. Framework-Day3 does not start training. Verify server model path before use.
+dry_run: true
+max_train_samples: 5
+max_eval_samples: 5
+notes: Scaffold only. Framework-Day4 dry-run does not start full training. Replace TODO_MODEL_PATH on the training server before use.
