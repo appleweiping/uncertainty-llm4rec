@@ -1,0 +1,9 @@
+score_type,split,ECE,Brier,AUROC,high_conf_error_rate,accuracy,status,fallback_reason,source_file
+raw_relevance_probability,valid,0.2941075,0.2189333416666666,0.6376441,0.087248322147651,0.44375,ready,,output-repaired\summary\day29_movies_medium5_2000_calibration_comparison.csv
+calibrated_relevance_probability,valid,2.1419208999044296e-17,0.1265672548009276,0.643234025,0.087248322147651,0.8463333333333334,ready,,output-repaired\summary\day29_movies_medium5_2000_calibration_comparison.csv
+raw_relevance_probability,test,0.2912566666666667,0.2202084333333333,0.6270546,0.1386138613861386,0.4425,ready,,output-repaired\summary\day29_movies_medium5_2000_calibration_comparison.csv
+calibrated_relevance_probability,test,0.0044445782973348,0.1296739445401988,0.6333534,0.1386138613861386,0.8416666666666667,ready,,output-repaired\summary\day29_movies_medium5_2000_calibration_comparison.csv
+evidence_posterior_relevance_minimal,valid,1.1807684459815465e-17,0.1253986173779827,0.67067585,0.087248322147651,0.8459166666666667,ready,,output-repaired\summary\day29_movies_medium5_2000_calibration_comparison.csv
+evidence_posterior_relevance_minimal,test,0.005297692088101,0.1286170235777658,0.659806475,0.1386138613861386,0.8415833333333333,ready,,output-repaired\summary\day29_movies_medium5_2000_calibration_comparison.csv
+evidence_posterior_relevance_full,valid,2.069756403303795e-17,0.1253707247044044,0.664414275,0.0785714285714285,0.846,ready,,output-repaired\summary\day29_movies_medium5_2000_calibration_comparison.csv
+evidence_posterior_relevance_full,test,0.0063157974631847,0.1283612517249599,0.65746245,0.1276595744680851,0.8408333333333333,ready,,output-repaired\summary\day29_movies_medium5_2000_calibration_comparison.csv

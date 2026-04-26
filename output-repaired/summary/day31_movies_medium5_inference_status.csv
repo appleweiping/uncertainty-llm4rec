@@ -1,0 +1,3 @@
+split,prediction_path,expected_rows,actual_rows,complete,parse_success_rate,raw_response_nonempty_rate,missing_required_field_rows,status
+valid,output-repaired\movies_deepseek_relevance_evidence_medium_5neg_2000\predictions\valid_raw.jsonl,12000,12000,True,1.0,1.0,0,complete
+test,output-repaired\movies_deepseek_relevance_evidence_medium_5neg_2000\predictions\test_raw.jsonl,12000,12000,True,1.0,1.0,0,complete
