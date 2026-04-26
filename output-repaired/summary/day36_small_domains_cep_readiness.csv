@@ -1,0 +1,4 @@
+domain,has_raw_confidence_outputs,has_relevance_evidence_outputs,valid_rows,test_rows,total_rows_if_run_deepseek,recommended_action,reason
+books,True,False,3000,3000,6000,id_backbone_plugin_ready,small split has comparatively warm candidates and can support ID-backbone sanity after evidence is generated
+electronics,True,False,3000,3000,6000,id_backbone_plugin_ready,small split has comparatively warm candidates and can support ID-backbone sanity after evidence is generated
+movies,True,False,3000,3000,6000,id_backbone_plugin_ready,small split has comparatively warm candidates and can support ID-backbone sanity after evidence is generated

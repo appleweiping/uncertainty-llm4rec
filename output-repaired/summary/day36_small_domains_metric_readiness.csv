@@ -1,0 +1,4 @@
+domain,candidate_pool_size_mean,hr10_trivial_flag,recommended_primary_metrics
+books,6,True,NDCG@10;MRR;HR@1;HR@3;NDCG@3;NDCG@5
+electronics,6,True,NDCG@10;MRR;HR@1;HR@3;NDCG@3;NDCG@5
+movies,6,True,NDCG@10;MRR;HR@1;HR@3;NDCG@3;NDCG@5
