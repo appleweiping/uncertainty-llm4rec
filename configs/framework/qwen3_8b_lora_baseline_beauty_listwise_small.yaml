@@ -1,0 +1,27 @@
+model_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+train_file: data_done_lora/beauty/train_listwise.jsonl
+valid_file: data_done_lora/beauty/valid_listwise.jsonl
+test_file: data_done_lora/beauty/test_listwise.jsonl
+output_dir: artifacts/lora/qwen3_8b_beauty_listwise_day6_small
+task_type: candidate_ranking_listwise
+prompt_template: prompts/framework/qwen_candidate_ranking_baseline.txt
+evaluation_mode: closed_candidate_ranking
+max_seq_len: 2048
+max_train_samples: 512
+max_eval_samples: 128
+max_steps: 100
+batch_size: 1
+gradient_accumulation_steps: 4
+learning_rate: 2e-4
+lora_rank: 8
+lora_alpha: 16
+lora_dropout: 0.05
+target_modules: q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj
+bf16: true
+gradient_checkpointing: true
+seed: 42
+save_strategy: final
+logging_steps: 5
+eval_steps: 50
+notes: Framework-Day6 Beauty listwise small train. No confidence/evidence/CEP fusion and no formal long training.

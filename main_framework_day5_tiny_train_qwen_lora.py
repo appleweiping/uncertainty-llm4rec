@@ -65,13 +65,18 @@ def _write_json(path: Path, data: dict[str, Any]) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def _write_report(metrics: dict[str, Any]) -> None:
+def _write_report(
+    metrics: dict[str, Any],
+    report_path: Path = REPORT_PATH,
+    title: str = "Framework-Day5 Beauty Listwise Qwen-LoRA Tiny Train Report",
+    scope: str = "This is a tiny LoRA training smoke for the Beauty listwise baseline only. It does not implement confidence, evidence, CEP fusion, API calls, or formal long training.",
+) -> None:
     losses = metrics.get("losses", [])
-    report = f"""# Framework-Day5 Beauty Listwise Qwen-LoRA Tiny Train Report
+    report = f"""# {title}
 
 ## Scope
 
-This is a tiny LoRA training smoke for the Beauty listwise baseline only. It does not implement confidence, evidence, CEP fusion, API calls, or formal long training.
+{scope}
 
 ## Status
 
@@ -106,8 +111,8 @@ This is a tiny LoRA training smoke for the Beauty listwise baseline only. It doe
 
 Passing this tiny train means the Qwen3-8B LoRA baseline infrastructure can perform optimizer steps on server data. It is not a performance result and should not be used as CEP/framework evidence.
 """
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text(report, encoding="utf-8")
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(report, encoding="utf-8")
 
 
 def _collate(batch: list[dict[str, Any]], tokenizer: Any):
@@ -128,7 +133,13 @@ def _collate(batch: list[dict[str, Any]], tokenizer: Any):
     }
 
 
-def run_tiny_train(config_path: str | Path) -> dict[str, Any]:
+def run_tiny_train(
+    config_path: str | Path,
+    metrics_path: Path = METRICS_PATH,
+    report_path: Path = REPORT_PATH,
+    report_title: str = "Framework-Day5 Beauty Listwise Qwen-LoRA Tiny Train Report",
+    report_scope: str = "This is a tiny LoRA training smoke for the Beauty listwise baseline only. It does not implement confidence, evidence, CEP fusion, API calls, or formal long training.",
+) -> dict[str, Any]:
     cfg = _read_config(config_path)
     blockers = _check_blockers(cfg)
     metrics: dict[str, Any] = {
@@ -154,8 +165,8 @@ def run_tiny_train(config_path: str | Path) -> dict[str, Any]:
         "peak_gpu_memory_gb": None,
     }
     if blockers:
-        _write_json(METRICS_PATH, metrics)
-        _write_report(metrics)
+        _write_json(metrics_path, metrics)
+        _write_report(metrics, report_path=report_path, title=report_title, scope=report_scope)
         return metrics
 
     import torch  # type: ignore
@@ -286,8 +297,8 @@ def run_tiny_train(config_path: str | Path) -> dict[str, Any]:
             "save_strategy": save_strategy,
         }
     )
-    _write_json(METRICS_PATH, metrics)
-    _write_report(metrics)
+    _write_json(metrics_path, metrics)
+    _write_report(metrics, report_path=report_path, title=report_title, scope=report_scope)
     return metrics
 
 
