@@ -1,0 +1,251 @@
+{
+  "listwise": {
+    "sample_id": "beauty_valid_AE23ZBUF2YVBQPH2NN6F5XSA3QYQ_listwise",
+    "domain": "beauty",
+    "task": "candidate_ranking",
+    "instruction": "You are a recommendation model. Rank only the candidate items provided in the candidate pool. Do not invent item IDs outside the candidate pool. Return JSON with ranked_item_ids.",
+    "input": {
+      "user_history": [
+        {
+          "item_id": "B08BF4BKKM",
+          "title": "Facial Kit For Women - Includes Facial Mask, Facial Makeup Wipes, Nose Strips, Facial Cleansers, Facial- Self Care Package For Women (Multivitamin Facial Kit)",
+          "text": "Title: Facial Kit For Women - Includes Facial Mask, Facial Makeup Wipes, Nose Strips, Facial Cleansers, Facial- Self Care Package For Women (Multivitamin Facial Kit)",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B0841WQNNZ",
+          "title": "2 Pack Hair Towel Wrap Turban Microfiber Drying Shower and Bath, Twist Head Towels with Button, Magic Quick Dryer, Hair Care for Women and Girls, One Wrap Plus One Cap and Two Velvet Hair Bands",
+          "text": "Title: 2 Pack Hair Towel Wrap Turban Microfiber Drying Shower and Bath, Twist Head Towels with Button, Magic Quick Dryer, Hair Care for Women and Girls, One Wrap Plus One Cap and Two Velvet Hair Bands",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08G5YVHQP",
+          "title": "Panama Jack Sunscreen Lip Balm - SPF 45, Tropical & Mango 6 Pack Plus, Broad Spectrum UVA-UVB Sunscreen Protection, Prevents & Soothes Dry, Chapped Lips",
+          "text": "Title: Panama Jack Sunscreen Lip Balm - SPF 45, Tropical & Mango 6 Pack Plus, Broad Spectrum UVA-UVB Sunscreen Protection, Prevents & Soothes Dry, Chapped Lips",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08GS19PM7",
+          "title": "Oukzon 40 Pcs Art and Crafts Supplies Kit for Kids, Dinosaur Toys Painting Set with Foldable Storage Carpet, Party Favors and Creativity DIY Painting Gift Easter for 4 5 6 7 8 Year Old Boys and Girls",
+          "text": "Title: Oukzon 40 Pcs Art and Crafts Supplies Kit for Kids, Dinosaur Toys Painting Set with Foldable Storage Carpet, Party Favors and Creativity DIY Painting Gift Easter for 4 5 6 7 8 Year Old Boys and Girls",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08LPC1G23",
+          "title": "MKBOO Hair Curler,3 in 1 Curling Iron Wand Set Automatic Hair Curling Iron Wand 3 Barrels,Hair Curlers Rollers Hair Styling Kit with Different Wands Quick Heat Interchangeable Ceramic",
+          "text": "Title: MKBOO Hair Curler,3 in 1 Curling Iron Wand Set Automatic Hair Curling Iron Wand 3 Barrels,Hair Curlers Rollers Hair Styling Kit with Different Wands Quick Heat Interchangeable Ceramic",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08NTD1NM1",
+          "title": "Magnetic Eyelashes with Eyeliner, Invisible Magnetic Mink Magnetic Lashes Kits with 2 Liquid Eyeliner 6 Reusable Waterproof False Eyelashes, Eyelash Tweezers, Best Magnetic Eyeliner for Daily, Party",
+          "text": "Title: Magnetic Eyelashes with Eyeliner, Invisible Magnetic Mink Magnetic Lashes Kits with 2 Liquid Eyeliner 6 Reusable Waterproof False Eyelashes, Eyelash Tweezers, Best Magnetic Eyeliner for Daily, Party",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08CVTNQP1",
+          "title": "Disney Frozen - Townley Girl Mega Nail Set with Nail Dryer Foldable Gift Set for Parties, Sleepovers and Makeovers",
+          "text": "Title: Disney Frozen - Townley Girl Mega Nail Set with Nail Dryer Foldable Gift Set for Parties, Sleepovers and Makeovers",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08MQWJZSG",
+          "title": "Nu-Pore Facial Sheet Mask Packaged Holiday Shippable Gift Set Aloe Vera Pomegranate Hibiscus Green Tea Lavender Cucumber 12 K-Beauty Sheets Perfect for Home Spa Treatment gifts Made in South Korea",
+          "text": "Title: Nu-Pore Facial Sheet Mask Packaged Holiday Shippable Gift Set Aloe Vera Pomegranate Hibiscus Green Tea Lavender Cucumber 12 K-Beauty Sheets Perfect for Home Spa Treatment gifts Made in South Korea",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08S3B8Y5G",
+          "title": "Scrunchie Holder Stands with 8 Pack Large Size Scrunchies - Acrylic Hair Ties Organizer for Teenage Girls and VSCO Girls Gift Stuff",
+          "text": "Title: Scrunchie Holder Stands with 8 Pack Large Size Scrunchies - Acrylic Hair Ties Organizer for Teenage Girls and VSCO Girls Gift Stuff",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        }
+      ],
+      "candidate_pool": [
+        {
+          "candidate_item_id": "B0998BD871",
+          "title": "O.M.CHIC Mannequin Head with shoulders for wig, Display wigs Eyeglasses Necklaces and Earrings",
+          "text": "Title: O.M.CHIC Mannequin Head with shoulders for wig, Display wigs Eyeglasses Necklaces and Earrings",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B08GYJY8F2",
+          "title": "Karuna 7 Days of Glow - Face & Eye Mask Variety Pack (7 Sheets), Hydrate, Brighten and Glow",
+          "text": "Title: Karuna 7 Days of Glow - Face & Eye Mask Variety Pack (7 Sheets), Hydrate, Brighten and Glow",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B01CVQALFE",
+          "title": "Beard Oil - Tea Tree Scent - Huge Man-Sized 4 oz Bottle - 100% Natural - Softens Your Beard and Stops Itching - Scent Women Love - Best Beard Oil And Conditioner For Men",
+          "text": "Title: Beard Oil - Tea Tree Scent - Huge Man-Sized 4 oz Bottle - 100% Natural - Softens Your Beard and Stops Itching - Scent Women Love - Best Beard Oil And Conditioner For Men",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B08BRS98SF",
+          "title": "Wonder4 Electric Callus Remover - Rechargeable Electric Foot File Callus Shaver Hard Skin Remover Pedicure Tools with 3 in 1 Roller Heads, for Cracked Heels Calluses and Dead Skin",
+          "text": "Title: Wonder4 Electric Callus Remover - Rechargeable Electric Foot File Callus Shaver Hard Skin Remover Pedicure Tools with 3 in 1 Roller Heads, for Cracked Heels Calluses and Dead Skin",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B07WTZP6WD",
+          "title": "STYLEAGAL False Eyelashes - 4 Pairs Multipack Natural 3D False Eyelashes Natural Thick Hand-Made Faux Mink Eyelashes Extension(G106)",
+          "text": "Title: STYLEAGAL False Eyelashes - 4 Pairs Multipack Natural 3D False Eyelashes Natural Thick Hand-Made Faux Mink Eyelashes Extension(G106)",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B08DG5CDXR",
+          "title": "Rhinestone Crystal Padded Headband Bejewelled Velvet Wide Hairband Hair Hoops Wedding Bridal Party Headpiece Headwear For Woman Girls (rose)",
+          "text": "Title: Rhinestone Crystal Padded Headband Bejewelled Velvet Wide Hairband Hair Hoops Wedding Bridal Party Headpiece Headwear For Woman Girls (rose)",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        }
+      ]
+    },
+    "output": {
+      "ranked_item_ids": [
+        "B0998BD871",
+        "B08GYJY8F2",
+        "B01CVQALFE",
+        "B08BRS98SF",
+        "B07WTZP6WD",
+        "B08DG5CDXR"
+      ],
+      "target_item_id": "B0998BD871"
+    },
+    "metadata": {
+      "candidate_pool_setting": "5neg",
+      "text_missing_rate": 0.0,
+      "source_split": "valid",
+      "closed_catalog": true
+    }
+  },
+  "pointwise": {
+    "sample_id": "beauty_valid_0_pointwise",
+    "domain": "beauty",
+    "task": "candidate_relevance",
+    "instruction": "You are a recommendation model. Decide whether the candidate item matches the user's history. Return JSON with relevance_label. This label is not a calibrated probability.",
+    "input": {
+      "user_history": [
+        {
+          "item_id": "B08BF4BKKM",
+          "title": "Facial Kit For Women - Includes Facial Mask, Facial Makeup Wipes, Nose Strips, Facial Cleansers, Facial- Self Care Package For Women (Multivitamin Facial Kit)",
+          "text": "Title: Facial Kit For Women - Includes Facial Mask, Facial Makeup Wipes, Nose Strips, Facial Cleansers, Facial- Self Care Package For Women (Multivitamin Facial Kit)",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B0841WQNNZ",
+          "title": "2 Pack Hair Towel Wrap Turban Microfiber Drying Shower and Bath, Twist Head Towels with Button, Magic Quick Dryer, Hair Care for Women and Girls, One Wrap Plus One Cap and Two Velvet Hair Bands",
+          "text": "Title: 2 Pack Hair Towel Wrap Turban Microfiber Drying Shower and Bath, Twist Head Towels with Button, Magic Quick Dryer, Hair Care for Women and Girls, One Wrap Plus One Cap and Two Velvet Hair Bands",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08G5YVHQP",
+          "title": "Panama Jack Sunscreen Lip Balm - SPF 45, Tropical & Mango 6 Pack Plus, Broad Spectrum UVA-UVB Sunscreen Protection, Prevents & Soothes Dry, Chapped Lips",
+          "text": "Title: Panama Jack Sunscreen Lip Balm - SPF 45, Tropical & Mango 6 Pack Plus, Broad Spectrum UVA-UVB Sunscreen Protection, Prevents & Soothes Dry, Chapped Lips",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08GS19PM7",
+          "title": "Oukzon 40 Pcs Art and Crafts Supplies Kit for Kids, Dinosaur Toys Painting Set with Foldable Storage Carpet, Party Favors and Creativity DIY Painting Gift Easter for 4 5 6 7 8 Year Old Boys and Girls",
+          "text": "Title: Oukzon 40 Pcs Art and Crafts Supplies Kit for Kids, Dinosaur Toys Painting Set with Foldable Storage Carpet, Party Favors and Creativity DIY Painting Gift Easter for 4 5 6 7 8 Year Old Boys and Girls",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08LPC1G23",
+          "title": "MKBOO Hair Curler,3 in 1 Curling Iron Wand Set Automatic Hair Curling Iron Wand 3 Barrels,Hair Curlers Rollers Hair Styling Kit with Different Wands Quick Heat Interchangeable Ceramic",
+          "text": "Title: MKBOO Hair Curler,3 in 1 Curling Iron Wand Set Automatic Hair Curling Iron Wand 3 Barrels,Hair Curlers Rollers Hair Styling Kit with Different Wands Quick Heat Interchangeable Ceramic",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08NTD1NM1",
+          "title": "Magnetic Eyelashes with Eyeliner, Invisible Magnetic Mink Magnetic Lashes Kits with 2 Liquid Eyeliner 6 Reusable Waterproof False Eyelashes, Eyelash Tweezers, Best Magnetic Eyeliner for Daily, Party",
+          "text": "Title: Magnetic Eyelashes with Eyeliner, Invisible Magnetic Mink Magnetic Lashes Kits with 2 Liquid Eyeliner 6 Reusable Waterproof False Eyelashes, Eyelash Tweezers, Best Magnetic Eyeliner for Daily, Party",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08CVTNQP1",
+          "title": "Disney Frozen - Townley Girl Mega Nail Set with Nail Dryer Foldable Gift Set for Parties, Sleepovers and Makeovers",
+          "text": "Title: Disney Frozen - Townley Girl Mega Nail Set with Nail Dryer Foldable Gift Set for Parties, Sleepovers and Makeovers",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08MQWJZSG",
+          "title": "Nu-Pore Facial Sheet Mask Packaged Holiday Shippable Gift Set Aloe Vera Pomegranate Hibiscus Green Tea Lavender Cucumber 12 K-Beauty Sheets Perfect for Home Spa Treatment gifts Made in South Korea",
+          "text": "Title: Nu-Pore Facial Sheet Mask Packaged Holiday Shippable Gift Set Aloe Vera Pomegranate Hibiscus Green Tea Lavender Cucumber 12 K-Beauty Sheets Perfect for Home Spa Treatment gifts Made in South Korea",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B08S3B8Y5G",
+          "title": "Scrunchie Holder Stands with 8 Pack Large Size Scrunchies - Acrylic Hair Ties Organizer for Teenage Girls and VSCO Girls Gift Stuff",
+          "text": "Title: Scrunchie Holder Stands with 8 Pack Large Size Scrunchies - Acrylic Hair Ties Organizer for Teenage Girls and VSCO Girls Gift Stuff",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        }
+      ],
+      "candidate_item": {
+        "candidate_item_id": "B0998BD871",
+        "title": "O.M.CHIC Mannequin Head with shoulders for wig, Display wigs Eyeglasses Necklaces and Earrings",
+        "text": "Title: O.M.CHIC Mannequin Head with shoulders for wig, Display wigs Eyeglasses Necklaces and Earrings",
+        "candidate_text_missing": false,
+        "candidate_text_fallback_used": false,
+        "candidate_text_source": "metadata"
+      }
+    },
+    "output": {
+      "relevance_label": 1
+    },
+    "metadata": {
+      "candidate_pool_setting": "5neg",
+      "text_missing": false,
+      "text_fallback_used": false,
+      "source_split": "valid",
+      "not_calibrated_probability": true
+    }
+  }
+}

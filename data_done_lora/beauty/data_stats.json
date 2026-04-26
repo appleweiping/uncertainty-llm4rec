@@ -1,0 +1,21 @@
+{
+  "domain": "beauty",
+  "seed": 42,
+  "mode": "full",
+  "selected_users": 622,
+  "train_listwise_rows": 622,
+  "train_pointwise_rows": 3732,
+  "train_users": 622,
+  "train_positive_rows": 622,
+  "train_negative_rows": 3110,
+  "valid_listwise_rows": 622,
+  "valid_pointwise_rows": 3732,
+  "valid_users": 622,
+  "valid_positive_rows": 622,
+  "valid_negative_rows": 3110,
+  "test_listwise_rows": 622,
+  "test_pointwise_rows": 3732,
+  "test_users": 622,
+  "test_positive_rows": 622,
+  "test_negative_rows": 3110
+}

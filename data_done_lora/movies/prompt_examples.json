@@ -1,0 +1,171 @@
+{
+  "listwise": {
+    "sample_id": "movies_valid_AE25DKGT3NHOCVFTEBPN2CL5KBNQ_listwise",
+    "domain": "movies",
+    "task": "candidate_ranking",
+    "instruction": "You are a recommendation model. Rank only the candidate items provided in the candidate pool. Do not invent item IDs outside the candidate pool. Return JSON with ranked_item_ids.",
+    "input": {
+      "user_history": [
+        {
+          "item_id": "B00H7NEXYC",
+          "title": "Unknown item B00H7NEXYC",
+          "text": "Item ID: B00H7NEXYC",
+          "text_missing": true,
+          "text_fallback_used": true,
+          "text_source": "missing_metadata_fallback"
+        },
+        {
+          "item_id": "B00J7JY812",
+          "title": "Unknown item B00J7JY812",
+          "text": "Item ID: B00J7JY812",
+          "text_missing": true,
+          "text_fallback_used": true,
+          "text_source": "missing_metadata_fallback"
+        },
+        {
+          "item_id": "B0090QR706",
+          "title": "Payback",
+          "text": "Title: Payback Categories: Suspense > Drama > Exciting > Malicious Description: Mel Gibson portrays Porter, a career criminal bent on revenge after his partners in a street heist pump metal into him and take off with his $70,000 cut. Bad move, thugs. Because if you plan to double-cross Porter, you'd better make sure he's dead. Porter\"",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B006GLLXXK",
+          "title": "Unknown item B006GLLXXK",
+          "text": "Item ID: B006GLLXXK",
+          "text_missing": true,
+          "text_fallback_used": true,
+          "text_source": "missing_metadata_fallback"
+        }
+      ],
+      "candidate_pool": [
+        {
+          "candidate_item_id": "B00OSQA1Y2",
+          "title": "Unknown item B00OSQA1Y2",
+          "text": "Item ID: B00OSQA1Y2",
+          "candidate_text_missing": true,
+          "candidate_text_fallback_used": true,
+          "candidate_text_source": "missing_metadata_fallback"
+        },
+        {
+          "candidate_item_id": "B089DMHT8B",
+          "title": "Unknown item B089DMHT8B",
+          "text": "Item ID: B089DMHT8B",
+          "candidate_text_missing": true,
+          "candidate_text_fallback_used": true,
+          "candidate_text_source": "missing_metadata_fallback"
+        },
+        {
+          "candidate_item_id": "B002NQ08II",
+          "title": "Billy Elliot",
+          "text": "Title: Billy Elliot Categories: Comedy > Drama > Charming > Feel-good Description: The life of a miner's son in Northern England is forever changed one day when he stumbles upon a ballet class on his way to boxing lessons.",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B01MRUKM5L",
+          "title": "Unknown item B01MRUKM5L",
+          "text": "Item ID: B01MRUKM5L",
+          "candidate_text_missing": true,
+          "candidate_text_fallback_used": true,
+          "candidate_text_source": "missing_metadata_fallback"
+        },
+        {
+          "candidate_item_id": "B00CCLPKIM",
+          "title": "Unknown item B00CCLPKIM",
+          "text": "Item ID: B00CCLPKIM",
+          "candidate_text_missing": true,
+          "candidate_text_fallback_used": true,
+          "candidate_text_source": "missing_metadata_fallback"
+        },
+        {
+          "candidate_item_id": "B00VWPQNJ4",
+          "title": "Unknown item B00VWPQNJ4",
+          "text": "Item ID: B00VWPQNJ4",
+          "candidate_text_missing": true,
+          "candidate_text_fallback_used": true,
+          "candidate_text_source": "missing_metadata_fallback"
+        }
+      ]
+    },
+    "output": {
+      "ranked_item_ids": [
+        "B00OSQA1Y2",
+        "B089DMHT8B",
+        "B002NQ08II",
+        "B01MRUKM5L",
+        "B00CCLPKIM",
+        "B00VWPQNJ4"
+      ],
+      "target_item_id": "B00OSQA1Y2"
+    },
+    "metadata": {
+      "candidate_pool_setting": "5neg",
+      "text_missing_rate": 0.8333333333333334,
+      "source_split": "valid",
+      "closed_catalog": true
+    }
+  },
+  "pointwise": {
+    "sample_id": "movies_valid_0_pointwise",
+    "domain": "movies",
+    "task": "candidate_relevance",
+    "instruction": "You are a recommendation model. Decide whether the candidate item matches the user's history. Return JSON with relevance_label. This label is not a calibrated probability.",
+    "input": {
+      "user_history": [
+        {
+          "item_id": "B00H7NEXYC",
+          "title": "Unknown item B00H7NEXYC",
+          "text": "Item ID: B00H7NEXYC",
+          "text_missing": true,
+          "text_fallback_used": true,
+          "text_source": "missing_metadata_fallback"
+        },
+        {
+          "item_id": "B00J7JY812",
+          "title": "Unknown item B00J7JY812",
+          "text": "Item ID: B00J7JY812",
+          "text_missing": true,
+          "text_fallback_used": true,
+          "text_source": "missing_metadata_fallback"
+        },
+        {
+          "item_id": "B0090QR706",
+          "title": "Payback",
+          "text": "Title: Payback Categories: Suspense > Drama > Exciting > Malicious Description: Mel Gibson portrays Porter, a career criminal bent on revenge after his partners in a street heist pump metal into him and take off with his $70,000 cut. Bad move, thugs. Because if you plan to double-cross Porter, you'd better make sure he's dead. Porter\"",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B006GLLXXK",
+          "title": "Unknown item B006GLLXXK",
+          "text": "Item ID: B006GLLXXK",
+          "text_missing": true,
+          "text_fallback_used": true,
+          "text_source": "missing_metadata_fallback"
+        }
+      ],
+      "candidate_item": {
+        "candidate_item_id": "B00OSQA1Y2",
+        "title": "Unknown item B00OSQA1Y2",
+        "text": "Item ID: B00OSQA1Y2",
+        "candidate_text_missing": true,
+        "candidate_text_fallback_used": true,
+        "candidate_text_source": "missing_metadata_fallback"
+      }
+    },
+    "output": {
+      "relevance_label": 1
+    },
+    "metadata": {
+      "candidate_pool_setting": "5neg",
+      "text_missing": true,
+      "text_fallback_used": true,
+      "source_split": "valid",
+      "not_calibrated_probability": true
+    }
+  }
+}

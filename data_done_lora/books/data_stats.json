@@ -1,0 +1,21 @@
+{
+  "domain": "books",
+  "seed": 42,
+  "mode": "sample_1000",
+  "selected_users": 1000,
+  "train_listwise_rows": 1000,
+  "train_pointwise_rows": 6000,
+  "train_users": 1000,
+  "train_positive_rows": 1000,
+  "train_negative_rows": 5000,
+  "valid_listwise_rows": 1000,
+  "valid_pointwise_rows": 6000,
+  "valid_users": 1000,
+  "valid_positive_rows": 1000,
+  "valid_negative_rows": 5000,
+  "test_listwise_rows": 1000,
+  "test_pointwise_rows": 6000,
+  "test_users": 1000,
+  "test_positive_rows": 1000,
+  "test_negative_rows": 5000
+}

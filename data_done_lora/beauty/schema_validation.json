@@ -1,0 +1,13 @@
+{
+  "has_sample_id": true,
+  "has_instruction": true,
+  "has_input": true,
+  "has_output": true,
+  "listwise_closed_catalog": true,
+  "pointwise_label_values": [
+    0,
+    1
+  ],
+  "calibrated_probability_used_as_label": false,
+  "notes": "LoRA baseline learns raw relevance/ranking labels. CEP calibration remains a framework-stage post-processing mechanism."
+}

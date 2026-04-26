@@ -1,0 +1,6 @@
+{
+  "domain": "movies",
+  "full_generation_not_written": true,
+  "reason": "Framework-Day3 writes sample_1000 only for large domains; full files can be generated later with explicit confirmation.",
+  "source": "data_done/movies"
+}

@@ -1,0 +1,12 @@
+Future CEP/evidence generator schema. Not used for Framework-Day3 baseline training.
+
+{
+  "relevance_probability": 0.0,
+  "positive_evidence": [],
+  "negative_evidence": [],
+  "ambiguity": 0.0,
+  "missing_information": 0.0,
+  "evidence_risk": 0.0
+}
+
+Important: calibrated_relevance_probability is produced later by valid-set calibration. It is not a raw LoRA training label.

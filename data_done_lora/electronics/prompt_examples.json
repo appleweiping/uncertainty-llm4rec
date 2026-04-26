@@ -1,0 +1,155 @@
+{
+  "listwise": {
+    "sample_id": "electronics_valid_AE24Q4E3YCDJURZFQ6LWTXLNAPTA_listwise",
+    "domain": "electronics",
+    "task": "candidate_ranking",
+    "instruction": "You are a recommendation model. Rank only the candidate items provided in the candidate pool. Do not invent item IDs outside the candidate pool. Return JSON with ranked_item_ids.",
+    "input": {
+      "user_history": [
+        {
+          "item_id": "B0C1FRBK4K",
+          "title": "Anker Powerline+ II Lightning Cable (3ft), MFi Certified for Flawless Compatibility with iPhone Xs/XS Max/XR/X / 8/8 Plus / 7/7 Plus / 6/6 Plus / 5 / 5S and More (Black)",
+          "text": "Title: Anker Powerline+ II Lightning Cable (3ft), MFi Certified for Flawless Compatibility with iPhone Xs/XS Max/XR/X / 8/8 Plus / 7/7 Plus / 6/6 Plus / 5 / 5S and More (Black) Categories: Electronics > Computers & Accessories > Computer Accessories & Peripherals > Cables & Accessories > Cables & Interconnects > Lightning Cables",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B09BKVMG59",
+          "title": "[4 Pack] Soft Silicone Case Compatible with Apple AirTag 2021, with 8Pcs Screen Protector, Anti-Scratch Lightweight Skin Cover with Key Ring for AirTags Holder Keychain Accessories",
+          "text": "Title: [4 Pack] Soft Silicone Case Compatible with Apple AirTag 2021, with 8Pcs Screen Protector, Anti-Scratch Lightweight Skin Cover with Key Ring for AirTags Holder Keychain Accessories Categories: Electronics > Headphones, Earbuds & Accessories > Cases",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B0969V6VSX",
+          "title": "SITHON Silicone Case for Apple TV 4K 2022 2021 Remote, Lightweight Shockproof Anti Slip Protective Cover with Lanyard Strap for Apple TV 4K / HD Siri Remote (3rd Gen / 2nd Gen), Yellow",
+          "text": "Title: SITHON Silicone Case for Apple TV 4K 2022 2021 Remote, Lightweight Shockproof Anti Slip Protective Cover with Lanyard Strap for Apple TV 4K / HD Siri Remote (3rd Gen / 2nd Gen), Yellow Categories: Electronics > Television & Video > Accessories > Remote Controls",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        }
+      ],
+      "candidate_pool": [
+        {
+          "candidate_item_id": "B07FY19B4Q",
+          "title": "Messenger Bag for Laptop Vintage Canvas Leather Crossbody Satchel Shoulder Computer Bag Travel Office Messenger Bag",
+          "text": "Title: Messenger Bag for Laptop Vintage Canvas Leather Crossbody Satchel Shoulder Computer Bag Travel Office Messenger Bag Categories: Electronics > Computers & Accessories > Laptop Accessories > Bags, Cases & Sleeves > Messenger & Shoulder Bags Description: Carrying your stuff on-the-go couldn't be easier with this vintage style canvas and leather messenger bag. The strap is adjustable to provide comfort and can accomdate anyone regardless of their size. With four external pockets, you can carry and load your smartphone, wallet and other valuable items. With a large internal compartment, it's perfect for small to medium sized notebooks or tablets. There's also a compartment under the main flap to store other items. All flaps lock into place with magnetic buttons. This messenger bag is perfect for, business professionals and/or travelers trying to make a fashion statement.",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B01GPFM5GA",
+          "title": "Surface Pro 3 Charger Surface Pro 4 Charger,KINGDO 36W 12V 2.58A Power Supply Compatible Microsoft Surface Pro 3 Surface Pro 4 i5 i7 Surface Pro 5 Surface Laptop Surface Go 3/2/1 Include Carrying Case",
+          "text": "Title: Surface Pro 3 Charger Surface Pro 4 Charger,KINGDO 36W 12V 2.58A Power Supply Compatible Microsoft Surface Pro 3 Surface Pro 4 i5 i7 Surface Pro 5 Surface Laptop Surface Go 3/2/1 Include Carrying Case Categories: Electronics > Computers & Accessories > Tablet Accessories > Chargers & Adapters",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B082GP5LHV",
+          "title": "Remote Sleeve Case Compatible with Apple TV 4K 4th Generation Remote Control, Pinowu Silicone Lightweight Shockproof Skin Case forTV 4K Siri Remote Control (2pcs:Orange and Turquoise)",
+          "text": "Title: Remote Sleeve Case Compatible with Apple TV 4K 4th Generation Remote Control, Pinowu Silicone Lightweight Shockproof Skin Case forTV 4K Siri Remote Control (2pcs:Orange and Turquoise) Categories: Electronics > Television & Video > Accessories > Remote Controls",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B00C30BSTM",
+          "title": "LOT OF 10 NEW 6 Ft RCA AUDIO/VIDEO COMPOSITE CABLES DVD/VCR/SAT YELLOW RED & WHITE CONNECTORS",
+          "text": "Title: LOT OF 10 NEW 6 Ft RCA AUDIO/VIDEO COMPOSITE CABLES DVD/VCR/SAT YELLOW RED & WHITE CONNECTORS Categories: Electronics > Television & Video > Accessories > Cables > RCA Description: Pack of 10 3-Male to 3-Male RCA Audio Video AV Сomposite Cable Universal Wire PVC Black Cord by SatelliteSale connects your audio devices with its right and left plugs( white and red colors), transmitting clear stereo audio. The central pin ( yellow color ) is used for composite video data. Our RCA cord is a perfect match for both residential and commercial use as we offer different cable sizes, starting with 3 feet long and reaching up to 100 feet long. Regardless of the size, the selected cable will be a perfect cost-effective option. Every audio/video RCA cord we sell is covered with a durable PVC jacket to protect it from unwanted bending damage and to increase its durability. Moreover, gold-plated connectors will resist oxidation and serve much longer. Enjoy the clarity of the sound and picture without any distortion and signal loss, even at extended lengths. Our Pack of 10 3-Male to 3-Male RCA Audio Video AV Сomposite Cable is compatible with a wide range of modern and previous v",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B00O07080Q",
+          "title": "Amphenol AV-THLIN2BNCM-002.5 Thin-line BNC Coaxial Cable, BNC Male to BNC Male, 2.5', Black",
+          "text": "Title: Amphenol AV-THLIN2BNCM-002.5 Thin-line BNC Coaxial Cable, BNC Male to BNC Male, 2.5', Black Categories: Electronics > Television & Video > Accessories > Cables > Coaxial Cables Description: This low-profile thin-line (RG179) coaxial cable assembly features a much smaller diameter than standard RG59, allowing greater installation flexibility. Despite its small size, the proper 75 ohm impedance is maintained to ensure optimal signal transfer. These fully shielded cables feature molded BNC connector terminations for strain relief purposes. Ideal for short runs, these cables are excellent for connecting video displays, processors, and amplifiers with BNC type jacks.",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B095C65Z62",
+          "title": "Antrader Multicolored Breadboard Jumper Wires 40 Pin 10CM Male to Male Ribbon Cables",
+          "text": "Title: Antrader Multicolored Breadboard Jumper Wires 40 Pin 10CM Male to Male Ribbon Cables Categories: Electronics > Home Audio > Home Audio Accessories > Connectors & Adapters Description: The Best Product to Save Your Time and Money! Specifications： Material: Copper-clad aluminum,PVC Color: Multicolored Each Cable Length: about 10cm/ 3.94-inches Connectors: 40pin-40pin male to male header Compatible with: standard 0.1 inch (2.54mm) female sockets Features: Can be separated into single root as you request to do multiple connection. Weight: 23g Package Content: 1pcs x 40-pin Male to Male Jumper Wires Note: 1)The colors may have difference as the different display, please understand. 2).Please allow 1-2mm error due to manual measurement, please make sure you do not mind before you bid. QUALITY GUARANTEE: If there is any quality problem, please feel free to contact us. Refund or Replacement for any quality problem.",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        }
+      ]
+    },
+    "output": {
+      "ranked_item_ids": [
+        "B082GP5LHV",
+        "B07FY19B4Q",
+        "B01GPFM5GA",
+        "B00C30BSTM",
+        "B00O07080Q",
+        "B095C65Z62"
+      ],
+      "target_item_id": "B082GP5LHV"
+    },
+    "metadata": {
+      "candidate_pool_setting": "5neg",
+      "text_missing_rate": 0.0,
+      "source_split": "valid",
+      "closed_catalog": true
+    }
+  },
+  "pointwise": {
+    "sample_id": "electronics_valid_0_pointwise",
+    "domain": "electronics",
+    "task": "candidate_relevance",
+    "instruction": "You are a recommendation model. Decide whether the candidate item matches the user's history. Return JSON with relevance_label. This label is not a calibrated probability.",
+    "input": {
+      "user_history": [
+        {
+          "item_id": "B0C1FRBK4K",
+          "title": "Anker Powerline+ II Lightning Cable (3ft), MFi Certified for Flawless Compatibility with iPhone Xs/XS Max/XR/X / 8/8 Plus / 7/7 Plus / 6/6 Plus / 5 / 5S and More (Black)",
+          "text": "Title: Anker Powerline+ II Lightning Cable (3ft), MFi Certified for Flawless Compatibility with iPhone Xs/XS Max/XR/X / 8/8 Plus / 7/7 Plus / 6/6 Plus / 5 / 5S and More (Black) Categories: Electronics > Computers & Accessories > Computer Accessories & Peripherals > Cables & Accessories > Cables & Interconnects > Lightning Cables",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B09BKVMG59",
+          "title": "[4 Pack] Soft Silicone Case Compatible with Apple AirTag 2021, with 8Pcs Screen Protector, Anti-Scratch Lightweight Skin Cover with Key Ring for AirTags Holder Keychain Accessories",
+          "text": "Title: [4 Pack] Soft Silicone Case Compatible with Apple AirTag 2021, with 8Pcs Screen Protector, Anti-Scratch Lightweight Skin Cover with Key Ring for AirTags Holder Keychain Accessories Categories: Electronics > Headphones, Earbuds & Accessories > Cases",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B0969V6VSX",
+          "title": "SITHON Silicone Case for Apple TV 4K 2022 2021 Remote, Lightweight Shockproof Anti Slip Protective Cover with Lanyard Strap for Apple TV 4K / HD Siri Remote (3rd Gen / 2nd Gen), Yellow",
+          "text": "Title: SITHON Silicone Case for Apple TV 4K 2022 2021 Remote, Lightweight Shockproof Anti Slip Protective Cover with Lanyard Strap for Apple TV 4K / HD Siri Remote (3rd Gen / 2nd Gen), Yellow Categories: Electronics > Television & Video > Accessories > Remote Controls",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        }
+      ],
+      "candidate_item": {
+        "candidate_item_id": "B082GP5LHV",
+        "title": "Remote Sleeve Case Compatible with Apple TV 4K 4th Generation Remote Control, Pinowu Silicone Lightweight Shockproof Skin Case forTV 4K Siri Remote Control (2pcs:Orange and Turquoise)",
+        "text": "Title: Remote Sleeve Case Compatible with Apple TV 4K 4th Generation Remote Control, Pinowu Silicone Lightweight Shockproof Skin Case forTV 4K Siri Remote Control (2pcs:Orange and Turquoise) Categories: Electronics > Television & Video > Accessories > Remote Controls",
+        "candidate_text_missing": false,
+        "candidate_text_fallback_used": false,
+        "candidate_text_source": "metadata"
+      }
+    },
+    "output": {
+      "relevance_label": 1
+    },
+    "metadata": {
+      "candidate_pool_setting": "5neg",
+      "text_missing": false,
+      "text_fallback_used": false,
+      "source_split": "valid",
+      "not_calibrated_probability": true
+    }
+  }
+}

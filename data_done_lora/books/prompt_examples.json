@@ -1,0 +1,139 @@
+{
+  "listwise": {
+    "sample_id": "books_valid_AE256TRXZZW6LKZALD5FYRYGMR2A_listwise",
+    "domain": "books",
+    "task": "candidate_ranking",
+    "instruction": "You are a recommendation model. Rank only the candidate items provided in the candidate pool. Do not invent item IDs outside the candidate pool. Return JSON with ranked_item_ids.",
+    "input": {
+      "user_history": [
+        {
+          "item_id": "B000V761W8",
+          "title": "Down River: A Novel",
+          "text": "Title: Down River: A Novel Categories: Books > Mystery, Thriller & Suspense > Thrillers & Suspense Description: About the Author John Hart is the New York Times bestselling author of The King of Lies , Down River, The Last Child, Iron House , Redemption Road , and The Hush . The only author in history to win the Edgar Award for Best Novel consecutively, John has also won the Barry Award, the Southern Independent Bookseller’s Award for Fiction, the Ian Fleming Steel Dagger Award, and the North Carolina Award for Literature. His novels have been translated into thirty languages and can be found in more than seventy countries. --This text refers to the paperback edition. Review “This book should settle once and for all the question of whether thrillers and mysteries can also be literature.” ― Publishers Weekly (starred review) “As in his Edgar-nominated debut, The King of Lies, Hart takes his time, snaring the reader with evocative storytelling and lush prose.” ― Boston Globe “ Down River falls squarely in the league of the best of Southern novels.” ― South Florida Sun-Sentinel “A sensitive ruminat",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B000FCKPM6",
+          "title": "Nightlife: A Novel",
+          "text": "Title: Nightlife: A Novel Categories: Books > Mystery, Thriller & Suspense > Thrillers & Suspense Description: Review PRAISE FOR THOMAS PERRY“Thomas Perry is truly an original.”–Jonathan Kellerman“The best thriller of the year. [Thomas Perry is] one of the most thoroughly satisfying writers around.”–Lawrence Block, about Vanishing Act“Dazzles like a house of mirrors.”–Martha Grimes, about Shadow Woman“As beautifully crafted as a good automatic weapon.”–Martin Cruz Smith, about Sleeping Dogs“A wild and terrific book.”–Carl Hiaasen, about Island From the Hardcover edition. About the Author Thomas Perry received a BA from Cornell University and a PhD in English from the University of Rochester. He won an Edgar for The Butchers Boy , and Metzgers Dog was a New York Times Notable Book of the Year. He lives in Southern California. --This text refers to the audioCD edition. From Bookmarks Magazine Thomas Perry, author of the Edgar Award?winning The Butcher's Boy , the five-volume Jane Whitefield series, and other best-selling novels, has taken typical elements of an ordinary crime thriller and given t",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        }
+      ],
+      "candidate_pool": [
+        {
+          "candidate_item_id": "0451457811",
+          "title": "Storm Front (Dresden Files)",
+          "text": "Title: Storm Front (Dresden Files) Categories: Books > Mystery, Thriller & Suspense > Mystery Description: Review Praise for the Dresden Files “Think Buffy the Vampire Slayer starring Philip Marlowe.”— Entertainment Weekly “Fans of Laurell K. Hamilton and Tanya Huff will love this series.”— Midwest Book Review “Superlative.”— Publishers Weekly (starred review) “One of the most enjoyable marriages of the fantasy and mystery genres on the shelves.”— Cinescape “Butcher...spins an excellent noirish detective yarn in a well-crafted, supernaturally-charged setting. The supporting cast is again fantastic, and Harry’s wit continues to fly in the face of a peril-fraught plot.”— Booklist (starred review) “What’s not to like about this series?...It takes the best elements of urban fantasy, mixes it with some good old-fashioned noir mystery, tosses in a dash of romance and a lot of high-octane action, shakes, stirs, and serves.”— SF Site “A tricky plot complete with against-the-clock pacing, firefights, explosions, and plenty of magic. Longtime series fans as well as newcomers drawn by the SciFi Channe",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B017FM561I",
+          "title": "Kickback",
+          "text": "Title: Kickback Categories: Books > Mystery, Thriller & Suspense > Thrillers & Suspense Description: From Library Journal Australian author Disher breaches the American scene with this paperback edition of a suspense novel first published down under in 1991. The author introduces professional thief Wyatt Wareen, who, living on the violent edge of the Melbourne underworld, directs an operation aimed at separating a crooked lawyer from a large bundle of hush money. The lawyer's lustful partner, a drug-taking safecracker, a frustrated \"outlaw,\" and Sydney mobsters energize the plot. Suspenseful machinations reminiscent of Jon Cleary; swift, spartan prose; and the absence of sleuth provide a welcome change of pace.Copyright 1993 Reed Business Information, Inc. --This text refers to an out of print or unavailable edition of this title.",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "1616383712",
+          "title": "Evangelism by Fire",
+          "text": "Title: Evangelism by Fire Categories: Books > Christian Books & Bibles > Christian Living Description: About the Author Reinhard Bonnke began his missionary work in Africa in the early 1980s. Since his early days of tent meetings, he has conducted citywide meetings across the continent with as many as 1,600,000 people in attendance. Bonnke is the founder of the international ministry Christ for all Nations (CfaN), which has recorded 55 million documented decisions for Jesus Christ since the start of the new millennium. He and his wife, Anni, have three children and eight grandchildren.",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "1402284225",
+          "title": "Karma Gone Bad: How I Learned to Love Mangos, Bollywood and Water Buffalo",
+          "text": "Title: Karma Gone Bad: How I Learned to Love Mangos, Bollywood and Water Buffalo Categories: Books > Biographies & Memoirs > Community & Culture Description: Review \"I LOVED it. I would never, ever have the courage (or stomach) to live in India for two years, and now I don't have to because I lived vicariously through Jenny in the pages of her book. I couldn't put it down for days, completely addicted to the experience of her lifetime. Plus? No malaria pills for me!\" - Jill Smokler, New York Times bestselling author of Confessions of a Scary Mommy \"A wonderful adventure of self-discovery. I could not put this book down. It is a delight and awakens your senses while sweeping you away. I could almost taste the chai and smell the spices of India.\" - Soleil Moon Frye, author of Happy Chaos and Let's Get This Party Started \"Warm, funny, evocative, endowed with a winning voice and a moving conclusion.\" - Vivian Gornick, critic, essayist and author of The End of the Novel of Love, Fierce Attachments: A Memoir and The Men in My Life \"I'm incredibly tempted to put Jenny on a plane to another exotic locale just so I can read another compelling, hilar",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "B08VBS7RZX",
+          "title": "Enemy at the Gates (Mitch Rapp Book 20)",
+          "text": "Title: Enemy at the Gates (Mitch Rapp Book 20) Categories: Books > Mystery, Thriller & Suspense > Thrillers & Suspense Description: About the Author #1 New York Times bestselling author Vince Flynn (1966–2013) created one of contemporary fiction’s most popular heroes: CIA counterterrorist agent Mitch Rapp, featured in thirteen of Flynn’s acclaimed political thrillers. All of his novels are New York Times bestsellers, including his stand-alone debut novel, Term Limits .Kyle Mills is the #1 New York Times bestselling author of twenty-three political thrillers, including Code Red , Total Power , Lethal Agent , and Red War for Vince Flynn and The Patriot Attack for Robert Ludlum. He initially found inspiration from his father, the former director of Interpol, and still draws on his contacts in the intelligence community to give his books such realism. Avid outdoor athletes, he and his wife split their time between Jackson Hole, Wyoming, and Granada, Spain. Visit his website at KyleMills.com or connect with him on Twitter, Facebook, and Instagram @KyleMillsAuthor. From the Artist Vince Flynn and Kyle Mills --This text r",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        },
+        {
+          "candidate_item_id": "0618896872",
+          "title": "Curious George Cleans Up/Jorge el curioso limpia el reguero: Bilingual English-Spanish (Curious George TV)",
+          "text": "Title: Curious George Cleans Up/Jorge el curioso limpia el reguero: Bilingual English-Spanish (Curious George TV) Categories: Books > Children's Books > Literature & Fiction Description: About the Author Margret and H. A. Rey created many books during their lives together, including Curious George , one of the most treasured classics of all time, as well as other favorites like Pretzel, Spotty , and Find the Constellations . They had many pets—including two marmoset monkeys that joined them on one of their steamship journeys across the Atlantic. Committed philanthropists in their own lives, a portion of proceeds from each Curious George book sold flows to the Curious George Foundation, which funds programs for children that encourage inquisitiveness in learning and exploring. Curious George has been successfully adapted into a major motion picture and an Emmy-winning television show on PBS and “Pretzel and the Puppies,” based on their picture books, is a streaming series on Apple TV+. www.curiousgeorge.com www.pretzelandthepuppies.com",
+          "candidate_text_missing": false,
+          "candidate_text_fallback_used": false,
+          "candidate_text_source": "metadata"
+        }
+      ]
+    },
+    "output": {
+      "ranked_item_ids": [
+        "B08VBS7RZX",
+        "0451457811",
+        "B017FM561I",
+        "1616383712",
+        "1402284225",
+        "0618896872"
+      ],
+      "target_item_id": "B08VBS7RZX"
+    },
+    "metadata": {
+      "candidate_pool_setting": "5neg",
+      "text_missing_rate": 0.0,
+      "source_split": "valid",
+      "closed_catalog": true
+    }
+  },
+  "pointwise": {
+    "sample_id": "books_valid_0_pointwise",
+    "domain": "books",
+    "task": "candidate_relevance",
+    "instruction": "You are a recommendation model. Decide whether the candidate item matches the user's history. Return JSON with relevance_label. This label is not a calibrated probability.",
+    "input": {
+      "user_history": [
+        {
+          "item_id": "B000V761W8",
+          "title": "Down River: A Novel",
+          "text": "Title: Down River: A Novel Categories: Books > Mystery, Thriller & Suspense > Thrillers & Suspense Description: About the Author John Hart is the New York Times bestselling author of The King of Lies , Down River, The Last Child, Iron House , Redemption Road , and The Hush . The only author in history to win the Edgar Award for Best Novel consecutively, John has also won the Barry Award, the Southern Independent Bookseller’s Award for Fiction, the Ian Fleming Steel Dagger Award, and the North Carolina Award for Literature. His novels have been translated into thirty languages and can be found in more than seventy countries. --This text refers to the paperback edition. Review “This book should settle once and for all the question of whether thrillers and mysteries can also be literature.” ― Publishers Weekly (starred review) “As in his Edgar-nominated debut, The King of Lies, Hart takes his time, snaring the reader with evocative storytelling and lush prose.” ― Boston Globe “ Down River falls squarely in the league of the best of Southern novels.” ― South Florida Sun-Sentinel “A sensitive ruminat",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        },
+        {
+          "item_id": "B000FCKPM6",
+          "title": "Nightlife: A Novel",
+          "text": "Title: Nightlife: A Novel Categories: Books > Mystery, Thriller & Suspense > Thrillers & Suspense Description: Review PRAISE FOR THOMAS PERRY“Thomas Perry is truly an original.”–Jonathan Kellerman“The best thriller of the year. [Thomas Perry is] one of the most thoroughly satisfying writers around.”–Lawrence Block, about Vanishing Act“Dazzles like a house of mirrors.”–Martha Grimes, about Shadow Woman“As beautifully crafted as a good automatic weapon.”–Martin Cruz Smith, about Sleeping Dogs“A wild and terrific book.”–Carl Hiaasen, about Island From the Hardcover edition. About the Author Thomas Perry received a BA from Cornell University and a PhD in English from the University of Rochester. He won an Edgar for The Butchers Boy , and Metzgers Dog was a New York Times Notable Book of the Year. He lives in Southern California. --This text refers to the audioCD edition. From Bookmarks Magazine Thomas Perry, author of the Edgar Award?winning The Butcher's Boy , the five-volume Jane Whitefield series, and other best-selling novels, has taken typical elements of an ordinary crime thriller and given t",
+          "text_missing": false,
+          "text_fallback_used": false,
+          "text_source": "metadata"
+        }
+      ],
+      "candidate_item": {
+        "candidate_item_id": "B08VBS7RZX",
+        "title": "Enemy at the Gates (Mitch Rapp Book 20)",
+        "text": "Title: Enemy at the Gates (Mitch Rapp Book 20) Categories: Books > Mystery, Thriller & Suspense > Thrillers & Suspense Description: About the Author #1 New York Times bestselling author Vince Flynn (1966–2013) created one of contemporary fiction’s most popular heroes: CIA counterterrorist agent Mitch Rapp, featured in thirteen of Flynn’s acclaimed political thrillers. All of his novels are New York Times bestsellers, including his stand-alone debut novel, Term Limits .Kyle Mills is the #1 New York Times bestselling author of twenty-three political thrillers, including Code Red , Total Power , Lethal Agent , and Red War for Vince Flynn and The Patriot Attack for Robert Ludlum. He initially found inspiration from his father, the former director of Interpol, and still draws on his contacts in the intelligence community to give his books such realism. Avid outdoor athletes, he and his wife split their time between Jackson Hole, Wyoming, and Granada, Spain. Visit his website at KyleMills.com or connect with him on Twitter, Facebook, and Instagram @KyleMillsAuthor. From the Artist Vince Flynn and Kyle Mills --This text r",
+        "candidate_text_missing": false,
+        "candidate_text_fallback_used": false,
+        "candidate_text_source": "metadata"
+      }
+    },
+    "output": {
+      "relevance_label": 1
+    },
+    "metadata": {
+      "candidate_pool_setting": "5neg",
+      "text_missing": false,
+      "text_fallback_used": false,
+      "source_split": "valid",
+      "not_calibrated_probability": true
+    }
+  }
+}

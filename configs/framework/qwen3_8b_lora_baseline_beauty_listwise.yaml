@@ -1,0 +1,19 @@
+model_name_or_path: TODO:/home/ajifang/models/Qwen/Qwen3-8B
+tokenizer_name_or_path: TODO:/home/ajifang/models/Qwen/Qwen3-8B
+max_seq_len: 4096
+lora_rank: 16
+lora_alpha: 32
+lora_dropout: 0.05
+learning_rate: 2e-4
+num_epochs: 3
+batch_size: 1
+gradient_accumulation_steps: 16
+bf16: true
+seed: 42
+train_file: data_done_lora/beauty/train_listwise.jsonl
+valid_file: data_done_lora/beauty/valid_listwise.jsonl
+output_dir: outputs/framework/qwen3_8b_lora_baseline_beauty_listwise
+task_type: qwen_recommendation_baseline_listwise
+prompt_template: prompts/framework/qwen_candidate_ranking_baseline.txt
+evaluation_mode: closed_candidate_ranking
+notes: Scaffold only. Framework-Day3 does not start training. Verify server model path before use.
