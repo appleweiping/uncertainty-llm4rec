@@ -1,0 +1,19 @@
+backbone,stratum,num_users,num_rows,positive_rows,negative_rows,fallback_rate,positive_fallback_rate,negative_fallback_rate,candidate_pool_size_mean,notes
+sasrec,all_users,500,3000,500,2500,0.41,0.852,0.3216,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+sasrec,positive_fallback_false,74,444,74,370,0.240990990990991,0.0,0.2891891891891892,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+sasrec,positive_fallback_true,426,2556,426,2130,0.439358372456964,1.0,0.32723004694835683,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+sasrec,fallback_rate_per_user_eq_0,11,66,11,55,0.0,0.0,0.0,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+sasrec,fallback_rate_per_user_0_to_0.5,415,2490,415,2075,0.3670682730923695,0.8481927710843373,0.2708433734939759,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+sasrec,fallback_rate_per_user_gt_0.5,74,444,74,370,0.7117117117117117,1.0,0.654054054054054,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+gru4rec,all_users,500,3000,500,2500,0.571,0.898,0.5056,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+gru4rec,positive_fallback_false,51,306,51,255,0.24836601307189543,0.0,0.2980392156862745,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+gru4rec,positive_fallback_true,449,2694,449,2245,0.6076466221232368,1.0,0.5291759465478841,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+gru4rec,fallback_rate_per_user_eq_0,7,42,7,35,0.0,0.0,0.0,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+gru4rec,fallback_rate_per_user_0_to_0.5,301,1806,301,1505,0.36267995570321154,0.8538205980066446,0.2644518272425249,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+gru4rec,fallback_rate_per_user_gt_0.5,192,1152,192,960,0.9184027777777778,1.0,0.9020833333333333,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+bert4rec,all_users,500,3000,500,2500,0.571,0.898,0.5056,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+bert4rec,positive_fallback_false,51,306,51,255,0.24836601307189543,0.0,0.2980392156862745,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+bert4rec,positive_fallback_true,449,2694,449,2245,0.6076466221232368,1.0,0.5291759465478841,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+bert4rec,fallback_rate_per_user_eq_0,7,42,7,35,0.0,0.0,0.0,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+bert4rec,fallback_rate_per_user_0_to_0.5,301,1806,301,1505,0.36267995570321154,0.8538205980066446,0.2644518272425249,6.0,HR@10 trivial for movies_small because candidate pool size is 6.
+bert4rec,fallback_rate_per_user_gt_0.5,192,1152,192,960,0.9184027777777778,1.0,0.9020833333333333,6.0,HR@10 trivial for movies_small because candidate pool size is 6.

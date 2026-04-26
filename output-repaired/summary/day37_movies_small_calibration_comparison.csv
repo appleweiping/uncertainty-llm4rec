@@ -1,0 +1,9 @@
+domain,split,score_type,ECE,Brier,AUROC,high_conf_error_rate,accuracy,status,fallback_reason,parse_success_rate
+movies_small,valid,raw_relevance_probability,0.31109,0.23115063333333333,0.6172748,0.09302325581395349,0.399,ready,,1.0
+movies_small,valid,calibrated_relevance_probability,2.3471965112283515e-17,0.12703470341692097,0.626738,0.09302325581395349,0.8463333333333334,ready,,1.0
+movies_small,valid,evidence_posterior_relevance_minimal,1.0732155904709847e-18,0.12582892406445392,0.6503628,0.07142857142857142,0.8463333333333334,ready,,1.0
+movies_small,valid,evidence_posterior_relevance_full,9.80697005085555e-19,0.12578918661700178,0.6485292,0.07142857142857142,0.847,ready,,1.0
+movies_small,test,raw_relevance_probability,0.30785,0.23368236666666667,0.5853984,0.14814814814814814,0.383,ready,,1.0
+movies_small,test,calibrated_relevance_probability,0.0064666502796401895,0.1323234300961727,0.5945936,0.14814814814814814,0.839,ready,,1.0
+movies_small,test,evidence_posterior_relevance_minimal,0.012506561520508141,0.13161587669362396,0.6173552,0.11538461538461539,0.839,ready,,1.0
+movies_small,test,evidence_posterior_relevance_full,0.009710888270058568,0.1317026502193687,0.6146152,0.11538461538461539,0.839,ready,,1.0
