@@ -1,0 +1,5 @@
+strategy,num_rows,fallback_rows,fallback_rate,positive_fallback_rate,negative_fallback_rate,can_support_performance_claim,notes
+original_fallback,12000,11637,0.96975,0.8965,0.9844,False,Original Day31 SASRec score export.
+id_repaired,12000,11169,0.93075,0.7285,0.9712,False,History ASINs are extracted from 'Item ID: ASIN'; cold candidates still require fallback.
+vocab_repaired_min_score,12000,11169,0.93075,0.7285,0.9712,False,Adding scoring candidates to vocab does not train their embeddings; candidate-only cold items use min-score fallback.
+vocab_repaired_popularity_fallback,12000,11169,0.93075,0.7285,0.9712,False,Adding scoring candidates to vocab does not train their embeddings; candidate-only cold items use train-popularity fallback.

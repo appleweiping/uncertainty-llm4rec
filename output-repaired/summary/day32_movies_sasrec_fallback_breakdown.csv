@@ -1,0 +1,2 @@
+num_rows,num_fallback_rows,fallback_rate,fallback_user_rows,fallback_item_rows,fallback_both_rows,num_unique_users,num_unique_candidate_items,num_users_missing_train_history,num_items_missing_train_vocab,positive_rows,positive_fallback_rows,positive_fallback_rate,negative_rows,negative_fallback_rows,negative_fallback_rate
+12000,11637,0.96975,4122,11137,3899,2000,11480,704,10836,2000,1793,0.8965,10000,9844,0.9844
