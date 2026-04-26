@@ -1,0 +1,2 @@
+num_users,num_rows,candidate_pool_size_mean,candidate_pool_size_min,candidate_pool_size_max,positive_rows,negative_rows,source_test_path,seed
+500,3000,6.0,6,6,500,2500,data\processed\amazon_beauty\test.jsonl,42

@@ -1,0 +1,10 @@
+noise_type,noise_level,smoke_rows,smoke_parse_success_rate,smoke_output_path,dominant_error_type,error_type_counts
+history_dropout,0.1,20,1.0,output-repaired\beauty_robustness_500\history_dropout_0.1\predictions\smoke_verify_20260426012351_raw.jsonl,,{}
+history_dropout,0.2,20,1.0,output-repaired\beauty_robustness_500\history_dropout_0.2\predictions\smoke_verify_raw.jsonl,,{}
+history_dropout,0.3,20,1.0,output-repaired\beauty_robustness_500\history_dropout_0.3\predictions\smoke_verify_raw.jsonl,,{}
+candidate_text_dropout,0.1,20,1.0,output-repaired\beauty_robustness_500\candidate_text_dropout_0.1\predictions\smoke_verify_raw.jsonl,,{}
+candidate_text_dropout,0.2,20,1.0,output-repaired\beauty_robustness_500\candidate_text_dropout_0.2\predictions\smoke_verify_raw.jsonl,,{}
+candidate_text_dropout,0.3,20,1.0,output-repaired\beauty_robustness_500\candidate_text_dropout_0.3\predictions\smoke_verify_raw.jsonl,,{}
+history_swap_noise,0.1,20,1.0,output-repaired\beauty_robustness_500\history_swap_noise_0.1\predictions\smoke_verify_raw.jsonl,,{}
+history_swap_noise,0.2,20,1.0,output-repaired\beauty_robustness_500\history_swap_noise_0.2\predictions\smoke_verify_raw.jsonl,,{}
+history_swap_noise,0.3,20,1.0,output-repaired\beauty_robustness_500\history_swap_noise_0.3\predictions\smoke_verify_raw.jsonl,,{}

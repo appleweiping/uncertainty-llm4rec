@@ -1,0 +1,18 @@
+exp_name: beauty_robustness_500/history_dropout_0.3
+split_input_paths:
+  test: data/processed/amazon_beauty_robustness_500/noisy_history_dropout_0.3/test.jsonl
+output_root: output-repaired
+prompt_path: prompts/candidate_relevance_evidence.txt
+model_config: configs/model/deepseek.yaml
+max_samples: null
+overwrite: false
+seed: 42
+output_schema: relevance_evidence
+method_variant: candidate_relevance_evidence_robustness_500_history_dropout_0.3
+concurrent: true
+resume: true
+max_workers: 4
+requests_per_minute: 120
+max_retries: 3
+retry_backoff_seconds: 2.0
+checkpoint_every: 1

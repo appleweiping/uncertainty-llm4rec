@@ -1,0 +1,10 @@
+noise_type,noise_level,num_rows,num_users,avg_history_len_before,avg_history_len_after,candidate_text_changed_rate,history_changed_rate
+history_dropout,0.1,3000,500,3.476,3.1686666666666667,0.0,0.23966666666666667
+history_dropout,0.2,3000,500,3.476,2.8746666666666667,0.0,0.37566666666666665
+history_dropout,0.3,3000,500,3.476,2.535,0.0,0.478
+candidate_text_dropout,0.1,3000,500,3.476,3.476,0.9036666666666666,0.0
+candidate_text_dropout,0.2,3000,500,3.476,3.476,0.9763333333333334,0.0
+candidate_text_dropout,0.3,3000,500,3.476,3.476,0.9896666666666667,0.0
+history_swap_noise,0.1,3000,500,3.476,4.476,0.0,1.0
+history_swap_noise,0.2,3000,500,3.476,4.622,0.0,1.0
+history_swap_noise,0.3,3000,500,3.476,4.876,0.0,1.0
