@@ -358,7 +358,7 @@ Important: calibrated_relevance_probability is produced later by valid-set calib
 
 def _write_configs() -> None:
     _mkdir(CONFIG_DIR)
-    base_model = "TODO:/home/ajifang/models/Qwen/Qwen3-8B"
+    base_model = "TODO_MODEL_PATH"
     common = {
         "model_name_or_path": base_model,
         "tokenizer_name_or_path": base_model,
@@ -366,6 +366,7 @@ def _write_configs() -> None:
         "lora_rank": 16,
         "lora_alpha": 32,
         "lora_dropout": 0.05,
+        "target_modules": "q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj",
         "learning_rate": "2e-4",
         "num_epochs": 3,
         "batch_size": 1,
@@ -395,10 +396,13 @@ def _write_configs() -> None:
                 "train_file": train_file,
                 "valid_file": valid_file,
                 "output_dir": f"outputs/framework/qwen3_8b_lora_baseline_beauty_{task}",
-                "task_type": f"qwen_recommendation_baseline_{task}",
+                "task_type": "candidate_ranking_listwise" if task == "listwise" else "candidate_relevance_pointwise",
                 "prompt_template": prompt,
                 "evaluation_mode": eval_mode,
-                "notes": "Scaffold only. Framework-Day3 does not start training. Verify server model path before use.",
+                "dry_run": True,
+                "max_train_samples": 5,
+                "max_eval_samples": 5,
+                "notes": "Scaffold only. Replace TODO_MODEL_PATH on the training server before use.",
             }
         )
         lines = [f"{k}: {str(v).lower() if isinstance(v, bool) else v}" for k, v in cfg.items()]

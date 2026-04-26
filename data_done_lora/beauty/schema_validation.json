@@ -9,5 +9,6 @@
     1
   ],
   "calibrated_probability_used_as_label": false,
-  "notes": "LoRA baseline learns raw relevance/ranking labels. CEP calibration remains a framework-stage post-processing mechanism."
+  "confidence_or_evidence_fields_used_as_label": false,
+  "notes": "LoRA baseline learns raw relevance/ranking labels only. CEP calibration remains a later framework-stage operation."
 }
