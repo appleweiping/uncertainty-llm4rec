@@ -1,0 +1,14 @@
+{
+  "source": "server_ingest",
+  "status": "success",
+  "max_steps": 100,
+  "completed_steps": 100,
+  "train_samples": 512,
+  "eval_samples": 128,
+  "loss_nan_count": 0,
+  "peak_gpu_memory_gb": 20.2553,
+  "runtime_seconds": 325.72,
+  "adapter_output_dir": "artifacts/lora/qwen3_8b_beauty_listwise_day6_small",
+  "adapter_committed_to_git": false,
+  "notes": "Server-side Day6 Beauty listwise small train completed. Adapter/checkpoint artifacts are intentionally not committed."
+}
