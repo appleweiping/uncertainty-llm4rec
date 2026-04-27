@@ -1,0 +1,4805 @@
+{
+  "seed": 42,
+  "entries": [
+    {
+      "split": "valid",
+      "user_id": "AE36LRYPZ5CH65WBMP2UUJZPTF5A",
+      "original_candidate_order": [
+        "B08HMVTVZB",
+        "B07LCHCD6Q",
+        "B0868W34QW",
+        "B0C4LR3NZT",
+        "B08DD6BFFM",
+        "B085J9K64C"
+      ],
+      "shuffled_candidate_order": [
+        "B0C4LR3NZT",
+        "B07LCHCD6Q",
+        "B0868W34QW",
+        "B08DD6BFFM",
+        "B08HMVTVZB",
+        "B085J9K64C"
+      ],
+      "target_item_id": "B08HMVTVZB",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AE647AXNLY7Z2QEWUPYUPY7UO6WQ",
+      "original_candidate_order": [
+        "B086JCLWF2",
+        "B094TBJ2QN",
+        "B07YL4485K",
+        "B08DK5D9J5",
+        "B075KLSX61",
+        "B07PXFPVZK"
+      ],
+      "shuffled_candidate_order": [
+        "B07PXFPVZK",
+        "B075KLSX61",
+        "B08DK5D9J5",
+        "B094TBJ2QN",
+        "B07YL4485K",
+        "B086JCLWF2"
+      ],
+      "target_item_id": "B086JCLWF2",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AE6I5KFJ2EJNRBBV7NWURRU2X6UQ_1",
+      "original_candidate_order": [
+        "B08GMC5ZRY",
+        "B09Q5TTQS7",
+        "B07T6821GV",
+        "B07MZT83KK",
+        "B089RZ67T7",
+        "B0B7WR1NB7"
+      ],
+      "shuffled_candidate_order": [
+        "B07T6821GV",
+        "B09Q5TTQS7",
+        "B0B7WR1NB7",
+        "B08GMC5ZRY",
+        "B089RZ67T7",
+        "B07MZT83KK"
+      ],
+      "target_item_id": "B08GMC5ZRY",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AE7YYSYFEWAYIUCAK4W33CHPP4JQ",
+      "original_candidate_order": [
+        "B00XXZZCCU",
+        "B0B6QK5ML2",
+        "B0B2VVXM9C",
+        "B08DX9P6V1",
+        "B07F3C1QG4",
+        "B07SHHXSPL"
+      ],
+      "shuffled_candidate_order": [
+        "B07SHHXSPL",
+        "B00XXZZCCU",
+        "B0B6QK5ML2",
+        "B07F3C1QG4",
+        "B08DX9P6V1",
+        "B0B2VVXM9C"
+      ],
+      "target_item_id": "B00XXZZCCU",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEA42FBHILJ6UOXAYMRVKPTA4IWA",
+      "original_candidate_order": [
+        "B0B3NCXPVF",
+        "B08W4WQMNM",
+        "B083PQNHF8",
+        "B09C1S6LSV",
+        "B07ZS3DKL5",
+        "B077MYW993"
+      ],
+      "shuffled_candidate_order": [
+        "B08W4WQMNM",
+        "B07ZS3DKL5",
+        "B083PQNHF8",
+        "B077MYW993",
+        "B09C1S6LSV",
+        "B0B3NCXPVF"
+      ],
+      "target_item_id": "B0B3NCXPVF",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEC6IZVI2NGFBCIYVD4X5MDGB6DQ_2",
+      "original_candidate_order": [
+        "B08YNB5SHG",
+        "B0919R1CYT",
+        "B0B4RV6X1H",
+        "B094N6SBL2",
+        "B08DG5CDXR",
+        "B083PQNHF8"
+      ],
+      "shuffled_candidate_order": [
+        "B08DG5CDXR",
+        "B0919R1CYT",
+        "B083PQNHF8",
+        "B094N6SBL2",
+        "B08YNB5SHG",
+        "B0B4RV6X1H"
+      ],
+      "target_item_id": "B08YNB5SHG",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AECIT3NMW6RKABFS6YOCYX4YUYOQ",
+      "original_candidate_order": [
+        "B08S3B8Y5G",
+        "B0B6QK5ML2",
+        "B09BR6T5X6",
+        "B09LBK3TNZ",
+        "B0851T7HDS",
+        "B09XX4VR4Y"
+      ],
+      "shuffled_candidate_order": [
+        "B08S3B8Y5G",
+        "B09LBK3TNZ",
+        "B09XX4VR4Y",
+        "B0B6QK5ML2",
+        "B09BR6T5X6",
+        "B0851T7HDS"
+      ],
+      "target_item_id": "B08S3B8Y5G",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEE2XLIZKYGXRYGJG4AZEEL5VHUQ",
+      "original_candidate_order": [
+        "B08GMW3HNG",
+        "B08D5ZT3Q8",
+        "B07TV7DFZC",
+        "B08KHSB33G",
+        "B07YNH56W5",
+        "B076DGMQTM"
+      ],
+      "shuffled_candidate_order": [
+        "B07YNH56W5",
+        "B08D5ZT3Q8",
+        "B076DGMQTM",
+        "B08KHSB33G",
+        "B07TV7DFZC",
+        "B08GMW3HNG"
+      ],
+      "target_item_id": "B08GMW3HNG",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEFRTLVCVRALKXBED77KHPIXEPWQ",
+      "original_candidate_order": [
+        "B09HMXY36F",
+        "B07D5FBFQ4",
+        "B07FPS2VFK",
+        "B08JPKXJMV",
+        "B07ZQ1QXK7",
+        "B0B3X64B4H"
+      ],
+      "shuffled_candidate_order": [
+        "B07D5FBFQ4",
+        "B09HMXY36F",
+        "B0B3X64B4H",
+        "B07ZQ1QXK7",
+        "B07FPS2VFK",
+        "B08JPKXJMV"
+      ],
+      "target_item_id": "B09HMXY36F",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEGTJSI4X2EZHAL5VWJV3RCJIO4A",
+      "original_candidate_order": [
+        "B08GNZBRCT",
+        "B089LXFCV3",
+        "B08G5YVHQP",
+        "B07PTQHSQS",
+        "B084ZHP45Y",
+        "B08CXWTK1G"
+      ],
+      "shuffled_candidate_order": [
+        "B07PTQHSQS",
+        "B08G5YVHQP",
+        "B08GNZBRCT",
+        "B08CXWTK1G",
+        "B084ZHP45Y",
+        "B089LXFCV3"
+      ],
+      "target_item_id": "B08GNZBRCT",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEGWUKP4FG5GISCFLDOSG5W2KMWA",
+      "original_candidate_order": [
+        "B098GMKW8D",
+        "B08G15JBYN",
+        "B088GWCVVJ",
+        "B09B3KGCM1",
+        "B07XQKH3RY",
+        "B08BS3WDPJ"
+      ],
+      "shuffled_candidate_order": [
+        "B07XQKH3RY",
+        "B08BS3WDPJ",
+        "B08G15JBYN",
+        "B09B3KGCM1",
+        "B098GMKW8D",
+        "B088GWCVVJ"
+      ],
+      "target_item_id": "B098GMKW8D",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEHTPCFFRZYADDJ6LUHMWN5R2PRA",
+      "original_candidate_order": [
+        "B0BL2Q5PYZ",
+        "B0B5LNLFQK",
+        "B09HMXY36F",
+        "B07F3C1QG4",
+        "B088X2WPTX",
+        "B08G8B2CQH"
+      ],
+      "shuffled_candidate_order": [
+        "B0BL2Q5PYZ",
+        "B08G8B2CQH",
+        "B09HMXY36F",
+        "B07F3C1QG4",
+        "B0B5LNLFQK",
+        "B088X2WPTX"
+      ],
+      "target_item_id": "B0BL2Q5PYZ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEHWKRPNWNMOAJSMO2F6O7RFRTNA",
+      "original_candidate_order": [
+        "B09PQC2JCW",
+        "B01LXSWG49",
+        "B08DHZW3LK",
+        "B085J24382",
+        "B08N5NDVGH",
+        "B00TK0VV68"
+      ],
+      "shuffled_candidate_order": [
+        "B09PQC2JCW",
+        "B08N5NDVGH",
+        "B00TK0VV68",
+        "B08DHZW3LK",
+        "B085J24382",
+        "B01LXSWG49"
+      ],
+      "target_item_id": "B09PQC2JCW",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEIGRLFPH5Z3EQ73Z23CJ3WX6R6A",
+      "original_candidate_order": [
+        "B08N6YHQXT",
+        "B0719CXFHG",
+        "B07KG1TWP5",
+        "B08CMHFXJN",
+        "B08HZ5Y8RY",
+        "B08C24Q6LB"
+      ],
+      "shuffled_candidate_order": [
+        "B08C24Q6LB",
+        "B08CMHFXJN",
+        "B07KG1TWP5",
+        "B08HZ5Y8RY",
+        "B0719CXFHG",
+        "B08N6YHQXT"
+      ],
+      "target_item_id": "B08N6YHQXT",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEJE3IIDZTTU3P36LWRHKGROEVIA",
+      "original_candidate_order": [
+        "B093CPFRHJ",
+        "B08ZS8RLM8",
+        "B0B186FXGM",
+        "B07VWLSNYN",
+        "B08CPF22H2",
+        "B08YYKWXX4"
+      ],
+      "shuffled_candidate_order": [
+        "B08YYKWXX4",
+        "B08ZS8RLM8",
+        "B0B186FXGM",
+        "B07VWLSNYN",
+        "B093CPFRHJ",
+        "B08CPF22H2"
+      ],
+      "target_item_id": "B093CPFRHJ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEJE54M5UMYRXIOMXT6ZTRI6VNLA",
+      "original_candidate_order": [
+        "B08QKXY1KN",
+        "B08GR16Y3Z",
+        "B00MQ6BE92",
+        "B07DQ6NG1H",
+        "B0B4RV6X1H",
+        "B08HRHCZV2"
+      ],
+      "shuffled_candidate_order": [
+        "B0B4RV6X1H",
+        "B08GR16Y3Z",
+        "B07DQ6NG1H",
+        "B08HRHCZV2",
+        "B00MQ6BE92",
+        "B08QKXY1KN"
+      ],
+      "target_item_id": "B08QKXY1KN",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEK3IYABOEGTXOTX7P6SBQJUP57A",
+      "original_candidate_order": [
+        "B08KY7VYDS",
+        "B07S8F2X21",
+        "B093H28PD4",
+        "B00TK0VV68",
+        "B08G4Y4SFV",
+        "B07Z548TKH"
+      ],
+      "shuffled_candidate_order": [
+        "B00TK0VV68",
+        "B08KY7VYDS",
+        "B093H28PD4",
+        "B07Z548TKH",
+        "B07S8F2X21",
+        "B08G4Y4SFV"
+      ],
+      "target_item_id": "B08KY7VYDS",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEKPHJN45BBJXAFUH72D7REARUFA",
+      "original_candidate_order": [
+        "B09492T3QR",
+        "B01N5SHGS0",
+        "B08WF29DM9",
+        "B089ZQ8Y95",
+        "B09KGG7QNS",
+        "B09KX5N1DR"
+      ],
+      "shuffled_candidate_order": [
+        "B09KX5N1DR",
+        "B08WF29DM9",
+        "B09KGG7QNS",
+        "B089ZQ8Y95",
+        "B09492T3QR",
+        "B01N5SHGS0"
+      ],
+      "target_item_id": "B09492T3QR",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEKV4Q3JUQTQA2UR7PH7QLUHUTTQ",
+      "original_candidate_order": [
+        "B09BKK8G76",
+        "B07HMTLNWH",
+        "B09419W8LT",
+        "B08GY96F87",
+        "B087GB8ZRF",
+        "B07YXB7TJ4"
+      ],
+      "shuffled_candidate_order": [
+        "B087GB8ZRF",
+        "B09BKK8G76",
+        "B08GY96F87",
+        "B07HMTLNWH",
+        "B07YXB7TJ4",
+        "B09419W8LT"
+      ],
+      "target_item_id": "B09BKK8G76",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AENPFFAIQ75VTJYM6BCEKB5WWWJQ",
+      "original_candidate_order": [
+        "B08N6YHQXT",
+        "B08174L3RB",
+        "B07H8Y5QT2",
+        "B08P2DZB4X",
+        "B07YXB7TJ4",
+        "B09671G4KH"
+      ],
+      "shuffled_candidate_order": [
+        "B08N6YHQXT",
+        "B07H8Y5QT2",
+        "B09671G4KH",
+        "B07YXB7TJ4",
+        "B08174L3RB",
+        "B08P2DZB4X"
+      ],
+      "target_item_id": "B08N6YHQXT",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEPKAGO2WGVI55RQAVNBXKGJ2BOQ",
+      "original_candidate_order": [
+        "B08BLX72TP",
+        "B0B8DZ7H5F",
+        "B07XM9KWNH",
+        "B0BQQ5L942",
+        "B0B8CX4MKV",
+        "B0881MBQQF"
+      ],
+      "shuffled_candidate_order": [
+        "B07XM9KWNH",
+        "B0881MBQQF",
+        "B0BQQ5L942",
+        "B08BLX72TP",
+        "B0B8DZ7H5F",
+        "B0B8CX4MKV"
+      ],
+      "target_item_id": "B08BLX72TP",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AESGD7JWLZAPQZLN7NQD3GRPUADA",
+      "original_candidate_order": [
+        "B0BL2Q5PYZ",
+        "B0B6QK5ML2",
+        "B0BQQ5L942",
+        "B097H7H3MT",
+        "B085HNB449",
+        "B088LPYXNQ"
+      ],
+      "shuffled_candidate_order": [
+        "B0BL2Q5PYZ",
+        "B085HNB449",
+        "B0B6QK5ML2",
+        "B0BQQ5L942",
+        "B088LPYXNQ",
+        "B097H7H3MT"
+      ],
+      "target_item_id": "B0BL2Q5PYZ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AESH4UBOA6VWZ36CIYMP4JVYPOLA",
+      "original_candidate_order": [
+        "B082DGDDSH",
+        "B07V2L94ZW",
+        "B0BCHJ9MT1",
+        "B07Z5C1KGR",
+        "B08HQSK576",
+        "B07Q9516Z2"
+      ],
+      "shuffled_candidate_order": [
+        "B07V2L94ZW",
+        "B08HQSK576",
+        "B0BCHJ9MT1",
+        "B07Q9516Z2",
+        "B082DGDDSH",
+        "B07Z5C1KGR"
+      ],
+      "target_item_id": "B082DGDDSH",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AESWZGOSDDULZ2TWG6GLDEU2X5JA",
+      "original_candidate_order": [
+        "B0845LNDJK",
+        "B010SZWNP6",
+        "B08F7WFLCT",
+        "B08B14WCHR",
+        "B0842BXM5M",
+        "B0BP2Y6QY4"
+      ],
+      "shuffled_candidate_order": [
+        "B010SZWNP6",
+        "B0845LNDJK",
+        "B0BP2Y6QY4",
+        "B0842BXM5M",
+        "B08F7WFLCT",
+        "B08B14WCHR"
+      ],
+      "target_item_id": "B0845LNDJK",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEV4UO43YIZXLNB4E64KWRJ3ACXQ",
+      "original_candidate_order": [
+        "B09DXR7QJY",
+        "B092M5K59T",
+        "B01N5SHGS0",
+        "B084BS1GJP",
+        "B09PDK38GB",
+        "B08YJV9YL2"
+      ],
+      "shuffled_candidate_order": [
+        "B09PDK38GB",
+        "B092M5K59T",
+        "B08YJV9YL2",
+        "B084BS1GJP",
+        "B01N5SHGS0",
+        "B09DXR7QJY"
+      ],
+      "target_item_id": "B09DXR7QJY",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEW7UUQLNWWCKDWBUNIXACTNMZ4A",
+      "original_candidate_order": [
+        "B08Q3F3L7S",
+        "B084ZHP45Y",
+        "B086JN17SK",
+        "B08VDCWKHV",
+        "B0B85L2JTC",
+        "B08BRS98SF"
+      ],
+      "shuffled_candidate_order": [
+        "B0B85L2JTC",
+        "B086JN17SK",
+        "B084ZHP45Y",
+        "B08VDCWKHV",
+        "B08BRS98SF",
+        "B08Q3F3L7S"
+      ],
+      "target_item_id": "B08Q3F3L7S",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEX6F3NHCLMPXTPAS2CVOUQMOEUA",
+      "original_candidate_order": [
+        "B08MW22P84",
+        "B08R3F946X",
+        "B07ZSRTCH8",
+        "B086W18W1W",
+        "B0813ZQG3T",
+        "B09DCGXDLL"
+      ],
+      "shuffled_candidate_order": [
+        "B08R3F946X",
+        "B0813ZQG3T",
+        "B07ZSRTCH8",
+        "B08MW22P84",
+        "B086W18W1W",
+        "B09DCGXDLL"
+      ],
+      "target_item_id": "B08MW22P84",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEXGISIVX7WBUNI7UHHERVB3DF7Q",
+      "original_candidate_order": [
+        "B01MA3LXIL",
+        "B08L3J4FB9",
+        "B085RS26YH",
+        "B085KXJGHJ",
+        "B08MW3BNP8",
+        "B08BZ1RHPS"
+      ],
+      "shuffled_candidate_order": [
+        "B08L3J4FB9",
+        "B085RS26YH",
+        "B085KXJGHJ",
+        "B08MW3BNP8",
+        "B01MA3LXIL",
+        "B08BZ1RHPS"
+      ],
+      "target_item_id": "B01MA3LXIL",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AEZAZT27EFV2Z7YBOJ5TPIN7T3LQ",
+      "original_candidate_order": [
+        "B00PGGLADO",
+        "B07S8F3LRC",
+        "B0932BXNKC",
+        "B0B6QHG99T",
+        "B09NV6JY1Y",
+        "B08CZ5JZMZ"
+      ],
+      "shuffled_candidate_order": [
+        "B09NV6JY1Y",
+        "B08CZ5JZMZ",
+        "B07S8F3LRC",
+        "B0B6QHG99T",
+        "B0932BXNKC",
+        "B00PGGLADO"
+      ],
+      "target_item_id": "B00PGGLADO",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AF4XCHGF2AJ4S2MV22Y7KOUJFZPQ",
+      "original_candidate_order": [
+        "B005HJHPCA",
+        "B087D7MVHB",
+        "B0837K9W6P",
+        "B0B186FXGM",
+        "B08P15TB2V",
+        "B08DXLRTSB"
+      ],
+      "shuffled_candidate_order": [
+        "B08DXLRTSB",
+        "B0B186FXGM",
+        "B087D7MVHB",
+        "B005HJHPCA",
+        "B08P15TB2V",
+        "B0837K9W6P"
+      ],
+      "target_item_id": "B005HJHPCA",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AF6FMTV5MQT2UJT5DR6VSOTNZ6QA",
+      "original_candidate_order": [
+        "B08VMWZ7N2",
+        "B093P3GKF6",
+        "B08DXZ5VXB",
+        "B009GPP546",
+        "B08B3SJNL5",
+        "B07MN1KJ15"
+      ],
+      "shuffled_candidate_order": [
+        "B07MN1KJ15",
+        "B08DXZ5VXB",
+        "B009GPP546",
+        "B093P3GKF6",
+        "B08B3SJNL5",
+        "B08VMWZ7N2"
+      ],
+      "target_item_id": "B08VMWZ7N2",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFB7QGOJXRTRRZ3SDOSIRCR66UQQ",
+      "original_candidate_order": [
+        "B09C6P3174",
+        "B09N9TZLG3",
+        "B08WTX8K9F",
+        "B07SDQNK1R",
+        "B087PJ121M",
+        "B07DY1RDQR"
+      ],
+      "shuffled_candidate_order": [
+        "B09N9TZLG3",
+        "B087PJ121M",
+        "B07DY1RDQR",
+        "B07SDQNK1R",
+        "B09C6P3174",
+        "B08WTX8K9F"
+      ],
+      "target_item_id": "B09C6P3174",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFBYZ76467VCBKRQXZI66T7JLO4Q",
+      "original_candidate_order": [
+        "B0B7L3W5WD",
+        "B08CZG1MQF",
+        "B088X67C26",
+        "B093GX6XVV",
+        "B08CVTNQP1",
+        "B08MPK4JRB"
+      ],
+      "shuffled_candidate_order": [
+        "B088X67C26",
+        "B093GX6XVV",
+        "B08CZG1MQF",
+        "B0B7L3W5WD",
+        "B08MPK4JRB",
+        "B08CVTNQP1"
+      ],
+      "target_item_id": "B0B7L3W5WD",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFCQODXRVHWIJD5CWNND7J4GQ2MA",
+      "original_candidate_order": [
+        "B091TKH1JF",
+        "B08L4JSM2T",
+        "B08FD2KP9R",
+        "B08T6M827B",
+        "B0B8Q3WTGP",
+        "B0B4VHNL46"
+      ],
+      "shuffled_candidate_order": [
+        "B08FD2KP9R",
+        "B091TKH1JF",
+        "B08L4JSM2T",
+        "B0B4VHNL46",
+        "B0B8Q3WTGP",
+        "B08T6M827B"
+      ],
+      "target_item_id": "B091TKH1JF",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFDOMKOLLKBF4SWKTPC5JFDT4BHA",
+      "original_candidate_order": [
+        "B0BNWSR278",
+        "B0B34GRFL2",
+        "B09PNGDR81",
+        "B085WTCBLG",
+        "B08S1LWF9V",
+        "B085ZRVDKP"
+      ],
+      "shuffled_candidate_order": [
+        "B085ZRVDKP",
+        "B0B34GRFL2",
+        "B0BNWSR278",
+        "B08S1LWF9V",
+        "B085WTCBLG",
+        "B09PNGDR81"
+      ],
+      "target_item_id": "B0BNWSR278",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFEFRMJ5OQHPKVHB3YSZXIS7V4CQ",
+      "original_candidate_order": [
+        "B089CSR3KF",
+        "B00P93UO5O",
+        "B00XVYRQ1I",
+        "B0BPM7SBDK",
+        "B08GWT454V",
+        "B08HZ5Y8RY"
+      ],
+      "shuffled_candidate_order": [
+        "B0BPM7SBDK",
+        "B08GWT454V",
+        "B089CSR3KF",
+        "B00P93UO5O",
+        "B08HZ5Y8RY",
+        "B00XVYRQ1I"
+      ],
+      "target_item_id": "B089CSR3KF",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFESFBY7EYJMQNKR572SZFAAET5Q",
+      "original_candidate_order": [
+        "B09S6VFV48",
+        "B07SW7D6ZR",
+        "B0BN12F234",
+        "B083QP6MX4",
+        "B08CZM3GH3",
+        "B087ZQK2G8"
+      ],
+      "shuffled_candidate_order": [
+        "B08CZM3GH3",
+        "B087ZQK2G8",
+        "B083QP6MX4",
+        "B0BN12F234",
+        "B09S6VFV48",
+        "B07SW7D6ZR"
+      ],
+      "target_item_id": "B09S6VFV48",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFEYHZ6ZZCDYHVCZKIEDM2HZTVSA",
+      "original_candidate_order": [
+        "B07K7FB3WB",
+        "B07PPLGRM2",
+        "B08XJTL1D1",
+        "B0957HB33L",
+        "B09PNGDR81",
+        "B08D6WBXD7"
+      ],
+      "shuffled_candidate_order": [
+        "B08D6WBXD7",
+        "B07K7FB3WB",
+        "B09PNGDR81",
+        "B08XJTL1D1",
+        "B0957HB33L",
+        "B07PPLGRM2"
+      ],
+      "target_item_id": "B07K7FB3WB",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFF6DS6NOWRIF2AROFASUVVOPYLA",
+      "original_candidate_order": [
+        "B0BKLCF1CL",
+        "B08H5S2MJJ",
+        "B01N5SHGS0",
+        "B086TS3BKQ",
+        "B08LPJT4MT",
+        "B00X6P92OG"
+      ],
+      "shuffled_candidate_order": [
+        "B0BKLCF1CL",
+        "B00X6P92OG",
+        "B08H5S2MJJ",
+        "B08LPJT4MT",
+        "B086TS3BKQ",
+        "B01N5SHGS0"
+      ],
+      "target_item_id": "B0BKLCF1CL",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFGGRGHGHSFKMZASFBYFRHBBEOPA",
+      "original_candidate_order": [
+        "B09DQV8MK7",
+        "B07S9H98QF",
+        "B00DT4757A",
+        "B08LPJT4MT",
+        "B09MKLLL5J",
+        "B08VNP9MKF"
+      ],
+      "shuffled_candidate_order": [
+        "B09DQV8MK7",
+        "B07S9H98QF",
+        "B08VNP9MKF",
+        "B00DT4757A",
+        "B08LPJT4MT",
+        "B09MKLLL5J"
+      ],
+      "target_item_id": "B09DQV8MK7",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFGJYXOLE2THZ4IF3UVLSRTECMIQ",
+      "original_candidate_order": [
+        "B08K2V6WGH",
+        "B09CLNDMXX",
+        "B09LWV3HH2",
+        "B0B8NLVLPD",
+        "B095NZ5TLV",
+        "B07V2L94ZW"
+      ],
+      "shuffled_candidate_order": [
+        "B07V2L94ZW",
+        "B095NZ5TLV",
+        "B08K2V6WGH",
+        "B09LWV3HH2",
+        "B0B8NLVLPD",
+        "B09CLNDMXX"
+      ],
+      "target_item_id": "B08K2V6WGH",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFIAXFQN3RHN7U2MU42EJHMYMOXA",
+      "original_candidate_order": [
+        "B0832Z7KFJ",
+        "B09PNGDR81",
+        "B07W7PNSV2",
+        "B082FWK886",
+        "B08L4HTQ3R",
+        "B00KCTER3U"
+      ],
+      "shuffled_candidate_order": [
+        "B07W7PNSV2",
+        "B09PNGDR81",
+        "B08L4HTQ3R",
+        "B0832Z7KFJ",
+        "B00KCTER3U",
+        "B082FWK886"
+      ],
+      "target_item_id": "B0832Z7KFJ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFL5SKVALRTNSIM76DG5JLV5EKTA",
+      "original_candidate_order": [
+        "B0B593V71L",
+        "B09CLNDMXX",
+        "B093DZZ6DS",
+        "B01KJPFO9W",
+        "B088FBNQXW",
+        "B09LLKBZ3S"
+      ],
+      "shuffled_candidate_order": [
+        "B088FBNQXW",
+        "B01KJPFO9W",
+        "B09CLNDMXX",
+        "B0B593V71L",
+        "B093DZZ6DS",
+        "B09LLKBZ3S"
+      ],
+      "target_item_id": "B0B593V71L",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFLI33M7ADMQ2B3DSIJLODWUHTAA",
+      "original_candidate_order": [
+        "B08K2WH8LK",
+        "B0B4VHNL46",
+        "B0C711DDV7",
+        "B08MPK4JRB",
+        "B093P3GKF6",
+        "B09492T3QR"
+      ],
+      "shuffled_candidate_order": [
+        "B0C711DDV7",
+        "B08MPK4JRB",
+        "B09492T3QR",
+        "B08K2WH8LK",
+        "B093P3GKF6",
+        "B0B4VHNL46"
+      ],
+      "target_item_id": "B08K2WH8LK",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFOKWZIJI7K6Z6R4T7SSXRTWZNOQ",
+      "original_candidate_order": [
+        "B09XF4WD3V",
+        "B09BR6T5X6",
+        "B07S8F3LRC",
+        "B07STZPR5W",
+        "B004RC8TW8",
+        "B089QR2Y5B"
+      ],
+      "shuffled_candidate_order": [
+        "B09BR6T5X6",
+        "B089QR2Y5B",
+        "B07STZPR5W",
+        "B07S8F3LRC",
+        "B004RC8TW8",
+        "B09XF4WD3V"
+      ],
+      "target_item_id": "B09XF4WD3V",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFOYDZTIH27IJJKIXXKAPVRFQ2OQ",
+      "original_candidate_order": [
+        "B00OS9YWJY",
+        "B09KT4RJG6",
+        "B00O2FGBJS",
+        "B00MQ6BE92",
+        "B08R2MJJV3",
+        "B07YS9W97B"
+      ],
+      "shuffled_candidate_order": [
+        "B00MQ6BE92",
+        "B00O2FGBJS",
+        "B08R2MJJV3",
+        "B00OS9YWJY",
+        "B07YS9W97B",
+        "B09KT4RJG6"
+      ],
+      "target_item_id": "B00OS9YWJY",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFPF2CONJ33FNFKOEQ2TUNWQJTFQ",
+      "original_candidate_order": [
+        "B07Y2WSGVW",
+        "B0912BNP4J",
+        "B07S8F3GWK",
+        "B07VDCD17L",
+        "B07VHZDHR6",
+        "B08LZLBXYT"
+      ],
+      "shuffled_candidate_order": [
+        "B07VHZDHR6",
+        "B08LZLBXYT",
+        "B07Y2WSGVW",
+        "B07S8F3GWK",
+        "B0912BNP4J",
+        "B07VDCD17L"
+      ],
+      "target_item_id": "B07Y2WSGVW",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFPMVI6ZRR7KS7AWRIBCKILWDVIA",
+      "original_candidate_order": [
+        "B01MA3LXIL",
+        "B09JNRPRKT",
+        "B08B5FJMHM",
+        "B07RPL6JK9",
+        "B07TV7DFZC",
+        "B082XHLYZ5"
+      ],
+      "shuffled_candidate_order": [
+        "B07RPL6JK9",
+        "B09JNRPRKT",
+        "B082XHLYZ5",
+        "B08B5FJMHM",
+        "B07TV7DFZC",
+        "B01MA3LXIL"
+      ],
+      "target_item_id": "B01MA3LXIL",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFPPNF3RSFMMNC5UAM6V4B475MBQ",
+      "original_candidate_order": [
+        "B09LX1NLG3",
+        "B082VKPJV5",
+        "B08DX9P6V1",
+        "B08HMJT41C",
+        "B07Q9516Z2",
+        "B08DXCVRNY"
+      ],
+      "shuffled_candidate_order": [
+        "B07Q9516Z2",
+        "B08DXCVRNY",
+        "B08DX9P6V1",
+        "B08HMJT41C",
+        "B09LX1NLG3",
+        "B082VKPJV5"
+      ],
+      "target_item_id": "B09LX1NLG3",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFQ67MCWNIGBQPMBJTAXCUP7TX3Q",
+      "original_candidate_order": [
+        "B0B64PMWPH",
+        "B0B5X48DZR",
+        "B07LCF4BK5",
+        "B0BPM7SBDK",
+        "B00P93UO5O",
+        "B08T9BGQ6H"
+      ],
+      "shuffled_candidate_order": [
+        "B0BPM7SBDK",
+        "B08T9BGQ6H",
+        "B07LCF4BK5",
+        "B0B5X48DZR",
+        "B00P93UO5O",
+        "B0B64PMWPH"
+      ],
+      "target_item_id": "B0B64PMWPH",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFRQX3MJPV3GVQH52IOSS3RJ74JA",
+      "original_candidate_order": [
+        "B00OPEASFO",
+        "B086SFGYXX",
+        "B07YQG1Y2Z",
+        "B00U2VQZC4",
+        "B082NKQ4ZT",
+        "B00T83843U"
+      ],
+      "shuffled_candidate_order": [
+        "B086SFGYXX",
+        "B00OPEASFO",
+        "B00T83843U",
+        "B07YQG1Y2Z",
+        "B082NKQ4ZT",
+        "B00U2VQZC4"
+      ],
+      "target_item_id": "B00OPEASFO",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFSKPY37N3C43SOI5IEXEK5JSIYA",
+      "original_candidate_order": [
+        "B07RBSLNFR",
+        "B0863FZFPV",
+        "B08WPXVK2P",
+        "B0857H7SCD",
+        "B08F7FX3RJ",
+        "B07VHZDHR6"
+      ],
+      "shuffled_candidate_order": [
+        "B0863FZFPV",
+        "B07VHZDHR6",
+        "B07RBSLNFR",
+        "B08WPXVK2P",
+        "B08F7FX3RJ",
+        "B0857H7SCD"
+      ],
+      "target_item_id": "B07RBSLNFR",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFVOZ4UNUZKEQ7GTQ3IHQY7PZ5FA_1",
+      "original_candidate_order": [
+        "B09S6VFV48",
+        "B0859CYSTM",
+        "B08L4Y347P",
+        "B075M9L47N",
+        "B08BB3P4VQ",
+        "B08P5JZYX8"
+      ],
+      "shuffled_candidate_order": [
+        "B075M9L47N",
+        "B08L4Y347P",
+        "B08P5JZYX8",
+        "B09S6VFV48",
+        "B0859CYSTM",
+        "B08BB3P4VQ"
+      ],
+      "target_item_id": "B09S6VFV48",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AFWTG5KZEI542BTLSOT3I7SGFMFA",
+      "original_candidate_order": [
+        "B07CTMKDN3",
+        "B08P5579KC",
+        "B07YXB7TJ4",
+        "B0793JDW3W",
+        "B09QZNR4DB",
+        "B07DXLDS9G"
+      ],
+      "shuffled_candidate_order": [
+        "B07YXB7TJ4",
+        "B07CTMKDN3",
+        "B0793JDW3W",
+        "B08P5579KC",
+        "B07DXLDS9G",
+        "B09QZNR4DB"
+      ],
+      "target_item_id": "B07CTMKDN3",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AG4BOUOPWFVYET2U3COYJD4V3X5A",
+      "original_candidate_order": [
+        "B08KWN77LW",
+        "B07S8F3LRC",
+        "B091DF3MPN",
+        "B0875V791H",
+        "B08WPXVK2P",
+        "B08Z7FQGW3"
+      ],
+      "shuffled_candidate_order": [
+        "B07S8F3LRC",
+        "B08WPXVK2P",
+        "B08KWN77LW",
+        "B0875V791H",
+        "B08Z7FQGW3",
+        "B091DF3MPN"
+      ],
+      "target_item_id": "B08KWN77LW",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AG4D44BNNLUEZNG7COK2CNRYUHYQ",
+      "original_candidate_order": [
+        "B09LS5B4FC",
+        "B09MDWLNBR",
+        "B09XF5VG5W",
+        "B08GKVYS1Y",
+        "B08CC6YRLJ",
+        "B08GWT454V"
+      ],
+      "shuffled_candidate_order": [
+        "B08GWT454V",
+        "B08CC6YRLJ",
+        "B09LS5B4FC",
+        "B09XF5VG5W",
+        "B08GKVYS1Y",
+        "B09MDWLNBR"
+      ],
+      "target_item_id": "B09LS5B4FC",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AG63W2BMC4HRP76AMS36AYY64AHA",
+      "original_candidate_order": [
+        "B0924896KW",
+        "B08KRT47KY",
+        "B09L33VJCL",
+        "B08MVPVJ7V",
+        "B08GMC5ZRY",
+        "B097YYB2GV"
+      ],
+      "shuffled_candidate_order": [
+        "B08MVPVJ7V",
+        "B097YYB2GV",
+        "B08KRT47KY",
+        "B0924896KW",
+        "B08GMC5ZRY",
+        "B09L33VJCL"
+      ],
+      "target_item_id": "B0924896KW",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGAV7IY4HWGYRUIAGUZRXYUJ22DA",
+      "original_candidate_order": [
+        "B015A5DGG4",
+        "B08BRS98SF",
+        "B0C5V83YMB",
+        "B09XX4VR4Y",
+        "B08T96NYB9",
+        "B0B7DQ98PR"
+      ],
+      "shuffled_candidate_order": [
+        "B08T96NYB9",
+        "B015A5DGG4",
+        "B0C5V83YMB",
+        "B08BRS98SF",
+        "B0B7DQ98PR",
+        "B09XX4VR4Y"
+      ],
+      "target_item_id": "B015A5DGG4",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGBJJYJ3CKEKID5PLR2QGGUZFCVA",
+      "original_candidate_order": [
+        "B082XHLYZ5",
+        "B082DGDDSH",
+        "B088NVJSJT",
+        "B08QVJ4NVD",
+        "B095RYJJHY",
+        "B09NV6JY1Y"
+      ],
+      "shuffled_candidate_order": [
+        "B088NVJSJT",
+        "B09NV6JY1Y",
+        "B082XHLYZ5",
+        "B095RYJJHY",
+        "B08QVJ4NVD",
+        "B082DGDDSH"
+      ],
+      "target_item_id": "B082XHLYZ5",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGCGQWDEGSGIIT7AZZ7RGY5ZU74Q",
+      "original_candidate_order": [
+        "B0B2VVXM9C",
+        "B08BZ1RHPS",
+        "B08S1LWF9V",
+        "B08M8Z51F1",
+        "B0815TNMTL",
+        "B07V2L94ZW"
+      ],
+      "shuffled_candidate_order": [
+        "B08M8Z51F1",
+        "B0B2VVXM9C",
+        "B07V2L94ZW",
+        "B08S1LWF9V",
+        "B08BZ1RHPS",
+        "B0815TNMTL"
+      ],
+      "target_item_id": "B0B2VVXM9C",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGF6TCJ5DIUYHXKWWLFKAY2HUIXQ",
+      "original_candidate_order": [
+        "B08Q8NQMX2",
+        "B082MDFNZM",
+        "B0868W34QW",
+        "B08NPBQR9L",
+        "B08T5RVSD9",
+        "B09GGVH7RQ"
+      ],
+      "shuffled_candidate_order": [
+        "B09GGVH7RQ",
+        "B08NPBQR9L",
+        "B08Q8NQMX2",
+        "B0868W34QW",
+        "B08T5RVSD9",
+        "B082MDFNZM"
+      ],
+      "target_item_id": "B08Q8NQMX2",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGFLDIUYV2PKF5Q7IEMULR52GW2Q",
+      "original_candidate_order": [
+        "B08HZ5Y8RY",
+        "B08N5NDVGH",
+        "B00PKIE760",
+        "B0C711DDV7",
+        "B08CC6YRLJ",
+        "B08RS762Z7"
+      ],
+      "shuffled_candidate_order": [
+        "B08CC6YRLJ",
+        "B08HZ5Y8RY",
+        "B00PKIE760",
+        "B08N5NDVGH",
+        "B0C711DDV7",
+        "B08RS762Z7"
+      ],
+      "target_item_id": "B08HZ5Y8RY",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGFXY5HVXFJFJ2SJDGZL5YLGR6RA",
+      "original_candidate_order": [
+        "B088LWRYJC",
+        "B08YNR839W",
+        "B094TBJ2QN",
+        "B08CR1YH7B",
+        "B07PHWX88W",
+        "B09Q5TTQS7"
+      ],
+      "shuffled_candidate_order": [
+        "B09Q5TTQS7",
+        "B094TBJ2QN",
+        "B08CR1YH7B",
+        "B07PHWX88W",
+        "B08YNR839W",
+        "B088LWRYJC"
+      ],
+      "target_item_id": "B088LWRYJC",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGGD6CXA3JFPIPECTSBFB43YZQAA",
+      "original_candidate_order": [
+        "B07W4DHYLK",
+        "B09WN3KBDF",
+        "B08VKNT86J",
+        "B09NBDZDJW",
+        "B07XM9KWNH",
+        "B07T3PC35M"
+      ],
+      "shuffled_candidate_order": [
+        "B07T3PC35M",
+        "B09WN3KBDF",
+        "B09NBDZDJW",
+        "B07W4DHYLK",
+        "B08VKNT86J",
+        "B07XM9KWNH"
+      ],
+      "target_item_id": "B07W4DHYLK",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGIGXAVHVBQFXBXMOBNJ6HFY36MA",
+      "original_candidate_order": [
+        "B0B8CX4MKV",
+        "B096S4RQNH",
+        "B0BBM276SL",
+        "B08K4Q8S7P",
+        "B08LPC1G23",
+        "B08B14WCHR"
+      ],
+      "shuffled_candidate_order": [
+        "B08LPC1G23",
+        "B096S4RQNH",
+        "B0BBM276SL",
+        "B0B8CX4MKV",
+        "B08K4Q8S7P",
+        "B08B14WCHR"
+      ],
+      "target_item_id": "B0B8CX4MKV",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGJZWPISMR5ZKZ6W3XKSS3HMSMIQ",
+      "original_candidate_order": [
+        "B0BNJ2KVTP",
+        "B075M9L47N",
+        "B0849YFB92",
+        "B08MRRNL18",
+        "B07DY1RDQR",
+        "B08KG48M5L"
+      ],
+      "shuffled_candidate_order": [
+        "B0BNJ2KVTP",
+        "B0849YFB92",
+        "B08KG48M5L",
+        "B08MRRNL18",
+        "B07DY1RDQR",
+        "B075M9L47N"
+      ],
+      "target_item_id": "B0BNJ2KVTP",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGK5FHPJXPI75CVFCUKFFKLIF3VQ",
+      "original_candidate_order": [
+        "B085SY4WC3",
+        "B08BFH35VX",
+        "B086Z22XP3",
+        "B0BGS9F2FM",
+        "B07K7FB3WB",
+        "B0B6QK5ML2"
+      ],
+      "shuffled_candidate_order": [
+        "B07K7FB3WB",
+        "B0B6QK5ML2",
+        "B086Z22XP3",
+        "B0BGS9F2FM",
+        "B085SY4WC3",
+        "B08BFH35VX"
+      ],
+      "target_item_id": "B085SY4WC3",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGK6WBB4NS3NWCQQL7KQVU7XVLMA",
+      "original_candidate_order": [
+        "B08TB3DZ1D",
+        "B08BLX72TP",
+        "B089R7S73D",
+        "B08P7PSMRR",
+        "B08P5JZYX8",
+        "B08VDCWKHV"
+      ],
+      "shuffled_candidate_order": [
+        "B08VDCWKHV",
+        "B08TB3DZ1D",
+        "B08P5JZYX8",
+        "B08P7PSMRR",
+        "B08BLX72TP",
+        "B089R7S73D"
+      ],
+      "target_item_id": "B08TB3DZ1D",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGNN3VUKKFLK5VP7J7ICUSXMILTQ",
+      "original_candidate_order": [
+        "B0B4YJ3Z8W",
+        "B08H5S2MJJ",
+        "B082TPQY2R",
+        "B08879N2W3",
+        "B08FR3QXYY",
+        "B07NVTT4JS"
+      ],
+      "shuffled_candidate_order": [
+        "B0B4YJ3Z8W",
+        "B082TPQY2R",
+        "B07NVTT4JS",
+        "B08H5S2MJJ",
+        "B08FR3QXYY",
+        "B08879N2W3"
+      ],
+      "target_item_id": "B0B4YJ3Z8W",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGO73O7JZXWFCHYBNYW7GBEBYXKA",
+      "original_candidate_order": [
+        "B08DRNK7PS",
+        "B0B9C3C8SS",
+        "B082VYX7G8",
+        "B09L83YMXF",
+        "B08575Y9V3",
+        "B086VRRD99"
+      ],
+      "shuffled_candidate_order": [
+        "B08575Y9V3",
+        "B086VRRD99",
+        "B08DRNK7PS",
+        "B09L83YMXF",
+        "B082VYX7G8",
+        "B0B9C3C8SS"
+      ],
+      "target_item_id": "B08DRNK7PS",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGOVWV4LJFKR5CHYQFAPALIT4TBA",
+      "original_candidate_order": [
+        "B0895XPZNT",
+        "B091GG4N2X",
+        "B09V2MR177",
+        "B09NKFQL53",
+        "B07DFNPVSF",
+        "B075KLSX61"
+      ],
+      "shuffled_candidate_order": [
+        "B0895XPZNT",
+        "B091GG4N2X",
+        "B075KLSX61",
+        "B09V2MR177",
+        "B07DFNPVSF",
+        "B09NKFQL53"
+      ],
+      "target_item_id": "B0895XPZNT",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGROJMVDIUS3PBURBTV5MX5CVKSA",
+      "original_candidate_order": [
+        "B09C5NQSC5",
+        "B088TYPM71",
+        "B0BG6WX4DH",
+        "B08HVRP54L",
+        "B08837W489",
+        "B01N7A5AGF"
+      ],
+      "shuffled_candidate_order": [
+        "B08HVRP54L",
+        "B08837W489",
+        "B088TYPM71",
+        "B01N7A5AGF",
+        "B0BG6WX4DH",
+        "B09C5NQSC5"
+      ],
+      "target_item_id": "B09C5NQSC5",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGS2DBJGUNUWPY7K4JQKAWKOGGHQ",
+      "original_candidate_order": [
+        "B07FPS2VFK",
+        "B0885W8GCL",
+        "B09NKFQL53",
+        "B094VSZNNK",
+        "B00CUF29WU",
+        "B08FMKPW75"
+      ],
+      "shuffled_candidate_order": [
+        "B09NKFQL53",
+        "B094VSZNNK",
+        "B08FMKPW75",
+        "B07FPS2VFK",
+        "B00CUF29WU",
+        "B0885W8GCL"
+      ],
+      "target_item_id": "B07FPS2VFK",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGTGHYRTZXKX4AIL42A3FKWR7SOQ",
+      "original_candidate_order": [
+        "B08CZ5JZMZ",
+        "B08DRNK7PS",
+        "B08T5RVSD9",
+        "B084VCJY8D",
+        "B07VWLSNYN",
+        "B07YL4485K"
+      ],
+      "shuffled_candidate_order": [
+        "B07VWLSNYN",
+        "B084VCJY8D",
+        "B07YL4485K",
+        "B08CZ5JZMZ",
+        "B08DRNK7PS",
+        "B08T5RVSD9"
+      ],
+      "target_item_id": "B08CZ5JZMZ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGXHFUENM3G65MN4BGET2DNU4IAQ",
+      "original_candidate_order": [
+        "B07S9H98QF",
+        "B00L4HJX7O",
+        "B08XZDXTG2",
+        "B087PJ121M",
+        "B096T29D7N",
+        "B09GGVH7RQ"
+      ],
+      "shuffled_candidate_order": [
+        "B00L4HJX7O",
+        "B087PJ121M",
+        "B07S9H98QF",
+        "B08XZDXTG2",
+        "B096T29D7N",
+        "B09GGVH7RQ"
+      ],
+      "target_item_id": "B07S9H98QF",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGYVC7KVHP2AWM7BDCEYNHFA6F3Q",
+      "original_candidate_order": [
+        "B0B34GRFL2",
+        "B08T6M827B",
+        "B09GGC6696",
+        "B08N6CLJ6P",
+        "B0BDFKFWQF",
+        "B091DF3MPN"
+      ],
+      "shuffled_candidate_order": [
+        "B09GGC6696",
+        "B08N6CLJ6P",
+        "B0B34GRFL2",
+        "B0BDFKFWQF",
+        "B091DF3MPN",
+        "B08T6M827B"
+      ],
+      "target_item_id": "B0B34GRFL2",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGZMKHWSCB3UXDGFUPFRZSL4EAWQ",
+      "original_candidate_order": [
+        "B084ZHP45Y",
+        "B00W6X0I56",
+        "B085WTCBLG",
+        "B08H1XKLMS",
+        "B07YNDWRCB",
+        "B093JGCRWX"
+      ],
+      "shuffled_candidate_order": [
+        "B08H1XKLMS",
+        "B07YNDWRCB",
+        "B084ZHP45Y",
+        "B085WTCBLG",
+        "B00W6X0I56",
+        "B093JGCRWX"
+      ],
+      "target_item_id": "B084ZHP45Y",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGZSDSHEGWQOJZAJRXGXXV4FULIA",
+      "original_candidate_order": [
+        "B089KDH1H5",
+        "B08WTX8K9F",
+        "B07S7G1WPT",
+        "B08DRBZNZJ",
+        "B0851T7HDS",
+        "B0B5VP6TZ7"
+      ],
+      "shuffled_candidate_order": [
+        "B0851T7HDS",
+        "B0B5VP6TZ7",
+        "B089KDH1H5",
+        "B08DRBZNZJ",
+        "B08WTX8K9F",
+        "B07S7G1WPT"
+      ],
+      "target_item_id": "B089KDH1H5",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AGZYMSCZZ5SPWHX5AVWTP64TY7AA",
+      "original_candidate_order": [
+        "B09G22586Y",
+        "B08RMZXNH8",
+        "B08MT8L5ZL",
+        "B09V7S7GVZ",
+        "B08GS19PM7",
+        "B0857H7SCD"
+      ],
+      "shuffled_candidate_order": [
+        "B09G22586Y",
+        "B09V7S7GVZ",
+        "B08MT8L5ZL",
+        "B0857H7SCD",
+        "B08RMZXNH8",
+        "B08GS19PM7"
+      ],
+      "target_item_id": "B09G22586Y",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHBFC446AIQBMLC3U4SV6YJJERPQ",
+      "original_candidate_order": [
+        "B009GPP546",
+        "B08P2DZB4X",
+        "B09T5L3GF2",
+        "B08DRBZNZJ",
+        "B09FNTZFZZ",
+        "B096G6722H"
+      ],
+      "shuffled_candidate_order": [
+        "B09FNTZFZZ",
+        "B096G6722H",
+        "B09T5L3GF2",
+        "B08DRBZNZJ",
+        "B08P2DZB4X",
+        "B009GPP546"
+      ],
+      "target_item_id": "B009GPP546",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHCOV6ID7GFK6ABVU35ZNEJAXT6A",
+      "original_candidate_order": [
+        "B08HL2GW6R",
+        "B08VKNT86J",
+        "B07QN8B5VG",
+        "B0BKGM8XVS",
+        "B0912BNP4J",
+        "B0B8JVSXZ6"
+      ],
+      "shuffled_candidate_order": [
+        "B0BKGM8XVS",
+        "B0B8JVSXZ6",
+        "B08HL2GW6R",
+        "B07QN8B5VG",
+        "B08VKNT86J",
+        "B0912BNP4J"
+      ],
+      "target_item_id": "B08HL2GW6R",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHCZPHIPKSBSHMF7WLBPVQSEWM5A",
+      "original_candidate_order": [
+        "B0B2VVXM9C",
+        "B00KCTER3U",
+        "B08D6WBXD7",
+        "B08H1XKLMS",
+        "B0895FHBVG",
+        "B07DPMKDVH"
+      ],
+      "shuffled_candidate_order": [
+        "B08H1XKLMS",
+        "B0895FHBVG",
+        "B00KCTER3U",
+        "B07DPMKDVH",
+        "B08D6WBXD7",
+        "B0B2VVXM9C"
+      ],
+      "target_item_id": "B0B2VVXM9C",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHKADS7LVZVUGZWPOYIDMZMNPJRA",
+      "original_candidate_order": [
+        "B08DX9P6V1",
+        "B09ZDQ626L",
+        "B09R826BXF",
+        "B08693T3XR",
+        "B08HN7771X",
+        "B08RY2LML3"
+      ],
+      "shuffled_candidate_order": [
+        "B09ZDQ626L",
+        "B08RY2LML3",
+        "B08693T3XR",
+        "B08DX9P6V1",
+        "B08HN7771X",
+        "B09R826BXF"
+      ],
+      "target_item_id": "B08DX9P6V1",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHL5NDZ4IEYIQJVI2PZ66LORSVHQ",
+      "original_candidate_order": [
+        "B07S8F3GWK",
+        "B08N9RT9YD",
+        "B07LCHCD6Q",
+        "B08KNVV18L",
+        "B0BTTRRH98",
+        "B09QZNR4DB"
+      ],
+      "shuffled_candidate_order": [
+        "B0BTTRRH98",
+        "B07S8F3GWK",
+        "B08KNVV18L",
+        "B07LCHCD6Q",
+        "B09QZNR4DB",
+        "B08N9RT9YD"
+      ],
+      "target_item_id": "B07S8F3GWK",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHLFYIOJCRSSMGT54XQJ7LVZ6W4Q",
+      "original_candidate_order": [
+        "B08RYN11N9",
+        "B07P88S8SV",
+        "B0B1T39KQM",
+        "B07XM9KWNH",
+        "B09SHR3YR3",
+        "B08N5NDVGH"
+      ],
+      "shuffled_candidate_order": [
+        "B07P88S8SV",
+        "B0B1T39KQM",
+        "B08N5NDVGH",
+        "B07XM9KWNH",
+        "B08RYN11N9",
+        "B09SHR3YR3"
+      ],
+      "target_item_id": "B08RYN11N9",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHO5LQV4ORBQEIAKS5PS3SAKDMRQ",
+      "original_candidate_order": [
+        "B08LZLBXYT",
+        "B00LHZC4GA",
+        "B0B593BBTH",
+        "B08CPF22H2",
+        "B0B62GY2RX",
+        "B08GKLTPFQ"
+      ],
+      "shuffled_candidate_order": [
+        "B00LHZC4GA",
+        "B0B593BBTH",
+        "B08CPF22H2",
+        "B08GKLTPFQ",
+        "B0B62GY2RX",
+        "B08LZLBXYT"
+      ],
+      "target_item_id": "B08LZLBXYT",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHPGHDFIU3BUB3RQBP56RQQA7W4Q",
+      "original_candidate_order": [
+        "B09W287PQT",
+        "B086W18W1W",
+        "B01N5SHGS0",
+        "B08S2LYN64",
+        "B07Q9516Z2",
+        "B083CXR5V8"
+      ],
+      "shuffled_candidate_order": [
+        "B07Q9516Z2",
+        "B083CXR5V8",
+        "B09W287PQT",
+        "B01N5SHGS0",
+        "B08S2LYN64",
+        "B086W18W1W"
+      ],
+      "target_item_id": "B09W287PQT",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHR4NVRGPOS6GIJ3O4WQ3D4KUKRA",
+      "original_candidate_order": [
+        "B088GWCVVJ",
+        "B08Y7HV8CQ",
+        "B0876L7BWM",
+        "B07WRVM3Z2",
+        "B0875V791H",
+        "B08DXZW75W"
+      ],
+      "shuffled_candidate_order": [
+        "B07WRVM3Z2",
+        "B08Y7HV8CQ",
+        "B088GWCVVJ",
+        "B0876L7BWM",
+        "B08DXZW75W",
+        "B0875V791H"
+      ],
+      "target_item_id": "B088GWCVVJ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHR4X2QIPJX42NRSHZH4BGOFGPXA",
+      "original_candidate_order": [
+        "B08F4ZDVZQ",
+        "B09BN5TYK5",
+        "B08MW22P84",
+        "B08F7FX3RJ",
+        "B085J24382",
+        "B07N318SLJ"
+      ],
+      "shuffled_candidate_order": [
+        "B08F4ZDVZQ",
+        "B09BN5TYK5",
+        "B07N318SLJ",
+        "B08MW22P84",
+        "B08F7FX3RJ",
+        "B085J24382"
+      ],
+      "target_item_id": "B08F4ZDVZQ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHSS3YMNKYS3YHXSAK5NEYAJ4RIA",
+      "original_candidate_order": [
+        "B082FWK886",
+        "B086JCLWF2",
+        "B07J3GH1W1",
+        "B07W397QG4",
+        "B07XQKH3RY",
+        "B0B4YJ3Z8W"
+      ],
+      "shuffled_candidate_order": [
+        "B07W397QG4",
+        "B07XQKH3RY",
+        "B086JCLWF2",
+        "B082FWK886",
+        "B0B4YJ3Z8W",
+        "B07J3GH1W1"
+      ],
+      "target_item_id": "B082FWK886",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHT7TDFPRBZE3GH7RFKCPSCEAR5Q",
+      "original_candidate_order": [
+        "B08P15TB2V",
+        "B00CUF29WU",
+        "B08CR1YH7B",
+        "B087QYY7P5",
+        "B07YBW9KTX",
+        "B0BQQ5L942"
+      ],
+      "shuffled_candidate_order": [
+        "B07YBW9KTX",
+        "B08CR1YH7B",
+        "B08P15TB2V",
+        "B0BQQ5L942",
+        "B00CUF29WU",
+        "B087QYY7P5"
+      ],
+      "target_item_id": "B08P15TB2V",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHUIIYUMY5OXQWRECL5JEK4AITBA",
+      "original_candidate_order": [
+        "B087PJ121M",
+        "B096YHL82K",
+        "B088TXBCB5",
+        "B08YCYWY79",
+        "B08BMYPHD2",
+        "B07MZT83KK"
+      ],
+      "shuffled_candidate_order": [
+        "B087PJ121M",
+        "B08BMYPHD2",
+        "B096YHL82K",
+        "B07MZT83KK",
+        "B088TXBCB5",
+        "B08YCYWY79"
+      ],
+      "target_item_id": "B087PJ121M",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHWLAJMDMMY3U64I5ISWYBVE3S7Q",
+      "original_candidate_order": [
+        "B09TMRB5NT",
+        "B00PKIE760",
+        "B094XX4BTX",
+        "B08B3SJNL5",
+        "B081HDSNTS",
+        "B08T5LG5FT"
+      ],
+      "shuffled_candidate_order": [
+        "B08T5LG5FT",
+        "B09TMRB5NT",
+        "B094XX4BTX",
+        "B00PKIE760",
+        "B081HDSNTS",
+        "B08B3SJNL5"
+      ],
+      "target_item_id": "B09TMRB5NT",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHX2TSTU4JGBVSDURFMTBFVMO26A",
+      "original_candidate_order": [
+        "B0B5928SC7",
+        "B09S6VFV48",
+        "B004RC8TW8",
+        "B07L9H27SH",
+        "B08ZSL19VK",
+        "B08P5579KC"
+      ],
+      "shuffled_candidate_order": [
+        "B0B5928SC7",
+        "B07L9H27SH",
+        "B09S6VFV48",
+        "B08ZSL19VK",
+        "B004RC8TW8",
+        "B08P5579KC"
+      ],
+      "target_item_id": "B0B5928SC7",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHY2TURQPNIDXZGH2CMQLZ343YMQ",
+      "original_candidate_order": [
+        "B09SH1FD9S",
+        "B07FPS2VFK",
+        "B07J2QZBTP",
+        "B0919LJ9WT",
+        "B08T7GPT1D",
+        "B09VH7M73X"
+      ],
+      "shuffled_candidate_order": [
+        "B09VH7M73X",
+        "B07J2QZBTP",
+        "B07FPS2VFK",
+        "B09SH1FD9S",
+        "B0919LJ9WT",
+        "B08T7GPT1D"
+      ],
+      "target_item_id": "B09SH1FD9S",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHY37H4JF643FXWO3USRK3VSFFQA",
+      "original_candidate_order": [
+        "B08GC5GSNG",
+        "B09NCDK9T1",
+        "B08WCQWP3T",
+        "B07JDKTKPW",
+        "B087FTZSZH",
+        "B09PL113ZV"
+      ],
+      "shuffled_candidate_order": [
+        "B08WCQWP3T",
+        "B09PL113ZV",
+        "B087FTZSZH",
+        "B07JDKTKPW",
+        "B09NCDK9T1",
+        "B08GC5GSNG"
+      ],
+      "target_item_id": "B08GC5GSNG",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHYOSWORVZFXM5QMRIAW3JTTFFIQ",
+      "original_candidate_order": [
+        "B08LKLDCWJ",
+        "B087G54FLM",
+        "B07HWX4TMM",
+        "B015TJJYXU",
+        "B08CC6YRLJ",
+        "B0BLVN677K"
+      ],
+      "shuffled_candidate_order": [
+        "B08LKLDCWJ",
+        "B0BLVN677K",
+        "B07HWX4TMM",
+        "B08CC6YRLJ",
+        "B015TJJYXU",
+        "B087G54FLM"
+      ],
+      "target_item_id": "B08LKLDCWJ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHYR24K7VNCEHSLDYXUU5OWYYYUQ",
+      "original_candidate_order": [
+        "B09419W8LT",
+        "B0BQQ5L942",
+        "B09L33VJCL",
+        "B09PDK38GB",
+        "B08KRT47KY",
+        "B081D8D5YV"
+      ],
+      "shuffled_candidate_order": [
+        "B0BQQ5L942",
+        "B081D8D5YV",
+        "B09PDK38GB",
+        "B09L33VJCL",
+        "B08KRT47KY",
+        "B09419W8LT"
+      ],
+      "target_item_id": "B09419W8LT",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHYUOH2NL7IE2AEJZ6P55BP4TETA",
+      "original_candidate_order": [
+        "B0BK9R3Z6F",
+        "B08WL8GDCP",
+        "B08HZ5Y8RY",
+        "B07DKRK8ZW",
+        "B083PV1NRN",
+        "B08S3B8Y5G"
+      ],
+      "shuffled_candidate_order": [
+        "B08WL8GDCP",
+        "B07DKRK8ZW",
+        "B083PV1NRN",
+        "B08HZ5Y8RY",
+        "B08S3B8Y5G",
+        "B0BK9R3Z6F"
+      ],
+      "target_item_id": "B0BK9R3Z6F",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "valid",
+      "user_id": "AHZGQXTGR3WB6CQR3PP2TB2YPTUA",
+      "original_candidate_order": [
+        "B08GCJZW9V",
+        "B09HMXY36F",
+        "B08FF6LQ3G",
+        "B08WHBSK6R",
+        "B0876L7BWM",
+        "B0892LX4LX"
+      ],
+      "shuffled_candidate_order": [
+        "B08FF6LQ3G",
+        "B09HMXY36F",
+        "B0892LX4LX",
+        "B08WHBSK6R",
+        "B08GCJZW9V",
+        "B0876L7BWM"
+      ],
+      "target_item_id": "B08GCJZW9V",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AE23ZBUF2YVBQPH2NN6F5XSA3QYQ",
+      "original_candidate_order": [
+        "B09XF4WD3V",
+        "B082NKQ4ZT",
+        "B07TVBW1HT",
+        "B07RM722DH",
+        "B09B7F54K1",
+        "B01MSF13T1"
+      ],
+      "shuffled_candidate_order": [
+        "B07RM722DH",
+        "B07TVBW1HT",
+        "B01MSF13T1",
+        "B09B7F54K1",
+        "B082NKQ4ZT",
+        "B09XF4WD3V"
+      ],
+      "target_item_id": "B09XF4WD3V",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AE2O2C43KTYO4LXXGZWJZLE67GBQ",
+      "original_candidate_order": [
+        "B07Q4YCBWD",
+        "B08G4Y4SFV",
+        "B079J6BS5S",
+        "B09QT8SLJB",
+        "B07ZJX5MNJ",
+        "B08YZ3854D"
+      ],
+      "shuffled_candidate_order": [
+        "B079J6BS5S",
+        "B08G4Y4SFV",
+        "B07Q4YCBWD",
+        "B08YZ3854D",
+        "B09QT8SLJB",
+        "B07ZJX5MNJ"
+      ],
+      "target_item_id": "B07Q4YCBWD",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AE3AHOMNAUCHRF56YVRJVB5K2BVQ",
+      "original_candidate_order": [
+        "B07J3H27BJ",
+        "B08GCJZW9V",
+        "B07JHV9P52",
+        "B089KDH1H5",
+        "B08LPS9QXQ",
+        "B089NQKSLR"
+      ],
+      "shuffled_candidate_order": [
+        "B08GCJZW9V",
+        "B07JHV9P52",
+        "B089NQKSLR",
+        "B089KDH1H5",
+        "B07J3H27BJ",
+        "B08LPS9QXQ"
+      ],
+      "target_item_id": "B07J3H27BJ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AE3PLZHW6NXWBMZ76TDVFQG2MJFA",
+      "original_candidate_order": [
+        "B0B6DPNJHQ",
+        "B09R826BXF",
+        "B009GPP546",
+        "B08GKHQ9P1",
+        "B0B87SH493",
+        "B086YGY2HP"
+      ],
+      "shuffled_candidate_order": [
+        "B0B6DPNJHQ",
+        "B0B87SH493",
+        "B08GKHQ9P1",
+        "B09R826BXF",
+        "B086YGY2HP",
+        "B009GPP546"
+      ],
+      "target_item_id": "B0B6DPNJHQ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AE55NQRWURHFSVJRYDRLZQIL4RDA",
+      "original_candidate_order": [
+        "B0BGN49TQL",
+        "B08PYMT7BM",
+        "B07W7PNSV2",
+        "B08DK74M1P",
+        "B087PJ121M",
+        "B087GB8ZRF"
+      ],
+      "shuffled_candidate_order": [
+        "B087GB8ZRF",
+        "B087PJ121M",
+        "B08DK74M1P",
+        "B0BGN49TQL",
+        "B08PYMT7BM",
+        "B07W7PNSV2"
+      ],
+      "target_item_id": "B0BGN49TQL",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AE5GH4VM5Q5HNUL4EOAYRLNB7RVA",
+      "original_candidate_order": [
+        "B0B7DNFX1J",
+        "B095C1WF44",
+        "B0B34JJ8SR",
+        "B0B1M9NTSY",
+        "B089QR2Y5B",
+        "B09492T3QR"
+      ],
+      "shuffled_candidate_order": [
+        "B09492T3QR",
+        "B0B34JJ8SR",
+        "B095C1WF44",
+        "B0B7DNFX1J",
+        "B0B1M9NTSY",
+        "B089QR2Y5B"
+      ],
+      "target_item_id": "B0B7DNFX1J",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEA42FBHILJ6UOXAYMRVKPTA4IWA",
+      "original_candidate_order": [
+        "B0B593V71L",
+        "B08L4JSM2T",
+        "B08VJ7CZW3",
+        "B075KLSX61",
+        "B08SVW5GZ2",
+        "B089GQB9WM"
+      ],
+      "shuffled_candidate_order": [
+        "B089GQB9WM",
+        "B08VJ7CZW3",
+        "B08L4JSM2T",
+        "B0B593V71L",
+        "B08SVW5GZ2",
+        "B075KLSX61"
+      ],
+      "target_item_id": "B0B593V71L",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AECLZPHQ72FZTCG2MWNAZIJXCRZQ",
+      "original_candidate_order": [
+        "B0B7DQ98PR",
+        "B0845LNDJK",
+        "B089R7S73D",
+        "B07J3GH1W1",
+        "B096YFBWGX",
+        "B095C1WF44"
+      ],
+      "shuffled_candidate_order": [
+        "B089R7S73D",
+        "B095C1WF44",
+        "B0845LNDJK",
+        "B0B7DQ98PR",
+        "B07J3GH1W1",
+        "B096YFBWGX"
+      ],
+      "target_item_id": "B0B7DQ98PR",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEE62OCZYHOUZBWJKRKJQIDC7S3Q",
+      "original_candidate_order": [
+        "B09TFZZ4GW",
+        "B09TMRB5NT",
+        "B09FY9ZJ2V",
+        "B08GFJ31JG",
+        "B08MRRNL18",
+        "B08DD6BFFM"
+      ],
+      "shuffled_candidate_order": [
+        "B08DD6BFFM",
+        "B09FY9ZJ2V",
+        "B09TMRB5NT",
+        "B08MRRNL18",
+        "B08GFJ31JG",
+        "B09TFZZ4GW"
+      ],
+      "target_item_id": "B09TFZZ4GW",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEEHSGIEOXLHDMNDUYGX4R4W5TZA",
+      "original_candidate_order": [
+        "B08ZYKQ3D3",
+        "B08YNR839W",
+        "B08PTZL95G",
+        "B01KJPFO9W",
+        "B0B4JPGX8P",
+        "B08N6CLJ6P"
+      ],
+      "shuffled_candidate_order": [
+        "B08YNR839W",
+        "B01KJPFO9W",
+        "B08PTZL95G",
+        "B08ZYKQ3D3",
+        "B08N6CLJ6P",
+        "B0B4JPGX8P"
+      ],
+      "target_item_id": "B08ZYKQ3D3",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEFLJ44YE4GTJNXRJNWEVB4BPBGA",
+      "original_candidate_order": [
+        "B0B62GY2RX",
+        "B0B186FXGM",
+        "B08GWT454V",
+        "B0BKLCF1CL",
+        "B08HL2GW6R",
+        "B07THLR7RR"
+      ],
+      "shuffled_candidate_order": [
+        "B0BKLCF1CL",
+        "B08GWT454V",
+        "B07THLR7RR",
+        "B08HL2GW6R",
+        "B0B186FXGM",
+        "B0B62GY2RX"
+      ],
+      "target_item_id": "B0B62GY2RX",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEGKJTQWHGBIOTO34OB3GKIGCN7A",
+      "original_candidate_order": [
+        "B095CG2ZV1",
+        "B07R3BMYBG",
+        "B08DNZJ7P2",
+        "B07YG4PRTN",
+        "B097YYB2GV",
+        "B08BZ1RHPS"
+      ],
+      "shuffled_candidate_order": [
+        "B07YG4PRTN",
+        "B08BZ1RHPS",
+        "B097YYB2GV",
+        "B07R3BMYBG",
+        "B095CG2ZV1",
+        "B08DNZJ7P2"
+      ],
+      "target_item_id": "B095CG2ZV1",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEGRKUH3EW3DHUZOZDS3XIM5KOBA",
+      "original_candidate_order": [
+        "B0BF4T4GBD",
+        "B09BN5TYK5",
+        "B08KW32B98",
+        "B07HGFNG5N",
+        "B07T4YQK62",
+        "B0895FHBVG"
+      ],
+      "shuffled_candidate_order": [
+        "B07T4YQK62",
+        "B07HGFNG5N",
+        "B09BN5TYK5",
+        "B0BF4T4GBD",
+        "B08KW32B98",
+        "B0895FHBVG"
+      ],
+      "target_item_id": "B0BF4T4GBD",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEGUMA7C7RCKZZMFDM7SGENNPHEQ",
+      "original_candidate_order": [
+        "B0BHQN97CN",
+        "B08J7W1VQL",
+        "B08HMVTVZB",
+        "B09NV6JY1Y",
+        "B07LCHCD6Q",
+        "B08CDJFCMC"
+      ],
+      "shuffled_candidate_order": [
+        "B08HMVTVZB",
+        "B09NV6JY1Y",
+        "B0BHQN97CN",
+        "B08J7W1VQL",
+        "B08CDJFCMC",
+        "B07LCHCD6Q"
+      ],
+      "target_item_id": "B0BHQN97CN",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEHTPCFFRZYADDJ6LUHMWN5R2PRA",
+      "original_candidate_order": [
+        "B0B6DPNJHQ",
+        "B081D87QCJ",
+        "B08HXQ3T9K",
+        "B09G3KBK7Y",
+        "B0B1M8SBML",
+        "B07YS9W97B"
+      ],
+      "shuffled_candidate_order": [
+        "B07YS9W97B",
+        "B081D87QCJ",
+        "B0B6DPNJHQ",
+        "B09G3KBK7Y",
+        "B0B1M8SBML",
+        "B08HXQ3T9K"
+      ],
+      "target_item_id": "B0B6DPNJHQ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEIFXWDWF3NU6Y5L5VQBEITE7KJQ",
+      "original_candidate_order": [
+        "B09NV6JY1Y",
+        "B00W6X0I56",
+        "B083CXR5V8",
+        "B0963G6H4J",
+        "B084VCJY8D",
+        "B07NPCT6L5"
+      ],
+      "shuffled_candidate_order": [
+        "B00W6X0I56",
+        "B09NV6JY1Y",
+        "B083CXR5V8",
+        "B07NPCT6L5",
+        "B0963G6H4J",
+        "B084VCJY8D"
+      ],
+      "target_item_id": "B09NV6JY1Y",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEJASEICM46VPW4UGSLZIQIVMJCQ",
+      "original_candidate_order": [
+        "B0752ZGG15",
+        "B099NG1NKV",
+        "B08DX6B4QN",
+        "B09NVT7GGD",
+        "B08KNVV18L",
+        "B088NVJSJT"
+      ],
+      "shuffled_candidate_order": [
+        "B08DX6B4QN",
+        "B08KNVV18L",
+        "B099NG1NKV",
+        "B09NVT7GGD",
+        "B088NVJSJT",
+        "B0752ZGG15"
+      ],
+      "target_item_id": "B0752ZGG15",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEJJ4HTWBXN5WXB2X2NXUCIS2LFQ",
+      "original_candidate_order": [
+        "B087Z9X39L",
+        "B01N7A5AGF",
+        "B08VMWZ7N2",
+        "B081HDSNTS",
+        "B07S8F3GWK",
+        "B08K2K6RH8"
+      ],
+      "shuffled_candidate_order": [
+        "B08VMWZ7N2",
+        "B01N7A5AGF",
+        "B081HDSNTS",
+        "B08K2K6RH8",
+        "B07S8F3GWK",
+        "B087Z9X39L"
+      ],
+      "target_item_id": "B087Z9X39L",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AELRWE7QQJRKDFHDQHVAODTF5FRA",
+      "original_candidate_order": [
+        "B08R3F946X",
+        "B0BC273JJR",
+        "B07W7PNSV2",
+        "B09NFQ69KT",
+        "B0B6VCC3BG",
+        "B08BMYPHD2"
+      ],
+      "shuffled_candidate_order": [
+        "B08R3F946X",
+        "B0BC273JJR",
+        "B0B6VCC3BG",
+        "B09NFQ69KT",
+        "B08BMYPHD2",
+        "B07W7PNSV2"
+      ],
+      "target_item_id": "B08R3F946X",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AENALXICBEUWDJG6U2GYCGEVM3OQ",
+      "original_candidate_order": [
+        "B0BFJ87BW5",
+        "B097TV9CR6",
+        "B07STZPR5W",
+        "B08LPJT4MT",
+        "B09C6P3174",
+        "B08F4ZDVZQ"
+      ],
+      "shuffled_candidate_order": [
+        "B0BFJ87BW5",
+        "B08LPJT4MT",
+        "B07STZPR5W",
+        "B09C6P3174",
+        "B097TV9CR6",
+        "B08F4ZDVZQ"
+      ],
+      "target_item_id": "B0BFJ87BW5",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AENPFFAIQ75VTJYM6BCEKB5WWWJQ",
+      "original_candidate_order": [
+        "B09NKFQL53",
+        "B08SJKR877",
+        "B0998BD871",
+        "B07DY1RDQR",
+        "B08J7R5HHX",
+        "B08LPC1G23"
+      ],
+      "shuffled_candidate_order": [
+        "B07DY1RDQR",
+        "B09NKFQL53",
+        "B0998BD871",
+        "B08SJKR877",
+        "B08LPC1G23",
+        "B08J7R5HHX"
+      ],
+      "target_item_id": "B09NKFQL53",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEODUUL6REW3PW2ZGFREKGWBYUZA",
+      "original_candidate_order": [
+        "B08HCMNLKD",
+        "B096G6722H",
+        "B07KXM94BT",
+        "B083M985Q5",
+        "B01M24DUXH",
+        "B07SDQNK1R"
+      ],
+      "shuffled_candidate_order": [
+        "B08HCMNLKD",
+        "B01M24DUXH",
+        "B07SDQNK1R",
+        "B096G6722H",
+        "B083M985Q5",
+        "B07KXM94BT"
+      ],
+      "target_item_id": "B08HCMNLKD",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEOTWG667CGEIHYH33COIX53Y25Q",
+      "original_candidate_order": [
+        "B095C1WF44",
+        "B08SVW5GZ2",
+        "B07MMW5654",
+        "B0941YDPSW",
+        "B0793JDW3W",
+        "B09GGVH7RQ"
+      ],
+      "shuffled_candidate_order": [
+        "B095C1WF44",
+        "B0941YDPSW",
+        "B0793JDW3W",
+        "B07MMW5654",
+        "B09GGVH7RQ",
+        "B08SVW5GZ2"
+      ],
+      "target_item_id": "B095C1WF44",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEPS33MI7LANKDAHRYF2MRKNYTIQ",
+      "original_candidate_order": [
+        "B07YXB7TJ4",
+        "B07NPWK167",
+        "B086SSHLWT",
+        "B0B4JP5YD9",
+        "B09T2V5SRH",
+        "B09LXDDCMR"
+      ],
+      "shuffled_candidate_order": [
+        "B0B4JP5YD9",
+        "B07YXB7TJ4",
+        "B09T2V5SRH",
+        "B09LXDDCMR",
+        "B07NPWK167",
+        "B086SSHLWT"
+      ],
+      "target_item_id": "B07YXB7TJ4",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEQ7D7IDDUFNPOL4VDSXWZPIWKUQ",
+      "original_candidate_order": [
+        "B08HMJT41C",
+        "B076DGMQTM",
+        "B09N8WV99X",
+        "B087FTZSZH",
+        "B08MTLP5X5",
+        "B09Y84HNCB"
+      ],
+      "shuffled_candidate_order": [
+        "B09Y84HNCB",
+        "B09N8WV99X",
+        "B076DGMQTM",
+        "B087FTZSZH",
+        "B08MTLP5X5",
+        "B08HMJT41C"
+      ],
+      "target_item_id": "B08HMJT41C",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AERGQ6U7YCR6JZ54FFKYPUM7PFDQ",
+      "original_candidate_order": [
+        "B08QZ8LD7F",
+        "B08M3C6LVS",
+        "B093YZRFLW",
+        "B081HDSNTS",
+        "B07RBSLNFR",
+        "B08LZLBXYT"
+      ],
+      "shuffled_candidate_order": [
+        "B08LZLBXYT",
+        "B08M3C6LVS",
+        "B081HDSNTS",
+        "B08QZ8LD7F",
+        "B07RBSLNFR",
+        "B093YZRFLW"
+      ],
+      "target_item_id": "B08QZ8LD7F",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEUAQ6BAUEBP2C754LR3ILYHP54Q",
+      "original_candidate_order": [
+        "B07SLFWZKN",
+        "B09LS5B4FC",
+        "B09BR6T5X6",
+        "B085XZF8WQ",
+        "B09L563Q84",
+        "B08SBV6Z57"
+      ],
+      "shuffled_candidate_order": [
+        "B09LS5B4FC",
+        "B085XZF8WQ",
+        "B09L563Q84",
+        "B08SBV6Z57",
+        "B09BR6T5X6",
+        "B07SLFWZKN"
+      ],
+      "target_item_id": "B07SLFWZKN",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEVZGLYUEQEYH3ACTQCPBU65KIKQ",
+      "original_candidate_order": [
+        "B0BSHDZS1J",
+        "B08HQJXJ19",
+        "B0B34JGPR4",
+        "B088LWRYJC",
+        "B07YXB7TJ4",
+        "B081Q1R963"
+      ],
+      "shuffled_candidate_order": [
+        "B08HQJXJ19",
+        "B0B34JGPR4",
+        "B07YXB7TJ4",
+        "B081Q1R963",
+        "B0BSHDZS1J",
+        "B088LWRYJC"
+      ],
+      "target_item_id": "B0BSHDZS1J",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEW7UUQLNWWCKDWBUNIXACTNMZ4A",
+      "original_candidate_order": [
+        "B08KFKKPBB",
+        "B07YQG1Y2Z",
+        "B088NVJSJT",
+        "B082MDFNZM",
+        "B08CMQHW3P",
+        "B0B4D7V2HV"
+      ],
+      "shuffled_candidate_order": [
+        "B082MDFNZM",
+        "B0B4D7V2HV",
+        "B088NVJSJT",
+        "B08CMQHW3P",
+        "B07YQG1Y2Z",
+        "B08KFKKPBB"
+      ],
+      "target_item_id": "B08KFKKPBB",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEWXZ2FECGY3WO32MH5I7XKZMI7A",
+      "original_candidate_order": [
+        "B01JMKRPBU",
+        "B08M8Z51F1",
+        "B07NPCT6L5",
+        "B09LXDDCMR",
+        "B09T9KP2HS",
+        "B0BCHJ9MT1"
+      ],
+      "shuffled_candidate_order": [
+        "B0BCHJ9MT1",
+        "B08M8Z51F1",
+        "B01JMKRPBU",
+        "B09T9KP2HS",
+        "B07NPCT6L5",
+        "B09LXDDCMR"
+      ],
+      "target_item_id": "B01JMKRPBU",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AEXPTZ272HHG2KO2JAGU5IL45HIQ",
+      "original_candidate_order": [
+        "B08JFF4PLP",
+        "B089KDH1H5",
+        "B097TV9CR6",
+        "B01M7UMAUG",
+        "B0B593BBTH",
+        "B08JD4GGYB"
+      ],
+      "shuffled_candidate_order": [
+        "B089KDH1H5",
+        "B08JD4GGYB",
+        "B01M7UMAUG",
+        "B08JFF4PLP",
+        "B097TV9CR6",
+        "B0B593BBTH"
+      ],
+      "target_item_id": "B08JFF4PLP",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AF2LFSDT2SHRD2WEEC3O2ZWIWYEQ",
+      "original_candidate_order": [
+        "B07M9D3WYW",
+        "B07F3C1QG4",
+        "B09ZNXX417",
+        "B086JCLWF2",
+        "B0BKLCF1CL",
+        "B08Z32P2Q6"
+      ],
+      "shuffled_candidate_order": [
+        "B086JCLWF2",
+        "B08Z32P2Q6",
+        "B0BKLCF1CL",
+        "B07F3C1QG4",
+        "B09ZNXX417",
+        "B07M9D3WYW"
+      ],
+      "target_item_id": "B07M9D3WYW",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AF4TV3NNARN2N7YV6Z44S2YN237A",
+      "original_candidate_order": [
+        "B09GNXK3N1",
+        "B09PNGDR81",
+        "B08F7WFLCT",
+        "B0876YYL2H",
+        "B00TK0VV68",
+        "B08PYMT7BM"
+      ],
+      "shuffled_candidate_order": [
+        "B00TK0VV68",
+        "B08F7WFLCT",
+        "B08PYMT7BM",
+        "B09PNGDR81",
+        "B09GNXK3N1",
+        "B0876YYL2H"
+      ],
+      "target_item_id": "B09GNXK3N1",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AF6FMTV5MQT2UJT5DR6VSOTNZ6QA",
+      "original_candidate_order": [
+        "B08L632WH7",
+        "B07CTMKDN3",
+        "B099NG1NKV",
+        "B08R3Z6W4T",
+        "B07J2QZBTP",
+        "B07HGFNG5N"
+      ],
+      "shuffled_candidate_order": [
+        "B08L632WH7",
+        "B07J2QZBTP",
+        "B099NG1NKV",
+        "B08R3Z6W4T",
+        "B07HGFNG5N",
+        "B07CTMKDN3"
+      ],
+      "target_item_id": "B08L632WH7",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AF6QHJSY6N5MMHTC5L26QOTX6K3Q",
+      "original_candidate_order": [
+        "B09NVT7GGD",
+        "B08RY2LML3",
+        "B07YG4PRTN",
+        "B086VK22QT",
+        "B093DZZ6DS",
+        "B0BQQ5L942"
+      ],
+      "shuffled_candidate_order": [
+        "B093DZZ6DS",
+        "B07YG4PRTN",
+        "B086VK22QT",
+        "B0BQQ5L942",
+        "B09NVT7GGD",
+        "B08RY2LML3"
+      ],
+      "target_item_id": "B09NVT7GGD",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFBYZ76467VCBKRQXZI66T7JLO4Q",
+      "original_candidate_order": [
+        "B0B8JVSXZ6",
+        "B08HL2GW6R",
+        "B08YNB5SHG",
+        "B09SPPL7S4",
+        "B0BVQQ58G8",
+        "B08T5RVSD9"
+      ],
+      "shuffled_candidate_order": [
+        "B09SPPL7S4",
+        "B08HL2GW6R",
+        "B0B8JVSXZ6",
+        "B08T5RVSD9",
+        "B08YNB5SHG",
+        "B0BVQQ58G8"
+      ],
+      "target_item_id": "B0B8JVSXZ6",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFDNVPMB44ZS5O2CSJTL47BI2QTQ",
+      "original_candidate_order": [
+        "B08RY6S25W",
+        "B08DJ1BMHX",
+        "B0B5LNLFQK",
+        "B08PYXKZRS",
+        "B08F7WFLCT",
+        "B0B34GRFL2"
+      ],
+      "shuffled_candidate_order": [
+        "B0B34GRFL2",
+        "B08DJ1BMHX",
+        "B0B5LNLFQK",
+        "B08RY6S25W",
+        "B08PYXKZRS",
+        "B08F7WFLCT"
+      ],
+      "target_item_id": "B08RY6S25W",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFEYHZ6ZZCDYHVCZKIEDM2HZTVSA",
+      "original_candidate_order": [
+        "B07FZ5HZLM",
+        "B08BYK8SKR",
+        "B08KG48M5L",
+        "B07PZ8JNWJ",
+        "B01MA3LXIL",
+        "B07STZPR5W"
+      ],
+      "shuffled_candidate_order": [
+        "B08BYK8SKR",
+        "B07STZPR5W",
+        "B07FZ5HZLM",
+        "B01MA3LXIL",
+        "B08KG48M5L",
+        "B07PZ8JNWJ"
+      ],
+      "target_item_id": "B07FZ5HZLM",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFFHB6JLPVY4W566NW67GFKDBRNQ",
+      "original_candidate_order": [
+        "B07T6821GV",
+        "B093YZRFLW",
+        "B08NJ5BTWG",
+        "B01LXSWG49",
+        "B08GS1G9BH",
+        "B09N8WV99X"
+      ],
+      "shuffled_candidate_order": [
+        "B07T6821GV",
+        "B01LXSWG49",
+        "B08NJ5BTWG",
+        "B08GS1G9BH",
+        "B093YZRFLW",
+        "B09N8WV99X"
+      ],
+      "target_item_id": "B07T6821GV",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFGJYXOLE2THZ4IF3UVLSRTECMIQ",
+      "original_candidate_order": [
+        "B0B8F6MWFJ",
+        "B01DGWYQCG",
+        "B07S7G1WPT",
+        "B08SG2MBRY",
+        "B07SGCV4SP",
+        "B08MW22P84"
+      ],
+      "shuffled_candidate_order": [
+        "B0B8F6MWFJ",
+        "B01DGWYQCG",
+        "B08MW22P84",
+        "B08SG2MBRY",
+        "B07SGCV4SP",
+        "B07S7G1WPT"
+      ],
+      "target_item_id": "B0B8F6MWFJ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFHB5H6XQKOFLV7JRZUBA6IHJC6A",
+      "original_candidate_order": [
+        "B08FBHNBP1",
+        "B07QF1LW1L",
+        "B08D6PPL42",
+        "B0BGSXMDB3",
+        "B0863FZFPV",
+        "B08Z32P2Q6"
+      ],
+      "shuffled_candidate_order": [
+        "B07QF1LW1L",
+        "B0863FZFPV",
+        "B08FBHNBP1",
+        "B0BGSXMDB3",
+        "B08D6PPL42",
+        "B08Z32P2Q6"
+      ],
+      "target_item_id": "B08FBHNBP1",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFJOKSJE3KPYSUXT6TCKRRD4RO2Q",
+      "original_candidate_order": [
+        "B0C5V83YMB",
+        "B08TB3DZ1D",
+        "B07QN8B5VG",
+        "B07W7PNSV2",
+        "B08DK5D9J5",
+        "B08SSXQSVX"
+      ],
+      "shuffled_candidate_order": [
+        "B07QN8B5VG",
+        "B0C5V83YMB",
+        "B07W7PNSV2",
+        "B08TB3DZ1D",
+        "B08SSXQSVX",
+        "B08DK5D9J5"
+      ],
+      "target_item_id": "B0C5V83YMB",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFKLEJK2Y4TKTISZMHKTHX3KCEYQ",
+      "original_candidate_order": [
+        "B0BL2Q5PYZ",
+        "B091Y1V1FZ",
+        "B09QZNR4DB",
+        "B0B593V71L",
+        "B0841WQNNZ",
+        "B08R2MJJV3"
+      ],
+      "shuffled_candidate_order": [
+        "B0BL2Q5PYZ",
+        "B09QZNR4DB",
+        "B0B593V71L",
+        "B08R2MJJV3",
+        "B091Y1V1FZ",
+        "B0841WQNNZ"
+      ],
+      "target_item_id": "B0BL2Q5PYZ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFKX24ALWAPX366KX6DWTOBWLQAA",
+      "original_candidate_order": [
+        "B09ZNXX417",
+        "B07R3BMYBG",
+        "B07Y2WSGVW",
+        "B0837K9W6P",
+        "B08RY6S25W",
+        "B08LPGZMQK"
+      ],
+      "shuffled_candidate_order": [
+        "B09ZNXX417",
+        "B08LPGZMQK",
+        "B07R3BMYBG",
+        "B07Y2WSGVW",
+        "B0837K9W6P",
+        "B08RY6S25W"
+      ],
+      "target_item_id": "B09ZNXX417",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFKZESU3PTCQ2UVDBDSFVFTXBFNQ_2",
+      "original_candidate_order": [
+        "B087D7MVHB",
+        "B0190JGPZA",
+        "B08R9YW6JD",
+        "B07WTZP6WD",
+        "B085XZF8WQ",
+        "B08DKFV9SR"
+      ],
+      "shuffled_candidate_order": [
+        "B08DKFV9SR",
+        "B087D7MVHB",
+        "B0190JGPZA",
+        "B085XZF8WQ",
+        "B07WTZP6WD",
+        "B08R9YW6JD"
+      ],
+      "target_item_id": "B087D7MVHB",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFLKX7ZNVK2DN6LG3EAP6ZNYUFHA",
+      "original_candidate_order": [
+        "B08BKWLHYP",
+        "B08CXWTK1G",
+        "B08LCB741R",
+        "B07YBW9KTX",
+        "B086Z22XP3",
+        "B08Z32P2Q6"
+      ],
+      "shuffled_candidate_order": [
+        "B08Z32P2Q6",
+        "B08BKWLHYP",
+        "B07YBW9KTX",
+        "B08CXWTK1G",
+        "B08LCB741R",
+        "B086Z22XP3"
+      ],
+      "target_item_id": "B08BKWLHYP",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFMHLCUCTIK3ED5BLTPPMB4YFRFA",
+      "original_candidate_order": [
+        "B094771J4S",
+        "B08JFF4PLP",
+        "B01N5SHGS0",
+        "B08GR16Y3Z",
+        "B08BS3WDPJ",
+        "B08J7R5HHX"
+      ],
+      "shuffled_candidate_order": [
+        "B094771J4S",
+        "B08J7R5HHX",
+        "B01N5SHGS0",
+        "B08BS3WDPJ",
+        "B08JFF4PLP",
+        "B08GR16Y3Z"
+      ],
+      "target_item_id": "B094771J4S",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFOKWZIJI7K6Z6R4T7SSXRTWZNOQ",
+      "original_candidate_order": [
+        "B09NLMYH7T",
+        "B09Y1RRM72",
+        "B07P88S8SV",
+        "B081HDSNTS",
+        "B08BY91SGT",
+        "B0BF96JLDN"
+      ],
+      "shuffled_candidate_order": [
+        "B07P88S8SV",
+        "B0BF96JLDN",
+        "B09Y1RRM72",
+        "B08BY91SGT",
+        "B081HDSNTS",
+        "B09NLMYH7T"
+      ],
+      "target_item_id": "B09NLMYH7T",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFPF2CONJ33FNFKOEQ2TUNWQJTFQ",
+      "original_candidate_order": [
+        "B0851C4YPC",
+        "B08WCQWP3T",
+        "B08KHRF9NY",
+        "B082TPQY2R",
+        "B08ZYKQ3D3",
+        "B081ZN3TD5"
+      ],
+      "shuffled_candidate_order": [
+        "B08KHRF9NY",
+        "B082TPQY2R",
+        "B08WCQWP3T",
+        "B0851C4YPC",
+        "B08ZYKQ3D3",
+        "B081ZN3TD5"
+      ],
+      "target_item_id": "B0851C4YPC",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFPMVI6ZRR7KS7AWRIBCKILWDVIA",
+      "original_candidate_order": [
+        "B07Q4YCBWD",
+        "B07Z548TKH",
+        "B0912BNP4J",
+        "B08S3B8Y5G",
+        "B09CFZK853",
+        "B08M3C6LVS"
+      ],
+      "shuffled_candidate_order": [
+        "B0912BNP4J",
+        "B08M3C6LVS",
+        "B07Z548TKH",
+        "B09CFZK853",
+        "B07Q4YCBWD",
+        "B08S3B8Y5G"
+      ],
+      "target_item_id": "B07Q4YCBWD",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFSQYNVKFMP3WWNXTFTNBFNU3EOA",
+      "original_candidate_order": [
+        "B09HMXY36F",
+        "B0914JBBTV",
+        "B083TLNBJJ",
+        "B086VK22QT",
+        "B0713VF172",
+        "B0994HWXVV"
+      ],
+      "shuffled_candidate_order": [
+        "B0914JBBTV",
+        "B086VK22QT",
+        "B09HMXY36F",
+        "B083TLNBJJ",
+        "B0994HWXVV",
+        "B0713VF172"
+      ],
+      "target_item_id": "B09HMXY36F",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFWTG5KZEI542BTLSOT3I7SGFMFA",
+      "original_candidate_order": [
+        "B09HGVRZCS",
+        "B085WTCBLG",
+        "B09DQV8MK7",
+        "B093GR3N8W",
+        "B0B4MR9BXN",
+        "B01LXSWG49"
+      ],
+      "shuffled_candidate_order": [
+        "B093GR3N8W",
+        "B09HGVRZCS",
+        "B09DQV8MK7",
+        "B0B4MR9BXN",
+        "B01LXSWG49",
+        "B085WTCBLG"
+      ],
+      "target_item_id": "B09HGVRZCS",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFYCLJKUNJR5P62O2IF5ULMAWPQQ",
+      "original_candidate_order": [
+        "B095Y4L452",
+        "B0855L611L",
+        "B07TLMZL3T",
+        "B08DK74M1P",
+        "B08CZ5JZMZ",
+        "B08G8B2CQH"
+      ],
+      "shuffled_candidate_order": [
+        "B08G8B2CQH",
+        "B08CZ5JZMZ",
+        "B0855L611L",
+        "B07TLMZL3T",
+        "B095Y4L452",
+        "B08DK74M1P"
+      ],
+      "target_item_id": "B095Y4L452",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AFZSVK7P23M2B7GYUYU7TQIHCGFA_2",
+      "original_candidate_order": [
+        "B081M5R5L5",
+        "B08F7FX3RJ",
+        "B07WFQMC18",
+        "B004RC8TW8",
+        "B07DPKZPRH",
+        "B0919LJ9WT"
+      ],
+      "shuffled_candidate_order": [
+        "B081M5R5L5",
+        "B08F7FX3RJ",
+        "B0919LJ9WT",
+        "B07WFQMC18",
+        "B004RC8TW8",
+        "B07DPKZPRH"
+      ],
+      "target_item_id": "B081M5R5L5",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AG3JTOQ3IURV6USPWGHTPJKPQT3A",
+      "original_candidate_order": [
+        "B0BP2Y6QY4",
+        "B07DQ6NG1H",
+        "B093CPFRHJ",
+        "B0B3G3DCN6",
+        "B0849YFB92",
+        "B07FPS2VFK"
+      ],
+      "shuffled_candidate_order": [
+        "B0BP2Y6QY4",
+        "B07DQ6NG1H",
+        "B0B3G3DCN6",
+        "B07FPS2VFK",
+        "B0849YFB92",
+        "B093CPFRHJ"
+      ],
+      "target_item_id": "B0BP2Y6QY4",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AG5X7COSPHSZREKLQ3OKHIAKYT4A",
+      "original_candidate_order": [
+        "B004RC8TW8",
+        "B08HK11CN4",
+        "B0B3RHM6FH",
+        "B07T4YQK62",
+        "B08C2P34JC",
+        "B081Q1R963"
+      ],
+      "shuffled_candidate_order": [
+        "B08C2P34JC",
+        "B08HK11CN4",
+        "B07T4YQK62",
+        "B004RC8TW8",
+        "B081Q1R963",
+        "B0B3RHM6FH"
+      ],
+      "target_item_id": "B004RC8TW8",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AG7JCEMC64AM7JPATDVGP6YZOTXA",
+      "original_candidate_order": [
+        "B09VY96RBZ",
+        "B0971Z28DS",
+        "B0BG6WX4DH",
+        "B012Q9NGE4",
+        "B00NNKWDI6",
+        "B09ZDQ626L"
+      ],
+      "shuffled_candidate_order": [
+        "B00NNKWDI6",
+        "B0971Z28DS",
+        "B0BG6WX4DH",
+        "B09VY96RBZ",
+        "B012Q9NGE4",
+        "B09ZDQ626L"
+      ],
+      "target_item_id": "B09VY96RBZ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGB5SLLK7AXMK5MYIGZ74DAAMZBA",
+      "original_candidate_order": [
+        "B0BR4GL7Q6",
+        "B09R826BXF",
+        "B07YC9GNKS",
+        "B09TZXGSX6",
+        "B07FP1QXDZ",
+        "B07LCF4BK5"
+      ],
+      "shuffled_candidate_order": [
+        "B07LCF4BK5",
+        "B07FP1QXDZ",
+        "B09TZXGSX6",
+        "B09R826BXF",
+        "B07YC9GNKS",
+        "B0BR4GL7Q6"
+      ],
+      "target_item_id": "B0BR4GL7Q6",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGBJJYJ3CKEKID5PLR2QGGUZFCVA",
+      "original_candidate_order": [
+        "B0BXB4J297",
+        "B083B67373",
+        "B08LZLBXYT",
+        "B086VYKNDF",
+        "B07PRDZ2BH",
+        "B0B1T39KQM"
+      ],
+      "shuffled_candidate_order": [
+        "B0BXB4J297",
+        "B0B1T39KQM",
+        "B083B67373",
+        "B086VYKNDF",
+        "B08LZLBXYT",
+        "B07PRDZ2BH"
+      ],
+      "target_item_id": "B0BXB4J297",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGG5SZ7EMJI66IQ6E3Z3YJKQD56A",
+      "original_candidate_order": [
+        "B0BPC2QG37",
+        "B094MQSRDL",
+        "B0963G6H4J",
+        "B0719CXFHG",
+        "B002C741NG",
+        "B07S8F3LRC"
+      ],
+      "shuffled_candidate_order": [
+        "B002C741NG",
+        "B0BPC2QG37",
+        "B094MQSRDL",
+        "B0719CXFHG",
+        "B0963G6H4J",
+        "B07S8F3LRC"
+      ],
+      "target_item_id": "B0BPC2QG37",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGJJQLCYKHMRUTOUFHL4BSBBT32A",
+      "original_candidate_order": [
+        "B07S9GZZ6H",
+        "B08K2NG4KX",
+        "B088ZVSLYP",
+        "B01N7A5AGF",
+        "B08T96NYB9",
+        "B09NBDZDJW"
+      ],
+      "shuffled_candidate_order": [
+        "B09NBDZDJW",
+        "B088ZVSLYP",
+        "B08K2NG4KX",
+        "B08T96NYB9",
+        "B01N7A5AGF",
+        "B07S9GZZ6H"
+      ],
+      "target_item_id": "B07S9GZZ6H",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGL2LMYCHSXG2NTY3Q7OEVIGEMHA",
+      "original_candidate_order": [
+        "B0B4KS62Z8",
+        "B075KLSX61",
+        "B08MFT9ZZ9",
+        "B08YYKWXX4",
+        "B07X8W7GJZ",
+        "B08ZYKQ3D3"
+      ],
+      "shuffled_candidate_order": [
+        "B07X8W7GJZ",
+        "B08MFT9ZZ9",
+        "B08YYKWXX4",
+        "B0B4KS62Z8",
+        "B075KLSX61",
+        "B08ZYKQ3D3"
+      ],
+      "target_item_id": "B0B4KS62Z8",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGLGVDWNM5KVHS3PBM5HX464YVGA",
+      "original_candidate_order": [
+        "B0BDFKFWQF",
+        "B086SSHLWT",
+        "B08DRNK7PS",
+        "B07L9H27SH",
+        "B08BYKQS9S",
+        "B08F7FX3RJ"
+      ],
+      "shuffled_candidate_order": [
+        "B07L9H27SH",
+        "B08F7FX3RJ",
+        "B0BDFKFWQF",
+        "B086SSHLWT",
+        "B08DRNK7PS",
+        "B08BYKQS9S"
+      ],
+      "target_item_id": "B0BDFKFWQF",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGO73O7JZXWFCHYBNYW7GBEBYXKA",
+      "original_candidate_order": [
+        "B0851T7HDS",
+        "B083LHHQYF",
+        "B0B1M771DJ",
+        "B08T9BGQ6H",
+        "B075M9L47N",
+        "B08BFH35VX"
+      ],
+      "shuffled_candidate_order": [
+        "B0851T7HDS",
+        "B0B1M771DJ",
+        "B075M9L47N",
+        "B083LHHQYF",
+        "B08BFH35VX",
+        "B08T9BGQ6H"
+      ],
+      "target_item_id": "B0851T7HDS",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGQFUBXP54N5SB54U5LRPL62B2NQ",
+      "original_candidate_order": [
+        "B0B4JPGX8P",
+        "B010SZWNP6",
+        "B08HMLXW65",
+        "B07QN8CGPL",
+        "B089ZQ8Y95",
+        "B09LX1NLG3"
+      ],
+      "shuffled_candidate_order": [
+        "B089ZQ8Y95",
+        "B0B4JPGX8P",
+        "B08HMLXW65",
+        "B010SZWNP6",
+        "B09LX1NLG3",
+        "B07QN8CGPL"
+      ],
+      "target_item_id": "B0B4JPGX8P",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGS2DBJGUNUWPY7K4JQKAWKOGGHQ",
+      "original_candidate_order": [
+        "B0BMLD6TJY",
+        "B086N136NH",
+        "B095MV7N6Z",
+        "B0B6VCC3BG",
+        "B07W1WJZFG",
+        "B07MN1KJ15"
+      ],
+      "shuffled_candidate_order": [
+        "B07W1WJZFG",
+        "B0B6VCC3BG",
+        "B086N136NH",
+        "B07MN1KJ15",
+        "B095MV7N6Z",
+        "B0BMLD6TJY"
+      ],
+      "target_item_id": "B0BMLD6TJY",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGS4KJHF5LOOWT2A5TJJFMB24VOA",
+      "original_candidate_order": [
+        "B09X23VTSQ",
+        "B08FCV18Q4",
+        "B08DXDLR3P",
+        "B09KT4RJG6",
+        "B08YNR839W",
+        "B0B1MBRVDS"
+      ],
+      "shuffled_candidate_order": [
+        "B08DXDLR3P",
+        "B0B1MBRVDS",
+        "B08YNR839W",
+        "B08FCV18Q4",
+        "B09X23VTSQ",
+        "B09KT4RJG6"
+      ],
+      "target_item_id": "B09X23VTSQ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGU7PO73VGUO6TWDTPEEAP7JGC5Q",
+      "original_candidate_order": [
+        "B0BGS9F2FM",
+        "B0B593V71L",
+        "B081MQD52C",
+        "B0BC87LQ7Q",
+        "B0C4LR3NZT",
+        "B08LYT4Q2X"
+      ],
+      "shuffled_candidate_order": [
+        "B081MQD52C",
+        "B0B593V71L",
+        "B0BGS9F2FM",
+        "B0C4LR3NZT",
+        "B0BC87LQ7Q",
+        "B08LYT4Q2X"
+      ],
+      "target_item_id": "B0BGS9F2FM",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGUVC7ASI2PJ5REQFLSTFYB7DK7A",
+      "original_candidate_order": [
+        "B08RY6S25W",
+        "B08HQSGMJY",
+        "B08SSXQSVX",
+        "B08N5NDVGH",
+        "B0B8F6MWFJ",
+        "B0B2PM6T7Z"
+      ],
+      "shuffled_candidate_order": [
+        "B08SSXQSVX",
+        "B0B2PM6T7Z",
+        "B0B8F6MWFJ",
+        "B08HQSGMJY",
+        "B08RY6S25W",
+        "B08N5NDVGH"
+      ],
+      "target_item_id": "B08RY6S25W",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGYQ2VYAIX2UQHT252VXWWTUP75A",
+      "original_candidate_order": [
+        "B0BNJ2KVTP",
+        "B0C5V83YMB",
+        "B0190JGPZA",
+        "B0876YYL2H",
+        "B07V1QTSQ1",
+        "B08HK11CN4"
+      ],
+      "shuffled_candidate_order": [
+        "B0C5V83YMB",
+        "B07V1QTSQ1",
+        "B0876YYL2H",
+        "B0BNJ2KVTP",
+        "B08HK11CN4",
+        "B0190JGPZA"
+      ],
+      "target_item_id": "B0BNJ2KVTP",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AGYVC7KVHP2AWM7BDCEYNHFA6F3Q",
+      "original_candidate_order": [
+        "B0B6DPNJHQ",
+        "B09ZXKNS36",
+        "B01N5SHGS0",
+        "B08R6R1LNP",
+        "B07Q9516Z2",
+        "B084BS1GJP"
+      ],
+      "shuffled_candidate_order": [
+        "B07Q9516Z2",
+        "B0B6DPNJHQ",
+        "B01N5SHGS0",
+        "B084BS1GJP",
+        "B09ZXKNS36",
+        "B08R6R1LNP"
+      ],
+      "target_item_id": "B0B6DPNJHQ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AH2IYKYOETH3KZ6DZ7SBD7DRHX4Q",
+      "original_candidate_order": [
+        "B00SNXTL9M",
+        "B078W6XC3C",
+        "B07M9D3WYW",
+        "B08KW32B98",
+        "B07PCSRSND",
+        "B08B14WCHR"
+      ],
+      "shuffled_candidate_order": [
+        "B07PCSRSND",
+        "B078W6XC3C",
+        "B08KW32B98",
+        "B08B14WCHR",
+        "B00SNXTL9M",
+        "B07M9D3WYW"
+      ],
+      "target_item_id": "B00SNXTL9M",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AH36N5HJJQCBDAURJUTFAIB4GRFA",
+      "original_candidate_order": [
+        "B08N9RT9YD",
+        "B0825H74M5",
+        "B08KJF6Y6C",
+        "B00KCTER3U",
+        "B08KGVBW41",
+        "B08BMYPHD2"
+      ],
+      "shuffled_candidate_order": [
+        "B00KCTER3U",
+        "B08KGVBW41",
+        "B08BMYPHD2",
+        "B08N9RT9YD",
+        "B08KJF6Y6C",
+        "B0825H74M5"
+      ],
+      "target_item_id": "B08N9RT9YD",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AH3GANVLHHA7M6OB6ZTFDGFLQ62Q",
+      "original_candidate_order": [
+        "B0B8CX4MKV",
+        "B08C7MDQDG",
+        "B08F4CGWBG",
+        "B08KFKKPBB",
+        "B07S9H98QF",
+        "B093YZRFLW"
+      ],
+      "shuffled_candidate_order": [
+        "B08F4CGWBG",
+        "B093YZRFLW",
+        "B08C7MDQDG",
+        "B0B8CX4MKV",
+        "B08KFKKPBB",
+        "B07S9H98QF"
+      ],
+      "target_item_id": "B0B8CX4MKV",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AH5ONINJRNZ674DXUMV4RMYIFYVQ",
+      "original_candidate_order": [
+        "B092M5K59T",
+        "B0B1M9NTSY",
+        "B0832Z7KFJ",
+        "B010B0S67C",
+        "B08YNB5SHG",
+        "B0BP67SKBN"
+      ],
+      "shuffled_candidate_order": [
+        "B092M5K59T",
+        "B010B0S67C",
+        "B0832Z7KFJ",
+        "B0B1M9NTSY",
+        "B08YNB5SHG",
+        "B0BP67SKBN"
+      ],
+      "target_item_id": "B092M5K59T",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AH5VWWUH27OPSTF3QV2K274I7QTQ",
+      "original_candidate_order": [
+        "B08P5579KC",
+        "B07RPL6JK9",
+        "B0876YYL2H",
+        "B088LPYXNQ",
+        "B0B5XFVSXY",
+        "B09PDK38GB"
+      ],
+      "shuffled_candidate_order": [
+        "B0876YYL2H",
+        "B09PDK38GB",
+        "B08P5579KC",
+        "B07RPL6JK9",
+        "B088LPYXNQ",
+        "B0B5XFVSXY"
+      ],
+      "target_item_id": "B08P5579KC",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AH7MT2NRFFUJM2C76ASAFRW7HFQQ",
+      "original_candidate_order": [
+        "B09V2MR177",
+        "B081N8WY8N",
+        "B09C5NQSC5",
+        "B083BLZJ9M",
+        "B0851QJPZY",
+        "B08M5MQP59"
+      ],
+      "shuffled_candidate_order": [
+        "B08M5MQP59",
+        "B081N8WY8N",
+        "B0851QJPZY",
+        "B09C5NQSC5",
+        "B09V2MR177",
+        "B083BLZJ9M"
+      ],
+      "target_item_id": "B09V2MR177",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHBWH2LBU3NFLD46GKJKIBAHKXEQ",
+      "original_candidate_order": [
+        "B08XZDXTG2",
+        "B0793JDW3W",
+        "B08DRBZNZJ",
+        "B0BN12F234",
+        "B094XX4BTX",
+        "B075KLSX61"
+      ],
+      "shuffled_candidate_order": [
+        "B0793JDW3W",
+        "B08DRBZNZJ",
+        "B075KLSX61",
+        "B094XX4BTX",
+        "B08XZDXTG2",
+        "B0BN12F234"
+      ],
+      "target_item_id": "B08XZDXTG2",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHCRCBG3L7SZB5GU4VMFUFEJH5TQ",
+      "original_candidate_order": [
+        "B0B3RHM6FH",
+        "B00AX3YNPC",
+        "B08DXZ5VXB",
+        "B00PKIE760",
+        "B09PDK38GB",
+        "B0B4YJ3Z8W"
+      ],
+      "shuffled_candidate_order": [
+        "B00AX3YNPC",
+        "B0B3RHM6FH",
+        "B0B4YJ3Z8W",
+        "B08DXZ5VXB",
+        "B09PDK38GB",
+        "B00PKIE760"
+      ],
+      "target_item_id": "B0B3RHM6FH",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHEMJ62SUJPUYNWGROPI6MUAYQ5A",
+      "original_candidate_order": [
+        "B09X23VTSQ",
+        "B081D87QCJ",
+        "B0B591YB3B",
+        "B0BGSXMDB3",
+        "B0B5LNLFQK",
+        "B0B4JP5YD9"
+      ],
+      "shuffled_candidate_order": [
+        "B081D87QCJ",
+        "B0B5LNLFQK",
+        "B0B591YB3B",
+        "B0B4JP5YD9",
+        "B0BGSXMDB3",
+        "B09X23VTSQ"
+      ],
+      "target_item_id": "B09X23VTSQ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHERS5ISMLREKL7STKWOFEDCRXSQ",
+      "original_candidate_order": [
+        "B07KYWYWM5",
+        "B07YG4PRTN",
+        "B01B4F2U5M",
+        "B09SPPL7S4",
+        "B07YFQ4C9S",
+        "B0895XPZNT"
+      ],
+      "shuffled_candidate_order": [
+        "B01B4F2U5M",
+        "B07KYWYWM5",
+        "B07YFQ4C9S",
+        "B09SPPL7S4",
+        "B07YG4PRTN",
+        "B0895XPZNT"
+      ],
+      "target_item_id": "B07KYWYWM5",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHEZKYETH4DLYBFQNVQ6VFDGJGGQ",
+      "original_candidate_order": [
+        "B09VY96RBZ",
+        "B00J2D80W6",
+        "B07XM9KWNH",
+        "B08PBJPQ83",
+        "B08QYMWL16",
+        "B093P3GKF6"
+      ],
+      "shuffled_candidate_order": [
+        "B093P3GKF6",
+        "B07XM9KWNH",
+        "B08PBJPQ83",
+        "B08QYMWL16",
+        "B00J2D80W6",
+        "B09VY96RBZ"
+      ],
+      "target_item_id": "B09VY96RBZ",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHHWCYE6JF6MMRDKHOGRTNAUOMPA",
+      "original_candidate_order": [
+        "B08MW3BNP8",
+        "B08S1LWF9V",
+        "B08MF778D7",
+        "B08GMC5ZRY",
+        "B082XHLYZ5",
+        "B08HQJXJ19"
+      ],
+      "shuffled_candidate_order": [
+        "B08S1LWF9V",
+        "B08HQJXJ19",
+        "B08MF778D7",
+        "B08MW3BNP8",
+        "B08GMC5ZRY",
+        "B082XHLYZ5"
+      ],
+      "target_item_id": "B08MW3BNP8",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHI3JYK5BPWUGMVDGXM2MIW2R7IQ",
+      "original_candidate_order": [
+        "B07S8F2X21",
+        "B09K77RBHB",
+        "B07DXCVK8G",
+        "B081D8D5YV",
+        "B01KJPFO9W",
+        "B09VB59RFG"
+      ],
+      "shuffled_candidate_order": [
+        "B01KJPFO9W",
+        "B081D8D5YV",
+        "B07DXCVK8G",
+        "B07S8F2X21",
+        "B09K77RBHB",
+        "B09VB59RFG"
+      ],
+      "target_item_id": "B07S8F2X21",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHJPJAUI5LLLLQ4ST4CE2IHHXAZA",
+      "original_candidate_order": [
+        "B0BN7ZDMD5",
+        "B09SJ2ZRG9",
+        "B081D87QCJ",
+        "B07SGCV4SP",
+        "B09TQ2SDKK",
+        "B07T3PC35M"
+      ],
+      "shuffled_candidate_order": [
+        "B07T3PC35M",
+        "B09TQ2SDKK",
+        "B0BN7ZDMD5",
+        "B081D87QCJ",
+        "B09SJ2ZRG9",
+        "B07SGCV4SP"
+      ],
+      "target_item_id": "B0BN7ZDMD5",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 3,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHK6NZZMLGYC7CJCD377RS5ZO7RA",
+      "original_candidate_order": [
+        "B07DPMKDVH",
+        "B01M1OBRBQ",
+        "B07K1QJH5P",
+        "B09XX4VR4Y",
+        "B07XQKH3RY",
+        "B08S3B8Y5G"
+      ],
+      "shuffled_candidate_order": [
+        "B07DPMKDVH",
+        "B08S3B8Y5G",
+        "B01M1OBRBQ",
+        "B07K1QJH5P",
+        "B07XQKH3RY",
+        "B09XX4VR4Y"
+      ],
+      "target_item_id": "B07DPMKDVH",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHLFYIOJCRSSMGT54XQJ7LVZ6W4Q",
+      "original_candidate_order": [
+        "B08PQ6YXSH",
+        "B07T3PC35M",
+        "B09KX5N1DR",
+        "B086N136NH",
+        "B08L4Y347P",
+        "B095C1WF44"
+      ],
+      "shuffled_candidate_order": [
+        "B09KX5N1DR",
+        "B08PQ6YXSH",
+        "B086N136NH",
+        "B07T3PC35M",
+        "B095C1WF44",
+        "B08L4Y347P"
+      ],
+      "target_item_id": "B08PQ6YXSH",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHM7F4GRRASR5R4HCACGTBSWQWMA",
+      "original_candidate_order": [
+        "B0B5LNLFQK",
+        "B00MQ6BE92",
+        "B0B88X2FK4",
+        "B094N6SBL2",
+        "B07ZS3DKL5",
+        "B08JPK6MKD"
+      ],
+      "shuffled_candidate_order": [
+        "B08JPK6MKD",
+        "B0B88X2FK4",
+        "B094N6SBL2",
+        "B00MQ6BE92",
+        "B0B5LNLFQK",
+        "B07ZS3DKL5"
+      ],
+      "target_item_id": "B0B5LNLFQK",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHOETYTW24FWK46AC3YLCBJ4MVEA",
+      "original_candidate_order": [
+        "B0BBY271B6",
+        "B08LDB8FTW",
+        "B07FM69672",
+        "B08QYMWL16",
+        "B0C711DDV7",
+        "B00OS9YWJY"
+      ],
+      "shuffled_candidate_order": [
+        "B0BBY271B6",
+        "B0C711DDV7",
+        "B00OS9YWJY",
+        "B07FM69672",
+        "B08LDB8FTW",
+        "B08QYMWL16"
+      ],
+      "target_item_id": "B0BBY271B6",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHOYQ263ZGBZIBPQGKNVAWG35DNQ",
+      "original_candidate_order": [
+        "B009GPP546",
+        "B07F3C1QG4",
+        "B08JP365LL",
+        "B01I2MU2JQ",
+        "B08HXQ3T9K",
+        "B0B2PM6T7Z"
+      ],
+      "shuffled_candidate_order": [
+        "B08HXQ3T9K",
+        "B0B2PM6T7Z",
+        "B01I2MU2JQ",
+        "B07F3C1QG4",
+        "B08JP365LL",
+        "B009GPP546"
+      ],
+      "target_item_id": "B009GPP546",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHPLPRJ3TSSTQZHCL7EHS4MTFTBQ",
+      "original_candidate_order": [
+        "B0B4JPGX8P",
+        "B08G149DSD",
+        "B07XVNJFNF",
+        "B07F8PCLDV",
+        "B085SY4WC3",
+        "B09SHR3YR3"
+      ],
+      "shuffled_candidate_order": [
+        "B0B4JPGX8P",
+        "B07XVNJFNF",
+        "B09SHR3YR3",
+        "B085SY4WC3",
+        "B07F8PCLDV",
+        "B08G149DSD"
+      ],
+      "target_item_id": "B0B4JPGX8P",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHPR3DAGWZHHNZW2LBMTXU3PLSLQ",
+      "original_candidate_order": [
+        "B09K77RBHB",
+        "B08GLG6W8T",
+        "B08GCJZW9V",
+        "B07T4LKC4D",
+        "B08F4XPC97",
+        "B092M5K59T"
+      ],
+      "shuffled_candidate_order": [
+        "B08GCJZW9V",
+        "B092M5K59T",
+        "B07T4LKC4D",
+        "B09K77RBHB",
+        "B08F4XPC97",
+        "B08GLG6W8T"
+      ],
+      "target_item_id": "B09K77RBHB",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHSIR56YDJL76VXSFEKI5YQPYJ2Q",
+      "original_candidate_order": [
+        "B0BN7ZDMD5",
+        "B07G23R7ZX",
+        "B08PQ6YXSH",
+        "B0793JDW3W",
+        "B094VSZNNK",
+        "B07YDMZD6R"
+      ],
+      "shuffled_candidate_order": [
+        "B094VSZNNK",
+        "B0793JDW3W",
+        "B07YDMZD6R",
+        "B08PQ6YXSH",
+        "B07G23R7ZX",
+        "B0BN7ZDMD5"
+      ],
+      "target_item_id": "B0BN7ZDMD5",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHSP5IKX6USXFMSHWDQMXSKAEJ3Q",
+      "original_candidate_order": [
+        "B093Q24N9V",
+        "B086JCLWF2",
+        "B07DSC4X3K",
+        "B08L6GXY2S",
+        "B07T3PC35M",
+        "B09PBTF7V4"
+      ],
+      "shuffled_candidate_order": [
+        "B08L6GXY2S",
+        "B086JCLWF2",
+        "B07DSC4X3K",
+        "B07T3PC35M",
+        "B093Q24N9V",
+        "B09PBTF7V4"
+      ],
+      "target_item_id": "B093Q24N9V",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHT6AM6BNIZUHFJB5V2M6XM72G7Q",
+      "original_candidate_order": [
+        "B09NFKDCPG",
+        "B0B87SH493",
+        "B07S7G1WPT",
+        "B08L3J4FB9",
+        "B08SHXV5T8",
+        "B09BN5TYK5"
+      ],
+      "shuffled_candidate_order": [
+        "B0B87SH493",
+        "B08SHXV5T8",
+        "B07S7G1WPT",
+        "B09BN5TYK5",
+        "B08L3J4FB9",
+        "B09NFKDCPG"
+      ],
+      "target_item_id": "B09NFKDCPG",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 6,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHV7LKZELPOHGBWXQ6GLKLYHHPDA",
+      "original_candidate_order": [
+        "B08M3MKCGH",
+        "B084ZHP45Y",
+        "B08689TKXQ",
+        "B08C37KWRR",
+        "B07RM722DH",
+        "B096G6722H"
+      ],
+      "shuffled_candidate_order": [
+        "B08M3MKCGH",
+        "B084ZHP45Y",
+        "B07RM722DH",
+        "B08689TKXQ",
+        "B096G6722H",
+        "B08C37KWRR"
+      ],
+      "target_item_id": "B08M3MKCGH",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 1,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHY2TURQPNIDXZGH2CMQLZ343YMQ",
+      "original_candidate_order": [
+        "B0B4MR9BXN",
+        "B0B6QK5ML2",
+        "B0BGS9F2FM",
+        "B07Z3NRMBS",
+        "B0B34GRFL2",
+        "B08KW32B98"
+      ],
+      "shuffled_candidate_order": [
+        "B08KW32B98",
+        "B0B4MR9BXN",
+        "B07Z3NRMBS",
+        "B0B34GRFL2",
+        "B0BGS9F2FM",
+        "B0B6QK5ML2"
+      ],
+      "target_item_id": "B0B4MR9BXN",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 2,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHYBURPPFSJHXFTYTCDQIGQWYBNQ",
+      "original_candidate_order": [
+        "B07JDKTKPW",
+        "B08R9YW6JD",
+        "B098GMKW8D",
+        "B09KGG7QNS",
+        "B013L9TX22",
+        "B08JFF4PLP"
+      ],
+      "shuffled_candidate_order": [
+        "B09KGG7QNS",
+        "B08JFF4PLP",
+        "B013L9TX22",
+        "B098GMKW8D",
+        "B07JDKTKPW",
+        "B08R9YW6JD"
+      ],
+      "target_item_id": "B07JDKTKPW",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 5,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHYOSWORVZFXM5QMRIAW3JTTFFIQ",
+      "original_candidate_order": [
+        "B0BV31FS1W",
+        "B08Q8NQMX2",
+        "B097H7H3MT",
+        "B08R9YW6JD",
+        "B08P2DZB4X",
+        "B0B3NCXPVF"
+      ],
+      "shuffled_candidate_order": [
+        "B08Q8NQMX2",
+        "B097H7H3MT",
+        "B0B3NCXPVF",
+        "B0BV31FS1W",
+        "B08P2DZB4X",
+        "B08R9YW6JD"
+      ],
+      "target_item_id": "B0BV31FS1W",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    },
+    {
+      "split": "test",
+      "user_id": "AHZ4TADPCXAAIKTFERGG5YB4BNQQ",
+      "original_candidate_order": [
+        "B09V2MR177",
+        "B08CTYRD22",
+        "B07YB1CMFT",
+        "B076DGMQTM",
+        "B08LZLBXYT",
+        "B07ZQ1QXK7"
+      ],
+      "shuffled_candidate_order": [
+        "B076DGMQTM",
+        "B07ZQ1QXK7",
+        "B08LZLBXYT",
+        "B09V2MR177",
+        "B07YB1CMFT",
+        "B08CTYRD22"
+      ],
+      "target_item_id": "B09V2MR177",
+      "positive_original_position": 1,
+      "positive_shuffled_position": 4,
+      "seed": 42
+    }
+  ]
+}
