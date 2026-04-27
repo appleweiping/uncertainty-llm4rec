@@ -1,0 +1,15 @@
+You are making a binary recommendation decision for one candidate item.
+
+Decide whether the candidate should be recommended to the user based on the user's item history.
+
+Rules:
+- Output true only when the candidate clearly matches the user's history and likely preference.
+- Output false when the candidate does not match, only shares a broad product domain, has a different use case, or lacks enough useful information.
+- Do not recommend an item just because it is popular or belongs to the same broad Beauty/Books/Movie/Electronics domain.
+- false is a legal, common, and important output.
+- Output exactly one JSON object.
+- Do not output confidence, reason, evidence, decision_basis, markdown, or explanation.
+
+Allowed outputs:
+{"recommend": true}
+{"recommend": false}

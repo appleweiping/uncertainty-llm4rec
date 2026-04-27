@@ -1,2 +1,4 @@
-split,score_type,status,fallback_reason
-test,raw_confidence,missing_predictions,valid_or_test_prediction_missing
+split,score_type,num_rows,num_valid_rows,parse_success_rate,schema_valid_rate,accuracy,ECE,Brier,AUROC,high_conf_error_rate,mean_confidence,std_confidence,confidence_histogram,positive_label_rate,recommend_yes_rate,calibration_method,status,fallback_reason,delta_ECE_vs_raw,delta_Brier_vs_raw
+test,raw_confidence,200,200,1.0,1.0,0.785,0.04244999999999999,0.1761945,0.29558583913494296,0.215,0.8271499999999999,0.01781509191668683,"[0, 0, 0, 0, 0, 0, 0, 0, 199, 1]",0.17,0.165,none,ok,,,
+test,logistic_calibrated_confidence,200,200,1.0,1.0,0.785,0.02978774715311816,0.16899198210470728,0.704414160865057,0.0,0.7552122528468819,0.0022769019031577517,"[0, 0, 0, 0, 0, 0, 0, 200, 0, 0]",0.17,0.165,logistic,ok,,-0.012662252846881827,-0.0072025178952927205
+test,isotonic_calibrated_confidence,200,200,1.0,1.0,0.785,0.02999999999999991,0.16944723618090451,0.5031847133757962,0.0,0.755,0.017367589522704226,"[0, 0, 0, 0, 0, 0, 0, 199, 0, 1]",0.17,0.165,isotonic,ok,,-0.012450000000000079,-0.006747263819095489

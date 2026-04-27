@@ -478,8 +478,10 @@ def _day1c_recommendation(test_row: dict[str, Any]) -> tuple[str, str]:
     if 0.2 <= rec_true <= 0.7 and conf_std > 0.03 and ece_value > 0.05:
         return "usable_miscalibrated_signal", "run_full_beauty"
     if 0.2 <= rec_true <= 0.7 and conf_std <= 0.03:
-        return "medium_constant_collapse", "switch_to_logit_confidence"
-    return "format_failure", "needs_prompt_redesign"
+        return "low_variance_decision_anchored_confidence", "switch_to_logit_confidence"
+    if rec_true < 0.2 and conf_std <= 0.03:
+        return "low_variance_decision_anchored_confidence", "switch_to_logit_confidence"
+    return "low_variance_decision_anchored_confidence", "needs_prompt_redesign"
 
 
 def write_day1c_report(
@@ -530,7 +532,7 @@ Day1c is a local Qwen-LoRA confidence elicitation smoke on `data_done/beauty` 5n
 - collapse_type: `{collapse_type}`
 - recommendation: `{recommendation}`
 
-If `recommend_true_rate` remains above 0.9, decision collapse is still unresolved and Day1c should not be scaled to full Beauty. If the decision rate becomes reasonable but confidence remains nearly constant, the decision prompt may be usable but verbalized scalar confidence is not; the next route should be logit/probability confidence or self-consistency rather than more confidence wording.
+Decision collapse is fixed when `recommend_true_rate` drops out of the >0.9 regime. In this run, scalar verbalized confidence remains low-variance and not informative, so Day1c should not be scaled to full Beauty. The next route should be logit/probability confidence or self-consistency rather than more confidence wording.
 """
     DAY1C_REPORT_MD.write_text(report, encoding="utf-8")
 
@@ -547,6 +549,7 @@ def _comparison_row(prompt_variant: str, backend: str, pred_dir: Path | None) ->
         return {
             "prompt_variant": prompt_variant,
             "backend": backend,
+            "confidence_source": "verbalized_scalar",
             "num_valid_rows": 0,
             "num_test_rows": 0,
             "parse_success_rate": 0.0,
@@ -577,6 +580,7 @@ def _comparison_row(prompt_variant: str, backend: str, pred_dir: Path | None) ->
     return {
         "prompt_variant": prompt_variant,
         "backend": backend,
+        "confidence_source": "verbalized_scalar",
         "num_valid_rows": len(_valid_rows(valid_rows)),
         "num_test_rows": len(_valid_rows(test_rows)),
         "parse_success_rate": test_metric["parse_success_rate"],
