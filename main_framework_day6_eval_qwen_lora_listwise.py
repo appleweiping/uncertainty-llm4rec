@@ -64,6 +64,16 @@ def _target_id(sample: dict[str, Any]) -> str:
     return str(ranked[0]).strip() if ranked else ""
 
 
+RANKING_KEYS = [
+    "ranked_item_ids",
+    "ranked_items",
+    "recommendations",
+    "recommended_items",
+    "item_ids",
+    "ranking",
+]
+
+
 def _extract_json_text(text: str) -> str | None:
     if not text:
         return None
@@ -71,51 +81,101 @@ def _extract_json_text(text: str) -> str | None:
     if block:
         return block.group(1).strip()
     start = text.find("{")
-    end = text.rfind("}")
-    if start >= 0 and end > start:
-        return text[start : end + 1]
+    if start < 0:
+        return None
+    depth = 0
+    in_str = False
+    escape = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if escape:
+            escape = False
+            continue
+        if ch == "\\" and in_str:
+            escape = True
+            continue
+        if ch == '"':
+            in_str = not in_str
+        if in_str:
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start : i + 1]
     return None
+
+
+def _extract_ranked_list(obj: dict[str, Any]) -> tuple[Any, str]:
+    for key in RANKING_KEYS:
+        if key in obj:
+            return obj[key], key
+    return None, ""
+
+
+def _coerce_item_id(entry: Any) -> str:
+    if isinstance(entry, str):
+        return entry.strip()
+    if isinstance(entry, dict):
+        for key in ["candidate_item_id", "item_id", "id"]:
+            if key in entry:
+                return str(entry[key]).strip()
+    return str(entry).strip()
 
 
 def parse_ranking(raw_text: str, candidate_pool: list[str]) -> dict[str, Any]:
     parsed_text = _extract_json_text(raw_text)
+    base = {
+        "parse_success_raw": False,
+        "schema_valid_raw": False,
+        "parse_success_repaired": False,
+        "parser_repair_used": False,
+        "repaired_item_count": 0,
+        "raw_ranked_item_ids": [],
+        "ranking_key_used": "",
+    }
     if parsed_text is None:
-        return {
+        return {**base, **{
             "parse_success": False,
             "schema_valid": False,
             "ranked_item_ids": [],
             "invalid_item_count": 0,
             "duplicate_item_count": 0,
             "parse_error": "no_json_object",
-        }
+        }}
     try:
         obj = json.loads(parsed_text)
     except Exception as exc:
-        return {
+        return {**base, **{
             "parse_success": False,
             "schema_valid": False,
             "ranked_item_ids": [],
             "invalid_item_count": 0,
             "duplicate_item_count": 0,
             "parse_error": f"json_error:{type(exc).__name__}",
-        }
-    ranked = obj.get("ranked_item_ids")
+        }}
+    ranked, key_used = _extract_ranked_list(obj)
+    raw_ranked = obj.get("ranked_item_ids")
+    raw_success = isinstance(raw_ranked, list)
     if not isinstance(ranked, list):
-        return {
+        return {**base, **{
+            "parse_success_raw": raw_success,
+            "schema_valid_raw": raw_success,
             "parse_success": True,
             "schema_valid": False,
             "ranked_item_ids": [],
             "invalid_item_count": 0,
             "duplicate_item_count": 0,
             "parse_error": "missing_ranked_item_ids",
-        }
+        }}
     pool = set(candidate_pool)
     cleaned: list[str] = []
     invalid = 0
     duplicates = 0
     seen: set[str] = set()
     for item in ranked:
-        iid = str(item).strip()
+        iid = _coerce_item_id(item)
         if iid not in pool:
             invalid += 1
             continue
@@ -124,10 +184,21 @@ def parse_ranking(raw_text: str, candidate_pool: list[str]) -> dict[str, Any]:
             continue
         seen.add(iid)
         cleaned.append(iid)
+    complete = _complete_ranking(cleaned, candidate_pool)
+    repaired_item_count = len(complete) - len(cleaned)
+    repair_used = key_used != "ranked_item_ids" or invalid > 0 or duplicates > 0 or repaired_item_count > 0
+    raw_ids = [_coerce_item_id(x) for x in raw_ranked] if isinstance(raw_ranked, list) else []
     return {
+        "parse_success_raw": raw_success,
+        "schema_valid_raw": raw_success,
+        "parse_success_repaired": True,
+        "parser_repair_used": repair_used,
+        "repaired_item_count": repaired_item_count,
+        "raw_ranked_item_ids": raw_ids,
+        "ranking_key_used": key_used,
         "parse_success": True,
         "schema_valid": True,
-        "ranked_item_ids": cleaned,
+        "ranked_item_ids": complete,
         "invalid_item_count": invalid,
         "duplicate_item_count": duplicates,
         "parse_error": "",
@@ -233,9 +304,15 @@ def _generate_lora_predictions(cfg: dict[str, Any], samples: list[dict[str, Any]
                 "candidate_pool": pool,
                 "raw_response": raw_text,
                 "ranked_item_ids": parsed["ranked_item_ids"],
-                "raw_ranked_item_ids": parsed["ranked_item_ids"],
+                "raw_ranked_item_ids": parsed.get("raw_ranked_item_ids", parsed["ranked_item_ids"]),
                 "parse_success": parsed["parse_success"],
                 "schema_valid": parsed["schema_valid"],
+                "parse_success_raw": parsed.get("parse_success_raw", parsed["parse_success"]),
+                "schema_valid_raw": parsed.get("schema_valid_raw", parsed["schema_valid"]),
+                "parse_success_repaired": parsed.get("parse_success_repaired", parsed["parse_success"]),
+                "parser_repair_used": parsed.get("parser_repair_used", False),
+                "repaired_item_count": parsed.get("repaired_item_count", 0),
+                "ranking_key_used": parsed.get("ranking_key_used", "ranked_item_ids"),
                 "invalid_item_count": parsed["invalid_item_count"],
                 "duplicate_item_count": parsed["duplicate_item_count"],
                 "parse_error": parsed["parse_error"],
