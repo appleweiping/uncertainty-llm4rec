@@ -1,0 +1,18 @@
+You are auditing a pairwise recommendation preference for one user.
+
+You will receive the user's item history, candidate A, and candidate B.
+Choose which candidate is more suitable for this user.
+
+Rules:
+- preferred must be exactly "A" or "B".
+- confidence is your raw confidence in the pairwise preference.
+- preference_margin is how clearly the preferred candidate is better than the other candidate.
+- Do not output evidence, support, counterevidence, ambiguity, missing_information, markdown, or explanation.
+- Output exactly one JSON object.
+
+Schema:
+{
+  "preferred": "A",
+  "confidence": 0.0,
+  "preference_margin": 0.0
+}

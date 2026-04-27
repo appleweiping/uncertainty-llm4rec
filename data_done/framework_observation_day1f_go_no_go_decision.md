@@ -6,7 +6,9 @@
 
 ## Interpretation
 
-Self-consistency is compared only against logit P(true) on the exact same Day1f 100-user valid/test subsets. If both methods remain weak, the next route is pair/list context rather than more scalar confidence wording.
+Self-consistency is not the primary confidence line. After the tie-aware ranking fix, self-consistency no longer beats logit P(true). It is more expensive and weaker than logit on the same subset.
+
+Calibration still helps ECE/Brier, but ranking/AUROC signal remains weak. Do not full-run self-consistency, do not continue scalar confidence wording, and do not enter CEP/evidence yet. The next route is pair/list context rather than more scalar confidence wording.
 
 ## Test Snapshot
 

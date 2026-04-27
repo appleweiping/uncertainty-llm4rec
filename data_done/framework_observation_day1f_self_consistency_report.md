@@ -23,6 +23,12 @@ Ranking metrics are tie-aware: when candidates receive the same self-consistency
 
 See `data_done/framework_observation_day1f_logit_vs_self_consistency_comparison.csv` for same-subset comparison.
 
+## Interpretation
+
+Self-consistency is not the primary confidence line. After the tie-aware ranking fix, self-consistency no longer beats logit P(true). It is more expensive and weaker than logit on the same subset.
+
+Calibration still helps ECE/Brier, but ranking/AUROC signal remains weak. Do not full-run self-consistency, do not continue scalar confidence wording, and do not enter CEP/evidence yet.
+
 ## Recommendation
 
 `do_not_use_self_consistency`
