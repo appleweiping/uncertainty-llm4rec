@@ -1,0 +1,24 @@
+model_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+adapter_path: artifacts/lora/qwen3_8b_beauty_listwise_strict_day9_small
+model_variant: lora
+domain: beauty
+valid_file: data_done/beauty/valid.jsonl
+test_file: data_done/beauty/test.jsonl
+output_dir: output-repaired/framework_observation/beauty_qwen_lora_confidence_decision_forced/predictions
+prompt_template: prompts/framework/qwen_confidence_recommendation_pointwise_decision_forced.txt
+max_seq_len: 2048
+max_new_tokens: 128
+inference_backend: vllm
+vllm_tensor_parallel_size: 1
+vllm_gpu_memory_utilization: 0.85
+vllm_max_model_len: 2048
+vllm_enable_lora: true
+vllm_max_loras: 1
+vllm_max_lora_rank: 8
+vllm_batch_size: 16
+bf16: true
+seed: 42
+deterministic_generation: true
+max_history_items: 20
+notes: Framework-Observation-Day1c decision-forced confidence elicitation smoke. This is not evidence, CEP, or training. Use Beauty 200/200 only before deciding whether to run full.

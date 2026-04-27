@@ -14,6 +14,18 @@ DIAG_CSV = Path("data_done/framework_observation_day1_beauty_confidence_diagnost
 CAL_CSV = Path("data_done/framework_observation_day1_beauty_confidence_calibration.csv")
 COLLAPSE_CSV = Path("data_done/framework_observation_day1_beauty_confidence_collapse_diagnostics.csv")
 REPORT_MD = Path("data_done/framework_observation_day1_beauty_confidence_report.md")
+DAY1C_DIAG_CSV = Path("data_done/framework_observation_day1c_decision_forced_confidence_diagnostics.csv")
+DAY1C_CAL_CSV = Path("data_done/framework_observation_day1c_decision_forced_calibration.csv")
+DAY1C_REPORT_MD = Path("data_done/framework_observation_day1c_decision_forced_report.md")
+PROMPT_COMPARISON_CSV = Path("data_done/framework_observation_day1_prompt_comparison.csv")
+
+ORIGINAL_PRED_DIR = Path("output-repaired/framework_observation/beauty_qwen_lora_confidence/predictions")
+REFINED_PRED_DIRS = [
+    Path("output-repaired/framework_observation/beauty_qwen_lora_confidence_refined_vllm/predictions"),
+    Path("output-repaired/framework_observation/beauty_qwen_lora_confidence_refined_transformers/predictions"),
+]
+DECISION_FORCED_PRED_DIR = Path("output-repaired/framework_observation/beauty_qwen_lora_confidence_decision_forced/predictions")
+DECISION_BASIS_VALUES = ["strong_match", "weak_match", "unrelated", "insufficient_information"]
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -98,6 +110,13 @@ def histogram(scores: list[float], bins: int = 10) -> str:
 
 def _safe_mean(values: list[float]) -> float | str:
     return mean(values) if values else "NA"
+
+
+def _json_counts(values: list[str], keys: list[str] | None = None) -> str:
+    counts: dict[str, int] = {k: 0 for k in keys or []}
+    for value in values:
+        counts[value] = counts.get(value, 0) + 1
+    return json.dumps(counts, sort_keys=True)
 
 
 def _expected_confidence_level(score: float) -> str:
@@ -200,6 +219,76 @@ def metric_row(split: str, score_type: str, rows: list[dict[str, Any]], scores: 
     }
 
 
+def decision_forced_row(split: str, rows: list[dict[str, Any]]) -> dict[str, Any]:
+    valid = _valid_rows(rows)
+    metric = metric_row(split, "raw_confidence", rows)
+    collapse = collapse_row(split, rows)
+    labels = [int(r.get("label", 0)) for r in valid]
+    recommend_true = [1 if r.get("recommend") is True else 0 for r in valid]
+    recommend_false = [1 if r.get("recommend") is False else 0 for r in valid]
+    basis_rows = [str(r.get("decision_basis", "")).strip().lower() for r in valid]
+    valid_basis_rows = [b for b in basis_rows if b in DECISION_BASIS_VALUES]
+
+    def rate_for_label(values: list[int], label_value: int) -> float | str:
+        idx = [i for i, y in enumerate(labels) if y == label_value]
+        return mean([values[i] for i in idx]) if idx else "NA"
+
+    def basis_by(group_key: str) -> str:
+        grouped: dict[str, dict[str, int]] = {}
+        for r in valid:
+            basis = str(r.get("decision_basis", "")).strip().lower()
+            if basis not in DECISION_BASIS_VALUES:
+                basis = "invalid_or_missing"
+            if group_key == "label":
+                group = str(int(r.get("label", 0)))
+            elif group_key == "recommend":
+                group = str(bool(r.get("recommend")))
+            elif group_key == "correctness":
+                group = str(_correctness(r))
+            else:
+                group = "all"
+            grouped.setdefault(group, {})
+            grouped[group][basis] = grouped[group].get(basis, 0) + 1
+        return json.dumps(grouped, sort_keys=True)
+
+    row = {
+        "split": split,
+        "num_rows": len(rows),
+        "num_valid_rows": len(valid),
+        "parse_success_rate": metric["parse_success_rate"],
+        "schema_valid_rate": metric["schema_valid_rate"],
+        "accuracy": metric["accuracy"],
+        "ECE": metric["ECE"],
+        "Brier": metric["Brier"],
+        "AUROC": metric["AUROC"],
+        "recommend_true_rate": collapse["recommend_true_rate"],
+        "recommend_false_rate": collapse["recommend_false_rate"],
+        "recommend_true_rate_label_1": rate_for_label(recommend_true, 1),
+        "recommend_true_rate_label_0": rate_for_label(recommend_true, 0),
+        "recommend_false_rate_label_1": rate_for_label(recommend_false, 1),
+        "recommend_false_rate_label_0": rate_for_label(recommend_false, 0),
+        "confidence_mean": collapse["confidence_mean"],
+        "confidence_std": collapse["confidence_std"],
+        "confidence_unique_count": collapse["confidence_unique_count"],
+        "confidence_min": collapse["confidence_min"],
+        "confidence_max": collapse["confidence_max"],
+        "confidence_at_1_rate": collapse["confidence_at_1_rate"],
+        "confidence_ge_0.9_rate": collapse["confidence_ge_0.9_rate"],
+        "confidence_ge_0.97_rate": collapse["confidence_ge_0.97_rate"],
+        "confidence_by_recommend_true_mean": collapse["confidence_by_recommend_true_mean"],
+        "confidence_by_recommend_false_mean": collapse["confidence_by_recommend_false_mean"],
+        "confidence_by_correct_mean": collapse["confidence_by_correct_mean"],
+        "confidence_by_wrong_mean": collapse["confidence_by_wrong_mean"],
+        "confidence_gap_correct_minus_wrong": collapse["confidence_gap_correct_minus_wrong"],
+        "decision_basis_valid_rate": len(valid_basis_rows) / len(valid) if valid else 0.0,
+        "decision_basis_distribution": _json_counts(basis_rows, DECISION_BASIS_VALUES),
+        "decision_basis_by_label": basis_by("label"),
+        "decision_basis_by_recommend": basis_by("recommend"),
+        "decision_basis_by_correctness": basis_by("correctness"),
+    }
+    return row
+
+
 def _fit_logistic(valid_scores: list[float], valid_labels: list[int]):
     try:
         from sklearn.linear_model import LogisticRegression  # type: ignore
@@ -283,6 +372,15 @@ def _collapse_interpretation(row: dict[str, Any]) -> str:
     if int(row.get("confidence_unique_count", 0)) <= 3 and int(row.get("num_valid_rows", 0)) >= 50:
         return "low_unique_confidence_values"
     return "no_obvious_saturation"
+
+
+def _prompt_variant_from_pred_dir(pred_dir: Path) -> str:
+    text = str(pred_dir).replace("\\", "/").lower()
+    if "decision_forced" in text:
+        return "decision_forced"
+    if "refined" in text:
+        return "refined"
+    return "original"
 
 
 def write_report(
@@ -369,11 +467,153 @@ If the original prompt shows confidence collapse/saturation, run the optional Da
     REPORT_MD.write_text(report, encoding="utf-8")
 
 
+def _day1c_recommendation(test_row: dict[str, Any]) -> tuple[str, str]:
+    if not test_row or test_row.get("num_valid_rows", 0) == 0:
+        return "format_failure", "needs_prompt_redesign"
+    rec_true = float(test_row.get("recommend_true_rate", 0.0))
+    conf_std = float(test_row.get("confidence_std", 0.0))
+    ece_value = float(test_row.get("ECE", 0.0))
+    if rec_true > 0.9:
+        return "decision_true_collapse", "needs_prompt_redesign"
+    if 0.2 <= rec_true <= 0.7 and conf_std > 0.03 and ece_value > 0.05:
+        return "usable_miscalibrated_signal", "run_full_beauty"
+    if 0.2 <= rec_true <= 0.7 and conf_std <= 0.03:
+        return "medium_constant_collapse", "switch_to_logit_confidence"
+    return "format_failure", "needs_prompt_redesign"
+
+
+def write_day1c_report(
+    diag_rows: list[dict[str, Any]],
+    cal_rows: list[dict[str, Any]],
+    pred_dir: Path,
+) -> None:
+    test_row = next((r for r in diag_rows if r["split"] == "test"), {})
+    best_cal = min(
+        [r for r in cal_rows if r.get("status") == "ok"],
+        key=lambda r: float(r.get("ECE", 999)),
+        default={},
+    )
+    collapse_type, recommendation = _day1c_recommendation(test_row)
+    report = f"""# Framework-Observation-Day1c Decision-Forced Confidence Report
+
+## Scope
+
+Day1c is a local Qwen-LoRA confidence elicitation smoke on `data_done/beauty` 5neg pointwise samples. It does not use external APIs, evidence fields, CEP fusion, or training.
+
+## Prediction Directory
+
+`{pred_dir}`
+
+## Decision / Confidence Diagnostics
+
+- test rows / valid rows: `{test_row.get('num_rows', 'NA')}` / `{test_row.get('num_valid_rows', 'NA')}`
+- test parse success: `{test_row.get('parse_success_rate', 'NA')}`
+- test schema valid: `{test_row.get('schema_valid_rate', 'NA')}`
+- test accuracy: `{test_row.get('accuracy', 'NA')}`
+- test AUROC: `{test_row.get('AUROC', 'NA')}`
+- test ECE: `{test_row.get('ECE', 'NA')}`
+- test Brier: `{test_row.get('Brier', 'NA')}`
+- recommend true / false rate: `{test_row.get('recommend_true_rate', 'NA')}` / `{test_row.get('recommend_false_rate', 'NA')}`
+- confidence mean / std: `{test_row.get('confidence_mean', 'NA')}` / `{test_row.get('confidence_std', 'NA')}`
+- confidence unique count: `{test_row.get('confidence_unique_count', 'NA')}`
+- decision_basis valid rate: `{test_row.get('decision_basis_valid_rate', 'NA')}`
+- decision_basis distribution: `{test_row.get('decision_basis_distribution', 'NA')}`
+
+## Calibration
+
+- best calibrated score: `{best_cal.get('score_type', 'NA')}`
+- best calibrated ECE: `{best_cal.get('ECE', 'NA')}`
+- best calibrated Brier: `{best_cal.get('Brier', 'NA')}`
+
+## Interpretation
+
+- collapse_type: `{collapse_type}`
+- recommendation: `{recommendation}`
+
+If `recommend_true_rate` remains above 0.9, decision collapse is still unresolved and Day1c should not be scaled to full Beauty. If the decision rate becomes reasonable but confidence remains nearly constant, the decision prompt may be usable but verbalized scalar confidence is not; the next route should be logit/probability confidence or self-consistency rather than more confidence wording.
+"""
+    DAY1C_REPORT_MD.write_text(report, encoding="utf-8")
+
+
+def _read_first_existing_pred_dir(paths: list[Path]) -> Path | None:
+    for path in paths:
+        if (path / "test_raw.jsonl").exists() or (path / "valid_raw.jsonl").exists():
+            return path
+    return None
+
+
+def _comparison_row(prompt_variant: str, backend: str, pred_dir: Path | None) -> dict[str, Any]:
+    if pred_dir is None:
+        return {
+            "prompt_variant": prompt_variant,
+            "backend": backend,
+            "num_valid_rows": 0,
+            "num_test_rows": 0,
+            "parse_success_rate": 0.0,
+            "schema_valid_rate": 0.0,
+            "collapse_type": "missing_predictions",
+            "recommendation": "needs_prompt_redesign",
+        }
+    valid_rows = _read_jsonl(pred_dir / "valid_raw.jsonl")
+    test_rows = _read_jsonl(pred_dir / "test_raw.jsonl")
+    test_metric = metric_row("test", "raw_confidence", test_rows)
+    test_collapse = collapse_row("test", test_rows)
+    cal_rows = calibration_rows(valid_rows, test_rows) if valid_rows and test_rows else []
+    best_cal = min([r for r in cal_rows if r.get("status") == "ok"], key=lambda r: float(r.get("ECE", 999)), default={})
+    collapse_type = "format_failure"
+    recommendation = "needs_prompt_redesign"
+    rec_true = float(test_collapse.get("recommend_true_rate", 0.0))
+    conf_std = float(test_collapse.get("confidence_std", 0.0))
+    if prompt_variant == "original":
+        collapse_type = "high_confidence_saturation"
+        recommendation = "do_not_full_run"
+    elif prompt_variant == "refined":
+        collapse_type = "medium_constant_collapse" if int(test_collapse.get("confidence_unique_count", 0)) <= 3 else "usable_miscalibrated_signal"
+        recommendation = "do_not_full_run" if collapse_type == "medium_constant_collapse" else "run_full_beauty"
+    elif prompt_variant == "decision_forced":
+        collapse_type, recommendation = _day1c_recommendation(decision_forced_row("test", test_rows))
+    if rec_true > 0.9 and prompt_variant != "original":
+        collapse_type = "decision_true_collapse" if collapse_type != "medium_constant_collapse" else collapse_type
+    return {
+        "prompt_variant": prompt_variant,
+        "backend": backend,
+        "num_valid_rows": len(_valid_rows(valid_rows)),
+        "num_test_rows": len(_valid_rows(test_rows)),
+        "parse_success_rate": test_metric["parse_success_rate"],
+        "schema_valid_rate": test_metric["schema_valid_rate"],
+        "recommend_true_rate": test_collapse["recommend_true_rate"],
+        "accuracy": test_metric["accuracy"],
+        "raw_ECE": test_metric["ECE"],
+        "calibrated_ECE": best_cal.get("ECE", "NA"),
+        "Brier": test_metric["Brier"],
+        "AUROC": test_metric["AUROC"],
+        "confidence_mean": test_collapse["confidence_mean"],
+        "confidence_std": test_collapse["confidence_std"],
+        "confidence_unique_count": test_collapse["confidence_unique_count"],
+        "confidence_ge_0.9_rate": test_collapse["confidence_ge_0.9_rate"],
+        "confidence_ge_0.97_rate": test_collapse["confidence_ge_0.97_rate"],
+        "collapse_type": collapse_type,
+        "recommendation": recommendation,
+    }
+
+
+def write_prompt_comparison() -> None:
+    refined_dir = _read_first_existing_pred_dir(REFINED_PRED_DIRS)
+    rows = [
+        _comparison_row("original", "transformers", ORIGINAL_PRED_DIR if ORIGINAL_PRED_DIR.exists() else None),
+        _comparison_row("refined", "vllm" if refined_dir and "vllm" in str(refined_dir) else "transformers", refined_dir),
+        _comparison_row("decision_forced", "vllm", DECISION_FORCED_PRED_DIR if DECISION_FORCED_PRED_DIR.exists() else None),
+    ]
+    _write_csv(PROMPT_COMPARISON_CSV, rows)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze Framework-Observation-Day1 raw confidence predictions.")
     parser.add_argument("--pred_dir", default=str(PRED_DIR))
+    parser.add_argument("--variant", choices=["auto", "original", "refined", "decision_forced"], default="auto")
     args = parser.parse_args()
     pred_dir = Path(args.pred_dir)
+    variant = _prompt_variant_from_pred_dir(pred_dir) if args.variant == "auto" else args.variant
     valid_rows = _read_jsonl(pred_dir / "valid_raw.jsonl")
     test_rows = _read_jsonl(pred_dir / "test_raw.jsonl")
     diag_rows = [
@@ -387,11 +627,35 @@ def main() -> None:
     cal_rows = calibration_rows(valid_rows, test_rows) if valid_rows and test_rows else [
         {"split": "test", "score_type": "raw_confidence", "status": "missing_predictions", "fallback_reason": "valid_or_test_prediction_missing"}
     ]
-    _write_csv(DIAG_CSV, diag_rows)
-    _write_csv(CAL_CSV, cal_rows)
-    _write_csv(COLLAPSE_CSV, collapse_rows)
-    write_report(diag_rows, cal_rows, collapse_rows, pred_dir)
-    print(json.dumps({"diagnostics": str(DIAG_CSV), "calibration": str(CAL_CSV), "collapse": str(COLLAPSE_CSV), "report": str(REPORT_MD)}, ensure_ascii=False, indent=2))
+    if variant == "decision_forced":
+        day1c_rows = [
+            decision_forced_row("valid", valid_rows),
+            decision_forced_row("test", test_rows),
+        ]
+        _write_csv(DAY1C_DIAG_CSV, day1c_rows)
+        _write_csv(DAY1C_CAL_CSV, cal_rows)
+        write_day1c_report(day1c_rows, cal_rows, pred_dir)
+        write_prompt_comparison()
+        payload = {
+            "diagnostics": str(DAY1C_DIAG_CSV),
+            "calibration": str(DAY1C_CAL_CSV),
+            "report": str(DAY1C_REPORT_MD),
+            "prompt_comparison": str(PROMPT_COMPARISON_CSV),
+        }
+    else:
+        _write_csv(DIAG_CSV, diag_rows)
+        _write_csv(CAL_CSV, cal_rows)
+        _write_csv(COLLAPSE_CSV, collapse_rows)
+        write_report(diag_rows, cal_rows, collapse_rows, pred_dir)
+        write_prompt_comparison()
+        payload = {
+            "diagnostics": str(DIAG_CSV),
+            "calibration": str(CAL_CSV),
+            "collapse": str(COLLAPSE_CSV),
+            "report": str(REPORT_MD),
+            "prompt_comparison": str(PROMPT_COMPARISON_CSV),
+        }
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

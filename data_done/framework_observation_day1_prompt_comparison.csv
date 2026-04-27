@@ -1,0 +1,4 @@
+prompt_variant,backend,num_valid_rows,num_test_rows,parse_success_rate,schema_valid_rate,collapse_type,recommendation,recommend_true_rate,accuracy,raw_ECE,calibrated_ECE,Brier,AUROC,confidence_mean,confidence_std,confidence_unique_count,confidence_ge_0.9_rate,confidence_ge_0.97_rate
+original,transformers,0,0,0.0,0.0,missing_predictions,needs_prompt_redesign,,,,,,,,,,,
+refined,vllm,52,52,1.0,1.0,medium_constant_collapse,do_not_full_run,0.9807692307692307,0.19230769230769232,0.45769230769230773,0.0,0.36480769230769233,0.5,0.65,0.0,1,0.0,0.0
+decision_forced,vllm,0,0,0.0,0.0,missing_predictions,needs_prompt_redesign,,,,,,,,,,,

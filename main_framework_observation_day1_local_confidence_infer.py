@@ -118,6 +118,8 @@ def parse_confidence_response(raw_text: str) -> dict[str, Any]:
             "schema_valid": False,
             "recommend": None,
             "confidence": None,
+            "decision_basis": "",
+            "decision_basis_valid": False,
             "reason": "",
             "parse_error": "no_json_object",
         }
@@ -129,6 +131,8 @@ def parse_confidence_response(raw_text: str) -> dict[str, Any]:
             "schema_valid": False,
             "recommend": None,
             "confidence": None,
+            "decision_basis": "",
+            "decision_basis_valid": False,
             "reason": "",
             "parse_error": f"json_error:{type(exc).__name__}",
         }
@@ -144,6 +148,16 @@ def parse_confidence_response(raw_text: str) -> dict[str, Any]:
     confidence_level_valid = confidence_level in {"low", "medium", "high", "very_high"}
     if not confidence_level_valid:
         confidence_level = ""
+    decision_basis_raw = obj.get("decision_basis")
+    decision_basis = str(decision_basis_raw).strip().lower() if decision_basis_raw is not None else ""
+    decision_basis_valid = decision_basis in {
+        "strong_match",
+        "weak_match",
+        "unrelated",
+        "insufficient_information",
+    }
+    if not decision_basis_valid:
+        decision_basis = ""
     reason = str(obj.get("reason", "")).strip()
     schema_valid = recommend is not None and confidence is not None
     return {
@@ -153,6 +167,8 @@ def parse_confidence_response(raw_text: str) -> dict[str, Any]:
         "confidence": confidence,
         "confidence_level": confidence_level,
         "confidence_level_valid": confidence_level_valid,
+        "decision_basis": decision_basis,
+        "decision_basis_valid": decision_basis_valid,
         "reason": reason,
         "parse_error": "" if schema_valid else "missing_or_invalid_recommend_confidence",
     }
@@ -221,6 +237,8 @@ def _prediction_row(
         "confidence": parsed["confidence"],
         "confidence_level": parsed.get("confidence_level", ""),
         "confidence_level_valid": bool(parsed.get("confidence_level_valid", False)),
+        "decision_basis": parsed.get("decision_basis", ""),
+        "decision_basis_valid": bool(parsed.get("decision_basis_valid", False)),
         "reason": parsed["reason"],
         "parse_success": parsed["parse_success"],
         "schema_valid": parsed["schema_valid"],
