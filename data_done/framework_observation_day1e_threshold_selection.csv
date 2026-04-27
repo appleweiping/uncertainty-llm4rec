@@ -1,0 +1,5 @@
+threshold_strategy,valid_threshold,valid_accuracy,valid_f1,valid_balanced_accuracy,valid_recommend_true_rate,test_accuracy,test_f1,test_balanced_accuracy,test_recommend_true_rate,test_confusion_tp,test_confusion_fp,test_confusion_tn,test_confusion_fn
+best_threshold_by_accuracy,0.8,0.85,0.21052631578947367,0.5588235294117647,0.02,0.85,0.21052631578947367,0.5588235294117647,0.02,4,0,166,30
+best_threshold_by_f1,0.1,0.68,0.4181818181818182,0.6785967399007796,0.38,0.64,0.33333333333333337,0.5960311835577605,0.37,18,56,110,16
+best_threshold_by_balanced_accuracy,0.1,0.68,0.4181818181818182,0.6785967399007796,0.38,0.64,0.33333333333333337,0.5960311835577605,0.37,18,56,110,16
+threshold_matching_positive_rate,0.26,0.765,0.31884057971014496,0.5894755492558469,0.175,0.745,0.23880597014925375,0.5423458540042523,0.165,8,25,141,26

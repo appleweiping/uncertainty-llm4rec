@@ -1,0 +1,3 @@
+score_type,raw_ECE,calibrated_ECE,raw_Brier,calibrated_Brier,raw_AUROC,calibrated_AUROC,interpretation
+positive_relevance_score,0.11125464997727197,0.034089472091289215,0.1429006312394226,0.1345724812871104,0.5887668320340185,0.5887668320340185,valid-set calibration improves ECE/Brier
+decision_confidence,0.0847636449604948,0.03629381237551008,0.1429006312394226,0.13772766390758376,0.5965627214741318,0.5965627214741318,valid-set calibration improves ECE/Brier

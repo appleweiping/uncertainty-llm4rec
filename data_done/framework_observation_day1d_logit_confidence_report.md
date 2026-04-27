@@ -2,19 +2,42 @@
 
 ## Scope
 
-Pending server run. Day1d will run local Qwen-LoRA on Beauty valid/test 200/200 only. It does not train, use evidence, use CEP, call external APIs, or run four domains.
+Day1d is a local Qwen-LoRA Beauty 200/200 smoke. It does not train, use evidence, use CEP, call external APIs, or run four domains.
 
-## Method
+The model is prompted only for a binary `recommend` decision. Confidence is extracted from model token probabilities for `true` versus `false`, not from verbalized scalar confidence.
 
-The prompt asks only for a binary `recommend` JSON decision. The script extracts confidence from model token probabilities for `true` versus `false` at the `{"recommend": ...}` position.
+## Prediction Directory
 
-Implementation note: Day1d uses constrained true/false continuation scoring rather than free-form generation. This avoids an extra generation pass and keeps the score definition tied directly to token probabilities.
+`output-repaired/framework_observation/beauty_qwen_lora_logit_confidence/predictions`
 
-Two scores are reported:
+## Relevance / Label Prediction
 
-- `positive_relevance_score = P(recommend=true)` for relevance / label prediction.
-- `decision_confidence = max(P(true), P(false))` for confidence in the chosen binary decision.
+- test rows / valid rows: `200` / `200`
+- parse/schema: `1.0` / `1.0`
+- recommend true rate: `0.04`
+- accuracy at threshold 0.5: `0.83`
+- positive relevance AUROC: `0.5887668320340185`
+- positive relevance Brier: `0.1429006312394226`
+- positive relevance ECE: `0.11125464997727197`
+- positive relevance score mean/std: `0.13393764701965` / `0.17010084593581187`
 
-## Status
+## Decision Correctness Confidence
 
-Awaiting Day1d server smoke results.
+- correctness AUROC: `0.5965627214741318`
+- correctness Brier: `0.1429006312394226`
+- correctness ECE: `0.0847636449604948`
+- high-confidence error rate: `0.11`
+- decision confidence mean/std/min/max: `0.8839778485314717` / `0.12448676995862419` / `0.5094134374789216` / `0.9941465518261811`
+- confidence unique count: `200`
+
+## Calibration
+
+- best relevance calibrated score: `logistic_calibrated` with ECE `0.034089472091289215` and Brier `0.1345724812871104`
+- best correctness calibrated score: `logistic_calibrated` with ECE `0.03629381237551008` and Brier `0.13772766390758376`
+
+## Interpretation
+
+- collapse_type: `usable_miscalibrated_signal`
+- recommendation: `switch_to_logit_confidence`
+
+Logit/token probability fixes scalar verbalized confidence collapse and gives a usable-but-weak miscalibrated signal. However, the hard recommend=true/false decision remains conservative and under-recommending at the default 0.5 threshold, so we should not full-run yet. The next audit should treat P(true) as a continuous relevance score rather than over-reading the fixed-threshold hard decision.
