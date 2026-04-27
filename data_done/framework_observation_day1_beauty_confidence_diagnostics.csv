@@ -1,0 +1,3 @@
+split,score_type,num_rows,num_valid_rows,parse_success_rate,schema_valid_rate,accuracy,ECE,Brier,AUROC,high_conf_error_rate,mean_confidence,std_confidence,confidence_histogram,positive_label_rate,recommend_yes_rate
+valid,raw_confidence,0,0,0.0,0.0,0.0,0.0,0.0,NA,0.0,0.0,0.0,"[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",0.0,0.0
+test,raw_confidence,0,0,0.0,0.0,0.0,0.0,0.0,NA,0.0,0.0,0.0,"[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]",0.0,0.0

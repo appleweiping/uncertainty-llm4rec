@@ -1,0 +1,16 @@
+model_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+adapter_path:
+model_variant: base
+domain: beauty
+valid_file: data_done/beauty/valid.jsonl
+test_file: data_done/beauty/test.jsonl
+output_dir: output-repaired/framework_observation/beauty_qwen_base_confidence/predictions
+prompt_template: prompts/framework/qwen_confidence_recommendation_pointwise.txt
+max_seq_len: 2048
+max_new_tokens: 96
+bf16: true
+seed: 42
+deterministic_generation: true
+max_history_items: 20
+notes: Optional base Qwen raw confidence observation. Do not run by default; use as a control only after LoRA smoke is stable.
