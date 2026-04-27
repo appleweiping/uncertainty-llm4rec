@@ -444,9 +444,30 @@ def _fit_logistic(valid_scores: list[float], valid_labels: list[int]):
 
 def _calibrate(valid_scores: list[float], valid_labels: list[int], target_scores: list[float]) -> list[float]:
     model = _fit_logistic(valid_scores, valid_labels)
-    if model is None:
+    if model is not None:
+        return [float(x[1]) for x in model.predict_proba([[s] for s in target_scores])]
+    if not valid_scores or len(set(valid_labels)) < 2:
         return target_scores
-    return [float(x[1]) for x in model.predict_proba([[s] for s in target_scores])]
+
+    pos_rate = min(max(mean(valid_labels), 1e-6), 1.0 - 1e-6)
+    bias = math.log(pos_rate / (1.0 - pos_rate))
+    weight = 0.0
+    lr = 0.5
+    l2 = 1e-4
+    n = len(valid_scores)
+    for _ in range(2000):
+        grad_w = 0.0
+        grad_b = 0.0
+        for score, label in zip(valid_scores, valid_labels):
+            pred = 1.0 / (1.0 + math.exp(-(weight * score + bias)))
+            err = pred - label
+            grad_w += err * score
+            grad_b += err
+        grad_w = grad_w / n + l2 * weight
+        grad_b /= n
+        weight -= lr * grad_w
+        bias -= lr * grad_b
+    return [1.0 / (1.0 + math.exp(-(weight * score + bias))) for score in target_scores]
 
 
 def _dcg(labels: list[int], k: int) -> float:
@@ -470,21 +491,50 @@ def _hr(labels: list[int], k: int) -> float:
     return 1.0 if any(label > 0 for label in labels[:k]) else 0.0
 
 
+def _one_positive_tie_aware_metrics(scores: list[float], labels: list[int]) -> dict[str, float]:
+    """Expected ranking metrics when tied scores are broken uniformly at random."""
+    pos_index = labels.index(1)
+    pos_score = scores[pos_index]
+    higher = sum(1 for score in scores if score > pos_score)
+    equal = sum(1 for score in scores if score == pos_score)
+    ranks = list(range(higher + 1, higher + equal + 1))
+
+    def ndcg_at_rank(rank: int, k: int) -> float:
+        return (1.0 / math.log2(rank + 1)) if rank <= k else 0.0
+
+    return {
+        "NDCG@10": mean([ndcg_at_rank(rank, 10) for rank in ranks]),
+        "MRR": mean([1.0 / rank for rank in ranks]),
+        "HR@1": mean([1.0 if rank <= 1 else 0.0 for rank in ranks]),
+        "HR@3": mean([1.0 if rank <= 3 else 0.0 for rank in ranks]),
+        "NDCG@3": mean([ndcg_at_rank(rank, 3) for rank in ranks]),
+        "NDCG@5": mean([ndcg_at_rank(rank, 5) for rank in ranks]),
+        "HR@10": mean([1.0 if rank <= 10 else 0.0 for rank in ranks]),
+    }
+
+
 def ranking_metrics(rows: list[dict[str, Any]], score_key: str) -> dict[str, Any]:
     grouped = _group_by_user(rows)
     vals = {key: [] for key in ["NDCG@10", "MRR", "HR@1", "HR@3", "NDCG@3", "NDCG@5", "HR@10"]}
     pool_sizes = []
     for items in grouped.values():
-        ranked = sorted(items, key=lambda row: _score(row, score_key), reverse=True)
-        labels = [_label(row) for row in ranked]
+        scores = [_score(row, score_key) for row in items]
+        labels = [_label(row) for row in items]
         pool_sizes.append(len(items))
-        vals["NDCG@10"].append(_ndcg(labels, 10))
-        vals["MRR"].append(_mrr(labels))
-        vals["HR@1"].append(_hr(labels, 1))
-        vals["HR@3"].append(_hr(labels, 3))
-        vals["NDCG@3"].append(_ndcg(labels, 3))
-        vals["NDCG@5"].append(_ndcg(labels, 5))
-        vals["HR@10"].append(_hr(labels, 10))
+        if sum(labels) == 1:
+            expected = _one_positive_tie_aware_metrics(scores, labels)
+            for key in vals:
+                vals[key].append(expected[key])
+        else:
+            ranked = sorted(items, key=lambda row: _score(row, score_key), reverse=True)
+            ranked_labels = [_label(row) for row in ranked]
+            vals["NDCG@10"].append(_ndcg(ranked_labels, 10))
+            vals["MRR"].append(_mrr(ranked_labels))
+            vals["HR@1"].append(_hr(ranked_labels, 1))
+            vals["HR@3"].append(_hr(ranked_labels, 3))
+            vals["NDCG@3"].append(_ndcg(ranked_labels, 3))
+            vals["NDCG@5"].append(_ndcg(ranked_labels, 5))
+            vals["HR@10"].append(_hr(ranked_labels, 10))
     out = {k: mean(v) if v else 0.0 for k, v in vals.items()}
     out["candidate_pool_size_mean"] = mean(pool_sizes) if pool_sizes else 0.0
     out["hr10_trivial_flag"] = out["candidate_pool_size_mean"] <= 10
@@ -712,6 +762,8 @@ Day1f is a local Beauty 100-user valid/test smoke with complete six-candidate po
 - self-consistency test MRR / random MRR: `{test_rank.get('MRR', 'NA')}` / `{test_random.get('MRR', 'NA')}`
 - self-consistency test HR@1 / random HR@1: `{test_rank.get('HR@1', 'NA')}` / `{test_random.get('HR@1', 'NA')}`
 - self-consistency test NDCG@3 / random NDCG@3: `{test_rank.get('NDCG@3', 'NA')}` / `{test_random.get('NDCG@3', 'NA')}`
+
+Ranking metrics are tie-aware: when candidates receive the same self-consistency frequency, the report uses the expected metric under uniform random tie-breaking rather than preserving JSONL row order.
 
 ## Logit Comparison
 

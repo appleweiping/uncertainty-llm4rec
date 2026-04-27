@@ -1,0 +1,5 @@
+target,score_type,ECE,Brier,AUROC,calibration_method,status,delta_ECE_vs_raw,delta_Brier_vs_raw
+recommend_true_frequency_to_label,raw,0.17099999999999999,0.1706,0.53713,none,ok,,
+recommend_true_frequency_to_label,logistic_calibrated,0.023258808800338867,0.13712106600435617,0.53713,logistic,ok,-0.14774119119966111,-0.033478933995643834
+self_consistency_confidence_to_correctness,raw,0.1603333333333333,0.1706,0.5564192949907235,none,ok,,
+self_consistency_confidence_to_correctness,logistic_calibrated,0.015098075651946131,0.14664451751022392,0.5564192949907235,logistic,ok,-0.14523525768138718,-0.02395548248977608

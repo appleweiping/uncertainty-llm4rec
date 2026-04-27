@@ -1,19 +1,9 @@
 # Framework-Observation-Day1g Pair/List Context Plan
 
-If pointwise logit P(true) and Day1f self-consistency remain weak, the next step is not more scalar confidence wording. The input context should change.
+If pointwise logit and self-consistency signals remain weak, the next step is not more scalar confidence wording. The input context should change.
 
-## Pairwise Context
+1. Pairwise context: present a positive-like and negative-like candidate pair for the same user and ask which is more suitable.
+2. Listwise context: present the full six-candidate pool and ask for a relative ranking or relative score for every candidate.
+3. Confidence/uncertainty should then be extracted from relative decisions, rank margins, or calibrated pair/list probabilities.
 
-Give the model one user history plus two candidates, ideally one positive-like and one negative-like, and ask which candidate better matches the user. Confidence can be extracted from pairwise preference margins or calibrated pairwise probabilities.
-
-## Listwise Context
-
-Give the model the full six-candidate user pool and ask for a ranking or relative score for each candidate. This matches the recommendation task more directly than isolated pointwise decisions.
-
-## Confidence Extraction
-
-Use relative decision margins, rank gaps, calibrated probabilities, or consistency across listwise rankings. Do not return to raw verbalized scalar confidence unless it is only used as a secondary diagnostic.
-
-## Scope
-
-Day1g should remain Beauty-only smoke first. Do not run full Beauty or four domains until pair/list context clearly beats pointwise logit and self-consistency on the same user-pool ranking metrics.
+Day1g should remain a Beauty smoke first. Do not run full Beauty or four domains until pair/list context shows a stronger signal than pointwise logit/self-consistency.
