@@ -9,6 +9,13 @@ output_dir: output-repaired/framework_observation/beauty_qwen_base_confidence/pr
 prompt_template: prompts/framework/qwen_confidence_recommendation_pointwise.txt
 max_seq_len: 2048
 max_new_tokens: 96
+inference_backend: transformers
+vllm_tensor_parallel_size: 1
+vllm_gpu_memory_utilization: 0.85
+vllm_max_model_len: 2048
+vllm_enable_lora: false
+vllm_max_loras: 0
+vllm_max_lora_rank: 0
 bf16: true
 seed: 42
 deterministic_generation: true

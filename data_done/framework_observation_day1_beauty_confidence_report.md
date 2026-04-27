@@ -19,11 +19,28 @@ This is a local Qwen/Qwen-LoRA confidence observation on `data_done/beauty` 5neg
 - test AUROC: `NA`
 - test high-confidence error rate: `0.0`
 
+## Confidence Collapse / Saturation Diagnostics
+
+- collapse status: `pending_predictions`
+- test confidence mean: `0.0`
+- test confidence std: `0.0`
+- test confidence min/max: `NA` / `NA`
+- test confidence unique count: `0`
+- test confidence at 1.0 rate: `0.0`
+- test confidence >= 0.90 rate: `0.0`
+- test confidence >= 0.97 rate: `0.0`
+- recommend true/false rate: `0.0` / `0.0`
+- confidence correct/wrong mean: `NA` / `NA`
+- confidence gap correct-minus-wrong: `NA`
+
+If confidence mass concentrates near `0.97` or `1.0`, this should be interpreted as confidence collapse/saturation, not as method success. If confidence has meaningful variance but ECE/Brier are poor, the signal is informative but miscalibrated.
+
 ## Calibration
 
 - best available calibrated score: `NA`
 - best calibrated ECE: `NA`
 - best calibrated Brier: `NA`
+- interpretation: calibration benefit is pending or not yet established; inspect ECE/Brier after full predictions.
 
 Calibration is fit on valid and evaluated on test. Raw confidence is verbalized confidence, not a calibrated probability.
 
@@ -35,4 +52,4 @@ This stage is a cleaner local-framework continuation of the earlier confidence o
 
 ## Recommendation
 
-If parse/schema are stable and calibration reduces ECE/Brier, proceed to four-domain local confidence observation. If parsing is weak, repair the confidence prompt/parser before scaling.
+If the original prompt shows confidence collapse/saturation, run the optional Day1b refined 200/200 smoke before spending more full-runtime. If parse/schema are stable, confidence is not collapsed, and calibration reduces ECE/Brier, proceed to broader local confidence observation. If parsing is weak, repair the confidence prompt/parser before scaling.

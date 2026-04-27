@@ -12,6 +12,7 @@ from typing import Any
 PRED_DIR = Path("output-repaired/framework_observation/beauty_qwen_lora_confidence/predictions")
 DIAG_CSV = Path("data_done/framework_observation_day1_beauty_confidence_diagnostics.csv")
 CAL_CSV = Path("data_done/framework_observation_day1_beauty_confidence_calibration.csv")
+COLLAPSE_CSV = Path("data_done/framework_observation_day1_beauty_confidence_collapse_diagnostics.csv")
 REPORT_MD = Path("data_done/framework_observation_day1_beauty_confidence_report.md")
 
 
@@ -93,6 +94,81 @@ def histogram(scores: list[float], bins: int = 10) -> str:
         idx = min(bins - 1, max(0, int(s * bins)))
         counts[idx] += 1
     return json.dumps(counts)
+
+
+def _safe_mean(values: list[float]) -> float | str:
+    return mean(values) if values else "NA"
+
+
+def _expected_confidence_level(score: float) -> str:
+    if 0.50 <= score < 0.60:
+        return "low"
+    if 0.60 <= score < 0.75:
+        return "medium"
+    if 0.75 <= score < 0.90:
+        return "high"
+    if 0.90 <= score <= 0.97:
+        return "very_high"
+    return "out_of_range"
+
+
+def collapse_row(split: str, rows: list[dict[str, Any]]) -> dict[str, Any]:
+    valid = _valid_rows(rows)
+    scores = [float(r["confidence"]) for r in valid]
+    correct_flags = [_correctness(r) for r in valid]
+    recommend_true = [float(r["confidence"]) for r in valid if r.get("recommend") is True]
+    recommend_false = [float(r["confidence"]) for r in valid if r.get("recommend") is False]
+    correct_scores = [s for s, c in zip(scores, correct_flags) if c == 1]
+    wrong_scores = [s for s, c in zip(scores, correct_flags) if c == 0]
+    confidence_levels = [str(r.get("confidence_level", "")).strip().lower() for r in valid if r.get("confidence_level")]
+    valid_level_rows = [
+        r
+        for r in valid
+        if str(r.get("confidence_level", "")).strip().lower() in {"low", "medium", "high", "very_high"}
+    ]
+    level_counts: dict[str, int] = {"low": 0, "medium": 0, "high": 0, "very_high": 0}
+    for level in confidence_levels:
+        if level in level_counts:
+            level_counts[level] += 1
+    consistent = 0
+    for r in valid_level_rows:
+        level = str(r.get("confidence_level", "")).strip().lower()
+        expected = _expected_confidence_level(float(r["confidence"]))
+        if level == expected:
+            consistent += 1
+    recommend_true_rate = sum(1 for r in valid if r.get("recommend") is True) / len(valid) if valid else 0.0
+    recommend_false_rate = sum(1 for r in valid if r.get("recommend") is False) / len(valid) if valid else 0.0
+    correct_mean = _safe_mean(correct_scores)
+    wrong_mean = _safe_mean(wrong_scores)
+    if isinstance(correct_mean, float) and isinstance(wrong_mean, float):
+        gap = correct_mean - wrong_mean
+    else:
+        gap = "NA"
+    return {
+        "split": split,
+        "num_rows": len(rows),
+        "num_valid_rows": len(valid),
+        "parse_success_rate": sum(1 for r in rows if r.get("parse_success")) / len(rows) if rows else 0.0,
+        "schema_valid_rate": len(valid) / len(rows) if rows else 0.0,
+        "confidence_mean": mean(scores) if scores else 0.0,
+        "confidence_std": pstdev(scores) if len(scores) > 1 else 0.0,
+        "confidence_min": min(scores) if scores else "NA",
+        "confidence_max": max(scores) if scores else "NA",
+        "confidence_unique_count": len(set(scores)),
+        "confidence_at_1_rate": sum(1 for s in scores if s >= 1.0) / len(scores) if scores else 0.0,
+        "confidence_ge_0.9_rate": sum(1 for s in scores if s >= 0.9) / len(scores) if scores else 0.0,
+        "confidence_ge_0.97_rate": sum(1 for s in scores if s >= 0.97) / len(scores) if scores else 0.0,
+        "confidence_by_recommend_true_mean": _safe_mean(recommend_true),
+        "confidence_by_recommend_false_mean": _safe_mean(recommend_false),
+        "confidence_by_correct_mean": correct_mean,
+        "confidence_by_wrong_mean": wrong_mean,
+        "confidence_gap_correct_minus_wrong": gap,
+        "recommend_true_rate": recommend_true_rate,
+        "recommend_false_rate": recommend_false_rate,
+        "confidence_level_valid_rate": len(valid_level_rows) / len(valid) if valid else 0.0,
+        "confidence_level_distribution": json.dumps(level_counts, sort_keys=True),
+        "confidence_level_score_consistency_rate": consistent / len(valid_level_rows) if valid_level_rows else "NA",
+    }
 
 
 def metric_row(split: str, score_type: str, rows: list[dict[str, Any]], scores: list[float] | None = None) -> dict[str, Any]:
@@ -199,8 +275,24 @@ def calibration_rows(valid_rows: list[dict[str, Any]], test_rows: list[dict[str,
     return rows
 
 
-def write_report(diag_rows: list[dict[str, Any]], cal_rows: list[dict[str, Any]], pred_dir: Path) -> None:
+def _collapse_interpretation(row: dict[str, Any]) -> str:
+    if not row or row.get("num_valid_rows", 0) == 0:
+        return "pending_predictions"
+    if float(row.get("confidence_at_1_rate", 0.0)) >= 0.2 or float(row.get("confidence_ge_0.97_rate", 0.0)) >= 0.5:
+        return "confidence_collapse_or_saturation"
+    if int(row.get("confidence_unique_count", 0)) <= 3 and int(row.get("num_valid_rows", 0)) >= 50:
+        return "low_unique_confidence_values"
+    return "no_obvious_saturation"
+
+
+def write_report(
+    diag_rows: list[dict[str, Any]],
+    cal_rows: list[dict[str, Any]],
+    collapse_rows: list[dict[str, Any]],
+    pred_dir: Path,
+) -> None:
     test_raw = next((r for r in diag_rows if r["split"] == "test" and r["score_type"] == "raw_confidence"), {})
+    test_collapse = next((r for r in collapse_rows if r["split"] == "test"), {})
     best_cal = min(
         [r for r in cal_rows if r.get("status") == "ok"],
         key=lambda r: float(r.get("ECE", 999)),
@@ -211,6 +303,13 @@ def write_report(diag_rows: list[dict[str, Any]], cal_rows: list[dict[str, Any]]
         status = "pending_predictions"
     elif test_raw:
         status = "ready_for_interpretation" if test_raw.get("schema_valid_rate", 0) >= 0.9 else "needs_parse_review"
+    collapse_status = _collapse_interpretation(test_collapse)
+    raw_ece = test_raw.get("ECE", "NA")
+    best_ece = best_cal.get("ECE", "NA")
+    if isinstance(raw_ece, float) and isinstance(best_ece, float) and best_ece < raw_ece:
+        calibration_note = "valid-set calibration reduces ECE/Brier and makes the raw confidence signal more usable."
+    else:
+        calibration_note = "calibration benefit is pending or not yet established; inspect ECE/Brier after full predictions."
     report = f"""# Framework-Observation-Day1 Beauty Local Qwen-LoRA Confidence Report
 
 ## Scope
@@ -232,11 +331,28 @@ This is a local Qwen/Qwen-LoRA confidence observation on `data_done/beauty` 5neg
 - test AUROC: `{test_raw.get('AUROC', 'NA')}`
 - test high-confidence error rate: `{test_raw.get('high_conf_error_rate', 'NA')}`
 
+## Confidence Collapse / Saturation Diagnostics
+
+- collapse status: `{collapse_status}`
+- test confidence mean: `{test_collapse.get('confidence_mean', 'NA')}`
+- test confidence std: `{test_collapse.get('confidence_std', 'NA')}`
+- test confidence min/max: `{test_collapse.get('confidence_min', 'NA')}` / `{test_collapse.get('confidence_max', 'NA')}`
+- test confidence unique count: `{test_collapse.get('confidence_unique_count', 'NA')}`
+- test confidence at 1.0 rate: `{test_collapse.get('confidence_at_1_rate', 'NA')}`
+- test confidence >= 0.90 rate: `{test_collapse.get('confidence_ge_0.9_rate', 'NA')}`
+- test confidence >= 0.97 rate: `{test_collapse.get('confidence_ge_0.97_rate', 'NA')}`
+- recommend true/false rate: `{test_collapse.get('recommend_true_rate', 'NA')}` / `{test_collapse.get('recommend_false_rate', 'NA')}`
+- confidence correct/wrong mean: `{test_collapse.get('confidence_by_correct_mean', 'NA')}` / `{test_collapse.get('confidence_by_wrong_mean', 'NA')}`
+- confidence gap correct-minus-wrong: `{test_collapse.get('confidence_gap_correct_minus_wrong', 'NA')}`
+
+If confidence mass concentrates near `0.97` or `1.0`, this should be interpreted as confidence collapse/saturation, not as method success. If confidence has meaningful variance but ECE/Brier are poor, the signal is informative but miscalibrated.
+
 ## Calibration
 
 - best available calibrated score: `{best_cal.get('score_type', 'NA')}`
 - best calibrated ECE: `{best_cal.get('ECE', 'NA')}`
 - best calibrated Brier: `{best_cal.get('Brier', 'NA')}`
+- interpretation: {calibration_note}
 
 Calibration is fit on valid and evaluated on test. Raw confidence is verbalized confidence, not a calibrated probability.
 
@@ -248,7 +364,7 @@ This stage is a cleaner local-framework continuation of the earlier confidence o
 
 ## Recommendation
 
-If parse/schema are stable and calibration reduces ECE/Brier, proceed to four-domain local confidence observation. If parsing is weak, repair the confidence prompt/parser before scaling.
+If the original prompt shows confidence collapse/saturation, run the optional Day1b refined 200/200 smoke before spending more full-runtime. If parse/schema are stable, confidence is not collapsed, and calibration reduces ECE/Brier, proceed to broader local confidence observation. If parsing is weak, repair the confidence prompt/parser before scaling.
 """
     REPORT_MD.write_text(report, encoding="utf-8")
 
@@ -264,13 +380,18 @@ def main() -> None:
         metric_row("valid", "raw_confidence", valid_rows),
         metric_row("test", "raw_confidence", test_rows),
     ]
+    collapse_rows = [
+        collapse_row("valid", valid_rows),
+        collapse_row("test", test_rows),
+    ]
     cal_rows = calibration_rows(valid_rows, test_rows) if valid_rows and test_rows else [
         {"split": "test", "score_type": "raw_confidence", "status": "missing_predictions", "fallback_reason": "valid_or_test_prediction_missing"}
     ]
     _write_csv(DIAG_CSV, diag_rows)
     _write_csv(CAL_CSV, cal_rows)
-    write_report(diag_rows, cal_rows, pred_dir)
-    print(json.dumps({"diagnostics": str(DIAG_CSV), "calibration": str(CAL_CSV), "report": str(REPORT_MD)}, ensure_ascii=False, indent=2))
+    _write_csv(COLLAPSE_CSV, collapse_rows)
+    write_report(diag_rows, cal_rows, collapse_rows, pred_dir)
+    print(json.dumps({"diagnostics": str(DIAG_CSV), "calibration": str(CAL_CSV), "collapse": str(COLLAPSE_CSV), "report": str(REPORT_MD)}, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

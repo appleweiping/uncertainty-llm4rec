@@ -139,6 +139,11 @@ def parse_confidence_response(raw_text: str) -> dict[str, Any]:
         confidence = None
     if confidence is not None:
         confidence = max(0.0, min(1.0, confidence))
+    confidence_level_raw = obj.get("confidence_level")
+    confidence_level = str(confidence_level_raw).strip().lower() if confidence_level_raw is not None else ""
+    confidence_level_valid = confidence_level in {"low", "medium", "high", "very_high"}
+    if not confidence_level_valid:
+        confidence_level = ""
     reason = str(obj.get("reason", "")).strip()
     schema_valid = recommend is not None and confidence is not None
     return {
@@ -146,6 +151,8 @@ def parse_confidence_response(raw_text: str) -> dict[str, Any]:
         "schema_valid": schema_valid,
         "recommend": recommend,
         "confidence": confidence,
+        "confidence_level": confidence_level,
+        "confidence_level_valid": confidence_level_valid,
         "reason": reason,
         "parse_error": "" if schema_valid else "missing_or_invalid_recommend_confidence",
     }
@@ -231,6 +238,8 @@ def run_inference(cfg: dict[str, Any], split: str, model_variant: str, max_sampl
                 "raw_response": raw_text,
                 "recommend": parsed["recommend"],
                 "confidence": parsed["confidence"],
+                "confidence_level": parsed.get("confidence_level", ""),
+                "confidence_level_valid": bool(parsed.get("confidence_level_valid", False)),
                 "reason": parsed["reason"],
                 "parse_success": parsed["parse_success"],
                 "schema_valid": parsed["schema_valid"],

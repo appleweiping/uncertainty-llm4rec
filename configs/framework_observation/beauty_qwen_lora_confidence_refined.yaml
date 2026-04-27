@@ -5,10 +5,10 @@ model_variant: lora
 domain: beauty
 valid_file: data_done/beauty/valid.jsonl
 test_file: data_done/beauty/test.jsonl
-output_dir: output-repaired/framework_observation/beauty_qwen_lora_confidence/predictions
-prompt_template: prompts/framework/qwen_confidence_recommendation_pointwise.txt
+output_dir: output-repaired/framework_observation/beauty_qwen_lora_confidence_refined/predictions
+prompt_template: prompts/framework/qwen_confidence_recommendation_pointwise_refined.txt
 max_seq_len: 2048
-max_new_tokens: 96
+max_new_tokens: 128
 inference_backend: transformers
 vllm_tensor_parallel_size: 1
 vllm_gpu_memory_utilization: 0.85
@@ -20,4 +20,4 @@ bf16: true
 seed: 42
 deterministic_generation: true
 max_history_items: 20
-notes: Framework-Observation-Day1 local Qwen-LoRA raw confidence observation. Confidence is raw verbalized confidence, not calibrated probability. Adapter selection uses the current best available listwise strict adapter unless explicitly changed.
+notes: Optional Framework-Observation-Day1b refined confidence elicitation smoke. Use only after original prompt shows confidence collapse/saturation or very low confidence_unique_count. This is measurement refinement, not a CEP method contribution.
