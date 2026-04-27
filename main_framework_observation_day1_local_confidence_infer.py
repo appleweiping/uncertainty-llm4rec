@@ -36,7 +36,21 @@ def _compact_json(obj: Any) -> str:
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
 
 
-def format_confidence_prompt(sample: dict[str, Any], template_path: str | Path, max_history_items: int = 20) -> str:
+def _truncate_text(value: Any, max_chars: int) -> str:
+    text = str(value or "")
+    if max_chars <= 0 or len(text) <= max_chars:
+        return text
+    return text[:max_chars].rstrip() + "..."
+
+
+def format_confidence_prompt(
+    sample: dict[str, Any],
+    template_path: str | Path,
+    max_history_items: int = 20,
+    max_title_chars: int = 160,
+    max_history_text_chars: int = 360,
+    max_candidate_text_chars: int = 520,
+) -> str:
     template = Path(template_path).read_text(encoding="utf-8").strip()
     history = sample.get("history", [])
     if max_history_items > 0:
@@ -45,8 +59,8 @@ def format_confidence_prompt(sample: dict[str, Any], template_path: str | Path, 
         "user_history": [
             {
                 "item_id": str(item.get("item_id", "")),
-                "title": str(item.get("title", "")),
-                "text": str(item.get("text", "")),
+                "title": _truncate_text(item.get("title", ""), max_title_chars),
+                "text": _truncate_text(item.get("text", ""), max_history_text_chars),
                 "text_missing": bool(item.get("text_missing", False)),
                 "text_fallback_used": bool(item.get("text_fallback_used", False)),
             }
@@ -54,8 +68,8 @@ def format_confidence_prompt(sample: dict[str, Any], template_path: str | Path, 
         ],
         "candidate_item": {
             "candidate_item_id": str(sample.get("candidate_item_id", "")),
-            "title": str(sample.get("candidate_title", "")),
-            "text": str(sample.get("candidate_text", "")),
+            "title": _truncate_text(sample.get("candidate_title", ""), max_title_chars),
+            "text": _truncate_text(sample.get("candidate_text", ""), max_candidate_text_chars),
             "candidate_text_missing": bool(sample.get("candidate_text_missing", False)),
             "candidate_text_fallback_used": bool(sample.get("candidate_text_fallback_used", False)),
         },
@@ -275,12 +289,22 @@ def _run_transformers_inference(
     model, tokenizer = _load_model(cfg, model_variant=model_variant)
     pending_out: list[dict[str, Any]] = []
     max_history_items = int(cfg.get("max_history_items", 20))
+    max_title_chars = int(cfg.get("max_title_chars", 160))
+    max_history_text_chars = int(cfg.get("max_history_text_chars", 360))
+    max_candidate_text_chars = int(cfg.get("max_candidate_text_chars", 520))
     adapter_path = str(cfg.get("adapter_path", "")) if model_variant == "lora" else ""
     for idx, sample in enumerate(rows):
         sid = _sample_id(split, idx, sample)
         if sid in finished:
             continue
-        prompt = format_confidence_prompt(sample, cfg["prompt_template"], max_history_items=max_history_items)
+        prompt = format_confidence_prompt(
+            sample,
+            cfg["prompt_template"],
+            max_history_items=max_history_items,
+            max_title_chars=max_title_chars,
+            max_history_text_chars=max_history_text_chars,
+            max_candidate_text_chars=max_candidate_text_chars,
+        )
         inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=int(cfg.get("max_seq_len", 2048))).to("cuda")
         with torch.no_grad():
             output_ids = model.generate(
@@ -364,6 +388,9 @@ def _run_vllm_inference(
     llm, sampling_params = _load_vllm(cfg, model_variant=model_variant)
     lora_request = _vllm_lora_request(cfg, model_variant=model_variant)
     max_history_items = int(cfg.get("max_history_items", 20))
+    max_title_chars = int(cfg.get("max_title_chars", 160))
+    max_history_text_chars = int(cfg.get("max_history_text_chars", 360))
+    max_candidate_text_chars = int(cfg.get("max_candidate_text_chars", 520))
     batch_size = int(cfg.get("vllm_batch_size", 16))
     adapter_path = str(cfg.get("adapter_path", "")) if model_variant == "lora" else ""
     batch: list[tuple[int, dict[str, Any], str, str]] = []
@@ -384,7 +411,14 @@ def _run_vllm_inference(
         sid = _sample_id(split, idx, sample)
         if sid in finished:
             continue
-        prompt = format_confidence_prompt(sample, cfg["prompt_template"], max_history_items=max_history_items)
+        prompt = format_confidence_prompt(
+            sample,
+            cfg["prompt_template"],
+            max_history_items=max_history_items,
+            max_title_chars=max_title_chars,
+            max_history_text_chars=max_history_text_chars,
+            max_candidate_text_chars=max_candidate_text_chars,
+        )
         batch.append((idx, sample, sid, prompt))
         if len(batch) >= batch_size:
             flush_batch(batch)

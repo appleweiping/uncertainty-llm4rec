@@ -7,12 +7,12 @@ valid_file: data_done/beauty/valid.jsonl
 test_file: data_done/beauty/test.jsonl
 output_dir: output-repaired/framework_observation/beauty_qwen_lora_confidence_decision_forced/predictions
 prompt_template: prompts/framework/qwen_confidence_recommendation_pointwise_decision_forced.txt
-max_seq_len: 2048
+max_seq_len: 4096
 max_new_tokens: 128
 inference_backend: vllm
 vllm_tensor_parallel_size: 1
 vllm_gpu_memory_utilization: 0.85
-vllm_max_model_len: 2048
+vllm_max_model_len: 4096
 vllm_enable_lora: true
 vllm_max_loras: 1
 vllm_max_lora_rank: 8
@@ -20,5 +20,8 @@ vllm_batch_size: 16
 bf16: true
 seed: 42
 deterministic_generation: true
-max_history_items: 20
-notes: Framework-Observation-Day1c decision-forced confidence elicitation smoke. This is not evidence, CEP, or training. Use Beauty 200/200 only before deciding whether to run full.
+max_history_items: 8
+max_title_chars: 160
+max_history_text_chars: 260
+max_candidate_text_chars: 360
+notes: Framework-Observation-Day1c decision-forced confidence elicitation smoke. This is not evidence, CEP, or training. Use Beauty 200/200 only before deciding whether to run full. Inputs are conservatively truncated so vLLM smoke does not fail on long Beauty descriptions.

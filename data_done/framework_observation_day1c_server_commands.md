@@ -42,6 +42,8 @@ python main_framework_observation_day1_local_confidence_infer.py --config config
 python main_framework_observation_day1_confidence_analysis.py --pred_dir output-repaired/framework_observation/beauty_qwen_lora_confidence_decision_forced/predictions --variant decision_forced
 ```
 
+If an earlier Day1c run failed with `decoder prompt ... longer than the maximum model length of 2048`, pull the latest code and rerun the same commands with `--resume`. The Day1c config now uses `vllm_max_model_len: 4096` plus conservative prompt truncation, so completed partial rows are reused and only missing rows continue.
+
 ## Sync Lightweight Results
 
 ```bash

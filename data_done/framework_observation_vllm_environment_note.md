@@ -54,6 +54,7 @@ python -m pip install --no-cache-dir --no-deps PACKAGE_NAME
 - The server driver reports CUDA 12.8 support, so `torch 2.8.0+cu128` is the safe target.
 - vLLM initialization can reserve a large KV cache. Do not run two Qwen/vLLM processes at the same time on the single 4090.
 - If vLLM reports low free GPU memory, check and stop stale `VLLM::EngineCore` processes before retrying.
+- Day1c uses `vllm_max_model_len: 4096` and conservative input truncation because a few Beauty samples exceed 2048 prompt tokens.
 
 ```bash
 nvidia-smi
