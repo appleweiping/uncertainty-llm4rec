@@ -1,2 +1,5 @@
-status,reason
-skipped,run with --run_strict_eval on server
+method,num_samples,parse_success_rate_raw,parse_success_rate_repaired,schema_valid_rate,NDCG@10,MRR,HR@1,HR@3,NDCG@3,NDCG@5,HR@10,hr10_trivial_flag,notes
+day7_original_generation_parser,512,0.8320,0.8320,0.8027,0.5747,0.4197,0.2559,0.4727,0.3783,0.4749,1.0,true,server Day7 original prompt/parser result
+day8_parser_only_repair_existing_outputs,512,0.8320,0.8340,NA,0.5753,0.4206,NA,NA,NA,NA,NA,true,parser-only repair gives only marginal change
+day8_strict_prompt_repaired_parser,512,0.8086,0.8086,0.7910,0.5618,0.3995,NA,NA,NA,NA,NA,true,strict inference prompt caused prompt mismatch and degraded performance
+random_same_samples,512,1.0,1.0,1.0,0.5532,0.4114,0.1680,0.5234,0.3677,0.4955,1.0,true,random baseline on same 512 samples

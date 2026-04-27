@@ -308,7 +308,13 @@ def _run_base_comparison(config_path: Path, max_eval_samples: int, lora_pred_pat
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     dtype = torch.bfloat16 if str(cfg.get("bf16", "true")).lower() == "true" else torch.float16
-    model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=dtype, trust_remote_code=True).cuda().eval()
+    model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=dtype, trust_remote_code=True)
+    if hasattr(model, "generation_config"):
+        model.generation_config.do_sample = False
+        for sampling_key in ("temperature", "top_p", "top_k"):
+            if hasattr(model.generation_config, sampling_key):
+                setattr(model.generation_config, sampling_key, None)
+    model = model.cuda().eval()
     pred_rows, rankings = [], []
     for idx, sample in enumerate(samples):
         prompt, _ = format_sample(sample, task_type=str(cfg["task_type"]), template_path=cfg["prompt_template"])

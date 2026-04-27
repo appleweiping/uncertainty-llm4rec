@@ -1,0 +1,7 @@
+method,train_samples,max_steps,task_type,prompt_style,parse_success_rate,schema_valid_rate,NDCG@10,MRR,HR@1,HR@3,NDCG@3,NDCG@5,HR@10,hr10_trivial_flag,notes
+random_ranking_same_512,0,0,baseline,random,1.0,1.0,0.5532,0.4114,0.1680,0.5234,0.3677,0.4955,1.0,true,Day7/Day8 random baseline on same 512 Beauty 5neg samples.
+day6_listwise_v1_original_prompt,512,100,candidate_ranking_listwise,original,0.8320,0.8027,0.5747,0.4197,0.2559,0.4727,0.3783,0.4749,1.0,true,Existing Day6 adapter evaluated on Day7 512 samples.
+day8_listwise_v1_strict_inference_prompt,512,100,candidate_ranking_listwise,strict_infer_only,0.8086,0.7910,0.5618,0.3995,NA,NA,NA,NA,1.0,true,Strict inference prompt without strict training caused prompt mismatch.
+day9_listwise_v2_strict_train_strict_infer,622,300,candidate_ranking_listwise,json_strict_train_and_infer,pending_server_run,pending_server_run,pending_server_run,pending_server_run,pending_server_run,pending_server_run,pending_server_run,pending_server_run,1.0,true,Run Day9 listwise strict train/eval on server.
+day9_pointwise_v1_aggregated_ranking,2000,300,candidate_relevance_pointwise,pointwise_relevance,pending_server_run,pending_server_run,pending_server_run,pending_server_run,pending_server_run,pending_server_run,pending_server_run,pending_server_run,1.0,true,Run Day9 pointwise train/eval on server.
+oracle_positive_upper_bound,0,0,oracle,label_based,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,true,"Sanity upper bound only, not a method."

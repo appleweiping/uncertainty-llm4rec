@@ -274,8 +274,25 @@ def _generate_lora_predictions(cfg: dict[str, Any], samples: list[dict[str, Any]
     dtype = torch.bfloat16 if str(cfg.get("bf16", "true")).lower() == "true" else torch.float16
     base = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=dtype, trust_remote_code=True)
     model = PeftModel.from_pretrained(base, adapter_path)
+    if hasattr(model, "generation_config"):
+        model.generation_config.do_sample = False
+        for sampling_key in ("temperature", "top_p", "top_k"):
+            if hasattr(model.generation_config, sampling_key):
+                setattr(model.generation_config, sampling_key, None)
     model.cuda()
     model.eval()
+
+    def _deterministic_generate(model: Any, inputs: Any) -> Any:
+        # Keep generation deterministic and avoid passing sampling-only flags
+        # such as temperature/top_p/top_k when do_sample=False.
+        kwargs = {
+            **inputs,
+            "max_new_tokens": max_new_tokens,
+            "do_sample": False,
+            "pad_token_id": tokenizer.pad_token_id,
+            "eos_token_id": tokenizer.eos_token_id,
+        }
+        return model.generate(**kwargs)
 
     pred_rows: list[dict[str, Any]] = []
     rankings: list[list[str]] = []
@@ -283,13 +300,7 @@ def _generate_lora_predictions(cfg: dict[str, Any], samples: list[dict[str, Any]
         prompt, _ = format_sample(sample, task_type=str(cfg["task_type"]), template_path=cfg["prompt_template"])
         inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=int(cfg.get("max_seq_len", 2048))).to("cuda")
         with torch.no_grad():
-            output_ids = model.generate(
-                **inputs,
-                max_new_tokens=max_new_tokens,
-                do_sample=False,
-                pad_token_id=tokenizer.pad_token_id,
-                eos_token_id=tokenizer.eos_token_id,
-            )
+            output_ids = _deterministic_generate(model, inputs)
         gen_ids = output_ids[0][inputs["input_ids"].shape[1] :]
         raw_text = tokenizer.decode(gen_ids, skip_special_tokens=True)
         pool = _candidate_ids(sample)

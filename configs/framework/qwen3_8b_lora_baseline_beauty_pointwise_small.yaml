@@ -1,0 +1,27 @@
+model_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+train_file: data_done_lora/beauty/train_pointwise.jsonl
+valid_file: data_done_lora/beauty/valid_pointwise.jsonl
+test_file: data_done_lora/beauty/test_pointwise.jsonl
+output_dir: artifacts/lora/qwen3_8b_beauty_pointwise_day9_small
+task_type: candidate_relevance_pointwise
+prompt_template: prompts/framework/qwen_candidate_relevance_baseline.txt
+evaluation_mode: pointwise_relevance_aggregated_ranking
+max_seq_len: 1536
+max_train_samples: 2000
+max_eval_samples: 128
+max_steps: 300
+batch_size: 1
+gradient_accumulation_steps: 4
+learning_rate: 2e-4
+lora_rank: 8
+lora_alpha: 16
+lora_dropout: 0.05
+target_modules: q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj
+bf16: true
+gradient_checkpointing: true
+seed: 42
+save_strategy: final
+logging_steps: 5
+eval_steps: 50
+notes: Framework-Day9 pointwise-v1 relevance baseline aggregated to candidate ranking. No calibrated probability or CEP target.
