@@ -8,6 +8,8 @@ Pending server run. Day1d will run local Qwen-LoRA on Beauty valid/test 200/200 
 
 The prompt asks only for a binary `recommend` JSON decision. The script extracts confidence from model token probabilities for `true` versus `false` at the `{"recommend": ...}` position.
 
+Implementation note: Day1d uses constrained true/false continuation scoring rather than free-form generation. This avoids an extra generation pass and keeps the score definition tied directly to token probabilities.
+
 Two scores are reported:
 
 - `positive_relevance_score = P(recommend=true)` for relevance / label prediction.

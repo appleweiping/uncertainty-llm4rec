@@ -9,7 +9,7 @@ git pull origin codex/week4-confidence-repair
 
 ## Activate Environment
 
-Day1d uses transformers for logit extraction, not vLLM logprobs.
+Day1d uses transformers for logit extraction, not vLLM logprobs. The script uses constrained true/false continuation scoring and skips free-form generation, so it is faster than the initial transformers version without changing the logit-confidence score definition.
 
 ```bash
 source ~/miniconda3/etc/profile.d/conda.sh
@@ -35,6 +35,8 @@ python main_framework_observation_day1d_logit_confidence.py --config configs/fra
 
 python main_framework_observation_day1d_logit_confidence.py --config configs/framework_observation/beauty_qwen_lora_logit_confidence.yaml --analyze_only
 ```
+
+If GPU memory is tight, reduce `logit_batch_size` in `configs/framework_observation/beauty_qwen_lora_logit_confidence.yaml` from `4` to `2` and rerun with `--resume`. This changes only batching, not the score definition.
 
 ## Server Packaging
 

@@ -4,7 +4,6 @@ import argparse
 import csv
 import json
 import math
-import re
 from pathlib import Path
 from statistics import mean, pstdev
 from typing import Any
@@ -86,28 +85,6 @@ def format_logit_prompt(
     return f"{template}\n\nInput JSON:\n{_compact_json(payload)}\n\nOutput JSON:\n"
 
 
-def _extract_recommend(raw_text: str) -> bool | None:
-    if not raw_text:
-        return None
-    match = re.search(r"\{.*?\}", raw_text, flags=re.DOTALL)
-    if not match:
-        return None
-    try:
-        obj = json.loads(match.group(0))
-    except Exception:
-        return None
-    value = obj.get("recommend")
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        lowered = value.strip().lower()
-        if lowered == "true":
-            return True
-        if lowered == "false":
-            return False
-    return None
-
-
 def _load_model(cfg: dict[str, Any], model_variant: str):
     import torch  # type: ignore
     from transformers import AutoModelForCausalLM, AutoTokenizer  # type: ignore
@@ -131,38 +108,7 @@ def _load_model(cfg: dict[str, Any], model_variant: str):
     return model, tokenizer
 
 
-def _candidate_logprob(
-    model: Any,
-    tokenizer: Any,
-    prefix: str,
-    continuation: str,
-    max_seq_len: int,
-) -> float:
-    import torch  # type: ignore
-
-    prefix_ids = tokenizer(prefix, add_special_tokens=False)["input_ids"]
-    continuation_ids = tokenizer(continuation, add_special_tokens=False)["input_ids"]
-    max_prefix_len = max_seq_len - len(continuation_ids)
-    if max_prefix_len <= 0:
-        raise ValueError(f"Continuation is longer than max_seq_len: {continuation!r}")
-    if len(prefix_ids) > max_prefix_len:
-        prefix_ids = prefix_ids[-max_prefix_len:]
-    input_ids = torch.tensor([prefix_ids + continuation_ids], device="cuda")
-    with torch.no_grad():
-        logits = model(input_ids=input_ids).logits[0]
-    log_probs = torch.log_softmax(logits[:-1].float(), dim=-1)
-    start = len(prefix_ids)
-    total = 0.0
-    for offset, token_id in enumerate(continuation_ids):
-        pos = start + offset
-        total += float(log_probs[pos - 1, token_id].item())
-    return total
-
-
-def _true_false_scores(model: Any, tokenizer: Any, prompt: str, max_seq_len: int) -> dict[str, float]:
-    prefix = f'{prompt}{{"recommend": '
-    logprob_true = _candidate_logprob(model, tokenizer, prefix, "true}", max_seq_len)
-    logprob_false = _candidate_logprob(model, tokenizer, prefix, "false}", max_seq_len)
+def _normalize_true_false_logprobs(logprob_true: float, logprob_false: float) -> dict[str, float]:
     max_logprob = max(logprob_true, logprob_false)
     exp_true = math.exp(logprob_true - max_logprob)
     exp_false = math.exp(logprob_false - max_logprob)
@@ -181,9 +127,66 @@ def _true_false_scores(model: Any, tokenizer: Any, prompt: str, max_seq_len: int
     }
 
 
-def run_inference(cfg: dict[str, Any], split: str, model_variant: str, max_samples: int | None, resume: bool) -> Path:
+def _true_false_scores_batch(
+    model: Any,
+    tokenizer: Any,
+    prompts: list[str],
+    max_seq_len: int,
+) -> list[dict[str, float]]:
     import torch  # type: ignore
 
+    true_ids = tokenizer("true}", add_special_tokens=False)["input_ids"]
+    false_ids = tokenizer("false}", add_special_tokens=False)["input_ids"]
+    max_continuation_len = max(len(true_ids), len(false_ids))
+    max_prefix_len = max_seq_len - max_continuation_len
+    if max_prefix_len <= 0:
+        raise ValueError("true/false continuation is longer than max_seq_len")
+
+    sequences: list[list[int]] = []
+    metadata: list[tuple[int, int, list[int]]] = []
+    for prompt_idx, prompt in enumerate(prompts):
+        prefix = f'{prompt}{{"recommend": '
+        prefix_ids = tokenizer(prefix, add_special_tokens=False)["input_ids"]
+        if len(prefix_ids) > max_prefix_len:
+            prefix_ids = prefix_ids[-max_prefix_len:]
+        for candidate_idx, continuation_ids in enumerate([true_ids, false_ids]):
+            row_idx = len(sequences)
+            sequences.append(prefix_ids + continuation_ids)
+            metadata.append((prompt_idx, candidate_idx, continuation_ids))
+    if not sequences:
+        return []
+
+    lengths = [len(sequence) for sequence in sequences]
+    pad_token_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+    max_len = max(lengths)
+    input_ids = torch.full((len(sequences), max_len), int(pad_token_id), dtype=torch.long, device="cuda")
+    attention_mask = torch.zeros((len(sequences), max_len), dtype=torch.long, device="cuda")
+    for row_idx, sequence in enumerate(sequences):
+        seq_tensor = torch.tensor(sequence, dtype=torch.long, device="cuda")
+        input_ids[row_idx, : len(sequence)] = seq_tensor
+        attention_mask[row_idx, : len(sequence)] = 1
+
+    with torch.inference_mode():
+        logits = model(input_ids=input_ids, attention_mask=attention_mask).logits
+
+    logprob_pairs = [[0.0, 0.0] for _ in prompts]
+
+    def sequence_logprob(row_idx: int, continuation_ids: list[int]) -> float:
+        total = 0.0
+        start = lengths[row_idx] - len(continuation_ids)
+        for offset, token_id in enumerate(continuation_ids):
+            pos = start + offset
+            token_log_probs = torch.log_softmax(logits[row_idx, pos - 1].float(), dim=-1)
+            total += float(token_log_probs[token_id].item())
+        return total
+
+    for row_idx, (prompt_idx, candidate_idx, continuation_ids) in enumerate(metadata):
+        logprob_pairs[prompt_idx][candidate_idx] = sequence_logprob(row_idx, continuation_ids)
+
+    return [_normalize_true_false_logprobs(pair[0], pair[1]) for pair in logprob_pairs]
+
+
+def run_inference(cfg: dict[str, Any], split: str, model_variant: str, max_samples: int | None, resume: bool) -> Path:
     split_file = Path(str(cfg[f"{split}_file"]))
     output_dir = Path(str(cfg["output_dir"]))
     output_path = output_dir / f"{split}_raw.jsonl"
@@ -195,12 +198,55 @@ def run_inference(cfg: dict[str, Any], split: str, model_variant: str, max_sampl
     model, tokenizer = _load_model(cfg, model_variant)
     adapter_path = str(cfg.get("adapter_path", "")) if model_variant == "lora" else ""
     max_seq_len = int(cfg.get("max_seq_len", 4096))
-    max_new_tokens = int(cfg.get("max_new_tokens", 8))
     max_history_items = int(cfg.get("max_history_items", 8))
     max_title_chars = int(cfg.get("max_title_chars", 160))
     max_history_text_chars = int(cfg.get("max_history_text_chars", 260))
     max_candidate_text_chars = int(cfg.get("max_candidate_text_chars", 360))
+    logit_batch_size = int(cfg.get("logit_batch_size", 4))
     pending: list[dict[str, Any]] = []
+    batch: list[tuple[dict[str, Any], str, str]] = []
+
+    def flush_batch(items: list[tuple[dict[str, Any], str, str]]) -> None:
+        nonlocal pending
+        if not items:
+            return
+        prompts = [item[2] for item in items]
+        batch_scores = _true_false_scores_batch(model, tokenizer, prompts, max_seq_len)
+        for (sample, sid, _), scores in zip(items, batch_scores):
+            recommend = bool(scores["p_true"] >= scores["p_false"])
+            raw_text = json.dumps({"recommend": recommend}, ensure_ascii=False, separators=(",", ":"))
+            correctness = int(recommend == (int(sample.get("label", 0)) == 1))
+            pending.append(
+                {
+                    "sample_id": sid,
+                    "domain": sample.get("domain", "beauty"),
+                    "split": split,
+                    "user_id": sample.get("user_id", ""),
+                    "candidate_item_id": sample.get("candidate_item_id", ""),
+                    "label": int(sample.get("label", 0)),
+                    "recommend": recommend,
+                    "generated_recommend": recommend,
+                    "raw_response": raw_text,
+                    "parse_success": True,
+                    "schema_valid": True,
+                    "p_true": scores["p_true"],
+                    "p_false": scores["p_false"],
+                    "logprob_true": scores["logprob_true"],
+                    "logprob_false": scores["logprob_false"],
+                    "logit_margin": scores["logit_margin"],
+                    "prob_margin": scores["prob_margin"],
+                    "decision_confidence": scores["decision_confidence"],
+                    "positive_relevance_score": scores["positive_relevance_score"],
+                    "correctness": correctness,
+                    "model_variant": model_variant,
+                    "adapter_path": adapter_path,
+                    "inference_backend": "transformers",
+                    "confidence_source": "token_probability",
+                }
+            )
+        if len(pending) >= 25:
+            _write_jsonl(output_path, pending)
+            pending = []
 
     for idx, sample in enumerate(rows):
         sid = _sample_id(split, idx, sample)
@@ -214,53 +260,11 @@ def run_inference(cfg: dict[str, Any], split: str, model_variant: str, max_sampl
             max_history_text_chars=max_history_text_chars,
             max_candidate_text_chars=max_candidate_text_chars,
         )
-        scores = _true_false_scores(model, tokenizer, prompt, max_seq_len)
-        recommend = bool(scores["p_true"] >= scores["p_false"])
-
-        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_seq_len).to("cuda")
-        with torch.no_grad():
-            generated = model.generate(
-                **inputs,
-                max_new_tokens=max_new_tokens,
-                do_sample=False,
-                pad_token_id=tokenizer.pad_token_id,
-                eos_token_id=tokenizer.eos_token_id,
-            )
-        gen_ids = generated[0][inputs["input_ids"].shape[1] :]
-        raw_text = tokenizer.decode(gen_ids, skip_special_tokens=True)
-        generated_recommend = _extract_recommend(raw_text)
-        correctness = int(recommend == (int(sample.get("label", 0)) == 1))
-        pending.append(
-            {
-                "sample_id": sid,
-                "domain": sample.get("domain", "beauty"),
-                "split": split,
-                "user_id": sample.get("user_id", ""),
-                "candidate_item_id": sample.get("candidate_item_id", ""),
-                "label": int(sample.get("label", 0)),
-                "recommend": recommend,
-                "generated_recommend": generated_recommend,
-                "raw_response": raw_text,
-                "parse_success": generated_recommend is not None,
-                "schema_valid": True,
-                "p_true": scores["p_true"],
-                "p_false": scores["p_false"],
-                "logprob_true": scores["logprob_true"],
-                "logprob_false": scores["logprob_false"],
-                "logit_margin": scores["logit_margin"],
-                "prob_margin": scores["prob_margin"],
-                "decision_confidence": scores["decision_confidence"],
-                "positive_relevance_score": scores["positive_relevance_score"],
-                "correctness": correctness,
-                "model_variant": model_variant,
-                "adapter_path": adapter_path,
-                "inference_backend": "transformers",
-                "confidence_source": "token_probability",
-            }
-        )
-        if len(pending) >= 25:
-            _write_jsonl(output_path, pending)
-            pending = []
+        batch.append((sample, sid, prompt))
+        if len(batch) >= logit_batch_size:
+            flush_batch(batch)
+            batch = []
+    flush_batch(batch)
     _write_jsonl(output_path, pending)
     return output_path
 
