@@ -199,7 +199,54 @@ def _load_model(cfg: dict[str, Any], model_variant: str):
     return model, tokenizer
 
 
-def run_inference(cfg: dict[str, Any], split: str, model_variant: str, max_samples: int | None, resume: bool) -> Path:
+def _prediction_row(
+    sample: dict[str, Any],
+    sid: str,
+    split: str,
+    raw_text: str,
+    parsed: dict[str, Any],
+    model_variant: str,
+    adapter_path: str,
+    inference_backend: str,
+) -> dict[str, Any]:
+    return {
+        "sample_id": sid,
+        "domain": sample.get("domain", "beauty"),
+        "split": split,
+        "user_id": sample.get("user_id", ""),
+        "candidate_item_id": sample.get("candidate_item_id", ""),
+        "label": int(sample.get("label", 0)),
+        "raw_response": raw_text,
+        "recommend": parsed["recommend"],
+        "confidence": parsed["confidence"],
+        "confidence_level": parsed.get("confidence_level", ""),
+        "confidence_level_valid": bool(parsed.get("confidence_level_valid", False)),
+        "reason": parsed["reason"],
+        "parse_success": parsed["parse_success"],
+        "schema_valid": parsed["schema_valid"],
+        "parse_error": parsed["parse_error"],
+        "model_variant": model_variant,
+        "adapter_path": adapter_path,
+        "inference_backend": inference_backend,
+    }
+
+
+def _append_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
+    if not rows:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8", newline="\n") as f:
+        for row in rows:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
+def _run_transformers_inference(
+    cfg: dict[str, Any],
+    split: str,
+    model_variant: str,
+    max_samples: int | None,
+    resume: bool,
+) -> Path:
     import torch  # type: ignore
 
     split_file = Path(str(cfg[f"{split}_file"]))
@@ -210,6 +257,7 @@ def run_inference(cfg: dict[str, Any], split: str, model_variant: str, max_sampl
     model, tokenizer = _load_model(cfg, model_variant=model_variant)
     pending_out: list[dict[str, Any]] = []
     max_history_items = int(cfg.get("max_history_items", 20))
+    adapter_path = str(cfg.get("adapter_path", "")) if model_variant == "lora" else ""
     for idx, sample in enumerate(rows):
         sid = _sample_id(split, idx, sample)
         if sid in finished:
@@ -228,38 +276,119 @@ def run_inference(cfg: dict[str, Any], split: str, model_variant: str, max_sampl
         raw_text = tokenizer.decode(gen_ids, skip_special_tokens=True)
         parsed = parse_confidence_response(raw_text)
         pending_out.append(
-            {
-                "sample_id": sid,
-                "domain": sample.get("domain", "beauty"),
-                "split": split,
-                "user_id": sample.get("user_id", ""),
-                "candidate_item_id": sample.get("candidate_item_id", ""),
-                "label": int(sample.get("label", 0)),
-                "raw_response": raw_text,
-                "recommend": parsed["recommend"],
-                "confidence": parsed["confidence"],
-                "confidence_level": parsed.get("confidence_level", ""),
-                "confidence_level_valid": bool(parsed.get("confidence_level_valid", False)),
-                "reason": parsed["reason"],
-                "parse_success": parsed["parse_success"],
-                "schema_valid": parsed["schema_valid"],
-                "parse_error": parsed["parse_error"],
-                "model_variant": model_variant,
-                "adapter_path": str(cfg.get("adapter_path", "")) if model_variant == "lora" else "",
-            }
+            _prediction_row(sample, sid, split, raw_text, parsed, model_variant, adapter_path, "transformers")
         )
         if len(pending_out) % 50 == 0:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            with output_path.open("a", encoding="utf-8", newline="\n") as f:
-                for row in pending_out:
-                    f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            _append_jsonl(output_path, pending_out)
             pending_out = []
-    if pending_out:
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with output_path.open("a", encoding="utf-8", newline="\n") as f:
-            for row in pending_out:
-                f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    _append_jsonl(output_path, pending_out)
     return output_path
+
+
+def _load_vllm(cfg: dict[str, Any], model_variant: str):
+    try:
+        from vllm import LLM, SamplingParams  # type: ignore
+    except Exception as exc:  # pragma: no cover - exercised on server
+        raise RuntimeError(
+            "vLLM backend requested but vllm is not importable. Install vllm on the server or use inference_backend=transformers."
+        ) from exc
+
+    model_path = str(cfg["model_name_or_path"])
+    tokenizer_path = str(cfg.get("tokenizer_name_or_path") or model_path)
+    dtype = "bfloat16" if str(cfg.get("bf16", "true")).lower() == "true" else "float16"
+    enable_lora = model_variant == "lora" and bool(cfg.get("vllm_enable_lora", True))
+    llm_kwargs = {
+        "model": model_path,
+        "tokenizer": tokenizer_path,
+        "trust_remote_code": True,
+        "dtype": dtype,
+        "tensor_parallel_size": int(cfg.get("vllm_tensor_parallel_size", 1)),
+        "gpu_memory_utilization": float(cfg.get("vllm_gpu_memory_utilization", 0.85)),
+        "max_model_len": int(cfg.get("vllm_max_model_len", cfg.get("max_seq_len", 2048))),
+        "enable_lora": enable_lora,
+    }
+    if enable_lora:
+        llm_kwargs["max_loras"] = int(cfg.get("vllm_max_loras", 1))
+        llm_kwargs["max_lora_rank"] = int(cfg.get("vllm_max_lora_rank", 8))
+    llm = LLM(**llm_kwargs)
+    sampling_params = SamplingParams(
+        temperature=0.0,
+        max_tokens=int(cfg.get("max_new_tokens", 96)),
+    )
+    return llm, sampling_params
+
+
+def _vllm_lora_request(cfg: dict[str, Any], model_variant: str):
+    if model_variant != "lora":
+        return None
+    adapter_path = str(cfg.get("adapter_path") or "")
+    if not adapter_path or not Path(adapter_path).exists():
+        raise FileNotFoundError(f"LoRA adapter path not found: {adapter_path}")
+    try:
+        from vllm.lora.request import LoRARequest  # type: ignore
+    except Exception as exc:  # pragma: no cover - exercised on server
+        raise RuntimeError("vLLM LoRA requested but vllm.lora.request.LoRARequest is not importable.") from exc
+    return LoRARequest("qwen_lora_confidence", 1, adapter_path)
+
+
+def _run_vllm_inference(
+    cfg: dict[str, Any],
+    split: str,
+    model_variant: str,
+    max_samples: int | None,
+    resume: bool,
+) -> Path:
+    split_file = Path(str(cfg[f"{split}_file"]))
+    output_dir = Path(str(cfg["output_dir"]))
+    output_path = output_dir / f"{split}_raw.jsonl"
+    rows = _read_jsonl(split_file, limit=max_samples)
+    finished = _existing_ids(output_path) if resume else set()
+    llm, sampling_params = _load_vllm(cfg, model_variant=model_variant)
+    lora_request = _vllm_lora_request(cfg, model_variant=model_variant)
+    max_history_items = int(cfg.get("max_history_items", 20))
+    batch_size = int(cfg.get("vllm_batch_size", 16))
+    adapter_path = str(cfg.get("adapter_path", "")) if model_variant == "lora" else ""
+    batch: list[tuple[int, dict[str, Any], str, str]] = []
+
+    def flush_batch(items: list[tuple[int, dict[str, Any], str, str]]) -> None:
+        if not items:
+            return
+        prompts = [x[3] for x in items]
+        outputs = llm.generate(prompts, sampling_params, lora_request=lora_request)
+        out_rows: list[dict[str, Any]] = []
+        for (_, sample, sid, _), output in zip(items, outputs):
+            raw_text = output.outputs[0].text if output.outputs else ""
+            parsed = parse_confidence_response(raw_text)
+            out_rows.append(_prediction_row(sample, sid, split, raw_text, parsed, model_variant, adapter_path, "vllm"))
+        _append_jsonl(output_path, out_rows)
+
+    for idx, sample in enumerate(rows):
+        sid = _sample_id(split, idx, sample)
+        if sid in finished:
+            continue
+        prompt = format_confidence_prompt(sample, cfg["prompt_template"], max_history_items=max_history_items)
+        batch.append((idx, sample, sid, prompt))
+        if len(batch) >= batch_size:
+            flush_batch(batch)
+            batch = []
+    flush_batch(batch)
+    return output_path
+
+
+def run_inference(
+    cfg: dict[str, Any],
+    split: str,
+    model_variant: str,
+    max_samples: int | None,
+    resume: bool,
+    inference_backend: str | None = None,
+) -> Path:
+    backend = (inference_backend or str(cfg.get("inference_backend", "transformers"))).strip().lower()
+    if backend == "transformers":
+        return _run_transformers_inference(cfg, split, model_variant, max_samples, resume)
+    if backend == "vllm":
+        return _run_vllm_inference(cfg, split, model_variant, max_samples, resume)
+    raise ValueError(f"Unsupported inference_backend: {backend}")
 
 
 def main() -> None:
@@ -267,13 +396,25 @@ def main() -> None:
     parser.add_argument("--config", default=DEFAULT_CONFIG)
     parser.add_argument("--split", choices=["valid", "test"], required=True)
     parser.add_argument("--model_variant", choices=["base", "lora"], default=None)
+    parser.add_argument("--inference_backend", choices=["transformers", "vllm"], default=None)
+    parser.add_argument("--output_dir", default=None, help="Optional prediction output directory override.")
     parser.add_argument("--max_samples", type=int, default=None)
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     cfg = _read_config(args.config)
+    if args.output_dir:
+        cfg["output_dir"] = args.output_dir
     variant = args.model_variant or str(cfg.get("model_variant", "lora"))
-    path = run_inference(cfg, split=args.split, model_variant=variant, max_samples=args.max_samples, resume=args.resume)
-    print(json.dumps({"output_path": str(path), "split": args.split, "model_variant": variant}, ensure_ascii=False, indent=2))
+    path = run_inference(
+        cfg,
+        split=args.split,
+        model_variant=variant,
+        max_samples=args.max_samples,
+        resume=args.resume,
+        inference_backend=args.inference_backend,
+    )
+    backend = args.inference_backend or str(cfg.get("inference_backend", "transformers"))
+    print(json.dumps({"output_path": str(path), "split": args.split, "model_variant": variant, "inference_backend": backend}, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

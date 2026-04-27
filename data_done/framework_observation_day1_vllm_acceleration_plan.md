@@ -14,7 +14,10 @@ vllm_max_model_len: 2048
 vllm_enable_lora: true
 vllm_max_loras: 1
 vllm_max_lora_rank: 8
+vllm_batch_size: 16
 ```
+
+The Day1 inference entrypoint now accepts `--inference_backend transformers|vllm`. Keep `transformers` as the reference backend and use `vllm` only after a 200-row distribution check.
 
 ## Validation Protocol
 
@@ -39,3 +42,13 @@ If vLLM output distribution differs substantially from transformers, do not use 
 ## Runtime Caution
 
 On a single RTX 4090, do not load transformers and vLLM Qwen processes concurrently. Do not run valid and test with two simultaneous model processes. Let the original transformers full run finish if it is close; otherwise stop gently with Ctrl+C and resume later.
+
+## Smoke Commands
+
+```bash
+python main_framework_observation_day1_local_confidence_infer.py --config configs/framework_observation/beauty_qwen_lora_confidence.yaml --split valid --model_variant lora --inference_backend vllm --output_dir output-repaired/framework_observation/beauty_qwen_lora_confidence_vllm/predictions --max_samples 200 --resume
+python main_framework_observation_day1_local_confidence_infer.py --config configs/framework_observation/beauty_qwen_lora_confidence.yaml --split test --model_variant lora --inference_backend vllm --output_dir output-repaired/framework_observation/beauty_qwen_lora_confidence_vllm/predictions --max_samples 200 --resume
+python main_framework_observation_day1_confidence_analysis.py --pred_dir output-repaired/framework_observation/beauty_qwen_lora_confidence_vllm/predictions
+```
+
+If the vLLM and transformers 200-row distributions are consistent, continue full inference with the same command but without `--max_samples`.

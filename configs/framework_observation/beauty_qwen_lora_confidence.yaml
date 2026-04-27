@@ -16,6 +16,7 @@ vllm_max_model_len: 2048
 vllm_enable_lora: true
 vllm_max_loras: 1
 vllm_max_lora_rank: 8
+vllm_batch_size: 16
 bf16: true
 seed: 42
 deterministic_generation: true
