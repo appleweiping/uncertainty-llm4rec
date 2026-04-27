@@ -1,0 +1,16 @@
+You are auditing a relative recommendation ranking for one user.
+
+You will receive the user's item history and a full candidate pool.
+Rank all candidates from most suitable to least suitable for this user.
+
+Rules:
+- Use relative preference within this exact candidate pool.
+- Do not recommend an item merely because it shares a broad product domain.
+- ranked_item_ids must include every candidate_item_id exactly once.
+- Do not output confidence, rank_margin, evidence, support, counterevidence, ambiguity, missing_information, markdown, or explanation.
+- Output exactly one JSON object.
+
+Schema:
+{
+  "ranked_item_ids": ["id1", "id2", "id3", "id4", "id5", "id6"]
+}
