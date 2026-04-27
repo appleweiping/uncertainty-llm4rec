@@ -22,6 +22,8 @@ If this row remains `pending_server_run`, run the Day9 server commands after pul
 - formulation: candidate relevance label per item, aggregated into per-user ranking
 - note: this is a raw relevance baseline, not calibrated probability and not CEP.
 
+Important Day9.5 boundary: the server-reported pointwise-v1 result is suspiciously near-oracle. Because the local workspace does not yet contain the server prediction JSONL or pointwise eval summary, this report must not treat pointwise-v1 as a successful baseline. Use `data_done/framework_day95_pointwise_leakage_audit_report.md` after syncing server artifacts.
+
 ## 5. Comparison With Random and Day6
 
 See `data_done/framework_day9_qwen_lora_baseline_formulation_comparison.csv`. HR@10 remains trivial for Beauty 5neg; use NDCG@10, MRR, HR@1, HR@3, NDCG@3, and NDCG@5.

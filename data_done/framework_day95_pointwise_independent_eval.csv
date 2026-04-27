@@ -1,0 +1,5 @@
+method,status,NDCG@10,MRR,HR@1,HR@3,NDCG@3,NDCG@5,notes,HR@10
+original_day9_pointwise_eval,missing_server_artifact,NA,NA,NA,NA,NA,NA,Need sync: output-repaired\framework\day9_qwen_lora_beauty_pointwise_predictions.jsonl,
+independent_safe_eval,missing_server_artifact,NA,NA,NA,NA,NA,NA,Need sync: output-repaired\framework\day9_qwen_lora_beauty_pointwise_predictions.jsonl,
+random_same_users,computed_without_predictions,0.5481770630527063,0.4049479166666667,0.1640625,0.505859375,0.355162989320596,0.48417108411923354,Deterministic seed=42 random ranking on same local test users.,1.0
+oracle,computed_without_predictions,1.0,1.0,1.0,1.0,1.0,1.0,Label-based upper bound only.,1.0
