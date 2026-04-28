@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "storyflow-truce-rec"
+version = "0.1.0"
+description = "Research scaffold for uncertainty-aware title-level generative recommendation."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Research-only" }
+authors = [
+  { name = "Storyflow / TRUCE-Rec contributors" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-markers -p no:cacheprovider"
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -23,13 +23,17 @@ contract for Codex work in this repository.
 
 ## Current Status
 
-Phase 0 governance/scaffold is established. Implementation, data, observation,
-training, simulation, and full experiment phases have not started.
+Phase 0 governance/scaffold is established. A minimal Python research scaffold
+now exists with schemas, transparent title grounding, basic calibration metrics,
+popularity buckets, and pytest coverage for those foundations. Data download,
+API observation, model training, simulation, and full experiment phases have
+not started.
 
 No data has been downloaded. No paid or external API has been called. No model,
 toy model, pilot experiment, full experiment, or server run has been executed.
-Any future result must come from tracked code, reproducible configs, logs, and
-output manifests.
+The synthetic fixture under `tests/fixtures/` is only for unit tests and
+pipeline sanity checks; it is not an experimental result. Any future result
+must come from tracked code, reproducible configs, logs, and output manifests.
 
 ## Scientific Scope
 
@@ -59,9 +63,10 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `references/README.md`: policy for local reference material such as
   `recprefer.zip`.
 
-## Planned Repository Layout
+## Python Scaffold
 
-The implementation should grow toward this structure in phases:
+The repository uses a `src/` Python package layout. The following package
+directories are present:
 
 ```text
 src/storyflow/
@@ -78,17 +83,21 @@ src/storyflow/models/
 src/storyflow/training/
 src/storyflow/baselines/
 src/storyflow/utils/
-configs/
-configs/server/
-scripts/
-scripts/server/
 tests/
-docs/
-references/
 ```
 
-These modules are planned, not yet implemented unless a later commit explicitly
-adds them.
+Implemented foundation modules:
+
+- `storyflow.schemas`: item catalog, interaction, user sequence, generative
+  prediction, grounded prediction, confidence, and observation example records.
+- `storyflow.grounding`: title normalization, exact match, normalized exact
+  match, stdlib fuzzy match, grounding score, and ambiguity placeholder.
+- `storyflow.metrics`: ECE, Brier score, CBU_tau, WBC_tau, GroundHit,
+  popularity bucket assignment, and Tail Underconfidence Gap.
+- `tests/fixtures/`: synthetic records used only for tests.
+
+The remaining subpackages are intentionally lightweight placeholders for later
+phases.
 
 ## Milestones
 
@@ -128,9 +137,37 @@ caches.
 Large reference files such as PDFs and `recprefer.zip` must remain local under
 `references/` and are not committed. Commit only lightweight indexes and notes.
 
+## Installation
+
+For local development:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -e ".[dev]"
+```
+
+Some MSYS2-style Python builds create `.venv\bin\python.exe` instead of
+`.venv\Scripts\python`; use the path that exists in your local environment.
+
+The current runtime code has no required third-party dependency. The `dev`
+extra installs pytest for tests.
+
+## Tests
+
+Run the local test suite:
+
+```powershell
+python -m pytest
+```
+
+Current tests cover schema validation, title normalization, grounding,
+calibration metrics, GroundHit, popularity buckets, and Tail Underconfidence
+Gap. These tests use synthetic fixtures only and do not download data or call
+APIs.
+
 ## Basic Checks
 
-Current governance checks are ordinary repository checks:
+Governance checks:
 
 ```powershell
 Get-Location
@@ -138,6 +175,3 @@ git branch --show-current
 git remote -v
 git status --short --branch
 ```
-
-No pytest suite exists yet in Phase 0. Future implementation phases should add
-tests as soon as executable code is introduced.

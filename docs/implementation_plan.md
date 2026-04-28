@@ -17,6 +17,24 @@ does not contain experimental results.
 - No result can be claimed without code, config, logs, manifests, and output
   paths.
 
+## Current Foundation Scaffold
+
+The repository now has a minimal `src/storyflow/` package skeleton and pytest
+suite. Implemented foundation modules are intentionally lightweight:
+
+- `storyflow.schemas` defines catalog, interaction, sequence, prediction,
+  grounded prediction, confidence, and observation example records.
+- `storyflow.grounding` provides transparent title normalization, exact match,
+  normalized exact match, stdlib fuzzy match, grounding confidence, and an
+  ambiguity placeholder.
+- `storyflow.metrics` provides ECE, Brier score, CBU_tau, WBC_tau, GroundHit,
+  head/mid/tail popularity buckets, and Tail Underconfidence Gap.
+- `tests/fixtures/` contains synthetic fixtures only for unit tests and
+  pipeline sanity checks.
+
+This scaffold does not include dataset download, API calls, model training,
+baselines, simulations, or experiment results.
+
 ## Phase 0: Governance And Scaffold
 
 Goal: establish the repository rules, documentation skeleton, artifact policy,
