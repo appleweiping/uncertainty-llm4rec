@@ -253,6 +253,12 @@ API runs must support:
 
 Paid APIs must not be called in tests.
 
+Phase 2B adds provider configs and a dry-run API runner. Dry-run mode is the
+default and must not read API keys or call the network. Real API execution is
+allowed only after an explicit user-approved provider/model/budget/rate-limit
+decision and requires `--execute-api`, a confirmed provider endpoint/model
+config, and the relevant environment variable.
+
 ## Reporting Rules
 
 Reports, papers, and README updates may say:

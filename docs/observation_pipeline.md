@@ -104,3 +104,38 @@ Before a real API pilot, add provider adapters with:
 
 Do not call a paid API until the provider is explicitly configured and the
 pilot subset is approved.
+
+## Phase 2B API Framework Flow
+
+Phase 2B adds the real-provider framework, still dry-run by default:
+
+```text
+observation inputs
+  -> API request records
+  -> raw responses
+  -> parsed predictions
+  -> grounded predictions
+  -> metrics/report/manifest
+```
+
+The API framework writes:
+
+- `request_records.jsonl`
+- `raw_responses.jsonl`
+- `parsed_predictions.jsonl`
+- `failed_cases.jsonl`
+- `grounded_predictions.jsonl`
+- `metrics.json`
+- `report.md`
+- `manifest.json`
+
+Default dry-run command:
+
+```powershell
+python scripts/run_api_observation.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --max-examples 5 --dry-run
+```
+
+Dry-run responses are deterministic placeholders used to test cache, resume,
+parsing, grounding, and output schemas. They are not API results. Real API
+execution requires `--execute-api`, confirmed provider endpoint/model config,
+and the corresponding API key environment variable.

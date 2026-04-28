@@ -71,6 +71,69 @@ scripts exist:
 9. Copy only sanitized summaries, configs, logs, and metrics needed for local
    analysis.
 
+## Amazon Reviews 2023 Beauty Full Run Gate
+
+Amazon Beauty full download and preprocessing should run on a server or a local
+machine with large enough disk/network capacity. Codex has not run a full
+Amazon Beauty download or preprocessing job.
+
+Required inputs:
+
+- repository checkout on `main`;
+- `configs/datasets/amazon_reviews_2023_beauty.yaml`;
+- access to `McAuley-Lab/Amazon-Reviews-2023` according to its dataset card and
+  usage terms;
+- raw review JSONL at
+  `data/raw/amazon_reviews_2023_beauty/raw_review_All_Beauty.jsonl`;
+- raw metadata JSONL at
+  `data/raw/amazon_reviews_2023_beauty/raw_meta_All_Beauty.jsonl`;
+- enough storage for raw/cache/processed outputs.
+
+Lightweight readiness check:
+
+```powershell
+python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
+```
+
+Optional online availability check:
+
+```powershell
+python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --check-online
+```
+
+Prepare dry-run/readiness:
+
+```powershell
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
+```
+
+Full prepare command shape after raw JSONL placement:
+
+```powershell
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/raw_review_All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/raw_meta_All_Beauty.jsonl --output-suffix full
+```
+
+Expected processed outputs:
+
+- `item_catalog.csv`
+- `interactions.csv`
+- `user_sequences.jsonl`
+- `observation_examples.jsonl`
+- `preprocess_manifest.json`
+
+Every server full run must preserve:
+
+- exact command line;
+- git commit hash;
+- dataset config snapshot;
+- raw file paths and checksums where possible;
+- stdout/stderr logs;
+- processed output manifest;
+- failure/resume notes.
+
+Only sanitized manifests, logs, and metrics should be copied back for local
+analysis. Raw data and full processed data remain uncommitted.
+
 ## Required Run Artifacts
 
 Every future server run should produce:

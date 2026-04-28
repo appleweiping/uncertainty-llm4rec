@@ -39,6 +39,11 @@ grounding/correctness integration, mock metrics, and resume support. These are
 scaffold and sanity capabilities only; no paid API call, model training,
 baseline run, simulation, or experiment result has been produced.
 
+Phase 2B adds provider configs, `.env.example`, robust response parsing,
+dry-run API request/response layers, cache/resume support, and Amazon Reviews
+2023 Beauty readiness gates. It still does not execute a real API call or full
+Amazon download.
+
 ## Phase 0: Governance And Scaffold
 
 Goal: establish the repository rules, documentation skeleton, artifact policy,

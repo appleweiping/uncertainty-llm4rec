@@ -1,5 +1,13 @@
 """Data loading and preprocessing modules."""
 
+from storyflow.data.amazon import (
+    AmazonPrepareSummary,
+    amazon_metadata_to_item,
+    amazon_review_to_interaction,
+    inspect_amazon_config,
+    prepare_amazon_from_jsonl,
+    write_amazon_readiness_report,
+)
 from storyflow.data.preprocessing import (
     DatasetPreparationError,
     PrepareResult,
@@ -19,8 +27,11 @@ from storyflow.data.preprocessing import (
 )
 
 __all__ = [
+    "AmazonPrepareSummary",
     "DatasetPreparationError",
     "PrepareResult",
+    "amazon_metadata_to_item",
+    "amazon_review_to_interaction",
     "assign_global_chronological_splits",
     "attach_catalog_fields_to_examples",
     "build_user_sequences",
@@ -28,10 +39,13 @@ __all__ = [
     "clean_title",
     "compute_item_popularity",
     "filter_users_by_interaction_count",
+    "inspect_amazon_config",
     "k_core_filter",
     "make_leave_last_splits",
     "make_rolling_examples",
     "prepare_movielens_1m",
+    "prepare_amazon_from_jsonl",
     "read_interactions_csv",
     "read_item_catalog_csv",
+    "write_amazon_readiness_report",
 ]

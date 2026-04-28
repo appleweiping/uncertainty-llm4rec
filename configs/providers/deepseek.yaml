@@ -1,0 +1,23 @@
+provider_name: deepseek
+provider_family: openai_compatible
+model_name: TODO_CONFIRM_DEEPSEEK_MODEL
+api_key_env: DEEPSEEK_API_KEY
+base_url: TODO_CONFIRM_OFFICIAL_BASE_URL
+endpoint: TODO_CONFIRM_CHAT_COMPLETIONS_ENDPOINT
+requires_endpoint_confirmation: true
+timeout_seconds: 60
+max_concurrency: 1
+temperature: 0.0
+max_tokens: 256
+retry:
+  max_attempts: 3
+  backoff_seconds: 2.0
+rate_limit:
+  requests_per_minute: 20
+cache:
+  enabled: true
+  cache_dir: outputs/api_cache/deepseek
+dry_run:
+  default: true
+  response_title_source: target_title
+notes: Endpoint and model name must be confirmed by the user before real API execution.

@@ -28,8 +28,9 @@ now exists with schemas, transparent title grounding, basic calibration metrics,
 popularity buckets, dataset manifests, a MovieLens 1M downloader, preprocessing
 and split utilities, processed-data validation, Phase 2A prompt construction,
 mock provider support, no-API observation input/output flow, and pytest coverage
-for those foundations. Real API observation, model training, simulation, and
-full experiment phases have not started.
+for those foundations. Phase 2B API observation framework dry-run support and
+Amazon Reviews 2023 Beauty readiness gates are in place. Real API observation,
+model training, simulation, and full experiment phases have not started.
 
 MovieLens 1M has also been verified as a local real-data sanity path from a
 manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
@@ -39,6 +40,8 @@ manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
 No paid or external API has been called. No model, toy model, pilot experiment,
 full experiment, or server run has been executed. The mock observation pipeline
 is only a no-API sanity path and must not be reported as model behavior. The
+API framework currently supports dry-run only unless a future task explicitly
+approves provider/model/budget/rate limits and supplies environment variables.
 synthetic fixture under `tests/fixtures/` is only for unit tests and pipeline
 sanity checks; it is not an experimental result. Any future result must come
 from tracked code, reproducible configs, logs, and output manifests.
@@ -69,6 +72,9 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `docs/dataset_matrix.md`: dataset roadmap from synthetic fixtures through
   Amazon Reviews 2023 full categories.
 - `docs/observation_pipeline.md`: Phase 2A no-API generative observation flow.
+- `docs/api_observation.md`: Phase 2B provider config, dry-run, cache, resume,
+  parsing, and real-pilot guardrails.
+- `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
 - `docs/codex_execution_protocol.md`: required workflow for each Codex task.
 - `docs/server_runbook.md`: server execution framework. It is a scaffold only;
   no server run has been performed by Codex.
@@ -113,6 +119,10 @@ Implemented foundation modules:
   self-verification, probability confidence, and forced JSON output.
 - `storyflow.providers.mock`: deterministic no-API mock provider for scaffold
   tests and observation pipeline sanity checks.
+- `storyflow.providers`: provider config loading, cache key utilities,
+  dry-run provider, and conservative OpenAI-compatible adapter scaffold.
+- `storyflow.observation_parsing`: strict JSON, fenced JSON, embedded JSON, and
+  regex fallback parsing for generated title, yes/no, and confidence.
 - `storyflow.observation`: JSONL input construction, mock observation runner,
   grounding integration, metrics, reports, and resume support.
 - `tests/fixtures/`: synthetic records used only for tests.
@@ -163,7 +173,8 @@ Dataset configs live under `configs/datasets/`:
 API keys must be provided through environment variables such as
 `DEEPSEEK_API_KEY`, `DASHSCOPE_API_KEY`, `MOONSHOT_API_KEY`, and
 `ZHIPUAI_API_KEY`. Do not commit `.env`, sensitive API responses, or paid API
-caches.
+caches. `.env.example` documents the expected variable names without containing
+real keys.
 
 Large reference files such as PDFs and `recprefer.zip` must remain local under
 `references/` and are not committed. Commit only lightweight indexes and notes.
@@ -239,6 +250,18 @@ runtime budget, and record manifests/logs before making any experimental claim.
 MovieLens 1M must remain a sanity check; after Phase 2A, at least one Amazon
 Reviews 2023 category should be prepared as the first full-data pipeline.
 
+Inspect Amazon Reviews 2023 Beauty readiness without full download:
+
+```powershell
+python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
+```
+
+Amazon Beauty full prepare is server/big-disk oriented and has not been run:
+
+```powershell
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
+```
+
 Validate a processed dataset before building observation inputs:
 
 ```powershell
@@ -273,6 +296,30 @@ labeling, metrics, and resume behavior. It is not a real API pilot and not a
 paper result. The next phase is to add real provider adapters with explicit
 rate limits, retries, cache/resume, token/cost accounting, and environment
 variable API keys.
+
+## Phase 2B API Framework Dry-Run
+
+Provider configs live under `configs/providers/` and intentionally keep
+endpoint/model values as `TODO_CONFIRM...` placeholders until the user confirms
+the exact provider setup.
+
+Run a dry-run API observation:
+
+```powershell
+python scripts/run_api_observation.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --max-examples 5 --dry-run
+```
+
+Dry-run writes ignored outputs under `outputs/api_observations/...` and never
+calls the network or reads API keys. A future real pilot requires
+`--execute-api`, confirmed config fields, an environment variable key, and user
+approval of provider, model, budget, and rate limits.
+
+Current status markers:
+
+- Mock observation: ready for local sanity.
+- API framework: dry-run ready.
+- API pilot: not yet run.
+- Amazon Beauty full data: not yet downloaded or processed.
 
 ## Tests
 
