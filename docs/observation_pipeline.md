@@ -85,6 +85,32 @@ from this constrained prompt is not interpretable as recommendation accuracy.
 Use it to debug catalog coverage, parser behavior, and title grounding before
 returning to the normal `forced_json` observation flow.
 
+## Retrieval-Context Gate
+
+After grounding failure taxonomy shows many ungrounded high-confidence cases,
+build all no-API gate inputs together:
+
+```powershell
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --candidate-count 20
+```
+
+This writes:
+
+- `test_forced_json.jsonl`: the main free-form title-generation input;
+- `test_catalog_constrained_json_c20.jsonl`: a round-robin head/mid/tail
+  catalog-constrained diagnostic;
+- `test_retrieval_context_json_c20.jsonl`: a retrieval-context diagnostic whose
+  candidates are selected by history-title token overlap and popularity;
+- `test_observation_gate_manifest.json`: counts, target-leak checks, candidate
+  policy, and output pointers.
+
+The retrieval-context prompt still asks for title-level generative
+recommendation and structured confidence, but it provides catalog titles as
+grounding context. By default the held-out target item is excluded, so this is
+not a recommendation-accuracy setting and must not be used as paper evidence.
+It is a gate for prompt/candidate/grounding behavior before additional API
+spend.
+
 ## Run Mock Observation
 
 ```powershell

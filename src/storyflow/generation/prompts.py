@@ -38,6 +38,13 @@ CATALOG_CONSTRAINED_JSON_TEMPLATE = PromptTemplate(
         "catalog candidate list."
     ),
 )
+RETRIEVAL_CONTEXT_JSON_TEMPLATE = PromptTemplate(
+    name="retrieval_context_json",
+    description=(
+        "Diagnostic prompt that provides retrieved catalog titles as grounding "
+        "context for a JSON next-title recommendation."
+    ),
+)
 
 
 def format_history_titles(history_titles: Iterable[str]) -> str:
@@ -139,6 +146,33 @@ def build_catalog_constrained_json_prompt(
     )
 
 
+def build_retrieval_context_json_prompt(
+    history_titles: Iterable[str],
+    candidate_titles: Iterable[str],
+) -> str:
+    """Prompt with retrieved catalog titles as grounding context."""
+
+    history = format_history_titles(history_titles)
+    candidates = format_candidate_titles(candidate_titles)
+    return (
+        "You are doing title-level generative recommendation, not ordinary "
+        "top-k ranking.\n"
+        "The user history is a chronological list of item titles:\n"
+        f"{history}\n\n"
+        "The following catalog titles were retrieved without using the held-out "
+        "target item. They are grounding context, not ground-truth answers:\n"
+        f"{candidates}\n\n"
+        "Generate exactly one next item title that can be grounded to the "
+        "catalog. Prefer an exact title from the retrieved context when it is "
+        "plausible for the user's next interaction. If none is plausible, set "
+        'generated_title to "NO_GROUNDABLE_TITLE". Return only valid JSON with '
+        'this schema: {"generated_title": string, "is_likely_correct": '
+        '"yes" | "no", "confidence": number}. Confidence must be in [0, 1] '
+        "and should reflect whether the recommendation would remain correct "
+        "after catalog grounding."
+    )
+
+
 def build_prompt(
     history_titles: Iterable[str],
     *,
@@ -159,6 +193,10 @@ def build_prompt(
         if candidate_titles is None:
             raise ValueError("candidate_titles are required for catalog_constrained_json")
         return build_catalog_constrained_json_prompt(history_titles, candidate_titles)
+    if template == RETRIEVAL_CONTEXT_JSON_TEMPLATE.name:
+        if candidate_titles is None:
+            raise ValueError("candidate_titles are required for retrieval_context_json")
+        return build_retrieval_context_json_prompt(history_titles, candidate_titles)
     raise ValueError(f"unknown prompt template: {template}")
 
 

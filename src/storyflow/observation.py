@@ -12,10 +12,11 @@ from typing import Any, Iterable
 
 from storyflow.generation import (
     CATALOG_CONSTRAINED_JSON_TEMPLATE,
+    RETRIEVAL_CONTEXT_JSON_TEMPLATE,
     build_prompt,
     compute_prompt_hash,
 )
-from storyflow.grounding import TitleGrounder
+from storyflow.grounding import TitleGrounder, normalize_title
 from storyflow.metrics import (
     brier_score,
     cbu_tau,
@@ -140,6 +141,7 @@ def _catalog_candidate_records(
     catalog_rows: list[dict[str, Any]],
     candidate_count: int,
     allow_target_in_candidates: bool = False,
+    candidate_policy: str = "round_robin_popularity",
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Build a deterministic catalog candidate list for diagnostic prompts.
 
@@ -155,6 +157,9 @@ def _catalog_candidate_records(
     excluded_ids = set(history_ids)
     if not allow_target_in_candidates:
         excluded_ids.add(target_item_id)
+
+    if candidate_policy not in {"round_robin_popularity", "history_token_overlap"}:
+        raise ValueError(f"unknown candidate_policy: {candidate_policy}")
 
     grouped: dict[str, list[dict[str, Any]]] = {bucket.value: [] for bucket in PopularityBucket}
     for row in sorted(
@@ -173,22 +178,63 @@ def _catalog_candidate_records(
 
     candidates: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
-    while len(candidates) < candidate_count:
-        made_progress = False
-        for bucket in ("head", "mid", "tail"):
-            bucket_rows = grouped.get(bucket, [])
-            while bucket_rows:
-                candidate = bucket_rows.pop(0)
-                item_id = str(candidate["item_id"])
-                if item_id not in seen_ids:
-                    candidates.append(candidate)
-                    seen_ids.add(item_id)
-                    made_progress = True
-                    break
+    candidate_scores: dict[str, float] = {}
+    if candidate_policy == "history_token_overlap":
+        token_weights: dict[str, float] = {}
+        history_titles = example.get("history_item_titles", [])
+        history_count = max(len(history_titles), 1)
+        for index, title in enumerate(history_titles):
+            recency_weight = (index + 1) / history_count
+            for token in normalize_title(str(title)).split():
+                if len(token) < 3:
+                    continue
+                token_weights[token] = token_weights.get(token, 0.0) + recency_weight
+        scored_rows: list[tuple[float, dict[str, Any]]] = []
+        for row in catalog_rows:
+            item_id = str(row["item_id"])
+            if item_id in excluded_ids:
+                continue
+            title_tokens = set(normalize_title(str(row.get("title") or "")).split())
+            score = sum(token_weights.get(token, 0.0) for token in title_tokens)
+            if score <= 0:
+                continue
+            scored_rows.append((score, row))
+        scored_rows.sort(
+            key=lambda item: (
+                -item[0],
+                -int(item[1].get("popularity") or 0),
+                str(item[1].get("title") or ""),
+                str(item[1].get("item_id") or ""),
+            )
+        )
+        for score, candidate in scored_rows:
+            item_id = str(candidate["item_id"])
+            if item_id in seen_ids:
+                continue
+            candidate_scores[item_id] = score
+            candidates.append(candidate)
+            seen_ids.add(item_id)
             if len(candidates) >= candidate_count:
                 break
-        if not made_progress:
-            break
+
+    if len(candidates) < candidate_count:
+        while len(candidates) < candidate_count:
+            made_progress = False
+            for bucket in ("head", "mid", "tail"):
+                bucket_rows = grouped.get(bucket, [])
+                while bucket_rows:
+                    candidate = bucket_rows.pop(0)
+                    item_id = str(candidate["item_id"])
+                    if item_id not in seen_ids:
+                        candidates.append(candidate)
+                        candidate_scores.setdefault(item_id, 0.0)
+                        seen_ids.add(item_id)
+                        made_progress = True
+                        break
+                if len(candidates) >= candidate_count:
+                    break
+            if not made_progress:
+                break
 
     fallback_history_count = 0
     if len(candidates) < candidate_count:
@@ -198,18 +244,17 @@ def _catalog_candidate_records(
             if item_id in seen_ids or item_id == target_item_id or item_id not in catalog_by_id:
                 continue
             candidates.append(catalog_by_id[item_id])
+            candidate_scores.setdefault(item_id, 0.0)
             seen_ids.add(item_id)
             fallback_history_count += 1
             if len(candidates) >= candidate_count:
                 break
 
     candidate_ids = {str(candidate["item_id"]) for candidate in candidates}
+    policy_name = f"{candidate_policy}_{'allow_target' if allow_target_in_candidates else 'no_target'}"
     policy = {
-        "name": (
-            "round_robin_popularity_allow_target"
-            if allow_target_in_candidates
-            else "round_robin_popularity_no_target"
-        ),
+        "name": policy_name,
+        "candidate_policy": candidate_policy,
         "candidate_count_requested": candidate_count,
         "candidate_count_actual": len(candidates),
         "allow_target_in_candidates": allow_target_in_candidates,
@@ -218,13 +263,22 @@ def _catalog_candidate_records(
         "history_fallback_count": fallback_history_count,
         "uses_target_title": target_item_id in candidate_ids,
         "is_diagnostic_grounding_gate": True,
+        "is_retrieval_context_gate": candidate_policy == "history_token_overlap",
         "correctness_not_interpretable_without_unbiased_candidate_generation": True,
         "note": (
-            "Diagnostic catalog-constrained prompt candidate set. Default policy "
-            "excludes target item to prevent leakage."
+            "Diagnostic candidate set. Default policy excludes target item to "
+            "prevent leakage."
         ),
     }
-    return candidates, policy
+    candidate_output: list[dict[str, Any]] = []
+    for candidate in candidates:
+        candidate_row = dict(candidate)
+        candidate_row["candidate_score"] = candidate_scores.get(
+            str(candidate["item_id"]),
+            0.0,
+        )
+        candidate_output.append(candidate_row)
+    return candidate_output, policy
 
 
 def _enrich_example_from_catalog(
@@ -265,6 +319,7 @@ def build_observation_input_records(
     prompt_template: str = "forced_json",
     candidate_count: int | None = None,
     allow_target_in_candidates: bool = False,
+    candidate_policy: str = "round_robin_popularity",
 ) -> list[dict[str, Any]]:
     processed_dir = Path(processed_dir)
     catalog_csv = processed_dir / "item_catalog.csv"
@@ -282,19 +337,30 @@ def build_observation_input_records(
         stratify_by_popularity=stratify_by_popularity,
     )
     records: list[dict[str, Any]] = []
+    candidate_prompt_templates = {
+        CATALOG_CONSTRAINED_JSON_TEMPLATE.name,
+        RETRIEVAL_CONTEXT_JSON_TEMPLATE.name,
+    }
     for example in examples:
         candidate_records: list[dict[str, Any]] = []
-        candidate_policy: dict[str, Any] | None = None
-        if prompt_template == CATALOG_CONSTRAINED_JSON_TEMPLATE.name:
-            candidate_records, candidate_policy = _catalog_candidate_records(
+        candidate_policy_info: dict[str, Any] | None = None
+        effective_candidate_policy = candidate_policy
+        if (
+            prompt_template == RETRIEVAL_CONTEXT_JSON_TEMPLATE.name
+            and candidate_policy == "round_robin_popularity"
+        ):
+            effective_candidate_policy = "history_token_overlap"
+        if prompt_template in candidate_prompt_templates:
+            candidate_records, candidate_policy_info = _catalog_candidate_records(
                 example,
                 catalog_rows=catalog,
                 candidate_count=candidate_count or 20,
                 allow_target_in_candidates=allow_target_in_candidates,
+                candidate_policy=effective_candidate_policy,
             )
             if not candidate_records:
                 raise ValueError(
-                    "catalog_constrained_json requires at least one catalog candidate"
+                    f"{prompt_template} requires at least one catalog candidate"
                 )
             prompt = build_prompt(
                 example["history_item_titles"],
@@ -343,7 +409,11 @@ def build_observation_input_records(
                         str(candidate.get("popularity_bucket") or "tail")
                         for candidate in candidate_records
                     ],
-                    "candidate_policy": candidate_policy,
+                    "catalog_candidate_scores": [
+                        float(candidate.get("candidate_score") or 0.0)
+                        for candidate in candidate_records
+                    ],
+                    "candidate_policy": candidate_policy_info,
                 }
             )
         records.append(record)
@@ -360,7 +430,10 @@ def default_observation_input_path(
     root: str | Path = ".",
 ) -> Path:
     stem = f"{split}_{prompt_template}"
-    if prompt_template == CATALOG_CONSTRAINED_JSON_TEMPLATE.name:
+    if prompt_template in {
+        CATALOG_CONSTRAINED_JSON_TEMPLATE.name,
+        RETRIEVAL_CONTEXT_JSON_TEMPLATE.name,
+    }:
         stem = f"{stem}_c{candidate_count or 20}"
     return (
         Path(root)
@@ -383,6 +456,7 @@ def write_observation_inputs(
     stratify_by_popularity: bool,
     candidate_count: int | None = None,
     allow_target_in_candidates: bool = False,
+    candidate_policy: str = "round_robin_popularity",
 ) -> dict[str, Any]:
     output_path = Path(output_jsonl)
     write_jsonl(output_path, records)
@@ -399,6 +473,7 @@ def write_observation_inputs(
         "stratify_by_popularity": stratify_by_popularity,
         "candidate_count": candidate_count,
         "allow_target_in_candidates": allow_target_in_candidates,
+        "candidate_policy": candidate_policy,
         "input_count": len(records),
         "bucket_counts": bucket_counts,
         "output_jsonl": str(output_path),

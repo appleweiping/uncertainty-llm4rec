@@ -29,6 +29,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--prompt-template", default="forced_json")
     parser.add_argument("--candidate-count", type=int)
     parser.add_argument(
+        "--candidate-policy",
+        default="round_robin_popularity",
+        choices=["round_robin_popularity", "history_token_overlap"],
+    )
+    parser.add_argument(
         "--allow-target-in-candidates",
         action="store_true",
         help=(
@@ -66,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
         prompt_template=args.prompt_template,
         candidate_count=args.candidate_count,
         allow_target_in_candidates=args.allow_target_in_candidates,
+        candidate_policy=args.candidate_policy,
     )
     manifest = write_observation_inputs(
         records,
@@ -77,6 +83,7 @@ def main(argv: list[str] | None = None) -> int:
         stratify_by_popularity=args.stratify_by_popularity,
         candidate_count=args.candidate_count,
         allow_target_in_candidates=args.allow_target_in_candidates,
+        candidate_policy=args.candidate_policy,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True))
     return 0

@@ -133,6 +133,24 @@ This gate only proves that the processed sample can feed the title-level
 generative observation pipeline. It does not call an API, does not train a
 model, and does not convert the sample into a full Amazon result.
 
+After pilot case review or grounding diagnostics, build the v2 no-API gate that
+compares free-form, catalog-constrained, and retrieval-context input variants:
+
+```powershell
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --candidate-count 20
+```
+
+The v2 gate writes ignored JSONL inputs and a manifest under:
+
+```text
+outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/
+```
+
+The retrieval-context variant uses history-title token overlap to select
+catalog titles without including the held-out target by default. It is a
+prompt/grounding readiness artifact only, not an API result and not paper
+evidence.
+
 ## Server Guidance
 
 Full Amazon Beauty download and preprocessing should run on a server or local

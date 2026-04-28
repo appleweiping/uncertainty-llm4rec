@@ -337,6 +337,18 @@ generative recommendation setting. By default the target item is excluded from
 the candidate list, so correctness from this constrained file is not
 interpretable as recommendation accuracy.
 
+Build the no-API Amazon Beauty observation gate variants in one command:
+
+```powershell
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --candidate-count 20
+```
+
+This writes free-form `forced_json`, round-robin `catalog_constrained_json`,
+and history-token-overlap `retrieval_context_json` input files plus a gate
+manifest under `outputs/observation_inputs/...`. The retrieval-context prompt
+uses catalog titles as leakage-safe grounding context only; it does not call an
+API and does not produce a model result.
+
 Run the no-API mock observation pipeline:
 
 ```powershell
@@ -496,16 +508,19 @@ future approved API observation. It is not a full Amazon run and not paper
 evidence.
 
 If pilot case review shows many ungrounded high-confidence titles, build the
-separate catalog-constrained diagnostic input before spending more API budget:
+separate catalog-constrained and retrieval-context diagnostic inputs before
+spending more API budget:
 
 ```powershell
-python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --prompt-template catalog_constrained_json --candidate-count 20
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --candidate-count 20
 ```
 
 This produces ignored inputs under:
 
 ```text
 outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_catalog_constrained_json_c20.jsonl
+outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_retrieval_context_json_c20.jsonl
+outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_observation_gate_manifest.json
 ```
 
 ## Tests

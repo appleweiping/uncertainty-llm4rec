@@ -5,9 +5,11 @@ import json
 import uuid
 from pathlib import Path
 
+from scripts.build_observation_gate_inputs import main as gate_inputs_main
 from storyflow.generation import (
     build_catalog_constrained_json_prompt,
     build_forced_json_prompt,
+    build_retrieval_context_json_prompt,
 )
 from storyflow.observation import (
     build_observation_input_records,
@@ -143,6 +145,18 @@ def test_catalog_constrained_prompt_is_diagnostic_grounding_gate() -> None:
     assert "confidence" in prompt
 
 
+def test_retrieval_context_prompt_is_grounding_context_gate() -> None:
+    prompt = build_retrieval_context_json_prompt(
+        ["Primer", "Arrival"],
+        ["The Matrix", "Solaris"],
+    )
+
+    assert "retrieved without using the held-out target item" in prompt
+    assert "grounding context" in prompt
+    assert "NO_GROUNDABLE_TITLE" in prompt
+    assert "generated_title" in prompt
+
+
 def test_observation_input_records_have_prompt_schema() -> None:
     workspace = _workspace_tmp("observation_inputs")
     processed_dir = workspace / "processed"
@@ -200,6 +214,71 @@ def test_catalog_constrained_observation_inputs_exclude_target_by_default() -> N
     assert record["candidate_policy"]["target_in_candidates"] is False
     assert record["candidate_policy"]["is_diagnostic_grounding_gate"] is True
     assert "Catalog candidate titles" in record["prompt"]
+
+
+def test_retrieval_context_observation_inputs_use_history_overlap_policy() -> None:
+    workspace = _workspace_tmp("retrieval_context_observation_inputs")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+
+    records = build_observation_input_records(
+        dataset="synthetic_fixture",
+        processed_suffix="tiny",
+        split="test",
+        processed_dir=processed_dir,
+        max_examples=1,
+        prompt_template="retrieval_context_json",
+        candidate_count=2,
+    )
+
+    assert len(records) == 1
+    record = records[0]
+    assert record["prompt_template"] == "retrieval_context_json"
+    assert record["target_item_id"] not in record["catalog_candidate_item_ids"]
+    assert record["candidate_policy"]["candidate_policy"] == "history_token_overlap"
+    assert record["candidate_policy"]["is_retrieval_context_gate"] is True
+    assert len(record["catalog_candidate_scores"]) == len(record["catalog_candidate_titles"])
+    assert "grounding context" in record["prompt"]
+
+
+def test_observation_gate_script_writes_three_input_variants() -> None:
+    workspace = _workspace_tmp("observation_gate_script")
+    processed_dir = workspace / "processed"
+    output_manifest = workspace / "gate_manifest.json"
+    _write_processed_fixture(processed_dir)
+
+    code = gate_inputs_main(
+        [
+            "--dataset",
+            "synthetic_fixture",
+            "--processed-suffix",
+            "tiny",
+            "--processed-dir",
+            str(processed_dir),
+            "--split",
+            "test",
+            "--max-examples",
+            "2",
+            "--candidate-count",
+            "2",
+            "--stratify-by-popularity",
+            "--output-manifest",
+            str(output_manifest),
+        ]
+    )
+
+    manifest = json.loads(output_manifest.read_text(encoding="utf-8"))
+    variants = {variant["prompt_template"]: variant for variant in manifest["variants"]}
+    assert code == 0
+    assert manifest["api_called"] is False
+    assert set(variants) == {
+        "forced_json",
+        "catalog_constrained_json",
+        "retrieval_context_json",
+    }
+    assert variants["forced_json"]["candidate_summary"]["candidate_record_count"] == 0
+    assert variants["catalog_constrained_json"]["candidate_summary"]["target_leak_count"] == 0
+    assert variants["retrieval_context_json"]["candidate_policy"] == "history_token_overlap"
 
 
 def test_mock_provider_is_deterministic_without_api_key(monkeypatch) -> None:
