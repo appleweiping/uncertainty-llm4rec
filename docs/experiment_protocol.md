@@ -69,6 +69,44 @@ Future phases may add graded relevance when ratings, categories, or semantic
 audits support it. The binary implicit-feedback label must not be described as
 the only possible user preference truth.
 
+## Preprocessing And Split Policy
+
+The data pipeline supports two recommendation evaluation settings.
+
+### Per-User Leave-Last Setting
+
+Each user's interactions are sorted chronologically. The held-out target is
+defined from the end of that user's sequence:
+
+- leave-last-one: the final item is the test target;
+- leave-last-two: the second-to-last item is the validation target and the
+  final item is the test target;
+- earlier eligible items can produce training examples when they have enough
+  history.
+
+This setting is useful for next-item recommendation where every evaluated user
+has a personal historical context.
+
+### Rolling Examples With Global Chronological Split
+
+For each user sequence, the pipeline can create iterative examples where target
+index `k` ranges over `[min_history, n - 1]`. The history is the prefix before
+`k`, optionally truncated to `max_history`. These rolling examples are then
+sorted by target timestamp and split globally into train/validation/test.
+
+This setting is useful when the experiment needs a global time boundary and
+multiple examples per user, matching iterative sequential recommendation
+setups.
+
+### Filtering Policy
+
+The pipeline supports user interaction-count filtering and iterative k-core
+filtering over users and items. These filters are included to follow common
+recommendation preprocessing settings and to avoid evaluating users/items with
+too little behavioral evidence for sequential history construction.
+
+TODO: add exact citations after related-work reading.
+
 ## Confidence Analysis
 
 Confidence must always be analyzed jointly with:

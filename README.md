@@ -25,15 +25,16 @@ contract for Codex work in this repository.
 
 Phase 0 governance/scaffold is established. A minimal Python research scaffold
 now exists with schemas, transparent title grounding, basic calibration metrics,
-popularity buckets, and pytest coverage for those foundations. Data download,
-API observation, model training, simulation, and full experiment phases have
-not started.
+popularity buckets, dataset manifests, a MovieLens 1M downloader, preprocessing
+and split utilities, and pytest coverage for those foundations. API
+observation, model training, simulation, and full experiment phases have not
+started.
 
-No data has been downloaded. No paid or external API has been called. No model,
-toy model, pilot experiment, full experiment, or server run has been executed.
-The synthetic fixture under `tests/fixtures/` is only for unit tests and
-pipeline sanity checks; it is not an experimental result. Any future result
-must come from tracked code, reproducible configs, logs, and output manifests.
+No paid or external API has been called. No model, toy model, pilot experiment,
+full experiment, or server run has been executed. The synthetic fixture under
+`tests/fixtures/` is only for unit tests and pipeline sanity checks; it is not
+an experimental result. Any future result must come from tracked code,
+reproducible configs, logs, and output manifests.
 
 ## Scientific Scope
 
@@ -94,6 +95,9 @@ Implemented foundation modules:
   match, stdlib fuzzy match, grounding score, and ambiguity placeholder.
 - `storyflow.metrics`: ECE, Brier score, CBU_tau, WBC_tau, GroundHit,
   popularity bucket assignment, and Tail Underconfidence Gap.
+- `storyflow.data`: MovieLens 1M reading, title cleaning, chronological sorting,
+  interaction filtering, k-core filtering, popularity computation, per-user
+  leave-last splits, rolling examples, and global chronological split.
 - `tests/fixtures/`: synthetic records used only for tests.
 
 The remaining subpackages are intentionally lightweight placeholders for later
@@ -124,10 +128,20 @@ user provides logs or artifacts.
 
 ## Data, API, and Reference Policy
 
-Raw datasets belong under `data/raw/` and are gitignored. Generated caches,
-outputs, and run artifacts are also gitignored by default. Small processed test
-fixtures may be committed under `tests/fixtures/` when they are created in a
-future phase.
+Raw datasets belong under `data/raw/` and are gitignored. Interim files,
+processed outputs, generated caches, and run artifacts are also gitignored by
+default. Small processed test fixtures may be committed under `tests/fixtures/`
+when they are created in a future phase.
+
+Dataset configs live under `configs/datasets/`:
+
+- `movielens_1m.yaml`: local real-data sanity dataset with automatic download.
+- `amazon_reviews_2023_beauty.yaml`: Hugging Face entry for All_Beauty.
+- `amazon_reviews_2023_sports.yaml`: Hugging Face entry for
+  Sports_and_Outdoors.
+- `amazon_reviews_2023_video_games.yaml`: Hugging Face entry for Video_Games.
+- `steam.yaml`: planned/server-scale placeholder until a verified source is
+  selected.
 
 API keys must be provided through environment variables such as
 `DEEPSEEK_API_KEY`, `DASHSCOPE_API_KEY`, `MOONSHOT_API_KEY`, and
@@ -152,6 +166,55 @@ Some MSYS2-style Python builds create `.venv\bin\python.exe` instead of
 The current runtime code has no required third-party dependency. The `dev`
 extra installs pytest for tests.
 
+## Dataset Commands
+
+Download MovieLens 1M:
+
+```powershell
+python scripts/download_datasets.py --dataset movielens_1m
+```
+
+This writes raw files under `data/raw/movielens_1m/` and a download manifest
+under `data/interim/movielens_1m/`. These paths are ignored by git.
+
+Prepare MovieLens 1M with the default per-user leave-last-two split:
+
+```powershell
+python scripts/prepare_dataset.py --dataset movielens_1m
+```
+
+Prepare a small local real-data sanity subset:
+
+```powershell
+python scripts/prepare_dataset.py --dataset movielens_1m --max-users 50 --output-suffix sanity_50_users
+```
+
+Processed outputs are written under `data/processed/movielens_1m/<run>/`:
+
+- `item_catalog.csv`
+- `interactions.csv`
+- `item_popularity.csv`
+- `user_sequences.jsonl`
+- `observation_examples.jsonl`
+- `preprocess_manifest.json`
+
+Alternative split policy:
+
+```powershell
+python scripts/prepare_dataset.py --dataset movielens_1m --split-policy global_chronological
+```
+
+Amazon Reviews 2023 configs are server/full-scale entries. The download script
+can cache the Hugging Face Dataset Viewer parquet index and write Chinese
+instructions, but it does not download the full Amazon data locally by default:
+
+```powershell
+python scripts/download_datasets.py --dataset amazon_reviews_2023_beauty
+```
+
+Use full Amazon categories only on a machine with enough disk, network, and
+runtime budget, and record manifests/logs before making any experimental claim.
+
 ## Tests
 
 Run the local test suite:
@@ -161,9 +224,10 @@ python -m pytest
 ```
 
 Current tests cover schema validation, title normalization, grounding,
-calibration metrics, GroundHit, popularity buckets, and Tail Underconfidence
-Gap. These tests use synthetic fixtures only and do not download data or call
-APIs.
+calibration metrics, GroundHit, k-core filtering, interaction filtering,
+chronological sorting, leave-last splits, rolling examples, popularity buckets,
+and Tail Underconfidence Gap. Tests use small committed fixtures only and do
+not download data or call APIs.
 
 ## Basic Checks
 
