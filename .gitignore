@@ -1,0 +1,50 @@
+# Secrets and local environment
+.env
+.env.local
+.envrc
+
+# Local research management reports
+local_reports/
+
+# Raw data, caches, and generated artifacts
+data/raw/
+data/cache/
+outputs/
+runs/
+
+# API and LLM response caches
+api_cache/
+.api_cache/
+data/api_cache/
+data/cache/api/
+outputs/api_cache/
+runs/api_cache/
+llm_cache/
+.llm_cache/
+
+# Large reference material
+references/*.pdf
+references/*.zip
+references/**/*.pdf
+references/**/*.zip
+references/**/*.tar
+references/**/*.tar.gz
+references/**/*.tgz
+
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments and local tooling
+.venv/
+venv/
+env/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
