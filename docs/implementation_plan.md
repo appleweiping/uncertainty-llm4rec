@@ -32,8 +32,12 @@ suite. Implemented foundation modules are intentionally lightweight:
 - `tests/fixtures/` contains synthetic fixtures only for unit tests and
   pipeline sanity checks.
 
-This scaffold does not include dataset download, API calls, model training,
-baselines, simulations, or experiment results.
+Phase 1 now includes MovieLens 1M download fallback, preprocessing, split
+generation, and processed-data validation. Phase 2A now includes prompt
+templates, observation input construction, a deterministic mock provider,
+grounding/correctness integration, mock metrics, and resume support. These are
+scaffold and sanity capabilities only; no paid API call, model training,
+baseline run, simulation, or experiment result has been produced.
 
 ## Phase 0: Governance And Scaffold
 

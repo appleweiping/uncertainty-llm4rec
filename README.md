@@ -26,9 +26,10 @@ contract for Codex work in this repository.
 Phase 0 governance/scaffold is established. A minimal Python research scaffold
 now exists with schemas, transparent title grounding, basic calibration metrics,
 popularity buckets, dataset manifests, a MovieLens 1M downloader, preprocessing
-and split utilities, and pytest coverage for those foundations. API
-observation, model training, simulation, and full experiment phases have not
-started.
+and split utilities, processed-data validation, Phase 2A prompt construction,
+mock provider support, no-API observation input/output flow, and pytest coverage
+for those foundations. Real API observation, model training, simulation, and
+full experiment phases have not started.
 
 MovieLens 1M has also been verified as a local real-data sanity path from a
 manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
@@ -36,10 +37,11 @@ manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
 `data/processed/`; it is a pipeline check, not an experimental result.
 
 No paid or external API has been called. No model, toy model, pilot experiment,
-full experiment, or server run has been executed. The synthetic fixture under
-`tests/fixtures/` is only for unit tests and pipeline sanity checks; it is not
-an experimental result. Any future result must come from tracked code,
-reproducible configs, logs, and output manifests.
+full experiment, or server run has been executed. The mock observation pipeline
+is only a no-API sanity path and must not be reported as model behavior. The
+synthetic fixture under `tests/fixtures/` is only for unit tests and pipeline
+sanity checks; it is not an experimental result. Any future result must come
+from tracked code, reproducible configs, logs, and output manifests.
 
 ## Scientific Scope
 
@@ -63,6 +65,10 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `docs/implementation_plan.md`: phased engineering and research plan.
 - `docs/experiment_protocol.md`: task definition, observation protocol, metrics,
   and local/server split.
+- `docs/data_validation.md`: processed dataset validation checks and command.
+- `docs/dataset_matrix.md`: dataset roadmap from synthetic fixtures through
+  Amazon Reviews 2023 full categories.
+- `docs/observation_pipeline.md`: Phase 2A no-API generative observation flow.
 - `docs/codex_execution_protocol.md`: required workflow for each Codex task.
 - `docs/server_runbook.md`: server execution framework. It is a scaffold only;
   no server run has been performed by Codex.
@@ -103,6 +109,12 @@ Implemented foundation modules:
 - `storyflow.data`: MovieLens 1M reading, title cleaning, chronological sorting,
   interaction filtering, k-core filtering, popularity computation, per-user
   leave-last splits, rolling examples, and global chronological split.
+- `storyflow.generation`: prompt templates for title-level next-item generation,
+  self-verification, probability confidence, and forced JSON output.
+- `storyflow.providers.mock`: deterministic no-API mock provider for scaffold
+  tests and observation pipeline sanity checks.
+- `storyflow.observation`: JSONL input construction, mock observation runner,
+  grounding integration, metrics, reports, and resume support.
 - `tests/fixtures/`: synthetic records used only for tests.
 
 The remaining subpackages are intentionally lightweight placeholders for later
@@ -224,6 +236,43 @@ python scripts/download_datasets.py --dataset amazon_reviews_2023_beauty
 
 Use full Amazon categories only on a machine with enough disk, network, and
 runtime budget, and record manifests/logs before making any experimental claim.
+MovieLens 1M must remain a sanity check; after Phase 2A, at least one Amazon
+Reviews 2023 category should be prepared as the first full-data pipeline.
+
+Validate a processed dataset before building observation inputs:
+
+```powershell
+python scripts/validate_processed_dataset.py --dataset movielens_1m --processed-suffix sanity_50_users
+```
+
+Validation outputs are written under `outputs/data_validation/...` and are
+ignored by git.
+
+## Phase 2A Mock Observation
+
+Build prompt JSONL inputs from processed examples:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset movielens_1m --processed-suffix sanity_50_users --split test --max-examples 20 --stratify-by-popularity
+```
+
+Run the no-API mock observation pipeline:
+
+```powershell
+python scripts/run_observation_pipeline.py --provider mock --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --max-examples 20
+```
+
+This writes ignored outputs under:
+
+- `outputs/observation_inputs/...`
+- `outputs/observations/mock/...`
+
+The mock provider is deterministic and does not require API keys. It exists to
+test prompt construction, response parsing, title grounding, correctness
+labeling, metrics, and resume behavior. It is not a real API pilot and not a
+paper result. The next phase is to add real provider adapters with explicit
+rate limits, retries, cache/resume, token/cost accounting, and environment
+variable API keys.
 
 ## Tests
 
@@ -236,8 +285,10 @@ python -m pytest
 Current tests cover schema validation, title normalization, grounding,
 calibration metrics, GroundHit, k-core filtering, interaction filtering,
 chronological sorting, leave-last splits, rolling examples, popularity buckets,
-and Tail Underconfidence Gap. Tests use small committed fixtures only and do
-not download data or call APIs.
+Tail Underconfidence Gap, prompt construction, mock provider parsing,
+observation input schema, grounding/correctness integration, metrics reporting,
+and resume behavior. Tests use small committed fixtures only and do not
+download data or call APIs.
 
 ## Basic Checks
 

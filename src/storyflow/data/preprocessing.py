@@ -7,6 +7,7 @@ import json
 import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -236,8 +237,12 @@ def _history_for(
     *,
     max_history: int | None,
 ) -> list[str]:
-    start = 0 if max_history is None else max(0, target_index - max_history)
+    start = _history_start_index(target_index, max_history=max_history)
     return sequence["item_ids"][start:target_index]
+
+
+def _history_start_index(target_index: int, *, max_history: int | None) -> int:
+    return 0 if max_history is None else max(0, target_index - max_history)
 
 
 def make_rolling_examples(
@@ -253,22 +258,9 @@ def make_rolling_examples(
     examples: list[dict[str, Any]] = []
     for sequence in sequences:
         item_ids = sequence["item_ids"]
-        timestamps = sequence["timestamps"]
         for target_index in range(min_history, len(item_ids)):
             examples.append(
-                {
-                    "example_id": f"{sequence['user_id']}:{target_index}",
-                    "user_id": sequence["user_id"],
-                    "history_item_ids": _history_for(
-                        sequence,
-                        target_index,
-                        max_history=max_history,
-                    ),
-                    "target_item_id": item_ids[target_index],
-                    "target_timestamp": timestamps[target_index],
-                    "history_length": min(target_index, max_history or target_index),
-                    "split": "unassigned",
-                }
+                _example_from_sequence(sequence, target_index, max_history, "unassigned")
             )
     return examples
 
@@ -310,19 +302,59 @@ def _example_from_sequence(
     max_history: int | None,
     split: str,
 ) -> dict[str, Any]:
+    history_start = _history_start_index(target_index, max_history=max_history)
+    history_item_ids = sequence["item_ids"][history_start:target_index]
+    history_timestamps = sequence["timestamps"][history_start:target_index]
     return {
         "example_id": f"{sequence['user_id']}:{target_index}",
         "user_id": sequence["user_id"],
-        "history_item_ids": _history_for(
-            sequence,
-            target_index,
-            max_history=max_history,
-        ),
+        "history_item_ids": history_item_ids,
+        "history_timestamps": history_timestamps,
         "target_item_id": sequence["item_ids"][target_index],
         "target_timestamp": sequence["timestamps"][target_index],
-        "history_length": min(target_index, max_history or target_index),
+        "target_index": target_index,
+        "history_start_index": history_start,
+        "history_end_index": target_index - 1,
+        "history_length": len(history_item_ids),
         "split": split,
     }
+
+
+def attach_catalog_fields_to_examples(
+    examples: Iterable[dict[str, Any]],
+    items: Iterable[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Attach title and popularity fields needed by observation pipelines."""
+
+    item_by_id = {str(item["item_id"]): item for item in items}
+    enriched: list[dict[str, Any]] = []
+    for example in examples:
+        target = item_by_id.get(str(example["target_item_id"]))
+        history_items = [
+            item_by_id[item_id]
+            for item_id in example["history_item_ids"]
+            if item_id in item_by_id
+        ]
+        row = dict(example)
+        row["history_item_titles"] = [item["title"] for item in history_items]
+        if target is not None:
+            row["target_item_title"] = target["title"]
+            row["target_title"] = target["title"]
+            row["target_item_popularity"] = int(target.get("popularity", 0) or 0)
+            row["target_popularity_bucket"] = str(
+                target.get("popularity_bucket", PopularityBucket.TAIL.value)
+            )
+            row["item_popularity"] = row["target_item_popularity"]
+            row["popularity_bucket"] = row["target_popularity_bucket"]
+        else:
+            row["target_item_title"] = ""
+            row["target_title"] = ""
+            row["target_item_popularity"] = 0
+            row["target_popularity_bucket"] = PopularityBucket.TAIL.value
+            row["item_popularity"] = 0
+            row["popularity_bucket"] = PopularityBucket.TAIL.value
+        enriched.append(row)
+    return enriched
 
 
 def assign_global_chronological_splits(
@@ -458,6 +490,7 @@ def prepare_movielens_1m(
         examples = assign_global_chronological_splits(rolling)
     else:
         raise ValueError(f"unknown split_policy: {split_policy}")
+    examples = attach_catalog_fields_to_examples(examples, items)
 
     processed_root = Path(str(config["processed_dir"]))
     run_name = output_suffix or split_policy
@@ -494,6 +527,7 @@ def prepare_movielens_1m(
     split_counts = dict(Counter(example["split"] for example in examples))
     manifest = {
         "dataset": dataset,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "split_policy": split_policy,
         "min_user_interactions": min_user_interactions,
         "user_k_core": user_k_core,
@@ -506,6 +540,22 @@ def prepare_movielens_1m(
         "user_count": len(sequences),
         "example_count": len(examples),
         "split_counts": split_counts,
+        "config_snapshot": {
+            "name": config.get("name"),
+            "type": config.get("type"),
+            "source_name": config.get("source_name"),
+            "source_url": config.get("source_url"),
+            "raw_dir": config.get("raw_dir"),
+            "processed_dir": config.get("processed_dir"),
+            "preprocess_min_user_interactions": config.get("preprocess_min_user_interactions"),
+            "preprocess_user_k_core": config.get("preprocess_user_k_core"),
+            "preprocess_item_k_core": config.get("preprocess_item_k_core"),
+            "preprocess_min_history": config.get("preprocess_min_history"),
+            "preprocess_max_history": config.get("preprocess_max_history"),
+            "preprocess_split_policy": config.get("preprocess_split_policy"),
+            "head_fraction": config.get("head_fraction"),
+            "tail_fraction": config.get("tail_fraction"),
+        },
         "outputs": {
             "item_catalog": str(output_dir / "item_catalog.csv"),
             "interactions": str(output_dir / "interactions.csv"),

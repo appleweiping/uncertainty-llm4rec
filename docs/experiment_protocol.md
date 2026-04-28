@@ -149,6 +149,31 @@ Observation must start small and real before scaling:
 
 No full-run claim may be written before the corresponding full run exists.
 
+## Phase 2A Generative Observation File Flow
+
+The practical observation pipeline is:
+
+```text
+processed examples
+  -> observation inputs
+  -> raw responses
+  -> parsed predictions
+  -> grounded predictions
+  -> metrics/report/manifest
+```
+
+Processed examples come from `data/processed/<dataset>/<run>/` and must contain
+or be joinable to history titles, target title, timestamp, item popularity, and
+head/mid/tail bucket. Observation inputs are JSONL records with prompt text and
+prompt hash. Raw responses are kept separate from parsed predictions. Grounded
+predictions must record generated title, grounded item id, grounding status,
+grounding score, ambiguity, correctness, confidence, popularity bucket, and
+provider metadata.
+
+Phase 2A uses `provider=mock` only. Mock outputs validate parsing, grounding,
+metrics, and resume behavior without calling any external API. Mock metrics are
+sanity checks, not API pilot results and not paper evidence.
+
 ## Framework Stage
 
 The framework stage targets Qwen3-8B + LoRA or a comparable small-model
@@ -202,6 +227,12 @@ Planned dataset support:
 Raw data belongs under `data/raw/` and must not be committed. If a source
 requires login, license acceptance, or manual placement, the pipeline must fail
 clearly and produce a Chinese report with the expected path and resume command.
+
+MovieLens 1M success is not sufficient for the final experimental story. After
+local MovieLens validation, the project must move to at least one Amazon
+Reviews 2023 full-data category, starting with Beauty unless a later protocol
+change gives a stronger reason to choose another category first. The project
+must not remain indefinitely in small-data sanity mode.
 
 ## API Policy
 
