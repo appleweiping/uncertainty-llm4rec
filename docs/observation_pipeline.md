@@ -235,3 +235,14 @@ Case review joins the observation input history, generated title, grounded
 catalog item, target title, confidence, and target/generated popularity
 buckets. It is meant for prompt/grounding triage before scale-up, not for
 paper claims.
+
+Run grounding diagnostics before additional API scale-up:
+
+```powershell
+python scripts/analyze_grounding_diagnostics.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k
+```
+
+If grounded predictions already exist, add `--grounded-jsonl` and
+`--manifest-json` to inspect top-two candidate margins. This produces ignored
+duplicate-title and low-margin reports under `outputs/grounding_diagnostics/`.
+The diagnostics are QA artifacts, not model behavior claims.

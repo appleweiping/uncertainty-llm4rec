@@ -95,6 +95,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
   cases, and local ignored run registry.
 - `docs/pilot_case_review.md`: pilot case-review and failure-taxonomy layer for
   prompt, grounding, and confidence triage before scaling.
+- `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
+  grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
 - `docs/codex_execution_protocol.md`: required workflow for each Codex task.
 - `docs/change_requests/` and `docs/decision_log.md`: scoped research and
@@ -152,6 +154,8 @@ Implemented foundation modules:
 - `storyflow.analysis`: observation analysis summaries, reliability diagram
   data, head/mid/tail slices, risk case extraction, and ignored run registry
   helpers.
+- `storyflow.analysis.grounding_diagnostics`: catalog duplicate normalized
+  title checks and optional grounding candidate margin audits.
 - `tests/fixtures/`: synthetic records used only for tests.
 
 The remaining subpackages are intentionally lightweight placeholders for later
@@ -445,6 +449,22 @@ writes machine-readable `recommended_actions` per case and
 `recommended_next_actions` in the summary, so pilot review can point to prompt,
 grounding, self-verification, popularity-residual, or tail-calibration follow
 ups. It is a pilot diagnostic, not a paper result.
+
+Audit catalog grounding ambiguity before scaling API calls:
+
+```powershell
+python scripts/analyze_grounding_diagnostics.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k
+```
+
+To include an existing pilot's grounded predictions:
+
+```powershell
+python scripts/analyze_grounding_diagnostics.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --grounded-jsonl outputs/api_observations/deepseek/amazon_reviews_2023_beauty/sample_5k/test_forced_json_api_pilot30_parallel_20260428/grounded_predictions.jsonl --manifest-json outputs/api_observations/deepseek/amazon_reviews_2023_beauty/sample_5k/test_forced_json_api_pilot30_parallel_20260428/manifest.json
+```
+
+This writes ignored artifacts under `outputs/grounding_diagnostics/...`,
+including duplicate normalized title groups and low-margin grounding cases. It
+is a QA artifact only, not a model-performance result.
 
 ## Amazon Beauty Sample Observation Gate
 

@@ -5,6 +5,13 @@ from storyflow.analysis.case_review import (
     review_observation_cases,
     summarize_case_review,
 )
+from storyflow.analysis.grounding_diagnostics import (
+    analyze_grounding_diagnostics,
+    catalog_grounding_summary,
+    duplicate_title_groups,
+    grounding_diagnostics_markdown,
+    grounding_margin_summary,
+)
 from storyflow.analysis.observation import (
     analyze_observation_run,
     bucket_summary,
@@ -19,9 +26,14 @@ from storyflow.analysis.run_registry import append_registry_record, stable_run_i
 
 __all__ = [
     "analyze_observation_run",
+    "analyze_grounding_diagnostics",
     "append_registry_record",
     "bucket_summary",
+    "catalog_grounding_summary",
     "case_review_markdown",
+    "duplicate_title_groups",
+    "grounding_diagnostics_markdown",
+    "grounding_margin_summary",
     "observation_analysis_markdown",
     "popularity_confidence_slope",
     "reliability_bins",
