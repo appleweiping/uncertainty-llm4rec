@@ -190,6 +190,23 @@ def test_cache_key_is_deterministic() -> None:
         request_options={"thinking": {"type": "disabled"}},
     )
     assert non_thinking != larger_generation_budget
+    dry_run_key = build_cache_key(
+        provider="p",
+        model="m",
+        prompt_template="forced_json",
+        temperature=0.0,
+        input_hash="abc",
+        execution_mode="dry_run",
+    )
+    execute_api_key = build_cache_key(
+        provider="p",
+        model="m",
+        prompt_template="forced_json",
+        temperature=0.0,
+        input_hash="abc",
+        execution_mode="execute_api",
+    )
+    assert dry_run_key != execute_api_key
 
 
 def test_response_cache_hit_roundtrip() -> None:
@@ -280,6 +297,59 @@ def test_api_runner_can_bypass_cache_for_diagnostics() -> None:
     assert first_run["cache_enabled"] is True
     assert second_run["cache_enabled"] is False
     assert raw_rows[0]["cache_hit"] is False
+
+
+def test_api_runner_records_run_and_budget_labels() -> None:
+    workspace = _workspace("api_runner_labels")
+    config_path = _provider_config(workspace, cache_dir=workspace / "cache")
+    input_path = _input_jsonl(workspace, n=1)
+    run_dir = workspace / "run"
+
+    manifest = run_api_observation(
+        provider_config_path=config_path,
+        input_jsonl=input_path,
+        output_dir=run_dir,
+        max_examples=1,
+        dry_run=True,
+        resume=False,
+        max_concurrency=None,
+        rate_limit=None,
+        run_label="unit-label",
+        budget_label="unit-budget",
+    )
+
+    request_rows = read_jsonl(run_dir / "request_records.jsonl")
+    assert manifest["run_label"] == "unit-label"
+    assert manifest["budget_label"] == "unit-budget"
+    assert request_rows[0]["metadata"]["run_label"] == "unit-label"
+    assert request_rows[0]["metadata"]["budget_label"] == "unit-budget"
+
+
+def test_api_runner_records_execution_mode_and_parallel_settings() -> None:
+    workspace = _workspace("api_runner_parallel")
+    config_path = _provider_config(workspace, cache_dir=workspace / "cache")
+    input_path = _input_jsonl(workspace, n=4)
+    run_dir = workspace / "run"
+
+    manifest = run_api_observation(
+        provider_config_path=config_path,
+        input_jsonl=input_path,
+        output_dir=run_dir,
+        max_examples=4,
+        dry_run=True,
+        resume=False,
+        max_concurrency=2,
+        rate_limit=30,
+        run_label="parallel-unit",
+        budget_label="dry-run-budget",
+    )
+
+    request_rows = read_jsonl(run_dir / "request_records.jsonl")
+    assert manifest["max_concurrency"] == 2
+    assert manifest["rate_limit_requests_per_minute"] == 30
+    assert manifest["execution_mode"] == "dry_run"
+    assert len(request_rows) == 4
+    assert {row["metadata"]["execution_mode"] for row in request_rows} == {"dry_run"}
 
 
 def test_parser_strict_json_fenced_json_and_regex() -> None:

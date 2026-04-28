@@ -29,8 +29,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--approved-provider")
     parser.add_argument("--approved-model")
     parser.add_argument("--approved-rate-limit", type=int)
+    parser.add_argument("--approved-max-concurrency", type=int)
     parser.add_argument("--approved-budget-label")
     parser.add_argument("--execute-api-intended", action="store_true")
+    parser.add_argument(
+        "--allow-over-20",
+        action="store_true",
+        help="Explicitly record user approval for a pilot sample size above the default <=20 gate.",
+    )
     parser.add_argument("--output-dir")
     args = parser.parse_args(argv)
 
@@ -42,8 +48,10 @@ def main(argv: list[str] | None = None) -> int:
         approved_provider=args.approved_provider,
         approved_model=args.approved_model,
         approved_rate_limit=args.approved_rate_limit,
+        approved_max_concurrency=args.approved_max_concurrency,
         approved_budget_label=args.approved_budget_label,
         execute_api_intended=args.execute_api_intended,
+        allow_over_20=args.allow_over_20,
     )
     output_dir = (
         _resolve(args.output_dir)

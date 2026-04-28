@@ -39,8 +39,10 @@ def check_api_pilot_readiness(
     approved_provider: str | None = None,
     approved_model: str | None = None,
     approved_rate_limit: int | None = None,
+    approved_max_concurrency: int | None = None,
     approved_budget_label: str | None = None,
     execute_api_intended: bool = False,
+    allow_over_20: bool = False,
 ) -> dict[str, Any]:
     """Check whether a future real API pilot is allowed by project gates.
 
@@ -59,8 +61,12 @@ def check_api_pilot_readiness(
     max_allowed = 5 if stage == "smoke" else 20
     if sample_size < 1:
         blockers.append("sample_size must be >= 1")
-    if sample_size > max_allowed:
+    if sample_size > max_allowed and not (stage == "pilot" and allow_over_20):
         blockers.append(f"{stage} sample_size must be <= {max_allowed}")
+    if stage == "pilot" and allow_over_20 and sample_size > max_allowed:
+        warnings.append(
+            "pilot sample_size exceeds the default <=20 gate because allow_over_20 was explicitly set"
+        )
     if approved_provider and approved_provider != config.provider_name:
         blockers.append(
             f"approved_provider={approved_provider} does not match config provider={config.provider_name}"
@@ -75,6 +81,10 @@ def check_api_pilot_readiness(
         blockers.append("approved_model is required before real API execution")
     if approved_rate_limit is None or approved_rate_limit < 1:
         blockers.append("approved_rate_limit >= 1 is required before real API execution")
+    if approved_max_concurrency is None:
+        approved_max_concurrency = config.max_concurrency
+    if approved_max_concurrency < 1:
+        blockers.append("approved_max_concurrency >= 1 is required before real API execution")
     if not approved_budget_label:
         blockers.append("approved_budget_label is required before real API execution")
     if not execute_api_intended:
@@ -98,8 +108,8 @@ def check_api_pilot_readiness(
             blockers.append(
                 f"input_jsonl has {input_count} records, fewer than requested sample_size={sample_size}"
             )
-    if config.max_concurrency != 1:
-        warnings.append("initial smoke/pilot should use max_concurrency=1")
+    if approved_max_concurrency != 1 and stage == "smoke":
+        warnings.append("initial smoke should use max_concurrency=1 unless explicitly approved")
     effective_rate = approved_rate_limit or config.rate_limit.requests_per_minute
     if effective_rate > 10 and stage == "smoke":
         warnings.append("recommended smoke-test rate_limit is <= 10 requests/minute")
@@ -114,7 +124,8 @@ def check_api_pilot_readiness(
         f"--max-examples {sample_size} "
         "--execute-api "
         f"--rate-limit {effective_rate} "
-        "--max-concurrency 1"
+        f"--max-concurrency {approved_max_concurrency} "
+        f"--budget-label {approved_budget_label or 'APPROVED_BUDGET_LABEL'}"
     )
     return {
         "created_at_utc": utc_now_iso(),
@@ -134,7 +145,9 @@ def check_api_pilot_readiness(
         "approved_provider": approved_provider,
         "approved_model": approved_model,
         "approved_rate_limit": approved_rate_limit,
+        "approved_max_concurrency": approved_max_concurrency,
         "approved_budget_label": approved_budget_label,
+        "allow_over_20": allow_over_20,
         "execute_api_intended": execute_api_intended,
         "cache_enabled": config.cache.enabled,
         "cache_dir": config.cache.cache_dir,

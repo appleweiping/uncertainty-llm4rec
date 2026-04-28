@@ -117,6 +117,7 @@ def test_api_readiness_ready_with_explicit_gates(monkeypatch) -> None:
         approved_provider="deepseek",
         approved_model="deepseek-v4-flash",
         approved_rate_limit=10,
+        approved_max_concurrency=1,
         approved_budget_label="unit-test-budget",
         execute_api_intended=True,
     )
@@ -125,6 +126,49 @@ def test_api_readiness_ready_with_explicit_gates(monkeypatch) -> None:
     assert manifest["api_called"] is False
     assert manifest["api_key_value_printed"] is False
     assert "--execute-api" in manifest["command_template_after_approval"]
+    assert "--max-concurrency 1" in manifest["command_template_after_approval"]
+    assert "--budget-label unit-test-budget" in manifest["command_template_after_approval"]
+
+
+def test_api_readiness_allows_explicit_over_20_pilot(monkeypatch) -> None:
+    workspace = _workspace("api_readiness_over20")
+    config_path = _provider_config(workspace)
+    input_path = _input_jsonl(workspace, n=30)
+    monkeypatch.setenv("DEEPSEEK_TEST_KEY", "not-a-real-key-for-tests")
+
+    blocked = check_api_pilot_readiness(
+        provider_config_path=config_path,
+        input_jsonl=input_path,
+        sample_size=30,
+        stage="pilot",
+        approved_provider="deepseek",
+        approved_model="deepseek-v4-flash",
+        approved_rate_limit=10,
+        approved_max_concurrency=2,
+        approved_budget_label="unit-test-budget",
+        execute_api_intended=True,
+    )
+    ready = check_api_pilot_readiness(
+        provider_config_path=config_path,
+        input_jsonl=input_path,
+        sample_size=30,
+        stage="pilot",
+        approved_provider="deepseek",
+        approved_model="deepseek-v4-flash",
+        approved_rate_limit=10,
+        approved_max_concurrency=2,
+        approved_budget_label="unit-test-budget",
+        execute_api_intended=True,
+        allow_over_20=True,
+    )
+
+    assert blocked["status"] == "blocked"
+    assert any("sample_size" in blocker for blocker in blocked["blockers"])
+    assert ready["status"] == "ready_for_execute_api"
+    assert ready["allow_over_20"] is True
+    assert ready["approved_max_concurrency"] == 2
+    assert "--max-concurrency 2" in ready["command_template_after_approval"]
+    assert ready["warnings"]
 
 
 def test_api_readiness_cli_writes_manifest(monkeypatch) -> None:
@@ -148,9 +192,12 @@ def test_api_readiness_cli_writes_manifest(monkeypatch) -> None:
             "deepseek-v4-flash",
             "--approved-rate-limit",
             "10",
+            "--approved-max-concurrency",
+            "2",
             "--approved-budget-label",
             "unit-test-budget",
             "--execute-api-intended",
+            "--allow-over-20",
             "--output-dir",
             str(output_dir),
         ]
@@ -159,6 +206,8 @@ def test_api_readiness_cli_writes_manifest(monkeypatch) -> None:
     assert code == 0
     manifest = json.loads((output_dir / "readiness_manifest.json").read_text(encoding="utf-8"))
     assert manifest["status"] == "ready_for_execute_api"
+    assert manifest["allow_over_20"] is True
+    assert manifest["approved_max_concurrency"] == 2
 
 
 def test_amazon_local_path_resolution_and_schema_sample() -> None:

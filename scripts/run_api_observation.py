@@ -11,8 +11,10 @@ import json
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -85,6 +87,9 @@ def _api_request_from_input(
     temperature: float,
     max_tokens: int,
     request_options: dict[str, Any] | None,
+    run_label: str | None,
+    budget_label: str | None,
+    execution_mode: str,
 ) -> APIRequestRecord:
     cache_key = build_cache_key(
         provider=provider,
@@ -94,6 +99,7 @@ def _api_request_from_input(
         input_hash=str(input_record["prompt_hash"]),
         max_tokens=max_tokens,
         request_options=request_options,
+        execution_mode=execution_mode,
     )
     return APIRequestRecord(
         request_id=f"{provider}:{input_record['input_id']}",
@@ -110,8 +116,61 @@ def _api_request_from_input(
             "example_id": input_record.get("example_id"),
             "dataset": input_record.get("dataset"),
             "split": input_record.get("split"),
+            "run_label": run_label,
+            "budget_label": budget_label,
+            "execution_mode": execution_mode,
         },
     )
+
+
+class _StartRateLimiter:
+    """Thread-safe start-time limiter for external API requests."""
+
+    def __init__(self, requests_per_minute: int) -> None:
+        if requests_per_minute < 1:
+            raise ValueError("requests_per_minute must be >= 1")
+        self.interval_seconds = 60.0 / requests_per_minute
+        self._lock = Lock()
+        self._next_allowed = 0.0
+
+    def wait(self) -> None:
+        with self._lock:
+            now = time.monotonic()
+            scheduled = max(now, self._next_allowed)
+            self._next_allowed = scheduled + self.interval_seconds
+            delay = scheduled - now
+        if delay > 0:
+            time.sleep(delay)
+
+
+def _valid_cached_response(cached: dict[str, Any] | None, *, dry_run: bool) -> dict[str, Any] | None:
+    if cached is None:
+        return None
+    if bool(cached.get("dry_run")) != dry_run:
+        return None
+    return cached
+
+
+def _failure_row(
+    *,
+    input_id: str,
+    request_id: str,
+    provider: str,
+    dry_run: bool,
+    failure_stage: str,
+    error: str | None,
+    row: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return {
+        **(row or {}),
+        "input_id": input_id,
+        "request_id": request_id,
+        "provider": provider,
+        "error": error,
+        "failure_stage": failure_stage,
+        "dry_run": dry_run,
+        "created_at_utc": utc_now_iso(),
+    }
 
 
 def _response_from_cache(
@@ -167,6 +226,8 @@ def run_api_observation(
     max_concurrency: int | None,
     rate_limit: int | None,
     cache_enabled_override: bool | None = None,
+    run_label: str | None = None,
+    budget_label: str | None = None,
 ) -> dict[str, Any]:
     config = load_provider_config(provider_config_path)
     output_dir = output_dir or _default_output_dir(
@@ -216,11 +277,17 @@ def run_api_observation(
 
     newly_processed = 0
     failed_count = 0
+    execution_mode = "dry_run" if dry_run else "execute_api"
+    limiter = None if dry_run else _StartRateLimiter(effective_rate_limit)
     request_ids = {str(input_record["input_id"]) for input_record in inputs}
-    for index, input_record in enumerate(inputs):
+    pending_inputs = [
+        input_record
+        for input_record in inputs
+        if str(input_record["input_id"]) not in completed
+    ]
+
+    def process_one(input_record: dict[str, Any]) -> dict[str, Any]:
         input_id = str(input_record["input_id"])
-        if input_id in completed:
-            continue
         request = _api_request_from_input(
             input_record,
             provider=config.provider_name,
@@ -228,13 +295,17 @@ def run_api_observation(
             temperature=config.temperature,
             max_tokens=config.max_tokens,
             request_options=config.extra_body,
+            run_label=run_label,
+            budget_label=budget_label,
+            execution_mode=execution_mode,
         )
-        write_jsonl(request_path, [asdict(request)], append=True)
-        cached = cache.get(request.cache_key)
+        cached = _valid_cached_response(cache.get(request.cache_key), dry_run=dry_run)
         if cached is not None:
             response = _response_from_cache(cached, request=request, dry_run=dry_run)
         else:
             try:
+                if limiter is not None:
+                    limiter.wait()
                 response = _generate_with_retry(
                     provider,
                     request=request,
@@ -243,25 +314,21 @@ def run_api_observation(
                     backoff_seconds=config.retry.backoff_seconds,
                 )
             except ProviderExecutionError as exc:
-                failed_count += 1
-                write_jsonl(
-                    failed_path,
-                    [
-                        {
-                            "input_id": input_id,
-                            "request_id": request.request_id,
-                            "provider": config.provider_name,
-                            "error": str(exc),
-                            "failure_stage": "provider",
-                            "dry_run": dry_run,
-                            "created_at_utc": utc_now_iso(),
-                        }
-                    ],
-                    append=True,
-                )
-                continue
+                return {
+                    "request": asdict(request),
+                    "raw": None,
+                    "parsed": None,
+                    "grounded": None,
+                    "failed": _failure_row(
+                        input_id=input_id,
+                        request_id=request.request_id,
+                        provider=config.provider_name,
+                        error=str(exc),
+                        failure_stage="provider",
+                        dry_run=dry_run,
+                    ),
+                }
             cache.put(request.cache_key, asdict(response))
-        write_jsonl(raw_path, [asdict(response)], append=True)
         parsed = parse_observation_response(response.raw_text or "")
         parsed_row = {
             "input_id": input_id,
@@ -274,21 +341,22 @@ def run_api_observation(
             "parse": asdict(parsed),
             "created_at_utc": utc_now_iso(),
         }
-        write_jsonl(parsed_path, [parsed_row], append=True)
         if not parsed.success:
-            failed_count += 1
-            write_jsonl(
-                failed_path,
-                [
-                    {
-                        **parsed_row,
-                        "failure_stage": "parse",
-                        "error": parsed.error,
-                    }
-                ],
-                append=True,
-            )
-            continue
+            return {
+                "request": asdict(request),
+                "raw": asdict(response),
+                "parsed": parsed_row,
+                "grounded": None,
+                "failed": _failure_row(
+                    input_id=input_id,
+                    request_id=request.request_id,
+                    provider=config.provider_name,
+                    error=parsed.error,
+                    failure_stage="parse",
+                    dry_run=dry_run,
+                    row=parsed_row,
+                ),
+            }
         grounded = grounder.ground(
             parsed.generated_title or "",
             prediction_id=request.request_id,
@@ -296,42 +364,59 @@ def run_api_observation(
         correctness = int(
             grounded.is_grounded and grounded.item_id == input_record["target_item_id"]
         )
-        write_jsonl(
-            grounded_path,
-            [
-                {
-                    "input_id": input_id,
-                    "request_id": request.request_id,
-                    "example_id": input_record["example_id"],
-                    "user_id": input_record["user_id"],
-                    "split": input_record["split"],
-                    "provider": config.provider_name,
-                    "model": config.model_name,
-                    "cache_key": request.cache_key,
-                    "cache_hit": response.cache_hit,
-                    "dry_run": dry_run,
-                    "generated_title": parsed.generated_title,
-                    "confidence": parsed.confidence,
-                    "is_likely_correct": parsed.is_likely_correct,
-                    "parse_strategy": parsed.parse_strategy,
-                    "target_item_id": input_record["target_item_id"],
-                    "target_title": input_record["target_title"],
-                    "target_popularity": input_record["target_popularity"],
-                    "target_popularity_bucket": input_record["target_popularity_bucket"],
-                    "grounded_item_id": grounded.item_id,
-                    "grounding_status": grounded.status.value,
-                    "grounding_score": grounded.score,
-                    "grounding_ambiguity": grounded.ambiguity,
-                    "correctness": correctness,
-                    "usage": response.usage,
-                    "is_experiment_result": False,
-                }
-            ],
-            append=True,
-        )
-        newly_processed += 1
-        if not dry_run and index < len(inputs) - 1:
-            time.sleep(60.0 / effective_rate_limit)
+        grounded_row = {
+            "input_id": input_id,
+            "request_id": request.request_id,
+            "example_id": input_record["example_id"],
+            "user_id": input_record["user_id"],
+            "split": input_record["split"],
+            "provider": config.provider_name,
+            "model": config.model_name,
+            "cache_key": request.cache_key,
+            "cache_hit": response.cache_hit,
+            "dry_run": dry_run,
+            "generated_title": parsed.generated_title,
+            "confidence": parsed.confidence,
+            "is_likely_correct": parsed.is_likely_correct,
+            "parse_strategy": parsed.parse_strategy,
+            "target_item_id": input_record["target_item_id"],
+            "target_title": input_record["target_title"],
+            "target_popularity": input_record["target_popularity"],
+            "target_popularity_bucket": input_record["target_popularity_bucket"],
+            "grounded_item_id": grounded.item_id,
+            "grounding_status": grounded.status.value,
+            "grounding_score": grounded.score,
+            "grounding_ambiguity": grounded.ambiguity,
+            "correctness": correctness,
+            "usage": response.usage,
+            "is_experiment_result": False,
+        }
+        return {
+            "request": asdict(request),
+            "raw": asdict(response),
+            "parsed": parsed_row,
+            "grounded": grounded_row,
+            "failed": None,
+        }
+
+    with ThreadPoolExecutor(max_workers=effective_concurrency) as executor:
+        future_to_index = {
+            executor.submit(process_one, input_record): index
+            for index, input_record in enumerate(pending_inputs)
+        }
+        for future in as_completed(future_to_index):
+            result = future.result()
+            write_jsonl(request_path, [result["request"]], append=True)
+            if result["raw"] is not None:
+                write_jsonl(raw_path, [result["raw"]], append=True)
+            if result["parsed"] is not None:
+                write_jsonl(parsed_path, [result["parsed"]], append=True)
+            if result["failed"] is not None:
+                failed_count += 1
+                write_jsonl(failed_path, [result["failed"]], append=True)
+            if result["grounded"] is not None:
+                newly_processed += 1
+                write_jsonl(grounded_path, [result["grounded"]], append=True)
 
     grounded_rows = [
         row for row in read_jsonl(grounded_path) if str(row["input_id"]) in request_ids
@@ -389,6 +474,9 @@ def run_api_observation(
         "rate_limit_requests_per_minute": effective_rate_limit,
         "cache_enabled": cache_enabled,
         "request_options": config.extra_body,
+        "run_label": run_label,
+        "budget_label": budget_label,
+        "execution_mode": execution_mode,
         "cache_dir": str(_cache_dir(config.cache.cache_dir)),
         "api_called": not dry_run,
         "is_experiment_result": False,
@@ -418,6 +506,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-concurrency", type=int)
     parser.add_argument("--rate-limit", type=int)
     parser.add_argument("--no-cache", action="store_true", help="Bypass provider cache for one-off diagnostics.")
+    parser.add_argument("--run-label", help="Human-readable run label written to request records and manifest.")
+    parser.add_argument("--budget-label", help="User-approved budget/provenance label written to request records and manifest.")
     args = parser.parse_args(argv)
 
     provider_config = _resolve(args.provider_config)
@@ -437,6 +527,8 @@ def main(argv: list[str] | None = None) -> int:
         max_concurrency=args.max_concurrency,
         rate_limit=args.rate_limit,
         cache_enabled_override=False if args.no_cache else None,
+        run_label=args.run_label,
+        budget_label=args.budget_label,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True))
     return 0

@@ -130,6 +130,12 @@ The API framework writes:
 - `report.md`
 - `manifest.json`
 
+For approved real API runs, request records and the manifest also include
+`run_label`, `budget_label`, and `execution_mode`. Cache keys include
+`execution_mode`, so a dry-run response cannot be reused as a real API response.
+The runner can process multiple in-flight requests with `--max-concurrency`,
+while a global `--rate-limit` controls request start rate.
+
 Phase 2C reads these outputs without mutating them:
 
 - `analysis_summary.json`
@@ -156,7 +162,18 @@ python scripts/run_api_observation.py --provider-config configs/providers/deepse
 Dry-run responses are deterministic placeholders used to test cache, resume,
 parsing, grounding, and output schemas. They are not API results. Real API
 execution requires `--execute-api`, confirmed provider endpoint/model config,
-and the corresponding API key environment variable.
+the corresponding API key environment variable, and an approved provider/model
+/budget/rate/concurrency gate.
+
+Approved accelerated pilot command shape:
+
+```powershell
+python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --sample-size 30 --stage pilot --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 30 --approved-max-concurrency 3 --approved-budget-label USER_APPROVED_BEAUTY_SAMPLE30_PARALLEL --execute-api-intended --allow-over-20
+python scripts/run_api_observation.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --max-examples 30 --execute-api --rate-limit 30 --max-concurrency 3 --run-label amazon_beauty_sample30_deepseek_parallel --budget-label USER_APPROVED_BEAUTY_SAMPLE30_PARALLEL
+```
+
+This remains a pilot flow. Full API observation requires a separate manifest,
+budget label, and scale-up decision.
 
 ## Analyze Observation Outputs
 

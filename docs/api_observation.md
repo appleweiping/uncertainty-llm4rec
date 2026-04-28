@@ -82,7 +82,7 @@ grounding, correctness labeling, metrics, and resume behavior can be checked.
 Check DeepSeek smoke-test readiness without making a network call:
 
 ```powershell
-python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --sample-size 5 --stage smoke --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 10 --approved-budget-label USER_APPROVED_SMOKE --execute-api-intended
+python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --sample-size 5 --stage smoke --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 10 --approved-max-concurrency 1 --approved-budget-label USER_APPROVED_SMOKE --execute-api-intended
 ```
 
 The readiness check prints whether required gates pass. It never prints the API
@@ -90,11 +90,11 @@ key value and never calls DeepSeek.
 
 ## Real API Pilot
 
-A real API pilot must be explicitly approved with provider, model, budget, and
-rate limits. The command shape is:
+A real API pilot must be explicitly approved with provider, model, budget,
+rate limits, and concurrency. The conservative command shape is:
 
 ```powershell
-python scripts/run_api_observation.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --max-examples 20 --execute-api --rate-limit 10 --max-concurrency 1
+python scripts/run_api_observation.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --max-examples 20 --execute-api --rate-limit 10 --max-concurrency 1 --run-label movielens_deepseek_pilot --budget-label USER_APPROVED_PILOT
 ```
 
 This will still fail unless:
@@ -112,17 +112,38 @@ For the first smoke test, the intended limits are:
 - cache/resume enabled;
 - run analysis immediately after completion.
 
+After smoke stability is verified, safe acceleration is allowed only through
+explicit gate records. Use `--rate-limit` to cap global request starts per
+minute and `--max-concurrency` to allow multiple in-flight requests. The runner
+uses a thread-safe start limiter, incremental JSONL writes, cache/resume, and
+per-request `run_label`, `budget_label`, and `execution_mode` metadata. A
+sample accelerated gate looks like:
+
+```powershell
+python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --sample-size 30 --stage pilot --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 30 --approved-max-concurrency 3 --approved-budget-label USER_APPROVED_BEAUTY_SAMPLE30_PARALLEL --execute-api-intended --allow-over-20
+python scripts/run_api_observation.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --output-dir outputs/api_observations/deepseek/amazon_reviews_2023_beauty/sample_5k/test_forced_json_api_pilot30_parallel --max-examples 30 --execute-api --rate-limit 30 --max-concurrency 3 --run-label amazon_beauty_sample30_deepseek_parallel --budget-label USER_APPROVED_BEAUTY_SAMPLE30_PARALLEL
+```
+
+The readiness manifest must be kept with the run artifacts under ignored
+`outputs/`. Do not scale beyond the approved sample/rate/concurrency without a
+new budget label and manifest.
+
 ## Cache And Resume
 
 Cache keys are deterministic over:
 
 ```text
 provider + model + prompt_template + temperature + prompt/input hash + max_tokens
++ request_options + execution_mode
 ```
 
 Cache files are written under the provider config's cache directory, currently
 `outputs/api_cache/...`, which is ignored by git. Resume skips input ids already
 present in grounded predictions or failed cases.
+
+`execution_mode` is part of the cache key and cached responses are rejected when
+their stored `dry_run` flag does not match the current run. This prevents a
+dry-run response from being counted as a real API observation.
 
 To avoid duplicate paid calls in a future real pilot:
 
@@ -197,7 +218,8 @@ failures.
 ## Pilot Versus Full
 
 - Dry-run: framework sanity only, no API call.
-- API pilot: approved small real API call, usually 20-50 MovieLens examples.
+- API pilot: approved small real API call, usually 20-50 MovieLens or Amazon
+  sample examples.
 - Full run: larger provider/dataset run with explicit manifests, logs, cache,
   and budget controls.
 
@@ -230,4 +252,28 @@ outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_
 outputs/analysis/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_api_pilot20_non_thinking_20260428/
 ```
 
-No full API run has been executed by Codex in this repository.
+On the same date, after Amazon Beauty sample readiness, the user approved a
+30-example Amazon Beauty sample pilot with:
+
+- provider: DeepSeek;
+- model: `deepseek-v4-flash`;
+- sample size: 30;
+- max concurrency: 3;
+- rate limit: 30 requests/minute;
+- budget label: `USER_APPROVED_BEAUTY_SAMPLE30_PARALLEL_20260428`.
+
+The first 30-example attempt exposed a dry-run cache contamination risk in the
+runner and was treated as invalid diagnostic output. The runner was then fixed
+to include `execution_mode` in cache keys and reject mismatched cached
+responses. The corrected parallel pilot produced 30 parsed and grounded
+records with no parse/provider failures, followed by analysis and case-review
+diagnostics under ignored output paths:
+
+```text
+outputs/api_observations/deepseek/amazon_reviews_2023_beauty/sample_5k/test_forced_json_api_pilot30_parallel_20260428/
+outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/sample_5k/test_forced_json_api_pilot30_parallel_20260428/
+outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/sample_5k/test_forced_json_api_pilot30_parallel_20260428/
+```
+
+This is a local sample pilot only. No full API run has been executed by Codex in
+this repository.

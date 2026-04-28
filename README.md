@@ -31,8 +31,8 @@ mock provider support, no-API observation input/output flow, and pytest coverage
 for those foundations. Phase 2B API observation framework dry-run support and
 Amazon Reviews 2023 Beauty readiness gates are in place. Phase 2C observation
 analysis and local run registry utilities are now available for mock/dry-run
-schema sanity and future pilot analysis. Real API observation, model training,
-simulation, and full experiment phases have not started.
+schema sanity and approved pilot analysis. Full API observation, model
+training, simulation, and full experiment phases have not started.
 
 MovieLens 1M has also been verified as a local real-data sanity path from a
 manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
@@ -46,9 +46,19 @@ and reasoning-token issues; those were fixed by using `certifi`, raising
 `max_tokens`, and disabling thinking mode for this short JSON observation task.
 The pilot produced parsed and grounded predictions plus analysis artifacts
 under ignored `outputs/` paths. This is a small pilot only, not a full run and
-not paper evidence. No model, toy model, full experiment, or server run has
-been executed. The mock observation pipeline is only a no-API sanity path and
-must not be reported as model behavior. Synthetic fixture under
+not paper evidence.
+
+After Amazon Beauty sample readiness, a user-approved 30-example DeepSeek
+Amazon Beauty sample pilot was executed with `deepseek-v4-flash`,
+`thinking.type=disabled`, cache enabled, explicit `execution_mode=execute_api`,
+30 requests/minute, and max concurrency 3. The run produced parsed and grounded
+pilot artifacts under ignored `outputs/` paths and was followed by analysis and
+case-review diagnostics. It is a small sample pilot only, not a full Amazon run
+and not paper evidence.
+
+No model, toy model, full experiment, or server run has been executed. The mock
+observation pipeline is only a no-API sanity path and must not be reported as
+model behavior. Synthetic fixture under
 `tests/fixtures/` is only for unit tests and pipeline sanity checks; it is not
 an experimental result. Any future result must come from tracked code,
 reproducible configs, logs, and output manifests.
@@ -346,16 +356,29 @@ python scripts/run_api_observation.py --provider-config configs/providers/deepse
 Dry-run writes ignored outputs under `outputs/api_observations/...` and never
 calls the network or reads API keys. A future real pilot requires
 `--execute-api`, confirmed config fields, an environment variable key, and user
-approval of provider, model, budget, and rate limits.
+approval of provider, model, budget, rate limits, and concurrency. Cache keys
+include `execution_mode`, so dry-run cache records cannot be reused as real API
+responses.
 
 Check DeepSeek smoke-test readiness without making a network call:
 
 ```powershell
-python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --sample-size 5 --stage smoke --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 10 --approved-budget-label USER_APPROVED_SMOKE --execute-api-intended
+python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --sample-size 5 --stage smoke --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 10 --approved-max-concurrency 1 --approved-budget-label USER_APPROVED_SMOKE --execute-api-intended
 ```
 
 This command never prints the API key value and never calls DeepSeek. It only
 checks whether all required gates are satisfied.
+
+For an explicitly approved faster Amazon Beauty sample pilot, use a separate
+budget label and keep cache/resume enabled:
+
+```powershell
+python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --sample-size 30 --stage pilot --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 30 --approved-max-concurrency 3 --approved-budget-label USER_APPROVED_BEAUTY_SAMPLE30_PARALLEL --execute-api-intended --allow-over-20
+python scripts/run_api_observation.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --output-dir outputs/api_observations/deepseek/amazon_reviews_2023_beauty/sample_5k/test_forced_json_api_pilot30_parallel --max-examples 30 --execute-api --rate-limit 30 --max-concurrency 3 --run-label amazon_beauty_sample30_deepseek_parallel --budget-label USER_APPROVED_BEAUTY_SAMPLE30_PARALLEL
+```
+
+These commands are for approved pilot work only. They do not authorize a paper
+claim or a full provider sweep.
 
 Current status markers:
 
@@ -368,6 +391,9 @@ Current status markers:
 - DeepSeek API pilot: succeeded for 20 approved MovieLens sanity records;
   outputs are ignored local pilot artifacts, not full results or paper
   evidence.
+- DeepSeek Amazon Beauty sample pilot: succeeded for 30 approved sample records
+  with max concurrency 3 and 30 requests/minute; outputs are ignored local
+  pilot artifacts, not a full Amazon/API run and not paper evidence.
 - Amazon Beauty local raw files: available for readiness/sample checks.
 - Amazon Beauty sample prepare gate: implemented; sample outputs are ignored
   local artifacts, not full-data results.

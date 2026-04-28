@@ -275,8 +275,8 @@ Paid APIs must not be called in tests.
 Phase 2B adds provider configs and a dry-run API runner. Dry-run mode is the
 default and must not read API keys or call the network. Real API execution is
 allowed only after an explicit user-approved provider/model/budget/rate-limit
-decision and requires `--execute-api`, a confirmed provider endpoint/model
-config, and the relevant environment variable.
+/concurrency decision and requires `--execute-api`, a confirmed provider
+endpoint/model config, and the relevant environment variable.
 
 On 2026-04-28, user-approved DeepSeek smoke and 20-example MovieLens sanity
 pilot runs were executed with `deepseek-v4-flash`, 10 requests/minute, and max
@@ -287,10 +287,19 @@ and 20-example pilot produced parsed and grounded predictions plus analysis
 artifacts. These are small pilot artifacts only, not full-run results or paper
 evidence.
 
+On the same date, after Amazon Beauty sample readiness, a user-approved
+30-example Amazon Beauty sample pilot was executed with `deepseek-v4-flash`, 30
+requests/minute, max concurrency 3, cache enabled, and
+`execution_mode=execute_api`. An earlier diagnostic attempt exposed that dry-run
+and real API cache entries must be separated; the runner now includes
+`execution_mode` in the cache key and rejects cached responses whose `dry_run`
+flag does not match the current run. The corrected 30-example pilot is a sample
+pilot only, not a full Amazon/API run or paper result.
+
 Before the first DeepSeek smoke test, run:
 
 ```powershell
-python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --sample-size 5 --stage smoke --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 10 --approved-budget-label USER_APPROVED_SMOKE --execute-api-intended
+python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --sample-size 5 --stage smoke --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 10 --approved-max-concurrency 1 --approved-budget-label USER_APPROVED_SMOKE --execute-api-intended
 ```
 
 This command is a gate check only and does not call the API.
