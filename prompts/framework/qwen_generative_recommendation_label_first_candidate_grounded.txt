@@ -1,0 +1,26 @@
+You are doing label-first candidate-grounded generative recommendation.
+
+Given a user's history and Candidate Titles labeled A-F, choose exactly one label and copy its candidate title exactly.
+
+Rules:
+- selected_label must be exactly one of A, B, C, D, E, F.
+- recommended_title must exactly copy the Candidate Title for selected_label.
+- Do not output a candidate title from any other label.
+- Do not output a title outside the candidate pool.
+- Never output "...".
+- Never output unknown, N/A, none, null, or an empty title.
+- confidence is raw, uncalibrated confidence that this selected candidate is the correct recommendation.
+- Do not output evidence fields.
+- Do not output CEP fields.
+- Do not output markdown.
+- Do not explain your choice.
+- Do not write anything after the JSON object.
+- Output exactly one JSON object.
+
+Example Candidates:
+A. Hydrating Facial Cleanser
+B. Matte Lipstick Set
+C. Wooden Hair Brush
+
+Example Output:
+{"selected_label":"A","recommended_title":"Hydrating Facial Cleanser","confidence":0.74}
