@@ -30,6 +30,11 @@ and split utilities, and pytest coverage for those foundations. API
 observation, model training, simulation, and full experiment phases have not
 started.
 
+MovieLens 1M has also been verified as a local real-data sanity path from a
+manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
+`sanity_50_users` prepare run produced only ignored local data outputs under
+`data/processed/`; it is a pipeline check, not an experimental result.
+
 No paid or external API has been called. No model, toy model, pilot experiment,
 full experiment, or server run has been executed. The synthetic fixture under
 `tests/fixtures/` is only for unit tests and pipeline sanity checks; it is not
@@ -176,6 +181,11 @@ python scripts/download_datasets.py --dataset movielens_1m
 
 This writes raw files under `data/raw/movielens_1m/` and a download manifest
 under `data/interim/movielens_1m/`. These paths are ignored by git.
+
+If network access or certificate validation blocks the automatic download,
+place the official GroupLens archive at
+`data/raw/movielens_1m/ml-1m.zip` and rerun the same command. The downloader
+will reuse the existing archive, compute its MD5, and extract it.
 
 Prepare MovieLens 1M with the default per-user leave-last-two split:
 
