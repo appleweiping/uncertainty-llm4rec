@@ -36,6 +36,7 @@ Files:
 - `grounding_diagnostics_summary.json`
 - `duplicate_title_groups.jsonl`
 - `low_margin_cases.jsonl`
+- `grounding_failure_cases.jsonl`
 - `grounding_diagnostics_report.md`
 - `grounding_diagnostics_manifest.json`
 
@@ -63,12 +64,37 @@ The observation margin audit reports:
 - low-margin cases with generated title, target title, confidence,
   correctness, grounding status, and top candidates.
 
+The failure taxonomy additionally reviews non-grounded predictions. If the run
+does not already contain grounding candidates, the diagnostic recomputes a
+lightweight catalog top-candidate similarity for review only. It does not
+change the official grounded prediction file.
+
+Failure cases are tagged with:
+
+- `near_miss_candidate`: top catalog candidate score is above
+  `--near-miss-threshold`;
+- `weak_candidate_overlap`: the generated title has some catalog overlap but
+  not enough for a near miss;
+- `no_catalog_support`: no useful catalog candidate is found;
+- `generated_title_too_generic`: the generated title is too short or generic;
+- `duplicate_title_risk`: normalized generated title collides with duplicated
+  catalog titles;
+- `target_title_near_generated`: target title and generated title are similar
+  but grounding still failed;
+- `high_confidence_ungrounded`: confidence is above
+  `--high-confidence-threshold` while grounding failed.
+
+The output includes `recommended_actions` for prompt review, catalog-constrained
+gates, threshold/normalization inspection, and duplicate-title disambiguation.
+These are triage labels, not paper conclusions.
+
 ## Interpretation Guardrails
 
 - Duplicate normalized titles indicate catalog ambiguity risk.
 - Low candidate margin indicates grounding instability risk.
+- Failure taxonomy labels indicate engineering follow-up categories.
 - These diagnostics do not prove model behavior or recommendation quality.
 - Mock, dry-run, and pilot outputs must retain their source status.
 - Before scaling API calls, inspect duplicate groups and low-margin cases to
-  decide whether title normalization, catalog metadata, or grounding thresholds
-  need revision.
+  decide whether title normalization, catalog metadata, grounding thresholds,
+  or prompt context need revision.

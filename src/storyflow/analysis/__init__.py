@@ -8,8 +8,10 @@ from storyflow.analysis.case_review import (
 from storyflow.analysis.grounding_diagnostics import (
     analyze_grounding_diagnostics,
     catalog_grounding_summary,
+    classify_grounding_failure,
     duplicate_title_groups,
     grounding_diagnostics_markdown,
+    grounding_failure_review,
     grounding_margin_summary,
 )
 from storyflow.analysis.observation import (
@@ -31,8 +33,10 @@ __all__ = [
     "bucket_summary",
     "catalog_grounding_summary",
     "case_review_markdown",
+    "classify_grounding_failure",
     "duplicate_title_groups",
     "grounding_diagnostics_markdown",
+    "grounding_failure_review",
     "grounding_margin_summary",
     "observation_analysis_markdown",
     "popularity_confidence_slope",

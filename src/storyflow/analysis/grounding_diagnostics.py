@@ -6,6 +6,7 @@ import csv
 import json
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -139,6 +140,94 @@ def _candidate_margin(row: dict[str, Any]) -> float | None:
     return float(top_score) - float(second_score)
 
 
+def _similarity(left: str, right: str) -> float:
+    if not left or not right:
+        return 0.0
+    if left == right:
+        return 1.0
+    return float(SequenceMatcher(None, left, right).ratio())
+
+
+def _quick_similarity(left: str, right: str) -> float:
+    if not left or not right:
+        return 0.0
+    if left == right:
+        return 1.0
+    return float(SequenceMatcher(None, left, right).quick_ratio())
+
+
+def _as_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _catalog_candidates(
+    generated_title: str,
+    catalog_rows: Iterable[dict[str, Any]],
+    *,
+    max_candidates: int = 3,
+) -> list[dict[str, Any]]:
+    generated_normalized = normalize_title(generated_title)
+    if not generated_normalized:
+        return []
+    generated_tokens = set(generated_normalized.split())
+    catalog = list(catalog_rows)
+    use_token_prefilter = len(catalog) > 500 and bool(generated_tokens)
+    candidates: list[dict[str, Any]] = []
+    for row in catalog:
+        title = str(row.get("title") or "")
+        normalized = str(row.get("title_normalized") or "").strip() or normalize_title(title)
+        if not normalized:
+            continue
+        if use_token_prefilter and not (generated_tokens & set(normalized.split())):
+            continue
+        score = _quick_similarity(generated_normalized, normalized)
+        candidates.append(
+            {
+                "item_id": row.get("item_id"),
+                "title": title,
+                "score": score,
+                "title_normalized": normalized,
+                "popularity": int(row.get("popularity") or 0),
+                "popularity_bucket": row.get("popularity_bucket"),
+            }
+        )
+    candidates.sort(
+        key=lambda candidate: (
+            -float(candidate["score"]),
+            -int(candidate.get("popularity") or 0),
+            str(candidate.get("item_id") or ""),
+        )
+    )
+    shortlist_size = min(len(candidates), max(max_candidates * 20, 50))
+    rescored_candidates: list[dict[str, Any]] = []
+    for candidate in candidates[:shortlist_size]:
+        rescored_candidates.append(
+            {
+                **candidate,
+                "score": _similarity(generated_normalized, str(candidate["title_normalized"])),
+            }
+        )
+    rescored_candidates.sort(
+        key=lambda candidate: (
+            -float(candidate["score"]),
+            -int(candidate.get("popularity") or 0),
+            str(candidate.get("item_id") or ""),
+        )
+    )
+    return [
+        {
+            **{key: value for key, value in candidate.items() if key != "title_normalized"},
+            "rank": index + 1,
+        }
+        for index, candidate in enumerate(rescored_candidates[:max_candidates])
+    ]
+
+
 def _compact_low_margin_case(row: dict[str, Any]) -> dict[str, Any]:
     top_score, second_score = _candidate_scores(row)
     candidates = row.get("grounding_candidates") or []
@@ -166,6 +255,170 @@ def _compact_low_margin_case(row: dict[str, Any]) -> dict[str, Any]:
             }
             for candidate in candidates[:3]
         ],
+    }
+
+
+def _failure_actions(categories: Iterable[str]) -> list[str]:
+    category_set = set(categories)
+    actions: list[str] = []
+    if "generated_title_too_generic" in category_set:
+        actions.append("tighten_prompt_for_specific_catalog_title")
+    if "near_miss_candidate" in category_set:
+        actions.append("inspect_grounding_threshold_and_normalization")
+    if "weak_candidate_overlap" in category_set:
+        actions.append("inspect_prompt_catalog_alignment")
+    if "no_catalog_support" in category_set:
+        actions.append("consider_catalog_constrained_gate_or_retrieval_context")
+    if "duplicate_title_risk" in category_set:
+        actions.append("review_duplicate_title_disambiguation")
+    if "target_title_near_generated" in category_set:
+        actions.append("inspect_target_near_miss_grounding")
+    if "high_confidence_ungrounded" in category_set:
+        actions.append("prioritize_case_review_before_api_scale")
+    if not actions:
+        actions.append("manual_review")
+    return sorted(dict.fromkeys(actions))
+
+
+def classify_grounding_failure(
+    row: dict[str, Any],
+    *,
+    catalog_rows: Iterable[dict[str, Any]] = (),
+    duplicate_normalized_titles: set[str] | None = None,
+    near_miss_threshold: float = 0.70,
+    weak_match_threshold: float = 0.40,
+    high_confidence_threshold: float = 0.70,
+    max_candidates: int = 3,
+) -> dict[str, Any]:
+    """Classify one non-grounded prediction into actionable diagnostic buckets."""
+
+    duplicate_normalized_titles = duplicate_normalized_titles or set()
+    generated_title = str(row.get("generated_title") or "")
+    target_title = str(row.get("target_title") or "")
+    generated_normalized = normalize_title(generated_title)
+    target_normalized = normalize_title(target_title)
+    existing_candidates = row.get("grounding_candidates") or []
+    catalog_candidates = (
+        [
+            {
+                "item_id": candidate.get("item_id"),
+                "title": candidate.get("title"),
+                "score": float(candidate.get("score") or 0.0),
+                "rank": candidate.get("rank") or index + 1,
+            }
+            for index, candidate in enumerate(existing_candidates[:max_candidates])
+        ]
+        if isinstance(existing_candidates, list) and existing_candidates
+        else _catalog_candidates(
+            generated_title,
+            catalog_rows,
+            max_candidates=max_candidates,
+        )
+    )
+    top_score = float(catalog_candidates[0]["score"]) if catalog_candidates else 0.0
+    second_score = float(catalog_candidates[1]["score"]) if len(catalog_candidates) > 1 else None
+    confidence = _as_float(row.get("confidence"))
+    target_similarity = _similarity(generated_normalized, target_normalized)
+    token_count = len(generated_normalized.split()) if generated_normalized else 0
+
+    categories: list[str] = []
+    if confidence is not None and confidence >= high_confidence_threshold:
+        categories.append("high_confidence_ungrounded")
+    if generated_normalized in duplicate_normalized_titles:
+        categories.append("duplicate_title_risk")
+    if token_count <= 2 or len(generated_normalized) < 8:
+        categories.append("generated_title_too_generic")
+    if top_score >= near_miss_threshold:
+        categories.append("near_miss_candidate")
+    elif top_score >= weak_match_threshold:
+        categories.append("weak_candidate_overlap")
+    else:
+        categories.append("no_catalog_support")
+    if target_similarity >= near_miss_threshold:
+        categories.append("target_title_near_generated")
+    else:
+        categories.append("target_title_distant")
+
+    return {
+        "input_id": row.get("input_id"),
+        "example_id": row.get("example_id"),
+        "user_id": row.get("user_id"),
+        "generated_title": generated_title,
+        "target_title": target_title,
+        "generated_title_normalized": generated_normalized,
+        "target_title_normalized": target_normalized,
+        "confidence": confidence,
+        "correctness": row.get("correctness"),
+        "grounding_status": row.get("grounding_status"),
+        "grounded_item_id": row.get("grounded_item_id"),
+        "grounding_score": row.get("grounding_score"),
+        "target_popularity_bucket": row.get("target_popularity_bucket"),
+        "generated_target_similarity": target_similarity,
+        "top_candidate_score": top_score,
+        "second_candidate_score": second_score,
+        "top_candidates": catalog_candidates,
+        "failure_categories": categories,
+        "recommended_actions": _failure_actions(categories),
+    }
+
+
+def grounding_failure_review(
+    grounded_rows: Iterable[dict[str, Any]],
+    catalog_rows: Iterable[dict[str, Any]],
+    duplicate_groups: Iterable[dict[str, Any]],
+    *,
+    near_miss_threshold: float = 0.70,
+    weak_match_threshold: float = 0.40,
+    high_confidence_threshold: float = 0.70,
+    max_cases: int = 50,
+) -> dict[str, Any]:
+    rows = list(grounded_rows)
+    catalog = list(catalog_rows)
+    duplicate_normalized_titles = {
+        str(group.get("normalized_title") or "")
+        for group in duplicate_groups
+        if str(group.get("normalized_title") or "")
+    }
+    failure_rows = [
+        row
+        for row in rows
+        if not row.get("grounded_item_id")
+        or str(row.get("grounding_status") or "").lower()
+        in {"ambiguous", "ungrounded", "out_of_catalog", "parse_failed"}
+    ]
+    cases = [
+        classify_grounding_failure(
+            row,
+            catalog_rows=catalog,
+            duplicate_normalized_titles=duplicate_normalized_titles,
+            near_miss_threshold=near_miss_threshold,
+            weak_match_threshold=weak_match_threshold,
+            high_confidence_threshold=high_confidence_threshold,
+        )
+        for row in failure_rows
+    ]
+    cases.sort(
+        key=lambda row: (
+            -float(row.get("confidence") or 0.0),
+            -float(row.get("top_candidate_score") or 0.0),
+            str(row.get("input_id") or ""),
+        )
+    )
+    category_counts = Counter(
+        category for case in cases for category in case.get("failure_categories", [])
+    )
+    action_counts = Counter(action for case in cases for action in case.get("recommended_actions", []))
+    status_counts = Counter(str(row.get("grounding_status") or "unknown") for row in failure_rows)
+    return {
+        "failure_row_count": len(failure_rows),
+        "failure_fraction": (len(failure_rows) / len(rows)) if rows else 0.0,
+        "near_miss_threshold": near_miss_threshold,
+        "weak_match_threshold": weak_match_threshold,
+        "high_confidence_threshold": high_confidence_threshold,
+        "status_counts": dict(sorted(status_counts.items())),
+        "category_counts": dict(sorted(category_counts.items())),
+        "recommended_action_counts": dict(sorted(action_counts.items())),
+        "cases": cases[:max_cases],
     }
 
 
@@ -210,6 +463,7 @@ def grounding_margin_summary(
 def grounding_diagnostics_markdown(summary: dict[str, Any]) -> str:
     catalog = summary["catalog"]
     margins = summary.get("observation_margins")
+    failures = summary.get("grounding_failures")
     lines = [
         f"# Grounding Diagnostics: {summary.get('dataset')} / {summary.get('processed_suffix')}",
         "",
@@ -255,6 +509,24 @@ def grounding_diagnostics_markdown(summary: dict[str, Any]) -> str:
                 f"- Low-margin status counts: {margins['low_margin_status_counts']}",
             ]
         )
+    if failures is not None:
+        lines.extend(
+            [
+                "",
+                "## Grounding Failure Taxonomy",
+                "",
+                f"- Failure rows: {failures['failure_row_count']}",
+                f"- Failure fraction: {failures['failure_fraction']}",
+                f"- Near-miss threshold: {failures['near_miss_threshold']}",
+                f"- Weak-match threshold: {failures['weak_match_threshold']}",
+                f"- High-confidence threshold: {failures['high_confidence_threshold']}",
+                f"- Failure status counts: {failures['status_counts']}",
+                f"- Failure category counts: {failures['category_counts']}",
+                f"- Recommended action counts: {failures['recommended_action_counts']}",
+                "",
+                "Top cases are sorted by confidence and catalog-candidate score for manual QA.",
+            ]
+        )
     lines.extend(
         [
             "",
@@ -275,6 +547,9 @@ def analyze_grounding_diagnostics(
     grounded_jsonl: str | Path | None = None,
     manifest_json: str | Path | None = None,
     margin_threshold: float = 0.03,
+    near_miss_threshold: float = 0.70,
+    weak_match_threshold: float = 0.40,
+    high_confidence_threshold: float = 0.70,
     max_groups: int = 50,
     max_cases: int = 50,
 ) -> dict[str, Any]:
@@ -298,6 +573,19 @@ def analyze_grounding_diagnostics(
         if grounded_jsonl
         else None
     )
+    failure_info = (
+        grounding_failure_review(
+            grounded_rows,
+            catalog_rows,
+            duplicate_groups,
+            near_miss_threshold=near_miss_threshold,
+            weak_match_threshold=weak_match_threshold,
+            high_confidence_threshold=high_confidence_threshold,
+            max_cases=max_cases,
+        )
+        if grounded_jsonl
+        else None
+    )
     summary = {
         "created_at_utc": utc_now_iso(),
         "dataset": dataset,
@@ -312,6 +600,7 @@ def analyze_grounding_diagnostics(
         "catalog": catalog_grounding_summary(catalog_rows),
         "duplicate_groups": duplicate_groups,
         "observation_margins": margin_info,
+        "grounding_failures": failure_info,
         "is_experiment_result": False,
         "note": "Grounding diagnostics only. Not model behavior or paper evidence.",
     }
@@ -319,6 +608,7 @@ def analyze_grounding_diagnostics(
     summary_path = output_path / "grounding_diagnostics_summary.json"
     duplicates_path = output_path / "duplicate_title_groups.jsonl"
     low_margin_path = output_path / "low_margin_cases.jsonl"
+    failure_cases_path = output_path / "grounding_failure_cases.jsonl"
     report_path = output_path / "grounding_diagnostics_report.md"
     manifest_out_path = output_path / "grounding_diagnostics_manifest.json"
 
@@ -331,6 +621,10 @@ def analyze_grounding_diagnostics(
         low_margin_path,
         margin_info["low_margin_cases"] if margin_info is not None else [],
     )
+    write_jsonl(
+        failure_cases_path,
+        failure_info["cases"] if failure_info is not None else [],
+    )
     report_path.write_text(grounding_diagnostics_markdown(summary), encoding="utf-8")
     analysis_manifest = {
         "created_at_utc": utc_now_iso(),
@@ -338,6 +632,7 @@ def analyze_grounding_diagnostics(
         "summary": str(summary_path),
         "duplicate_title_groups": str(duplicates_path),
         "low_margin_cases": str(low_margin_path),
+        "grounding_failure_cases": str(failure_cases_path),
         "report": str(report_path),
         "source_catalog_csv": str(catalog_path),
         "source_grounded_jsonl": str(grounded_jsonl) if grounded_jsonl else None,

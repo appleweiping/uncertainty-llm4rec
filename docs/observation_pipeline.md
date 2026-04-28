@@ -243,6 +243,10 @@ python scripts/analyze_grounding_diagnostics.py --dataset amazon_reviews_2023_be
 ```
 
 If grounded predictions already exist, add `--grounded-jsonl` and
-`--manifest-json` to inspect top-two candidate margins. This produces ignored
-duplicate-title and low-margin reports under `outputs/grounding_diagnostics/`.
-The diagnostics are QA artifacts, not model behavior claims.
+`--manifest-json` to inspect top-two candidate margins and grounding failure
+taxonomy. This produces ignored duplicate-title, low-margin, and
+`grounding_failure_cases.jsonl` reports under `outputs/grounding_diagnostics/`.
+The failure taxonomy tags ungrounded cases as near misses, weak catalog
+overlap, no catalog support, generic generated titles, duplicate-title risk, or
+high-confidence ungrounded predictions. These diagnostics are QA artifacts, not
+model behavior claims.

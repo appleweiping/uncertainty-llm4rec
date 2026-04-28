@@ -39,6 +39,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--manifest-json")
     parser.add_argument("--output-dir")
     parser.add_argument("--margin-threshold", type=float, default=0.03)
+    parser.add_argument("--near-miss-threshold", type=float, default=0.70)
+    parser.add_argument("--weak-match-threshold", type=float, default=0.40)
+    parser.add_argument("--high-confidence-threshold", type=float, default=0.70)
     parser.add_argument("--max-groups", type=int, default=50)
     parser.add_argument("--max-cases", type=int, default=50)
     args = parser.parse_args(argv)
@@ -69,6 +72,9 @@ def main(argv: list[str] | None = None) -> int:
         dataset=args.dataset,
         processed_suffix=args.processed_suffix,
         margin_threshold=args.margin_threshold,
+        near_miss_threshold=args.near_miss_threshold,
+        weak_match_threshold=args.weak_match_threshold,
+        high_confidence_threshold=args.high_confidence_threshold,
         max_groups=args.max_groups,
         max_cases=args.max_cases,
     )

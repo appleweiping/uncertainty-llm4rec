@@ -463,8 +463,12 @@ python scripts/analyze_grounding_diagnostics.py --dataset amazon_reviews_2023_be
 ```
 
 This writes ignored artifacts under `outputs/grounding_diagnostics/...`,
-including duplicate normalized title groups and low-margin grounding cases. It
-is a QA artifact only, not a model-performance result.
+including duplicate normalized title groups, low-margin grounding cases, and
+`grounding_failure_cases.jsonl`. Failure cases are tagged as near-miss
+candidates, weak catalog overlap, no catalog support, generic generated title,
+duplicate-title risk, and high-confidence ungrounded cases, with recommended
+next actions for prompt, catalog, or grounding review. It is a QA artifact
+only, not a model-performance result.
 
 ## Amazon Beauty Sample Observation Gate
 
