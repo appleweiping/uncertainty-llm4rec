@@ -247,6 +247,12 @@ Digital_Music, Handmade_Products, and Health_and_Personal_Care. Beauty remains
 the first full-data gate; the additional categories are robustness candidates
 after Beauty sample/full preparation is reproducible.
 
+Amazon Beauty local sample preparation must be labeled as readiness only. The
+sample command uses `--sample-mode --max-records N`, writes
+`is_sample_result=true` and `is_experiment_result=false` to the preprocess
+manifest, and is not paper evidence. Full Amazon preparation requires explicit
+approval and `--allow-full`.
+
 ## API Policy
 
 The first API pilot target is DeepSeek only. API adapters for Qwen/DashScope,

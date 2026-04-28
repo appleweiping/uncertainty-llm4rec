@@ -275,6 +275,17 @@ Amazon Beauty full prepare is server/big-disk oriented and has not been run:
 python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
 ```
 
+Run a local Beauty sample prepare after raw JSONL files are present:
+
+```powershell
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --sample-mode --max-records 5000 --output-suffix sample_5k --min-user-interactions 1 --user-k-core 1 --item-k-core 1 --min-history 1 --max-history 20
+```
+
+Sample outputs are written under `data/processed/amazon_reviews_2023_beauty/`
+and are ignored by git. They are readiness artifacts only, not full processed
+data and not paper evidence. Full prepare is guarded; it requires an explicit
+`--allow-full` flag after the user approves a full run.
+
 Validate a processed dataset before building observation inputs:
 
 ```powershell
@@ -345,6 +356,8 @@ Current status markers:
   analysis.
 - API pilot: not yet run.
 - Amazon Beauty local raw files: available for readiness/sample checks.
+- Amazon Beauty sample prepare gate: implemented; sample outputs are ignored
+  local artifacts, not full-data results.
 - Amazon Beauty full processed data: not yet produced.
 
 ## Phase 2C Observation Analysis

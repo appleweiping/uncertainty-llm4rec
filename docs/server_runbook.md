@@ -107,25 +107,28 @@ Prepare dry-run/readiness:
 python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
 ```
 
-Full prepare command shape after raw JSONL placement:
+Full prepare command shape after raw JSONL placement and explicit full-run
+approval:
 
 ```powershell
-python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full --allow-full
 ```
 
 Local sample prepare before full run:
 
 ```powershell
-python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --output-suffix sample_1k --max-records 1000
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --sample-mode --max-records 5000 --output-suffix sample_5k --min-user-interactions 1 --user-k-core 1 --item-k-core 1 --min-history 1 --max-history 20
 ```
 
 Sample prepare is only a pipeline readiness check. It is not a full server run
-and must not be reported as experimental evidence.
+and must not be reported as experimental evidence. The prepare script blocks
+accidental full preprocessing unless `--allow-full` is passed.
 
 Expected processed outputs:
 
 - `item_catalog.csv`
 - `interactions.csv`
+- `item_popularity.csv`
 - `user_sequences.jsonl`
 - `observation_examples.jsonl`
 - `preprocess_manifest.json`

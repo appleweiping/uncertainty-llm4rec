@@ -74,20 +74,28 @@ Dry-run/readiness:
 python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
 ```
 
-Full prepare command shape once raw JSONL files exist:
+Full prepare command shape once raw JSONL files exist and the full run is
+explicitly approved:
 
 ```powershell
-python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full --allow-full
 ```
 
 Small sample prepare command shape for local pipeline sanity:
 
 ```powershell
-python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --output-suffix sample_1k --max-records 1000
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --sample-mode --max-records 5000 --output-suffix sample_5k --min-user-interactions 1 --user-k-core 1 --item-k-core 1 --min-history 1 --max-history 20
 ```
 
-Sample prepare is not a full processed result and must not be used for paper
+Sample prepare only scans the requested review prefix and then loads metadata
+for the surviving item ids. It writes `is_sample_result=true`,
+`is_full_result=false`, and `is_experiment_result=false` in the preprocess
+manifest. It is not a full processed result and must not be used for paper
 claims.
+
+The script blocks accidental full preprocessing unless `--allow-full` is
+provided. This prevents a local readiness command from becoming an unapproved
+full-data run.
 
 The prepare code defines:
 

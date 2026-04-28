@@ -8,6 +8,7 @@ import urllib.error
 import urllib.request
 from collections import Counter
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -134,6 +135,43 @@ def iter_jsonl(path: str | Path, *, limit: int | None = None) -> Iterable[dict[s
             count += 1
             if limit is not None and count >= limit:
                 break
+
+
+def _metadata_items_for_interactions(
+    *,
+    metadata_jsonl: str | Path,
+    config: dict[str, Any],
+    needed_item_ids: set[str],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Read only metadata rows needed by the current interaction sample."""
+
+    if not needed_item_ids:
+        return [], {
+            "needed_item_count": 0,
+            "matched_item_count": 0,
+            "missing_item_count": 0,
+            "metadata_rows_scanned": 0,
+        }
+    item_field = str(config.get("metadata_join_key") or config.get("item_id_field") or "parent_asin")
+    items_by_id: dict[str, dict[str, Any]] = {}
+    rows_scanned = 0
+    for raw in iter_jsonl(metadata_jsonl, limit=None):
+        rows_scanned += 1
+        raw_item_id = str(raw.get(item_field) or "").strip()
+        if raw_item_id not in needed_item_ids or raw_item_id in items_by_id:
+            continue
+        item = amazon_metadata_to_item(raw, config)
+        if item["item_id"] and item["title"]:
+            items_by_id[item["item_id"]] = item
+        if len(items_by_id) >= len(needed_item_ids):
+            break
+    metadata_stats = {
+        "needed_item_count": len(needed_item_ids),
+        "matched_item_count": len(items_by_id),
+        "missing_item_count": max(0, len(needed_item_ids) - len(items_by_id)),
+        "metadata_rows_scanned": rows_scanned,
+    }
+    return list(items_by_id.values()), metadata_stats
 
 
 def _sample_schema(
@@ -281,6 +319,13 @@ def prepare_amazon_from_jsonl(
 ) -> AmazonPrepareSummary:
     """Prepare Amazon JSONL files into the Storyflow processed schema."""
 
+    min_user_interactions = int(config.get("preprocess_min_user_interactions") or 4)
+    user_k_core = int(config.get("preprocess_user_k_core") or 5)
+    item_k_core = int(config.get("preprocess_item_k_core") or 5)
+    min_history = int(config.get("preprocess_min_history") or 3)
+    max_history = int(config.get("preprocess_max_history") or 50)
+    split_policy = str(config.get("preprocess_split_policy") or "global_chronological")
+
     interactions = [
         row
         for row in (
@@ -289,23 +334,28 @@ def prepare_amazon_from_jsonl(
         )
         if row["user_id"] and row["item_id"] and row["timestamp"] > 0
     ]
-    metadata_items = [
-        item
-        for item in (
-            amazon_metadata_to_item(raw, config)
-            for raw in iter_jsonl(metadata_jsonl, limit=None)
-        )
-        if item["item_id"] and item["title"]
-    ]
     interactions = filter_users_by_interaction_count(
         interactions,
-        min_interactions=int(config.get("preprocess_min_user_interactions") or 4),
+        min_interactions=min_user_interactions,
     )
     interactions = k_core_filter(
         interactions,
-        user_k=int(config.get("preprocess_user_k_core") or 5),
-        item_k=int(config.get("preprocess_item_k_core") or 5),
+        user_k=user_k_core,
+        item_k=item_k_core,
     )
+    interactions = chronological_sort(interactions)
+    needed_item_ids = {str(row["item_id"]) for row in interactions}
+    metadata_items, metadata_stats = _metadata_items_for_interactions(
+        metadata_jsonl=metadata_jsonl,
+        config=config,
+        needed_item_ids=needed_item_ids,
+    )
+    available_item_ids = {str(item["item_id"]) for item in metadata_items}
+    interactions = [
+        row
+        for row in interactions
+        if str(row["item_id"]) in available_item_ids
+    ]
     interactions = chronological_sort(interactions)
     items = truncate_items_to_interactions(metadata_items, interactions)
     popularity = compute_item_popularity(interactions)
@@ -316,9 +366,6 @@ def prepare_amazon_from_jsonl(
         tail_fraction=float(config.get("tail_fraction") or 0.2),
     )
     sequences = build_user_sequences(interactions)
-    min_history = int(config.get("preprocess_min_history") or 3)
-    max_history = int(config.get("preprocess_max_history") or 50)
-    split_policy = str(config.get("preprocess_split_policy") or "global_chronological")
     if split_policy == "global_chronological":
         examples = make_rolling_examples(
             sequences,
@@ -348,13 +395,29 @@ def prepare_amazon_from_jsonl(
         interactions,
         ["user_id", "item_id", "rating", "timestamp"],
     )
+    write_csv_rows(
+        output_dir / "item_popularity.csv",
+        [
+            {"item_id": item_id, "popularity": count}
+            for item_id, count in sorted(popularity.items())
+        ],
+        ["item_id", "popularity"],
+    )
     write_jsonl(output_dir / "user_sequences.jsonl", sequences)
     write_jsonl(output_dir / "observation_examples.jsonl", examples)
     split_counts = dict(Counter(example["split"] for example in examples))
+    is_sample_result = max_records is not None
     manifest = {
         "dataset": config.get("name"),
         "category_name": config.get("category_name"),
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "output_suffix": output_suffix,
         "split_policy": split_policy,
+        "min_user_interactions": min_user_interactions,
+        "user_k_core": user_k_core,
+        "item_k_core": item_k_core,
+        "min_history": min_history,
+        "max_history": max_history,
         "item_count": len(items),
         "interaction_count": len(interactions),
         "user_count": len(sequences),
@@ -364,6 +427,39 @@ def prepare_amazon_from_jsonl(
         "source_metadata_jsonl": str(metadata_jsonl),
         "max_records": max_records,
         "is_full_result": max_records is None,
+        "is_sample_result": is_sample_result,
+        "is_experiment_result": False,
+        "result_scope": "local_sample" if is_sample_result else "full_prepare_entry",
+        "claim_note": (
+            "Local sample/sanity output only; not a paper result."
+            if is_sample_result
+            else "Full prepare output requires explicit run approval and manifest review before any claim."
+        ),
+        "metadata_stats": metadata_stats,
+        "config_snapshot": {
+            "name": config.get("name"),
+            "category_name": config.get("category_name"),
+            "source_name": config.get("source_name"),
+            "source_url": config.get("source_url"),
+            "raw_reviews_path": config.get("raw_reviews_path"),
+            "raw_metadata_path": config.get("raw_metadata_path"),
+            "processed_dir": config.get("processed_dir"),
+            "preprocess_min_user_interactions": config.get("preprocess_min_user_interactions"),
+            "preprocess_user_k_core": config.get("preprocess_user_k_core"),
+            "preprocess_item_k_core": config.get("preprocess_item_k_core"),
+            "preprocess_min_history": config.get("preprocess_min_history"),
+            "preprocess_max_history": config.get("preprocess_max_history"),
+            "preprocess_split_policy": config.get("preprocess_split_policy"),
+            "head_fraction": config.get("head_fraction"),
+            "tail_fraction": config.get("tail_fraction"),
+        },
+        "outputs": {
+            "item_catalog": str(output_dir / "item_catalog.csv"),
+            "interactions": str(output_dir / "interactions.csv"),
+            "item_popularity": str(output_dir / "item_popularity.csv"),
+            "user_sequences": str(output_dir / "user_sequences.jsonl"),
+            "observation_examples": str(output_dir / "observation_examples.jsonl"),
+        },
     }
     (output_dir / "preprocess_manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True),

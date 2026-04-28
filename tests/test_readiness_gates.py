@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 
 from scripts.check_api_pilot_readiness import main as readiness_main
-from storyflow.data import inspect_amazon_config, resolve_existing_raw_path
+from storyflow.data import inspect_amazon_config, prepare_amazon_from_jsonl, resolve_existing_raw_path
 from storyflow.observation import write_jsonl
 from storyflow.providers import check_api_pilot_readiness
 
@@ -207,3 +207,69 @@ def test_amazon_local_path_resolution_and_schema_sample() -> None:
     assert manifest["raw_reviews_path_exists"] is True
     assert manifest["review_schema_sample"]["sample_records_read"] == 1
     assert "user_id" in manifest["review_schema_sample"]["fields_seen"]
+
+
+def test_amazon_sample_prepare_writes_manifest_and_popularity() -> None:
+    workspace = _workspace("amazon_sample_prepare")
+    raw_dir = workspace / "raw"
+    processed_dir = workspace / "processed"
+    raw_dir.mkdir()
+    reviews = raw_dir / "Tiny.jsonl"
+    metadata = raw_dir / "meta_Tiny.jsonl"
+    write_jsonl(
+        reviews,
+        [
+            {"user_id": "u1", "parent_asin": "p1", "rating": 5, "timestamp": 1},
+            {"user_id": "u1", "parent_asin": "p2", "rating": 5, "timestamp": 2},
+            {"user_id": "u1", "parent_asin": "p3", "rating": 4, "timestamp": 3},
+            {"user_id": "u2", "parent_asin": "p1", "rating": 5, "timestamp": 1},
+            {"user_id": "u2", "parent_asin": "p2", "rating": 4, "timestamp": 4},
+        ],
+    )
+    write_jsonl(
+        metadata,
+        [
+            {"parent_asin": "unused", "title": "Unused Item"},
+            {"parent_asin": "p1", "title": "Tiny Cleanser", "categories": ["Beauty"], "store": "A"},
+            {"parent_asin": "p2", "title": "Tiny Lotion", "categories": ["Beauty"], "store": "B"},
+            {"parent_asin": "p3", "title": "Tiny Brush", "categories": ["Beauty"], "store": "C"},
+        ],
+    )
+    config = {
+        "name": "amazon_reviews_2023_tiny",
+        "category_name": "Tiny",
+        "source_name": "fixture",
+        "source_url": "https://example.invalid",
+        "processed_dir": str(processed_dir),
+        "user_id_field": "user_id",
+        "item_id_field": "parent_asin",
+        "rating_field": "rating",
+        "timestamp_field": "timestamp",
+        "metadata_join_key": "parent_asin",
+        "title_field": "title",
+        "preprocess_min_user_interactions": 1,
+        "preprocess_user_k_core": 1,
+        "preprocess_item_k_core": 1,
+        "preprocess_min_history": 1,
+        "preprocess_max_history": 5,
+        "preprocess_split_policy": "global_chronological",
+        "head_fraction": 0.4,
+        "tail_fraction": 0.4,
+    }
+
+    summary = prepare_amazon_from_jsonl(
+        config=config,
+        reviews_jsonl=reviews,
+        metadata_jsonl=metadata,
+        output_suffix="sample_test",
+        max_records=5,
+    )
+
+    manifest = json.loads((summary.output_dir / "preprocess_manifest.json").read_text(encoding="utf-8"))
+    assert summary.example_count > 0
+    assert manifest["is_sample_result"] is True
+    assert manifest["is_full_result"] is False
+    assert manifest["is_experiment_result"] is False
+    assert manifest["result_scope"] == "local_sample"
+    assert manifest["metadata_stats"]["matched_item_count"] == 3
+    assert (summary.output_dir / "item_popularity.csv").exists()

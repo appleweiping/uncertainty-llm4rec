@@ -40,9 +40,10 @@ license_note: Check Hugging Face dataset card and McAuley Lab usage terms before
 server_scale: true
 requires_large_download: true
 local_sample_mode: schema_or_small_sample_only
-local_sample_max_records: 1000
+local_sample_max_records: 5000
+local_sample_command_template: python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --sample-mode --max-records 5000 --output-suffix sample_5k --min-user-interactions 1 --user-k-core 1 --item-k-core 1 --min-history 1 --max-history 20
 server_full_mode: required_for_full_experiment
-full_mode_command_template: python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full
+full_mode_command_template: python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full --allow-full
 preprocess_min_user_interactions: 4
 preprocess_user_k_core: 5
 preprocess_item_k_core: 5
