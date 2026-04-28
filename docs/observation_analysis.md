@@ -111,3 +111,29 @@ For full runs, every plot or table must trace back to:
 - dataset config;
 - provider/model config;
 - command log.
+
+## Case Review
+
+Small smoke and pilot runs should also get a case-review pass before scale-up:
+
+```powershell
+python scripts/review_observation_cases.py --run-dir outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_api_pilot20_non_thinking_20260428
+```
+
+Outputs are written under `outputs/case_reviews/...`:
+
+- `case_review_summary.json`
+- `case_review_cases.jsonl`
+- `case_review.md`
+- `case_review_manifest.json`
+
+The review joins the source observation input, catalog, generated title,
+grounded item, target title, confidence, target/generated popularity buckets,
+and the user's history-title tail. It provides failure taxonomy labels such as
+`wrong_high_confidence`, `ungrounded_high_confidence`,
+`correct_low_confidence`, `self_verified_wrong`,
+`generated_more_popular_than_target`, and `grounding_ambiguous`.
+
+This taxonomy is a debugging tool for prompt/grounding/API scale-up decisions.
+It must not be quoted as a paper result unless it comes from an approved full
+run with complete manifests and the paper explicitly labels the scope.

@@ -140,6 +140,13 @@ Phase 2C reads these outputs without mutating them:
 - `analysis_manifest.json`
 - `outputs/run_registry/observation_runs.jsonl`
 
+Pilot case review is a separate diagnostic layer:
+
+- `case_review_summary.json`
+- `case_review_cases.jsonl`
+- `case_review.md`
+- `case_review_manifest.json`
+
 Default dry-run command:
 
 ```powershell
@@ -164,3 +171,14 @@ correctness, wrong-high-confidence cases, correct-low-confidence cases,
 grounding failures, parse failures, and an exploratory popularity-confidence
 slope. Analysis of mock or dry-run outputs is still only a schema sanity
 artifact and not paper evidence.
+
+Run case review on an approved smoke/pilot output directory:
+
+```powershell
+python scripts/review_observation_cases.py --run-dir outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_api_pilot20_non_thinking_20260428
+```
+
+Case review joins the observation input history, generated title, grounded
+catalog item, target title, confidence, and target/generated popularity
+buckets. It is meant for prompt/grounding triage before scale-up, not for
+paper claims.

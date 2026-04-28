@@ -83,6 +83,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
   parsing, and real-pilot guardrails.
 - `docs/observation_analysis.md`: analysis reports, reliability data, risk
   cases, and local ignored run registry.
+- `docs/pilot_case_review.md`: pilot case-review and failure-taxonomy layer for
+  prompt, grounding, and confidence triage before scaling.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
 - `docs/codex_execution_protocol.md`: required workflow for each Codex task.
 - `docs/change_requests/` and `docs/decision_log.md`: scoped research and
@@ -389,6 +391,43 @@ wrong-high-confidence cases, correct-low-confidence cases, grounding failures,
 parse failure summaries, and an exploratory popularity-confidence slope. When
 the source run is mock or dry-run, these are only pipeline sanity artifacts and
 must not be reported as real model behavior or paper evidence.
+
+Review concrete pilot cases and failure taxonomy:
+
+```powershell
+python scripts/review_observation_cases.py --run-dir outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_api_pilot20_non_thinking_20260428
+```
+
+This writes ignored artifacts under `outputs/case_reviews/...`, including
+`case_review_summary.json`, `case_review_cases.jsonl`, and `case_review.md`.
+The review joins generated titles, grounded catalog items, target titles,
+confidence, popularity buckets, and the tail of the user's history. It is a
+pilot diagnostic, not a paper result.
+
+## Amazon Beauty Sample Observation Gate
+
+After a local Amazon Beauty sample prepare exists, validate it before building
+observation inputs:
+
+```powershell
+python scripts/validate_processed_dataset.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k
+```
+
+Then build a small, stratified observation input file without calling any API:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity
+```
+
+The output is ignored under:
+
+```text
+outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl
+```
+
+This gate proves the Amazon Beauty sample is ready for prompt construction and
+future approved API observation. It is not a full Amazon run and not paper
+evidence.
 
 ## Tests
 

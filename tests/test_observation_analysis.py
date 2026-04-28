@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+import csv
 import json
 import uuid
 from pathlib import Path
 
 from scripts.analyze_observation import main as analyze_main
+from scripts.review_observation_cases import main as review_main
 from storyflow.analysis import (
     analyze_observation_run,
     append_registry_record,
     popularity_confidence_slope,
     reliability_bins,
+    review_observation_cases,
     summarize_observation_records,
 )
 from storyflow.observation import read_jsonl, write_jsonl
@@ -205,3 +208,104 @@ def test_analyze_observation_cli_run_dir() -> None:
     assert code == 0
     assert (output_dir / "analysis_summary.json").exists()
     assert read_jsonl(workspace / "registry.jsonl")[0]["source_label"] == "cli-test"
+
+
+def test_case_review_taxonomy_joins_history_and_catalog() -> None:
+    workspace = _workspace("case_review")
+    run_dir = workspace / "run"
+    run_dir.mkdir()
+    catalog = workspace / "item_catalog.csv"
+    with catalog.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=["item_id", "title", "title_normalized", "popularity", "popularity_bucket"],
+        )
+        writer.writeheader()
+        writer.writerow(
+            {
+                "item_id": "i2",
+                "title": "Popular Wrong",
+                "title_normalized": "popular wrong",
+                "popularity": 200,
+                "popularity_bucket": "head",
+            }
+        )
+        writer.writerow(
+            {
+                "item_id": "i3",
+                "title": "Tail Hit",
+                "title_normalized": "tail hit",
+                "popularity": 2,
+                "popularity_bucket": "tail",
+            }
+        )
+    input_jsonl = workspace / "inputs.jsonl"
+    write_jsonl(
+        input_jsonl,
+        [
+            {
+                "input_id": "b",
+                "user_id": "u2",
+                "split": "test",
+                "history_item_titles": ["A", "B", "C"],
+                "history_length": 3,
+                "target_item_id": "i3",
+                "target_title": "Tail Truth",
+                "target_popularity": 2,
+                "target_popularity_bucket": "tail",
+                "source": {"catalog_csv": str(catalog)},
+            }
+        ],
+    )
+    write_jsonl(run_dir / "grounded_predictions.jsonl", [_grounded_rows()[1]])
+    (run_dir / "manifest.json").write_text(
+        json.dumps(
+            {
+                "provider": "deepseek",
+                "model": "deepseek-v4-flash",
+                "dry_run": False,
+                "api_called": True,
+                "input_jsonl": str(input_jsonl),
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    manifest = review_observation_cases(
+        grounded_jsonl=run_dir / "grounded_predictions.jsonl",
+        manifest_json=run_dir / "manifest.json",
+        output_dir=workspace / "case_review",
+    )
+
+    summary = json.loads(Path(manifest["summary"]).read_text(encoding="utf-8"))
+    cases = read_jsonl(manifest["cases"])
+    assert summary["provider"] == "deepseek"
+    assert summary["taxonomy_counts"]["wrong_high_confidence"] == 1
+    assert "self_verified_wrong" not in summary["tag_counts"]
+    assert "generated_more_popular_than_target" in cases[0]["taxonomy_tags"]
+    assert cases[0]["history_titles_tail"] == ["A", "B", "C"]
+
+
+def test_case_review_cli_run_dir() -> None:
+    workspace = _workspace("case_review_cli")
+    run_dir = workspace / "run"
+    output_dir = workspace / "out"
+    run_dir.mkdir()
+    write_jsonl(run_dir / "grounded_predictions.jsonl", _grounded_rows())
+    (run_dir / "manifest.json").write_text(
+        json.dumps({"provider": "mock", "dry_run": True, "api_called": False}),
+        encoding="utf-8",
+    )
+
+    code = review_main(
+        [
+            "--run-dir",
+            str(run_dir),
+            "--output-dir",
+            str(output_dir),
+        ]
+    )
+
+    assert code == 0
+    assert (output_dir / "case_review_summary.json").exists()
+    assert (output_dir / "case_review_cases.jsonl").exists()

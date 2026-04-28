@@ -168,6 +168,19 @@ correct-low-confidence cases, grounding failures, parse failures, and a
 lightweight popularity-confidence slope diagnostic. Dry-run analysis is not a
 real API pilot and not paper evidence.
 
+For small real pilots, also generate case-review artifacts:
+
+```powershell
+python scripts/review_observation_cases.py --run-dir outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_api_pilot20_non_thinking_20260428
+```
+
+This produces an ignored failure taxonomy under `outputs/case_reviews/...`.
+It records primary types such as `wrong_high_confidence`,
+`ungrounded_high_confidence`, `correct_low_confidence`, parse/provider
+failures, and overlay tags such as `self_verified_wrong`,
+`generated_more_popular_than_target`, and `grounding_ambiguous`. The taxonomy
+is for debugging and scale-up decisions; a pilot review is not a full result.
+
 ## Parsing
 
 The parser attempts:

@@ -108,6 +108,31 @@ The prepare code defines:
 - leave-last-two and rolling/global chronological settings;
 - item popularity and head/mid/tail bucket assignment.
 
+## Sample Observation Gate
+
+After the local `sample_5k` prepare exists, validate it before constructing any
+prompt inputs:
+
+```powershell
+python scripts/validate_processed_dataset.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k
+```
+
+Then build a small stratified input file for future observation:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity
+```
+
+Expected ignored output:
+
+```text
+outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl
+```
+
+This gate only proves that the processed sample can feed the title-level
+generative observation pipeline. It does not call an API, does not train a
+model, and does not convert the sample into a full Amazon result.
+
 ## Server Guidance
 
 Full Amazon Beauty download and preprocessing should run on a server or local
