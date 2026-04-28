@@ -1,0 +1,209 @@
+from __future__ import annotations
+
+import csv
+import json
+import uuid
+from pathlib import Path
+
+from scripts.check_api_pilot_readiness import main as readiness_main
+from storyflow.data import inspect_amazon_config, resolve_existing_raw_path
+from storyflow.observation import write_jsonl
+from storyflow.providers import check_api_pilot_readiness
+
+
+def _workspace(name: str) -> Path:
+    path = Path("outputs") / "test_tmp" / f"{name}_{uuid.uuid4().hex}"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def _provider_config(path: Path) -> Path:
+    config_path = path / "deepseek.yaml"
+    config_path.write_text(
+        "\n".join(
+            [
+                "provider_name: deepseek",
+                "provider_family: openai_compatible",
+                "model_name: deepseek-v4-flash",
+                "api_key_env: DEEPSEEK_TEST_KEY",
+                "base_url: https://api.deepseek.com",
+                "endpoint: /chat/completions",
+                "requires_endpoint_confirmation: false",
+                "timeout_seconds: 60",
+                "max_concurrency: 1",
+                "temperature: 0.0",
+                "max_tokens: 256",
+                "retry:",
+                "  max_attempts: 3",
+                "  backoff_seconds: 1.0",
+                "rate_limit:",
+                "  requests_per_minute: 10",
+                "cache:",
+                "  enabled: true",
+                f"  cache_dir: {(path / 'cache').as_posix()}",
+                "dry_run:",
+                "  default: true",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return config_path
+
+
+def _input_jsonl(path: Path, *, n: int = 5) -> Path:
+    catalog_csv = path / "item_catalog.csv"
+    with catalog_csv.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=["item_id", "title", "title_normalized", "popularity", "popularity_bucket"],
+        )
+        writer.writeheader()
+        writer.writerow(
+            {
+                "item_id": "i1",
+                "title": "Fixture Item",
+                "title_normalized": "fixture item",
+                "popularity": 1,
+                "popularity_bucket": "head",
+            }
+        )
+    rows = [
+        {
+            "input_id": f"input-{index}",
+            "prompt": "Recommend next title.",
+            "prompt_hash": f"hash-{index}",
+            "prompt_template": "forced_json",
+            "target_title": "Fixture Item",
+            "source": {"catalog_csv": str(catalog_csv)},
+        }
+        for index in range(n)
+    ]
+    input_path = path / "inputs.jsonl"
+    write_jsonl(input_path, rows)
+    return input_path
+
+
+def test_api_readiness_blocks_without_approval_or_env(monkeypatch) -> None:
+    workspace = _workspace("api_readiness_blocked")
+    config_path = _provider_config(workspace)
+    input_path = _input_jsonl(workspace)
+    monkeypatch.delenv("DEEPSEEK_TEST_KEY", raising=False)
+
+    manifest = check_api_pilot_readiness(
+        provider_config_path=config_path,
+        input_jsonl=input_path,
+        sample_size=5,
+        stage="smoke",
+    )
+
+    assert manifest["status"] == "blocked"
+    assert manifest["api_called"] is False
+    assert any("approved_model" in blocker for blocker in manifest["blockers"])
+    assert any("DEEPSEEK_TEST_KEY" in blocker for blocker in manifest["blockers"])
+
+
+def test_api_readiness_ready_with_explicit_gates(monkeypatch) -> None:
+    workspace = _workspace("api_readiness_ready")
+    config_path = _provider_config(workspace)
+    input_path = _input_jsonl(workspace)
+    monkeypatch.setenv("DEEPSEEK_TEST_KEY", "not-a-real-key-for-tests")
+
+    manifest = check_api_pilot_readiness(
+        provider_config_path=config_path,
+        input_jsonl=input_path,
+        sample_size=5,
+        stage="smoke",
+        approved_provider="deepseek",
+        approved_model="deepseek-v4-flash",
+        approved_rate_limit=10,
+        approved_budget_label="unit-test-budget",
+        execute_api_intended=True,
+    )
+
+    assert manifest["status"] == "ready_for_execute_api"
+    assert manifest["api_called"] is False
+    assert manifest["api_key_value_printed"] is False
+    assert "--execute-api" in manifest["command_template_after_approval"]
+
+
+def test_api_readiness_cli_writes_manifest(monkeypatch) -> None:
+    workspace = _workspace("api_readiness_cli")
+    config_path = _provider_config(workspace)
+    input_path = _input_jsonl(workspace)
+    output_dir = workspace / "out"
+    monkeypatch.setenv("DEEPSEEK_TEST_KEY", "not-a-real-key-for-tests")
+
+    code = readiness_main(
+        [
+            "--provider-config",
+            str(config_path),
+            "--input-jsonl",
+            str(input_path),
+            "--sample-size",
+            "5",
+            "--approved-provider",
+            "deepseek",
+            "--approved-model",
+            "deepseek-v4-flash",
+            "--approved-rate-limit",
+            "10",
+            "--approved-budget-label",
+            "unit-test-budget",
+            "--execute-api-intended",
+            "--output-dir",
+            str(output_dir),
+        ]
+    )
+
+    assert code == 0
+    manifest = json.loads((output_dir / "readiness_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["status"] == "ready_for_execute_api"
+
+
+def test_amazon_local_path_resolution_and_schema_sample() -> None:
+    workspace = _workspace("amazon_readiness")
+    raw_dir = workspace / "raw"
+    raw_dir.mkdir()
+    reviews = raw_dir / "Tiny.jsonl"
+    metadata = raw_dir / "meta_Tiny.jsonl"
+    write_jsonl(
+        reviews,
+        [
+            {
+                "user_id": "u1",
+                "parent_asin": "p1",
+                "rating": 5,
+                "timestamp": 1,
+                "text": "nice",
+            }
+        ],
+    )
+    write_jsonl(
+        metadata,
+        [{"parent_asin": "p1", "title": "Tiny Item", "categories": ["A"], "store": "S"}],
+    )
+    config = {
+        "name": "amazon_reviews_2023_tiny",
+        "category_name": "Tiny",
+        "hf_dataset": "McAuley-Lab/Amazon-Reviews-2023",
+        "hf_review_config": "raw_review_Tiny",
+        "hf_meta_config": "raw_meta_Tiny",
+        "source_url": "https://example.invalid",
+        "raw_reviews_path": str(reviews),
+        "raw_metadata_path": str(metadata),
+        "user_id_field": "user_id",
+        "item_id_field": "parent_asin",
+        "rating_field": "rating",
+        "timestamp_field": "timestamp",
+        "review_text_field": "text",
+        "metadata_join_key": "parent_asin",
+        "title_field": "title",
+    }
+
+    assert resolve_existing_raw_path(config, "raw_reviews_path") == reviews
+    manifest = inspect_amazon_config(config, sample_records=1)
+    assert manifest["status"] == "local_raw_available"
+    assert manifest["raw_reviews_path_exists"] is True
+    assert manifest["review_schema_sample"]["sample_records_read"] == 1
+    assert "user_id" in manifest["review_schema_sample"]["fields_seen"]

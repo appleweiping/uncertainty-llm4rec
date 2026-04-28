@@ -127,7 +127,8 @@ def test_provider_config_loading() -> None:
     assert config.provider_name == "deepseek"
     assert config.api_key_env == "DEEPSEEK_API_KEY"
     assert config.dry_run_default is True
-    assert config.endpoint_is_placeholder
+    assert config.model_name == "deepseek-v4-flash"
+    assert config.endpoint_is_placeholder is False
 
 
 def test_missing_api_key_dry_run_does_not_trigger_real_call(monkeypatch: pytest.MonkeyPatch) -> None:

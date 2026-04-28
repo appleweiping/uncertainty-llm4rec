@@ -22,6 +22,7 @@ from storyflow.providers.mock import (
     parse_provider_response,
 )
 from storyflow.providers.openai_compatible import OpenAICompatibleProvider
+from storyflow.providers.readiness import check_api_pilot_readiness
 
 __all__ = [
     "APIRequestRecord",
@@ -38,6 +39,7 @@ __all__ = [
     "ResponseCache",
     "RetryConfig",
     "build_cache_key",
+    "check_api_pilot_readiness",
     "load_provider_config",
     "parse_provider_response",
     "provider_config_from_dict",

@@ -6,6 +6,7 @@ from storyflow.data.amazon import (
     amazon_review_to_interaction,
     inspect_amazon_config,
     prepare_amazon_from_jsonl,
+    resolve_existing_raw_path,
     write_amazon_readiness_report,
 )
 from storyflow.data.preprocessing import (
@@ -47,5 +48,6 @@ __all__ = [
     "prepare_amazon_from_jsonl",
     "read_interactions_csv",
     "read_item_catalog_csv",
+    "resolve_existing_raw_path",
     "write_amazon_readiness_report",
 ]

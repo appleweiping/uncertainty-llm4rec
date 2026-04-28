@@ -84,15 +84,15 @@ Required inputs:
 - access to `McAuley-Lab/Amazon-Reviews-2023` according to its dataset card and
   usage terms;
 - raw review JSONL at
-  `data/raw/amazon_reviews_2023_beauty/raw_review_All_Beauty.jsonl`;
+  `data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl`;
 - raw metadata JSONL at
-  `data/raw/amazon_reviews_2023_beauty/raw_meta_All_Beauty.jsonl`;
+  `data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl`;
 - enough storage for raw/cache/processed outputs.
 
 Lightweight readiness check:
 
 ```powershell
-python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
+python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run --sample-records 3
 ```
 
 Optional online availability check:
@@ -110,8 +110,17 @@ python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beau
 Full prepare command shape after raw JSONL placement:
 
 ```powershell
-python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/raw_review_All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/raw_meta_All_Beauty.jsonl --output-suffix full
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full
 ```
+
+Local sample prepare before full run:
+
+```powershell
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --output-suffix sample_1k --max-records 1000
+```
+
+Sample prepare is only a pipeline readiness check. It is not a full server run
+and must not be reported as experimental evidence.
 
 Expected processed outputs:
 

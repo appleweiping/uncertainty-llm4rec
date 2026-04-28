@@ -12,7 +12,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from storyflow.data import prepare_amazon_from_jsonl  # noqa: E402
+from storyflow.data import prepare_amazon_from_jsonl, resolve_existing_raw_path  # noqa: E402
 from storyflow.utils.config import load_simple_yaml  # noqa: E402
 
 
@@ -67,8 +67,16 @@ def main(argv: list[str] | None = None) -> int:
     if not config_path.exists():
         raise SystemExit(f"Unknown dataset config: {config_path}")
     config = load_simple_yaml(config_path)
-    reviews_jsonl = Path(args.reviews_jsonl or str(config.get("raw_reviews_path")))
-    metadata_jsonl = Path(args.metadata_jsonl or str(config.get("raw_metadata_path")))
+    reviews_jsonl = (
+        Path(args.reviews_jsonl)
+        if args.reviews_jsonl
+        else resolve_existing_raw_path(config, "raw_reviews_path")
+    )
+    metadata_jsonl = (
+        Path(args.metadata_jsonl)
+        if args.metadata_jsonl
+        else resolve_existing_raw_path(config, "raw_metadata_path")
+    )
     output_dir = ROOT / "outputs" / "amazon_reviews_2023" / args.dataset / "prepare"
     if args.dry_run or not reviews_jsonl.exists() or not metadata_jsonl.exists():
         report = _write_missing_report(

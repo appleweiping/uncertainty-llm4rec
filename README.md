@@ -80,6 +80,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
   cases, and local ignored run registry.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
 - `docs/codex_execution_protocol.md`: required workflow for each Codex task.
+- `docs/change_requests/` and `docs/decision_log.md`: scoped research and
+  data-route decisions.
 - `docs/server_runbook.md`: server execution framework. It is a scaffold only;
   no server run has been performed by Codex.
 - `references/README.md`: policy for local reference material such as
@@ -171,17 +173,21 @@ Dataset configs live under `configs/datasets/`:
 
 - `movielens_1m.yaml`: local real-data sanity dataset with automatic download.
 - `amazon_reviews_2023_beauty.yaml`: Hugging Face entry for All_Beauty.
+- `amazon_reviews_2023_digital_music.yaml`: local raw entry for Digital_Music.
+- `amazon_reviews_2023_handmade.yaml`: local raw entry for Handmade_Products.
+- `amazon_reviews_2023_health.yaml`: local raw entry for
+  Health_and_Personal_Care.
 - `amazon_reviews_2023_sports.yaml`: Hugging Face entry for
   Sports_and_Outdoors.
 - `amazon_reviews_2023_video_games.yaml`: Hugging Face entry for Video_Games.
 - `steam.yaml`: planned/server-scale placeholder until a verified source is
   selected.
 
-API keys must be provided through environment variables such as
-`DEEPSEEK_API_KEY`, `DASHSCOPE_API_KEY`, `MOONSHOT_API_KEY`, and
-`ZHIPUAI_API_KEY`. Do not commit `.env`, sensitive API responses, or paid API
-caches. `.env.example` documents the expected variable names without containing
-real keys.
+The current active API pilot target is DeepSeek only. API keys must be provided
+through environment variables such as `DEEPSEEK_API_KEY`. Do not commit `.env`,
+sensitive API responses, or paid API caches. `.env.example` also lists future
+provider variables for later multi-model work, but Qwen API/Kimi/GLM and
+server Qwen3 remain future phases.
 
 Large reference files such as PDFs and `recprefer.zip` must remain local under
 `references/` and are not committed. Commit only lightweight indexes and notes.
@@ -260,7 +266,7 @@ Reviews 2023 category should be prepared as the first full-data pipeline.
 Inspect Amazon Reviews 2023 Beauty readiness without full download:
 
 ```powershell
-python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
+python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run --sample-records 3
 ```
 
 Amazon Beauty full prepare is server/big-disk oriented and has not been run:
@@ -306,9 +312,10 @@ variable API keys.
 
 ## Phase 2B API Framework Dry-Run
 
-Provider configs live under `configs/providers/` and intentionally keep
-endpoint/model values as `TODO_CONFIRM...` placeholders until the user confirms
-the exact provider setup.
+Provider configs live under `configs/providers/`. DeepSeek is the current
+single-provider pilot target and is configured for OpenAI-compatible
+`/chat/completions`; future providers intentionally keep endpoint/model values
+as `TODO_CONFIRM...` placeholders until their exact setup is confirmed.
 
 Run a dry-run API observation:
 
@@ -321,6 +328,15 @@ calls the network or reads API keys. A future real pilot requires
 `--execute-api`, confirmed config fields, an environment variable key, and user
 approval of provider, model, budget, and rate limits.
 
+Check DeepSeek smoke-test readiness without making a network call:
+
+```powershell
+python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --sample-size 5 --stage smoke --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 10 --approved-budget-label USER_APPROVED_SMOKE --execute-api-intended
+```
+
+This command never prints the API key value and never calls DeepSeek. It only
+checks whether all required gates are satisfied.
+
 Current status markers:
 
 - Mock observation: ready for local sanity.
@@ -328,7 +344,8 @@ Current status markers:
 - Observation analysis: ready for mock/dry-run schema sanity and future pilot
   analysis.
 - API pilot: not yet run.
-- Amazon Beauty full data: not yet downloaded or processed.
+- Amazon Beauty local raw files: available for readiness/sample checks.
+- Amazon Beauty full processed data: not yet produced.
 
 ## Phase 2C Observation Analysis
 

@@ -23,12 +23,31 @@ The config records:
 - local sample mode;
 - server full mode command template.
 
+Current local raw Beauty files detected by config:
+
+```text
+data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl
+data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl
+```
+
+Compressed copies may also exist next to them. Raw and processed data remain
+ignored by git.
+
+Additional local raw Amazon category configs currently registered:
+
+- `configs/datasets/amazon_reviews_2023_digital_music.yaml`
+- `configs/datasets/amazon_reviews_2023_handmade.yaml`
+- `configs/datasets/amazon_reviews_2023_health.yaml`
+
+Beauty remains the first full-data gate; the extra categories are robustness
+candidates after the Beauty path is stable.
+
 ## Lightweight Inspect
 
 Default dry-run/readiness command:
 
 ```powershell
-python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
+python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run --sample-records 3
 ```
 
 This writes ignored outputs under:
@@ -58,8 +77,17 @@ python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beau
 Full prepare command shape once raw JSONL files exist:
 
 ```powershell
-python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/raw_review_All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/raw_meta_All_Beauty.jsonl --output-suffix full
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full
 ```
+
+Small sample prepare command shape for local pipeline sanity:
+
+```powershell
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --output-suffix sample_1k --max-records 1000
+```
+
+Sample prepare is not a full processed result and must not be used for paper
+claims.
 
 The prepare code defines:
 

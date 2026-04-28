@@ -51,6 +51,12 @@ correct-low-confidence cases, grounding/parse failure summaries, and an
 exploratory popularity-confidence slope. Mock/dry-run analysis remains a schema
 sanity artifact, not experimental evidence.
 
+The current readiness gate recognizes user-provided local Amazon Reviews 2023
+raw files for Beauty, Digital_Music, Handmade_Products, and
+Health_and_Personal_Care. Beauty remains the first full-data category. DeepSeek
+is the current single API provider target; Qwen API, Kimi, GLM, and server
+Qwen3 remain later phases.
+
 ## Phase 0: Governance And Scaffold
 
 Goal: establish the repository rules, documentation skeleton, artifact policy,

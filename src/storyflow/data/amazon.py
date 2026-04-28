@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import gzip
 import urllib.error
 import urllib.request
 from collections import Counter
@@ -26,6 +27,10 @@ from storyflow.data.preprocessing import (
     write_jsonl,
 )
 from storyflow.grounding import normalize_title
+
+
+REVIEW_FIELD_KEYS = ("user_id_field", "item_id_field", "rating_field", "timestamp_field", "review_text_field")
+METADATA_FIELD_KEYS = ("metadata_join_key", "title_field")
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,9 +77,56 @@ def amazon_metadata_to_item(row: dict[str, Any], config: dict[str, Any]) -> dict
     }
 
 
+def _candidate_paths(config: dict[str, Any], key: str) -> list[Path]:
+    paths: list[Path] = []
+    for candidate_key in (key, f"{key}_gz"):
+        value = config.get(candidate_key)
+        if value:
+            paths.append(Path(str(value)))
+    return paths
+
+
+def resolve_existing_raw_path(config: dict[str, Any], key: str) -> Path:
+    """Resolve the configured raw path, preferring existing JSONL over gzip."""
+
+    candidates = _candidate_paths(config, key)
+    for path in candidates:
+        if path.exists():
+            return path
+    if candidates:
+        return candidates[0]
+    raise ValueError(f"no configured path for {key}")
+
+
+def _path_status(config: dict[str, Any], key: str) -> dict[str, Any]:
+    candidates = _candidate_paths(config, key)
+    existing = [path for path in candidates if path.exists()]
+    selected = resolve_existing_raw_path(config, key) if candidates else None
+    return {
+        "configured": [str(path) for path in candidates],
+        "selected": str(selected) if selected else None,
+        "exists": bool(existing),
+        "existing": [
+            {
+                "path": str(path),
+                "size_bytes": path.stat().st_size,
+                "compressed": path.suffix == ".gz",
+            }
+            for path in existing
+        ],
+    }
+
+
+def _open_text(path: str | Path):
+    input_path = Path(path)
+    if input_path.suffix == ".gz":
+        return gzip.open(input_path, "rt", encoding="utf-8")
+    return input_path.open("r", encoding="utf-8")
+
+
 def iter_jsonl(path: str | Path, *, limit: int | None = None) -> Iterable[dict[str, Any]]:
     count = 0
-    with Path(path).open("r", encoding="utf-8") as handle:
+    with _open_text(path) as handle:
         for line in handle:
             if not line.strip():
                 continue
@@ -82,6 +134,30 @@ def iter_jsonl(path: str | Path, *, limit: int | None = None) -> Iterable[dict[s
             count += 1
             if limit is not None and count >= limit:
                 break
+
+
+def _sample_schema(
+    path: Path,
+    *,
+    expected_fields: Iterable[str],
+    sample_records: int,
+) -> dict[str, Any]:
+    seen_fields: set[str] = set()
+    missing_counts = {field: 0 for field in expected_fields if field}
+    row_count = 0
+    for row in iter_jsonl(path, limit=sample_records):
+        row_count += 1
+        seen_fields.update(row.keys())
+        for field in missing_counts:
+            if row.get(field) in (None, ""):
+                missing_counts[field] += 1
+    return {
+        "path": str(path),
+        "sample_records_requested": sample_records,
+        "sample_records_read": row_count,
+        "fields_seen": sorted(seen_fields),
+        "missing_counts": missing_counts,
+    }
 
 
 def inspect_amazon_config(
@@ -100,7 +176,9 @@ def inspect_amazon_config(
         "hf_meta_config": config.get("hf_meta_config"),
         "source_url": config.get("source_url"),
         "raw_reviews_path": config.get("raw_reviews_path"),
+        "raw_reviews_path_gz": config.get("raw_reviews_path_gz"),
         "raw_metadata_path": config.get("raw_metadata_path"),
+        "raw_metadata_path_gz": config.get("raw_metadata_path_gz"),
         "sample_records": sample_records,
         "full_download_attempted": False,
         "full_processed": False,
@@ -109,9 +187,42 @@ def inspect_amazon_config(
         "resume_command": f"python scripts/inspect_amazon_reviews_2023.py --dataset {config.get('name')} --check-online",
         "full_mode_command": config.get("full_mode_command_template"),
     }
-    for path_key in ("raw_reviews_path", "raw_metadata_path"):
-        path = Path(str(config.get(path_key) or ""))
-        manifest[f"{path_key}_exists"] = path.exists()
+    reviews_status = _path_status(config, "raw_reviews_path")
+    metadata_status = _path_status(config, "raw_metadata_path")
+    manifest["raw_reviews"] = reviews_status
+    manifest["raw_metadata"] = metadata_status
+    manifest["raw_reviews_path_exists"] = reviews_status["exists"]
+    manifest["raw_metadata_path_exists"] = metadata_status["exists"]
+    if reviews_status["exists"] and metadata_status["exists"]:
+        manifest["status"] = "local_raw_available"
+    else:
+        manifest["status"] = "dry_run_ready"
+        manifest["warnings"].append("Local raw review or metadata JSONL is missing.")
+    if sample_records > 0:
+        if reviews_status["exists"]:
+            review_path = Path(str(reviews_status["selected"]))
+            expected_review_fields = [
+                str(config.get(key))
+                for key in REVIEW_FIELD_KEYS
+                if config.get(key)
+            ]
+            manifest["review_schema_sample"] = _sample_schema(
+                review_path,
+                expected_fields=expected_review_fields,
+                sample_records=sample_records,
+            )
+        if metadata_status["exists"]:
+            metadata_path = Path(str(metadata_status["selected"]))
+            expected_metadata_fields = [
+                str(config.get(key))
+                for key in METADATA_FIELD_KEYS
+                if config.get(key)
+            ]
+            manifest["metadata_schema_sample"] = _sample_schema(
+                metadata_path,
+                expected_fields=expected_metadata_fields,
+                sample_records=sample_records,
+            )
     if check_online:
         url = (
             "https://datasets-server.huggingface.co/splits?dataset="

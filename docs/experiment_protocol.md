@@ -242,11 +242,16 @@ Reviews 2023 full-data category, starting with Beauty unless a later protocol
 change gives a stronger reason to choose another category first. The project
 must not remain indefinitely in small-data sanity mode.
 
+Local raw files are currently available for Amazon Reviews 2023 Beauty,
+Digital_Music, Handmade_Products, and Health_and_Personal_Care. Beauty remains
+the first full-data gate; the additional categories are robustness candidates
+after Beauty sample/full preparation is reproducible.
+
 ## API Policy
 
-API adapters are planned for DeepSeek, Qwen/DashScope, Kimi/Moonshot, and
-GLM/Zhipu. API keys must come from environment variables and must never be
-committed.
+The first API pilot target is DeepSeek only. API adapters for Qwen/DashScope,
+Kimi/Moonshot, and GLM/Zhipu remain future phases. API keys must come from
+environment variables and must never be committed.
 
 API runs must support:
 
@@ -266,6 +271,14 @@ default and must not read API keys or call the network. Real API execution is
 allowed only after an explicit user-approved provider/model/budget/rate-limit
 decision and requires `--execute-api`, a confirmed provider endpoint/model
 config, and the relevant environment variable.
+
+Before the first DeepSeek smoke test, run:
+
+```powershell
+python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --sample-size 5 --stage smoke --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 10 --approved-budget-label USER_APPROVED_SMOKE --execute-api-intended
+```
+
+This command is a gate check only and does not call the API.
 
 ## Reporting Rules
 

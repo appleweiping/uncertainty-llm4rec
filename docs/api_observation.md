@@ -2,7 +2,8 @@
 
 Phase 2B adds the API observation framework in dry-run mode. It prepares the
 provider, cache, resume, parsing, and output structure needed for a later
-approved API pilot. It does not call real APIs by default.
+approved API pilot. It does not call real APIs by default. The current active
+large-model API target is DeepSeek only; multi-provider API runs are deferred.
 
 ## Secrets
 
@@ -27,7 +28,16 @@ Provider configs live under `configs/providers/`:
 - `kimi.yaml`
 - `glm.yaml`
 
-Each config defines:
+DeepSeek is the current single-provider pilot target:
+
+- provider: `deepseek`;
+- model: `deepseek-v4-flash`;
+- base URL: `https://api.deepseek.com`;
+- endpoint: `/chat/completions`;
+- API key env: `DEEPSEEK_API_KEY`.
+
+Future provider configs remain placeholders until the user confirms exact
+provider/model settings. Each config defines:
 
 - provider name;
 - model name placeholder;
@@ -40,9 +50,8 @@ Each config defines:
 - cache policy;
 - dry-run default.
 
-Endpoint and model names are deliberately marked with `TODO_CONFIRM...` until
-the user confirms the exact provider/model settings. The real API runner will
-refuse execution while these placeholders remain.
+The real API runner will refuse execution while placeholder fields remain or
+when `requires_endpoint_confirmation` is true.
 
 ## Dry-Run
 
@@ -62,6 +71,15 @@ Dry-run never reads API keys and never makes a network call. It creates
 deterministic fake provider responses so the request schema, cache, parser,
 grounding, correctness labeling, metrics, and resume behavior can be checked.
 
+Check DeepSeek smoke-test readiness without making a network call:
+
+```powershell
+python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/movielens_1m/sanity_50_users/test_forced_json.jsonl --sample-size 5 --stage smoke --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 10 --approved-budget-label USER_APPROVED_SMOKE --execute-api-intended
+```
+
+The readiness check prints whether required gates pass. It never prints the API
+key value and never calls DeepSeek.
+
 ## Real API Pilot
 
 A real API pilot must be explicitly approved with provider, model, budget, and
@@ -76,6 +94,15 @@ This will still fail unless:
 - the provider config has confirmed endpoint/model values;
 - the relevant API key environment variable exists;
 - the user has approved the pilot.
+
+For the first smoke test, the intended limits are:
+
+- provider: DeepSeek only;
+- sample size: 5;
+- max concurrency: 1;
+- rate limit: 10 requests/minute or lower;
+- cache/resume enabled;
+- run analysis immediately after completion.
 
 ## Cache And Resume
 
