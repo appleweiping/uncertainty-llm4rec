@@ -97,6 +97,7 @@ def parse_label_response(raw_text: str) -> dict[str, Any]:
             "selected_label": "",
             "recommended_title": "",
             "confidence": None,
+            "json_truncation": looks_like_json_truncation(raw_text),
             "parse_error": "no_json_object",
         }
     try:
@@ -108,6 +109,7 @@ def parse_label_response(raw_text: str) -> dict[str, Any]:
             "selected_label": "",
             "recommended_title": "",
             "confidence": None,
+            "json_truncation": looks_like_json_truncation(raw_text),
             "parse_error": f"json_error:{type(exc).__name__}",
         }
     selected_label = str(obj.get("selected_label", "")).strip().upper()
@@ -125,8 +127,24 @@ def parse_label_response(raw_text: str) -> dict[str, Any]:
         "selected_label": selected_label,
         "recommended_title": title,
         "confidence": confidence,
+        "json_truncation": False,
         "parse_error": "" if schema_valid else "missing_or_invalid_label_title_confidence",
     }
+
+
+def looks_like_json_truncation(raw_text: Any) -> bool:
+    text = str(raw_text or "").strip()
+    if not text:
+        return False
+    if not text.startswith("{"):
+        return False
+    if text.count("{") > text.count("}"):
+        return True
+    if text.endswith('"confidence":') or text.endswith('"recommended_title":'):
+        return True
+    if text.count('"') % 2 == 1:
+        return True
+    return False
 
 
 def _label_diagnostics(parsed: dict[str, Any], pool: list[dict[str, Any]], raw_text: str) -> dict[str, Any]:
@@ -208,6 +226,7 @@ def _prediction_row(
         "candidate_title_exact_match": diagnostics["candidate_title_exact_match"],
         "placeholder_title": diagnostics["placeholder_title"],
         "explanatory_text_after_json": diagnostics["explanatory_text_after_json"],
+        "json_truncation": bool(parsed.get("json_truncation", False)),
         "parse_error": parsed["parse_error"],
         "prompt_token_proxy_chars": len(prompt),
         "candidate_order_seeded_shuffle": bool(cfg.get("shuffle_candidates", True)),
@@ -338,6 +357,7 @@ def _summarize(rows: list[dict[str, Any]], split: str) -> dict[str, Any]:
         "selected_label_hit_rate": _safe_mean([1.0 if row.get("selected_label_hit") else 0.0 for row in rows]),
         "hallucination_rate": _safe_mean([1.0 if row.get("hallucination") else 0.0 for row in rows]),
         "placeholder_title_rate": _safe_mean([1.0 if row.get("placeholder_title") else 0.0 for row in rows]),
+        "json_truncation_rate": _safe_mean([1.0 if row.get("json_truncation") else 0.0 for row in rows]),
         "explanatory_text_after_json_rate": _safe_mean([1.0 if row.get("explanatory_text_after_json") else 0.0 for row in rows]),
         "selected_label_distribution": json.dumps(dict(sorted(counts.items())), ensure_ascii=False),
         "confidence_mean": _safe_mean(scores),
@@ -370,10 +390,10 @@ def _comparison(day2c_rows: list[dict[str, Any]], cfg: dict[str, Any]) -> list[d
         Path(".tmp_day2b_analysis/data_done/framework_observation_day2b_generative_candidate_grounded_repair_diagnostics.csv"),
     ])
     prior_specs = [
-        ("day2_placeholder_schema", "recommended_title+confidence", day2_path, "Day2 placeholder/schema failure; parse/schema rates are superficial."),
-        ("day2b_no_placeholder_exact_title", "recommended_title+confidence", day2b_path, "Day2b fixed validity but retained explanatory text and unusable confidence."),
+        ("day2_placeholder_schema", "recommended_title+confidence", "NA", "recommended_title,confidence", day2_path, "Day2 placeholder/schema failure; parse/schema rates are superficial."),
+        ("day2b_no_placeholder_exact_title", "recommended_title+confidence", "96", "recommended_title,confidence", day2b_path, "Day2b fixed validity but retained explanatory text and unusable confidence."),
     ]
-    for prompt_version, schema, path, note in prior_specs:
+    for prompt_version, schema, max_tokens, field_order, path, note in prior_specs:
         if not path:
             continue
         rows = _read_csv(path)
@@ -385,11 +405,14 @@ def _comparison(day2c_rows: list[dict[str, Any]], cfg: dict[str, Any]) -> list[d
                 "method": "base_qwen_candidate_grounded",
                 "prompt_version": prompt_version,
                 "output_schema": schema,
+                "max_new_tokens": max_tokens,
+                "field_order": field_order,
                 "num_users": row.get("num_users", "NA"),
                 "parse_success_rate": row.get("parse_success_rate", "NA"),
                 "schema_valid_rate": row.get("schema_valid_rate", "NA"),
                 "generation_valid_rate": row.get("generation_valid_rate", row.get("catalog_match_rate", "NA")),
                 "placeholder_title_rate": row.get("placeholder_title_rate", "NA"),
+                "json_truncation_rate": row.get("json_truncation_rate", "NA"),
                 "label_valid_rate": "NA",
                 "title_matches_selected_label_rate": "NA",
                 "candidate_title_exact_match_rate": row.get("candidate_title_exact_match_rate", row.get("valid_candidate_title_rate", "NA")),
@@ -412,13 +435,16 @@ def _comparison(day2c_rows: list[dict[str, Any]], cfg: dict[str, Any]) -> list[d
         out.append(
             {
                 "method": "base_qwen_candidate_grounded",
-                "prompt_version": "day2c_label_first",
+                "prompt_version": str(cfg.get("prompt_version", "day2c_label_first")),
                 "output_schema": "selected_label+recommended_title+confidence",
+                "max_new_tokens": cfg.get("max_new_tokens", "NA"),
+                "field_order": str(cfg.get("field_order", "selected_label,recommended_title,confidence")),
                 "num_users": row.get("num_users", "NA"),
                 "parse_success_rate": row.get("parse_success_rate", "NA"),
                 "schema_valid_rate": row.get("schema_valid_rate", "NA"),
                 "generation_valid_rate": row.get("generation_valid_rate", "NA"),
                 "placeholder_title_rate": row.get("placeholder_title_rate", "NA"),
+                "json_truncation_rate": row.get("json_truncation_rate", "NA"),
                 "label_valid_rate": row.get("label_valid_rate", "NA"),
                 "title_matches_selected_label_rate": row.get("title_matches_selected_label_rate", "NA"),
                 "candidate_title_exact_match_rate": row.get("candidate_title_exact_match_rate", "NA"),
@@ -438,14 +464,20 @@ def _comparison(day2c_rows: list[dict[str, Any]], cfg: dict[str, Any]) -> list[d
 
 
 def _write_report(path: Path, rows: list[dict[str, Any]], comparison_rows: list[dict[str, Any]]) -> None:
+    is_repair = "repair" in str(path).lower()
+    title = (
+        "# Framework-Observation-Day2c-Repair Label-First Generation Report"
+        if is_repair
+        else "# Framework-Observation-Day2c Label-First Generation Report"
+    )
     lines = [
-        "# Framework-Observation-Day2c Label-First Generation Report",
+        title,
         "",
         "Status: observation only. This is not training, evidence, CEP, external API use, open-title generation, or a full run.",
         "",
         "## Framing",
         "",
-        "Day2 exposed placeholder generation failure. Day2b fixed candidate-title validity but still had explanatory text and unusable confidence. Day2c tests whether label-first generation gives clean candidate-grounded output.",
+        "Day2 exposed placeholder generation failure. Day2b fixed candidate-title validity but still had explanatory text and unusable confidence. Day2c fixed explanatory tails but failed due to long-title truncation. Day2c-repair tests whether increasing token budget and compact field order can make label-first title generation output-stable.",
         "",
         "## Diagnostics",
         "",
@@ -472,6 +504,8 @@ def _write_report(path: Path, rows: list[dict[str, Any]], comparison_rows: list[
             "- If matched-title hit rate remains around Day2b, base Qwen candidate-grounded recommendation ability is modest; do not overclaim.",
             "- If confidence remains low-variance, AUROC near 0.5, or ECE high, raw verbalized confidence remains unusable.",
             "- If confidence is unusable, move to selected-label logprob, title logprob, retrieval margin, self-consistency title agreement, or label-selection entropy.",
+            "- Day2d non-verbal uncertainty remains paused until parse/schema/generation/title-label validity are >= 0.95, JSON truncation <= 0.05, and explanatory text after JSON <= 0.05.",
+            "- If output control passes but matched-title hit rate remains 0.15-0.20, candidate-grounded generation is controllable but base Qwen recommendation choice is modest.",
         ]
     )
     path.parent.mkdir(parents=True, exist_ok=True)
