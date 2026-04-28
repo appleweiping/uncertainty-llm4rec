@@ -29,8 +29,10 @@ popularity buckets, dataset manifests, a MovieLens 1M downloader, preprocessing
 and split utilities, processed-data validation, Phase 2A prompt construction,
 mock provider support, no-API observation input/output flow, and pytest coverage
 for those foundations. Phase 2B API observation framework dry-run support and
-Amazon Reviews 2023 Beauty readiness gates are in place. Real API observation,
-model training, simulation, and full experiment phases have not started.
+Amazon Reviews 2023 Beauty readiness gates are in place. Phase 2C observation
+analysis and local run registry utilities are now available for mock/dry-run
+schema sanity and future pilot analysis. Real API observation, model training,
+simulation, and full experiment phases have not started.
 
 MovieLens 1M has also been verified as a local real-data sanity path from a
 manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
@@ -74,6 +76,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `docs/observation_pipeline.md`: Phase 2A no-API generative observation flow.
 - `docs/api_observation.md`: Phase 2B provider config, dry-run, cache, resume,
   parsing, and real-pilot guardrails.
+- `docs/observation_analysis.md`: analysis reports, reliability data, risk
+  cases, and local ignored run registry.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
 - `docs/codex_execution_protocol.md`: required workflow for each Codex task.
 - `docs/server_runbook.md`: server execution framework. It is a scaffold only;
@@ -125,6 +129,9 @@ Implemented foundation modules:
   regex fallback parsing for generated title, yes/no, and confidence.
 - `storyflow.observation`: JSONL input construction, mock observation runner,
   grounding integration, metrics, reports, and resume support.
+- `storyflow.analysis`: observation analysis summaries, reliability diagram
+  data, head/mid/tail slices, risk case extraction, and ignored run registry
+  helpers.
 - `tests/fixtures/`: synthetic records used only for tests.
 
 The remaining subpackages are intentionally lightweight placeholders for later
@@ -318,8 +325,29 @@ Current status markers:
 
 - Mock observation: ready for local sanity.
 - API framework: dry-run ready.
+- Observation analysis: ready for mock/dry-run schema sanity and future pilot
+  analysis.
 - API pilot: not yet run.
 - Amazon Beauty full data: not yet downloaded or processed.
+
+## Phase 2C Observation Analysis
+
+Analyze a dry-run or mock observation directory:
+
+```powershell
+python scripts/analyze_observation.py --run-dir outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_dry_run
+```
+
+Outputs are ignored by git and written under:
+
+- `outputs/analysis/...`
+- `outputs/run_registry/observation_runs.jsonl`
+
+The analysis report includes reliability diagram data, head/mid/tail summaries,
+wrong-high-confidence cases, correct-low-confidence cases, grounding failures,
+parse failure summaries, and an exploratory popularity-confidence slope. When
+the source run is mock or dry-run, these are only pipeline sanity artifacts and
+must not be reported as real model behavior or paper evidence.
 
 ## Tests
 

@@ -44,6 +44,13 @@ dry-run API request/response layers, cache/resume support, and Amazon Reviews
 2023 Beauty readiness gates. It still does not execute a real API call or full
 Amazon download.
 
+Phase 2C adds observation analysis and an ignored local run registry. It reads
+grounded prediction outputs, failed cases, and manifests to produce reliability
+diagram data, head/mid/tail summaries, wrong-high-confidence cases,
+correct-low-confidence cases, grounding/parse failure summaries, and an
+exploratory popularity-confidence slope. Mock/dry-run analysis remains a schema
+sanity artifact, not experimental evidence.
+
 ## Phase 0: Governance And Scaffold
 
 Goal: establish the repository rules, documentation skeleton, artifact policy,
@@ -119,6 +126,8 @@ Planned deliverables:
   embedding-based candidates in later iterations.
 - Correctness labels against next item and future-window targets.
 - Confidence extraction from verbal probability or structured output.
+- Analysis artifacts for reliability, bucket slices, risk cases, parse
+  failures, grounding failures, and local run registry.
 - Small pilot observation on real processed data after the pipeline is tested.
 
 Exit criteria:

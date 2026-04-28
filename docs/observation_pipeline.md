@@ -15,6 +15,7 @@ processed examples
   -> parsed predictions
   -> grounded predictions
   -> metrics/report/manifest
+  -> analysis summary/reliability/risk cases/run registry
 ```
 
 Default paths:
@@ -129,6 +130,16 @@ The API framework writes:
 - `report.md`
 - `manifest.json`
 
+Phase 2C reads these outputs without mutating them:
+
+- `analysis_summary.json`
+- `reliability_diagram.json`
+- `bucket_summary.json`
+- `risk_cases.jsonl`
+- `report.md`
+- `analysis_manifest.json`
+- `outputs/run_registry/observation_runs.jsonl`
+
 Default dry-run command:
 
 ```powershell
@@ -139,3 +150,17 @@ Dry-run responses are deterministic placeholders used to test cache, resume,
 parsing, grounding, and output schemas. They are not API results. Real API
 execution requires `--execute-api`, confirmed provider endpoint/model config,
 and the corresponding API key environment variable.
+
+## Analyze Observation Outputs
+
+Run analysis on a completed mock/dry-run/pilot output directory:
+
+```powershell
+python scripts/analyze_observation.py --run-dir outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_dry_run
+```
+
+The analysis layer reports reliability bins, head/mid/tail confidence and
+correctness, wrong-high-confidence cases, correct-low-confidence cases,
+grounding failures, parse failures, and an exploratory popularity-confidence
+slope. Analysis of mock or dry-run outputs is still only a schema sanity
+artifact and not paper evidence.

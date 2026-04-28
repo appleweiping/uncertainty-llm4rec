@@ -160,6 +160,7 @@ processed examples
   -> parsed predictions
   -> grounded predictions
   -> metrics/report/manifest
+  -> analysis summary/reliability/risk cases/run registry
 ```
 
 Processed examples come from `data/processed/<dataset>/<run>/` and must contain
@@ -173,6 +174,13 @@ provider metadata.
 Phase 2A uses `provider=mock` only. Mock outputs validate parsing, grounding,
 metrics, and resume behavior without calling any external API. Mock metrics are
 sanity checks, not API pilot results and not paper evidence.
+
+Phase 2C analysis reads grounded predictions, failed cases, and run manifests
+to produce reliability diagram bins, popularity-bucket summaries,
+wrong-high-confidence cases, correct-low-confidence cases, grounding failures,
+parse failures, and a local ignored run registry. These artifacts are required
+for reproducibility in later pilots/full runs, but analysis of mock or dry-run
+outputs remains a sanity check only.
 
 ## Framework Stage
 

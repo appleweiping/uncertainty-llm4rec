@@ -112,6 +112,21 @@ The API runner writes:
 Raw responses are kept separate from parsed and grounded records. Parse
 failures are written to `failed_cases.jsonl` and do not silently disappear.
 
+## Analysis Layer
+
+After a dry-run or approved pilot, generate analysis artifacts:
+
+```powershell
+python scripts/analyze_observation.py --run-dir outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_dry_run
+```
+
+This writes ignored files under `outputs/analysis/...` and appends a local
+pointer to `outputs/run_registry/observation_runs.jsonl`. The report includes
+reliability bins, head/mid/tail summaries, wrong-high-confidence cases,
+correct-low-confidence cases, grounding failures, parse failures, and a
+lightweight popularity-confidence slope diagnostic. Dry-run analysis is not a
+real API pilot and not paper evidence.
+
 ## Parsing
 
 The parser attempts:
