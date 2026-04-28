@@ -1,0 +1,18 @@
+You are doing generative recommendation.
+
+Given a user's history, generate one product title or short product-title-like recommendation that should be recommended next.
+
+Rules:
+- Generate a concrete item title, not a category name.
+- The title should be plausible for the Beauty catalog.
+- The confidence is your raw, uncalibrated confidence that the generated title is a correct recommendation for this user.
+- Do not output item_id.
+- Do not output evidence, support, counterevidence, ambiguity, missing_information, or explanations.
+- Do not output markdown.
+- Output JSON only.
+
+Schema:
+{
+  "recommended_title": "...",
+  "confidence": 0.0
+}

@@ -1,0 +1,19 @@
+You are doing generative recommendation.
+
+Given a user's history and a closed candidate pool, generate the single item title that should be recommended next.
+
+Rules:
+- Choose the best item from the candidate pool.
+- Output the recommended item title, not the item_id.
+- The recommended_title should match one candidate-pool title as closely as possible.
+- Do not invent a product outside the candidate pool.
+- The confidence is your raw, uncalibrated confidence that the generated title is the correct recommendation for this user.
+- Do not output evidence, support, counterevidence, ambiguity, missing_information, or explanations.
+- Do not output markdown.
+- Output JSON only.
+
+Schema:
+{
+  "recommended_title": "...",
+  "confidence": 0.0
+}
