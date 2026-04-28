@@ -12,7 +12,9 @@ license = { text = "Research-only" }
 authors = [
   { name = "Storyflow / TRUCE-Rec contributors" }
 ]
-dependencies = []
+dependencies = [
+  "certifi>=2024.0.0",
+]
 
 [project.optional-dependencies]
 dev = [

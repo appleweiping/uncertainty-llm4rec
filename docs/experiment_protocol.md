@@ -278,6 +278,12 @@ allowed only after an explicit user-approved provider/model/budget/rate-limit
 decision and requires `--execute-api`, a confirmed provider endpoint/model
 config, and the relevant environment variable.
 
+On 2026-04-28, a user-approved DeepSeek 5-example smoke attempt was executed
+with `deepseek-v4-flash`, 10 requests/minute, and max concurrency 1. The first
+attempt failed at local TLS verification; after adding `certifi`, the retry
+reached the provider but returned empty response content for all five records.
+This produced no grounded predictions or metrics and is not paper evidence.
+
 Before the first DeepSeek smoke test, run:
 
 ```powershell

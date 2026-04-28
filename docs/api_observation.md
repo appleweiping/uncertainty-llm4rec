@@ -19,6 +19,9 @@ ZHIPUAI_API_KEY=
 Never commit `.env`, API keys, raw sensitive API responses, or provider cache
 containing private content.
 
+The API adapter uses `certifi` for TLS certificate verification. Do not disable
+certificate verification to work around local CA issues.
+
 ## Provider Configs
 
 Provider configs live under `configs/providers/`:
@@ -174,4 +177,24 @@ failures.
 - Full run: larger provider/dataset run with explicit manifests, logs, cache,
   and budget controls.
 
-No API pilot or full run has been executed by Codex in this repository.
+## Current Smoke Status
+
+On 2026-04-28, the user approved a DeepSeek smoke attempt with:
+
+- provider: DeepSeek;
+- model: `deepseek-v4-flash`;
+- sample size: 5;
+- max concurrency: 1;
+- rate limit: 10 requests/minute;
+- budget label: `USER_APPROVED_SMOKE_20260428`.
+
+The first real attempt failed at local TLS certificate verification. After
+adding `certifi`, the retry reached the provider, but all five records returned
+empty response content and failed parsing. No grounded predictions, metrics, or
+paper evidence were produced. Ignored local outputs are under:
+
+```text
+outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_api_smoke_20260428/
+```
+
+No full API run has been executed by Codex in this repository.

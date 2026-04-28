@@ -338,7 +338,11 @@ def run_api_observation(
                 "model": config.model_name,
                 "dry_run": dry_run,
                 "is_experiment_result": False,
-                "note": "API framework dry-run metrics only unless dry_run=false in an approved pilot.",
+                "note": (
+                    "API framework dry-run metrics only; not paper evidence."
+                    if dry_run
+                    else "Approved small API smoke/pilot metrics only; not a full run or paper result."
+                ),
             }
         )
         metrics_path.write_text(
@@ -346,7 +350,10 @@ def run_api_observation(
             encoding="utf-8",
         )
         report_path.write_text(
-            observation_metrics_markdown(metrics, title="API Observation Dry-Run Report"),
+            observation_metrics_markdown(
+                metrics,
+                title="API Observation Dry-Run Report" if dry_run else "API Observation Smoke/Pilot Report",
+            ),
             encoding="utf-8",
         )
 
@@ -377,7 +384,11 @@ def run_api_observation(
         "cache_dir": str(_cache_dir(config.cache.cache_dir)),
         "api_called": not dry_run,
         "is_experiment_result": False,
-        "note": "Dry-run does not call network or paid APIs.",
+        "note": (
+            "Dry-run does not call network or paid APIs."
+            if dry_run
+            else "Approved small API smoke/pilot run; not a full run or paper result."
+        ),
     }
     manifest_path.write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True),

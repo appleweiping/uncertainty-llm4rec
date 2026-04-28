@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import ssl
 import urllib.error
 import urllib.request
 
@@ -61,7 +62,12 @@ class OpenAICompatibleProvider:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=self.config.timeout_seconds) as response:
+            context = _ssl_context()
+            with urllib.request.urlopen(
+                req,
+                timeout=self.config.timeout_seconds,
+                context=context,
+            ) as response:
                 response_payload = json.loads(response.read().decode("utf-8"))
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
             raise ProviderExecutionError(str(exc)) from exc
@@ -78,6 +84,14 @@ class OpenAICompatibleProvider:
             dry_run=False,
             usage=response_payload.get("usage", {}) if isinstance(response_payload, dict) else {},
         )
+
+
+def _ssl_context() -> ssl.SSLContext:
+    try:
+        import certifi
+    except ImportError:
+        return ssl.create_default_context()
+    return ssl.create_default_context(cafile=certifi.where())
 
 
 def _extract_openai_text(payload: dict[str, object]) -> str:

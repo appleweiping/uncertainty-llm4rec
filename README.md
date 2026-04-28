@@ -39,14 +39,17 @@ manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
 `sanity_50_users` prepare run produced only ignored local data outputs under
 `data/processed/`; it is a pipeline check, not an experimental result.
 
-No paid or external API has been called. No model, toy model, pilot experiment,
-full experiment, or server run has been executed. The mock observation pipeline
-is only a no-API sanity path and must not be reported as model behavior. The
-API framework currently supports dry-run only unless a future task explicitly
-approves provider/model/budget/rate limits and supplies environment variables.
-synthetic fixture under `tests/fixtures/` is only for unit tests and pipeline
-sanity checks; it is not an experimental result. Any future result must come
-from tracked code, reproducible configs, logs, and output manifests.
+A user-approved DeepSeek 5-example smoke attempt has been executed. The first
+attempt failed at local TLS certificate verification; after adding a certifi CA
+bundle, the retry reached the provider but returned empty response content for
+all five records, so there are no parsed predictions, grounded predictions, or
+metrics from that attempt. This is an operational smoke attempt only, not a
+successful pilot, not model behavior evidence, and not a paper result. No model,
+toy model, full experiment, or server run has been executed. The mock
+observation pipeline is only a no-API sanity path and must not be reported as
+model behavior. Synthetic fixture under `tests/fixtures/` is only for unit tests
+and pipeline sanity checks; it is not an experimental result. Any future result
+must come from tracked code, reproducible configs, logs, and output manifests.
 
 ## Scientific Scope
 
@@ -204,7 +207,7 @@ python -m venv .venv
 Some MSYS2-style Python builds create `.venv\bin\python.exe` instead of
 `.venv\Scripts\python`; use the path that exists in your local environment.
 
-The current runtime code has no required third-party dependency. The `dev`
+The API adapter uses `certifi` for TLS certificate verification. The `dev`
 extra installs pytest for tests.
 
 ## Dataset Commands
@@ -354,7 +357,10 @@ Current status markers:
 - API framework: dry-run ready.
 - Observation analysis: ready for mock/dry-run schema sanity and future pilot
   analysis.
-- API pilot: not yet run.
+- DeepSeek API smoke attempt: executed for 5 approved MovieLens sanity records;
+  all five failed parsing because the provider response content was empty. No
+  grounded predictions or metrics were produced.
+- Successful API pilot: not yet run.
 - Amazon Beauty local raw files: available for readiness/sample checks.
 - Amazon Beauty sample prepare gate: implemented; sample outputs are ignored
   local artifacts, not full-data results.
