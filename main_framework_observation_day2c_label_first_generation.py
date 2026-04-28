@@ -147,6 +147,78 @@ def looks_like_json_truncation(raw_text: Any) -> bool:
     return False
 
 
+def _first_json_end_index(raw_text: Any) -> int | None:
+    text = str(raw_text or "")
+    start = text.find("{")
+    if start < 0:
+        return None
+    depth = 0
+    in_str = False
+    escape = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if escape:
+            escape = False
+            continue
+        if ch == "\\" and in_str:
+            escape = True
+            continue
+        if ch == '"':
+            in_str = not in_str
+        if in_str:
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return i
+    return None
+
+
+def raw_ends_after_first_json(raw_text: Any) -> bool:
+    text = str(raw_text or "")
+    end = _first_json_end_index(text)
+    if end is None:
+        return False
+    return not bool(text[end + 1 :].strip())
+
+
+def raw_had_explanatory_tail(raw_text: Any) -> bool:
+    text = str(raw_text or "")
+    end = _first_json_end_index(text)
+    if end is None:
+        return False
+    return bool(text[end + 1 :].strip())
+
+
+def _decode_stop_text(value: str) -> list[str]:
+    stops = []
+    value = value.strip()
+    if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+        value = value[1:-1]
+    for part in value.split("|||"):
+        part = part.strip()
+        if (part.startswith('"') and part.endswith('"')) or (part.startswith("'") and part.endswith("'")):
+            part = part[1:-1]
+        if not part:
+            continue
+        stops.append(part.encode("utf-8").decode("unicode_escape"))
+    return stops
+
+
+def _configured_stop_sequences(cfg: dict[str, Any]) -> list[str] | None:
+    raw = cfg.get("vllm_stop")
+    if isinstance(raw, list):
+        return [str(item) for item in raw if str(item)]
+    if isinstance(raw, str) and raw.strip():
+        return _decode_stop_text(raw)
+    text_fallback = cfg.get("vllm_stop_text")
+    if isinstance(text_fallback, str) and text_fallback.strip():
+        return _decode_stop_text(text_fallback)
+    return None
+
+
 def _label_diagnostics(parsed: dict[str, Any], pool: list[dict[str, Any]], raw_text: str) -> dict[str, Any]:
     labels = _label_map(pool)
     selected = parsed.get("selected_label", "")
@@ -169,6 +241,8 @@ def _label_diagnostics(parsed: dict[str, Any], pool: list[dict[str, Any]], raw_t
         "title_matches_selected_label": title_matches_selected_label,
         "candidate_title_exact_match": candidate_title_exact_match,
         "placeholder_title": is_placeholder_title(title),
+        "raw_ends_after_json": raw_ends_after_first_json(raw_text),
+        "raw_had_explanatory_tail": raw_had_explanatory_tail(raw_text),
         "explanatory_text_after_json": explanatory_text_after_json(raw_text),
         "selected_label_expected_title": expected_title,
     }
@@ -225,6 +299,8 @@ def _prediction_row(
         "title_matches_selected_label": diagnostics["title_matches_selected_label"],
         "candidate_title_exact_match": diagnostics["candidate_title_exact_match"],
         "placeholder_title": diagnostics["placeholder_title"],
+        "raw_ends_after_json": diagnostics["raw_ends_after_json"],
+        "raw_had_explanatory_tail": diagnostics["raw_had_explanatory_tail"],
         "explanatory_text_after_json": diagnostics["explanatory_text_after_json"],
         "json_truncation": bool(parsed.get("json_truncation", False)),
         "parse_error": parsed["parse_error"],
@@ -252,7 +328,7 @@ def run_vllm(cfg: dict[str, Any], split: str, model_variant: str, max_users: int
         temperature=float(cfg.get("temperature", 0.0)),
         top_p=float(cfg.get("top_p", 1.0)),
         seed=int(cfg.get("seed", 42)),
-        stop=cfg.get("vllm_stop") or None,
+        stop=_configured_stop_sequences(cfg),
     )
     batch_size = int(cfg.get("vllm_batch_size", 12))
     for start in range(0, len(prompt_rows), batch_size):
@@ -347,6 +423,7 @@ def _summarize(rows: list[dict[str, Any]], split: str) -> dict[str, Any]:
         "split": split,
         "num_users": len(rows),
         "parse_success_rate": _safe_mean([1.0 if row.get("parse_success") else 0.0 for row in rows]),
+        "first_json_parse_success_rate": _safe_mean([1.0 if row.get("parse_success") else 0.0 for row in rows]),
         "schema_valid_rate": _safe_mean([1.0 if row.get("schema_valid") else 0.0 for row in rows]),
         "generation_valid_rate": _safe_mean([1.0 if row.get("generation_valid") else 0.0 for row in rows]),
         "label_valid_rate": _safe_mean([1.0 if row.get("label_valid") else 0.0 for row in rows]),
@@ -358,6 +435,8 @@ def _summarize(rows: list[dict[str, Any]], split: str) -> dict[str, Any]:
         "hallucination_rate": _safe_mean([1.0 if row.get("hallucination") else 0.0 for row in rows]),
         "placeholder_title_rate": _safe_mean([1.0 if row.get("placeholder_title") else 0.0 for row in rows]),
         "json_truncation_rate": _safe_mean([1.0 if row.get("json_truncation") else 0.0 for row in rows]),
+        "raw_ends_after_json_rate": _safe_mean([1.0 if row.get("raw_ends_after_json") else 0.0 for row in rows]),
+        "raw_had_explanatory_tail_rate": _safe_mean([1.0 if row.get("raw_had_explanatory_tail") else 0.0 for row in rows]),
         "explanatory_text_after_json_rate": _safe_mean([1.0 if row.get("explanatory_text_after_json") else 0.0 for row in rows]),
         "selected_label_distribution": json.dumps(dict(sorted(counts.items())), ensure_ascii=False),
         "confidence_mean": _safe_mean(scores),
@@ -389,11 +468,24 @@ def _comparison(day2c_rows: list[dict[str, Any]], cfg: dict[str, Any]) -> list[d
         Path("data_done/framework_observation_day2b_generative_candidate_grounded_repair_diagnostics.csv"),
         Path(".tmp_day2b_analysis/data_done/framework_observation_day2b_generative_candidate_grounded_repair_diagnostics.csv"),
     ])
+    day2c_path = _first_existing([
+        Path("data_done/framework_observation_day2c_label_first_generation_diagnostics.csv"),
+        Path(".tmp_day2c_analysis/data_done/framework_observation_day2c_label_first_generation_diagnostics.csv"),
+    ])
+    day2c_repair_path = _first_existing([
+        Path("data_done/framework_observation_day2c_repair_label_first_generation_diagnostics.csv"),
+        Path(".tmp_day2c_repair_analysis/data_done/framework_observation_day2c_repair_label_first_generation_diagnostics.csv"),
+    ])
     prior_specs = [
-        ("day2_placeholder_schema", "recommended_title+confidence", "NA", "recommended_title,confidence", day2_path, "Day2 placeholder/schema failure; parse/schema rates are superficial."),
-        ("day2b_no_placeholder_exact_title", "recommended_title+confidence", "96", "recommended_title,confidence", day2b_path, "Day2b fixed validity but retained explanatory text and unusable confidence."),
+        ("day2_placeholder_schema", "recommended_title+confidence", "NA", "recommended_title,confidence", "none", "yes", day2_path, "Day2 placeholder/schema failure; parse/schema rates are superficial."),
+        ("day2b_no_placeholder_exact_title", "recommended_title+confidence", "96", "recommended_title,confidence", "none", "yes", day2b_path, "Day2b fixed validity but retained explanatory text and unusable confidence."),
+        ("day2c_label_first_64_token", "selected_label+recommended_title+confidence", "64", "selected_label,recommended_title,confidence", "stop_after_newline", "yes", day2c_path, "Day2c fixed explanatory tails but introduced JSON truncation from short token budget."),
+        ("day2c_repair_label_first_compact", "selected_label+recommended_title+confidence", "160", "selected_label,confidence,recommended_title", "none", "yes", day2c_repair_path, "Day2c-repair fixed truncation but reintroduced explanatory tails."),
     ]
-    for prompt_version, schema, max_tokens, field_order, path, note in prior_specs:
+    current_prompt_version = str(cfg.get("prompt_version", "day2c_label_first"))
+    for prompt_version, schema, max_tokens, field_order, stop_strategy, first_json_extraction, path, note in prior_specs:
+        if prompt_version == current_prompt_version:
+            continue
         if not path:
             continue
         rows = _read_csv(path)
@@ -407,8 +499,11 @@ def _comparison(day2c_rows: list[dict[str, Any]], cfg: dict[str, Any]) -> list[d
                 "output_schema": schema,
                 "max_new_tokens": max_tokens,
                 "field_order": field_order,
+                "stop_strategy": stop_strategy,
+                "first_json_extraction": first_json_extraction,
                 "num_users": row.get("num_users", "NA"),
                 "parse_success_rate": row.get("parse_success_rate", "NA"),
+                "first_json_parse_success_rate": row.get("first_json_parse_success_rate", row.get("parse_success_rate", "NA")),
                 "schema_valid_rate": row.get("schema_valid_rate", "NA"),
                 "generation_valid_rate": row.get("generation_valid_rate", row.get("catalog_match_rate", "NA")),
                 "placeholder_title_rate": row.get("placeholder_title_rate", "NA"),
@@ -419,6 +514,8 @@ def _comparison(day2c_rows: list[dict[str, Any]], cfg: dict[str, Any]) -> list[d
                 "catalog_match_rate": row.get("catalog_match_rate", "NA"),
                 "matched_title_hit_rate": row.get("matched_title_hit_rate", row.get("HR@1", "NA")),
                 "hallucination_rate": row.get("hallucination_rate", "NA"),
+                "raw_ends_after_json_rate": row.get("raw_ends_after_json_rate", "NA"),
+                "raw_had_explanatory_tail_rate": row.get("raw_had_explanatory_tail_rate", row.get("explanatory_text_after_json_rate", "NA")),
                 "explanatory_text_after_json_rate": row.get("explanatory_text_after_json_rate", "NA"),
                 "confidence_mean": row.get("confidence_mean", "NA"),
                 "confidence_std": row.get("confidence_std", "NA"),
@@ -439,8 +536,11 @@ def _comparison(day2c_rows: list[dict[str, Any]], cfg: dict[str, Any]) -> list[d
                 "output_schema": "selected_label+recommended_title+confidence",
                 "max_new_tokens": cfg.get("max_new_tokens", "NA"),
                 "field_order": str(cfg.get("field_order", "selected_label,recommended_title,confidence")),
+                "stop_strategy": str(cfg.get("stop_strategy", "configured_stop_sequences")),
+                "first_json_extraction": "yes",
                 "num_users": row.get("num_users", "NA"),
                 "parse_success_rate": row.get("parse_success_rate", "NA"),
+                "first_json_parse_success_rate": row.get("first_json_parse_success_rate", row.get("parse_success_rate", "NA")),
                 "schema_valid_rate": row.get("schema_valid_rate", "NA"),
                 "generation_valid_rate": row.get("generation_valid_rate", "NA"),
                 "placeholder_title_rate": row.get("placeholder_title_rate", "NA"),
@@ -451,6 +551,8 @@ def _comparison(day2c_rows: list[dict[str, Any]], cfg: dict[str, Any]) -> list[d
                 "catalog_match_rate": row.get("catalog_match_rate", "NA"),
                 "matched_title_hit_rate": row.get("matched_title_hit_rate", "NA"),
                 "hallucination_rate": row.get("hallucination_rate", "NA"),
+                "raw_ends_after_json_rate": row.get("raw_ends_after_json_rate", "NA"),
+                "raw_had_explanatory_tail_rate": row.get("raw_had_explanatory_tail_rate", "NA"),
                 "explanatory_text_after_json_rate": row.get("explanatory_text_after_json_rate", "NA"),
                 "confidence_mean": row.get("confidence_mean", "NA"),
                 "confidence_std": row.get("confidence_std", "NA"),
@@ -465,7 +567,11 @@ def _comparison(day2c_rows: list[dict[str, Any]], cfg: dict[str, Any]) -> list[d
 
 def _write_report(path: Path, rows: list[dict[str, Any]], comparison_rows: list[dict[str, Any]]) -> None:
     is_repair = "repair" in str(path).lower()
+    is_repair_stop = "repair_stop" in str(path).lower()
     title = (
+        "# Framework-Observation-Day2c-Repair-Stop Label-First Generation Report"
+        if is_repair_stop
+        else
         "# Framework-Observation-Day2c-Repair Label-First Generation Report"
         if is_repair
         else "# Framework-Observation-Day2c Label-First Generation Report"
@@ -477,7 +583,7 @@ def _write_report(path: Path, rows: list[dict[str, Any]], comparison_rows: list[
         "",
         "## Framing",
         "",
-        "Day2 exposed placeholder generation failure. Day2b fixed candidate-title validity but still had explanatory text and unusable confidence. Day2c fixed explanatory tails but failed due to long-title truncation. Day2c-repair tests whether increasing token budget and compact field order can make label-first title generation output-stable.",
+        "Day2 exposed placeholder generation failure. Day2b fixed candidate-title validity but still had explanatory text and unusable confidence. Day2c fixed explanatory tails but failed due to long-title truncation. Day2c-repair fixed truncation but reintroduced explanatory tails. Day2c-repair-stop tests whether stop sequences or first-JSON extraction can make label-first candidate-grounded generation evaluable. This is an output-control repair, not a method contribution.",
         "",
         "## Diagnostics",
         "",
@@ -495,6 +601,37 @@ def _write_report(path: Path, rows: list[dict[str, Any]], comparison_rows: list[
         lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
         for row in comparison_rows:
             lines.append("| " + " | ".join(str(row.get(h, "")) for h in headers) + " |")
+    test_row = next((row for row in rows if row.get("split") == "test"), rows[-1] if rows else {})
+    if test_row:
+        output_control_pass = (
+            float(test_row.get("parse_success_rate", 0.0)) >= 0.95
+            and float(test_row.get("schema_valid_rate", 0.0)) >= 0.95
+            and float(test_row.get("generation_valid_rate", 0.0)) >= 0.95
+            and float(test_row.get("title_matches_selected_label_rate", 0.0)) >= 0.95
+            and float(test_row.get("json_truncation_rate", 1.0)) <= 0.05
+        )
+        raw_clean = float(test_row.get("raw_ends_after_json_rate", 0.0)) >= 0.95
+        tail_high = float(test_row.get("raw_had_explanatory_tail_rate", 0.0)) > 0.05
+        confidence_bad = (
+            float(test_row.get("confidence_AUROC_for_hit", 0.5)) < 0.6
+            or float(test_row.get("confidence_ECE_for_hit", 1.0)) > 0.2
+        )
+        lines.extend(["", "## Current Decision", ""])
+        if output_control_pass:
+            if raw_clean:
+                lines.append("Candidate-grounded generative output is raw-clean and evaluable.")
+            elif tail_high:
+                lines.append(
+                    "Candidate-grounded generative output is now evaluable under first-JSON extraction, but raw generation still contains explanatory tails; downstream analysis uses first JSON object extraction."
+                )
+            else:
+                lines.append("Candidate-grounded generative output is evaluable under first-JSON extraction.")
+        else:
+            lines.append(
+                "Output control is still not stable enough for Day2d; the next fallback would be label-only selection with parser-side title copying."
+            )
+        if confidence_bad:
+            lines.append("Raw verbalized confidence remains overconfident and weakly informative for recommendation correctness.")
     lines.extend(
         [
             "",
@@ -503,8 +640,10 @@ def _write_report(path: Path, rows: list[dict[str, Any]], comparison_rows: list[
             "- If generation validity and title-label agreement are near 1.0 and explanatory text falls, output control is clean.",
             "- If matched-title hit rate remains around Day2b, base Qwen candidate-grounded recommendation ability is modest; do not overclaim.",
             "- If confidence remains low-variance, AUROC near 0.5, or ECE high, raw verbalized confidence remains unusable.",
-            "- If confidence is unusable, move to selected-label logprob, title logprob, retrieval margin, self-consistency title agreement, or label-selection entropy.",
-            "- Day2d non-verbal uncertainty remains paused until parse/schema/generation/title-label validity are >= 0.95, JSON truncation <= 0.05, and explanatory text after JSON <= 0.05.",
+            "- If confidence is unusable, move to selected-label logprob, title logprob, retrieval margin, self-consistency title agreement, or label-selection entropy only after output control is stable.",
+            "- Day2d non-verbal uncertainty remains paused until parse/schema/generation/title-label validity are >= 0.95 and JSON truncation <= 0.05.",
+            "- If raw_ends_after_json_rate >= 0.95, decoding is raw-clean. If raw_had_explanatory_tail_rate remains high but first-JSON extraction is stable, the output is parser-controlled rather than raw-clean.",
+            "- If raw tails remain high but first-JSON extraction is fully stable, Day2d can proceed only cautiously with the caveat: raw generation still contains explanatory tails; downstream analysis uses first JSON object extraction.",
             "- If output control passes but matched-title hit rate remains 0.15-0.20, candidate-grounded generation is controllable but base Qwen recommendation choice is modest.",
         ]
     )

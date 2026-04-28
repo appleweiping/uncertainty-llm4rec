@@ -1,0 +1,45 @@
+model_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+adapter_path: artifacts/lora/qwen3_8b_beauty_listwise_strict_day9_small
+domain: beauty
+model_variant: base
+valid_file: data_done/beauty/valid.jsonl
+test_file: data_done/beauty/test.jsonl
+catalog_file: data_done/beauty/items.csv
+output_dir: output-repaired/framework_observation/beauty_qwen_base_generative_label_first_repair_stop/predictions
+prompt_template: prompts/framework/qwen_generative_recommendation_label_first_candidate_grounded_compact.txt
+max_users: 100
+seed: 42
+shuffle_candidates: true
+max_history_items: 8
+max_title_chars: 180
+max_history_text_chars: 240
+max_candidate_text_chars: 260
+max_new_tokens: 160
+temperature: 0.0
+top_p: 1.0
+do_sample: false
+backend: vllm
+bf16: true
+max_seq_len: 4096
+vllm_tensor_parallel_size: 1
+vllm_gpu_memory_utilization: 0.85
+vllm_max_model_len: 4096
+vllm_enable_lora: false
+vllm_max_loras: 1
+vllm_max_lora_rank: 8
+vllm_batch_size: 12
+vllm_stop:
+  - "\nOkay"
+  - "\nLet's"
+  - "\n\n"
+  - "</s>"
+vllm_stop_text: "\\nOkay|||\\nLet's|||\\n\\n|||</s>"
+prompt_version: day2c_repair_stop_label_first_compact
+field_order: selected_label,confidence,recommended_title
+stop_strategy: vllm_stop_variants_newline_okay_lets_blank_eos
+first_json_extraction: true
+diagnostics_csv: data_done/framework_observation_day2c_repair_stop_diagnostics.csv
+report_md: data_done/framework_observation_day2c_repair_stop_report.md
+comparison_csv: data_done/framework_observation_day2c_repair_stop_control_comparison.csv
+notes: Framework-Observation-Day2c-repair-stop compact label-first candidate-grounded title generation. Beauty 100-user valid/test smoke, max_new_tokens=160, stop variants plus first-JSON extraction, no training, evidence, CEP, external API, open-title, or full run.
