@@ -39,17 +39,19 @@ manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
 `sanity_50_users` prepare run produced only ignored local data outputs under
 `data/processed/`; it is a pipeline check, not an experimental result.
 
-A user-approved DeepSeek 5-example smoke attempt has been executed. The first
-attempt failed at local TLS certificate verification; after adding a certifi CA
-bundle, the retry reached the provider but returned empty response content for
-all five records, so there are no parsed predictions, grounded predictions, or
-metrics from that attempt. This is an operational smoke attempt only, not a
-successful pilot, not model behavior evidence, and not a paper result. No model,
-toy model, full experiment, or server run has been executed. The mock
-observation pipeline is only a no-API sanity path and must not be reported as
-model behavior. Synthetic fixture under `tests/fixtures/` is only for unit tests
-and pipeline sanity checks; it is not an experimental result. Any future result
-must come from tracked code, reproducible configs, logs, and output manifests.
+A user-approved DeepSeek smoke and 20-example MovieLens sanity pilot have been
+executed with `deepseek-v4-flash`, `thinking.type=disabled`, cache/resume, 10
+requests/minute, and max concurrency 1. Early diagnostics found local TLS CA
+and reasoning-token issues; those were fixed by using `certifi`, raising
+`max_tokens`, and disabling thinking mode for this short JSON observation task.
+The pilot produced parsed and grounded predictions plus analysis artifacts
+under ignored `outputs/` paths. This is a small pilot only, not a full run and
+not paper evidence. No model, toy model, full experiment, or server run has
+been executed. The mock observation pipeline is only a no-API sanity path and
+must not be reported as model behavior. Synthetic fixture under
+`tests/fixtures/` is only for unit tests and pipeline sanity checks; it is not
+an experimental result. Any future result must come from tracked code,
+reproducible configs, logs, and output manifests.
 
 ## Scientific Scope
 
@@ -328,8 +330,10 @@ variable API keys.
 
 Provider configs live under `configs/providers/`. DeepSeek is the current
 single-provider pilot target and is configured for OpenAI-compatible
-`/chat/completions`; future providers intentionally keep endpoint/model values
-as `TODO_CONFIRM...` placeholders until their exact setup is confirmed.
+`/chat/completions` with `thinking.type=disabled` so the smoke test requests a
+short final JSON answer rather than reasoning-only output. Future providers
+intentionally keep endpoint/model values as `TODO_CONFIRM...` placeholders
+until their exact setup is confirmed.
 
 Run a dry-run API observation:
 
@@ -357,10 +361,11 @@ Current status markers:
 - API framework: dry-run ready.
 - Observation analysis: ready for mock/dry-run schema sanity and future pilot
   analysis.
-- DeepSeek API smoke attempt: executed for 5 approved MovieLens sanity records;
-  all five failed parsing because the provider response content was empty. No
-  grounded predictions or metrics were produced.
-- Successful API pilot: not yet run.
+- DeepSeek API smoke: succeeded for 5 approved MovieLens sanity records after
+  setting `thinking.type=disabled`.
+- DeepSeek API pilot: succeeded for 20 approved MovieLens sanity records;
+  outputs are ignored local pilot artifacts, not full results or paper
+  evidence.
 - Amazon Beauty local raw files: available for readiness/sample checks.
 - Amazon Beauty sample prepare gate: implemented; sample outputs are ignored
   local artifacts, not full-data results.

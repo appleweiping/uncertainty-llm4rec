@@ -51,6 +51,7 @@ class OpenAICompatibleProvider:
             "temperature": request.temperature,
             "max_tokens": request.max_tokens,
         }
+        payload.update(self.config.extra_body)
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
             self._url(),
@@ -83,6 +84,7 @@ class OpenAICompatibleProvider:
             cache_hit=False,
             dry_run=False,
             usage=response_payload.get("usage", {}) if isinstance(response_payload, dict) else {},
+            raw_payload=response_payload if isinstance(response_payload, dict) else {},
         )
 
 
@@ -100,8 +102,12 @@ def _extract_openai_text(payload: dict[str, object]) -> str:
         first = choices[0]
         if isinstance(first, dict):
             message = first.get("message")
-            if isinstance(message, dict) and message.get("content") is not None:
-                return str(message["content"])
-            if first.get("text") is not None:
-                return str(first["text"])
+            if isinstance(message, dict):
+                for key in ("content", "reasoning_content"):
+                    value = message.get(key)
+                    if isinstance(value, str) and value.strip():
+                        return value
+            text = first.get("text")
+            if isinstance(text, str) and text.strip():
+                return text
     return json.dumps(payload, ensure_ascii=False, sort_keys=True)

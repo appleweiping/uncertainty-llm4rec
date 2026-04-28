@@ -84,6 +84,7 @@ def _api_request_from_input(
     model: str,
     temperature: float,
     max_tokens: int,
+    request_options: dict[str, Any] | None,
 ) -> APIRequestRecord:
     cache_key = build_cache_key(
         provider=provider,
@@ -91,6 +92,8 @@ def _api_request_from_input(
         prompt_template=str(input_record["prompt_template"]),
         temperature=temperature,
         input_hash=str(input_record["prompt_hash"]),
+        max_tokens=max_tokens,
+        request_options=request_options,
     )
     return APIRequestRecord(
         request_id=f"{provider}:{input_record['input_id']}",
@@ -128,6 +131,7 @@ def _response_from_cache(
         cache_hit=True,
         dry_run=bool(cached.get("dry_run", dry_run)),
         usage=dict(cached.get("usage") or {}),
+        raw_payload=dict(cached.get("raw_payload") or {}),
         error=cached.get("error"),
         created_at_unix=float(cached.get("created_at_unix") or time.time()),
     )
@@ -162,6 +166,7 @@ def run_api_observation(
     resume: bool,
     max_concurrency: int | None,
     rate_limit: int | None,
+    cache_enabled_override: bool | None = None,
 ) -> dict[str, Any]:
     config = load_provider_config(provider_config_path)
     output_dir = output_dir or _default_output_dir(
@@ -199,7 +204,8 @@ def run_api_observation(
     catalog_csv = _resolve(inputs[0]["source"]["catalog_csv"])
     catalog_rows = load_catalog_rows(catalog_csv)
     grounder = TitleGrounder(catalog_records(catalog_rows))
-    cache = ResponseCache(_cache_dir(config.cache.cache_dir), enabled=config.cache.enabled)
+    cache_enabled = config.cache.enabled if cache_enabled_override is None else cache_enabled_override
+    cache = ResponseCache(_cache_dir(config.cache.cache_dir), enabled=cache_enabled)
     provider = DryRunProvider(config) if dry_run else OpenAICompatibleProvider(config)
     effective_concurrency = max_concurrency or config.max_concurrency
     effective_rate_limit = rate_limit or config.rate_limit.requests_per_minute
@@ -221,6 +227,7 @@ def run_api_observation(
             model=config.model_name,
             temperature=config.temperature,
             max_tokens=config.max_tokens,
+            request_options=config.extra_body,
         )
         write_jsonl(request_path, [asdict(request)], append=True)
         cached = cache.get(request.cache_key)
@@ -380,7 +387,8 @@ def run_api_observation(
         "execute_api": not dry_run,
         "max_concurrency": effective_concurrency,
         "rate_limit_requests_per_minute": effective_rate_limit,
-        "cache_enabled": config.cache.enabled,
+        "cache_enabled": cache_enabled,
+        "request_options": config.extra_body,
         "cache_dir": str(_cache_dir(config.cache.cache_dir)),
         "api_called": not dry_run,
         "is_experiment_result": False,
@@ -409,6 +417,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-resume", action="store_true")
     parser.add_argument("--max-concurrency", type=int)
     parser.add_argument("--rate-limit", type=int)
+    parser.add_argument("--no-cache", action="store_true", help="Bypass provider cache for one-off diagnostics.")
     args = parser.parse_args(argv)
 
     provider_config = _resolve(args.provider_config)
@@ -427,6 +436,7 @@ def main(argv: list[str] | None = None) -> int:
         resume=resume,
         max_concurrency=args.max_concurrency,
         rate_limit=args.rate_limit,
+        cache_enabled_override=False if args.no_cache else None,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True))
     return 0

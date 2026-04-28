@@ -37,6 +37,7 @@ class APIResponseRecord:
     cache_hit: bool
     dry_run: bool
     usage: dict[str, Any] = field(default_factory=dict)
+    raw_payload: dict[str, Any] = field(default_factory=dict)
     error: str | None = None
     created_at_unix: float = field(default_factory=time.time)
 
@@ -84,4 +85,5 @@ class DryRunProvider:
                 "total_tokens": None,
                 "estimated_cost": None,
             },
+            raw_payload=payload,
         )

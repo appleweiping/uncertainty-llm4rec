@@ -15,6 +15,8 @@ def build_cache_key(
     prompt_template: str,
     temperature: float,
     input_hash: str,
+    max_tokens: int | None = None,
+    request_options: dict[str, Any] | None = None,
 ) -> str:
     payload = {
         "provider": provider,
@@ -23,6 +25,10 @@ def build_cache_key(
         "temperature": float(temperature),
         "input_hash": input_hash,
     }
+    if max_tokens is not None:
+        payload["max_tokens"] = int(max_tokens)
+    if request_options:
+        payload["request_options"] = request_options
     serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 

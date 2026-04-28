@@ -129,6 +129,7 @@ def test_provider_config_loading() -> None:
     assert config.dry_run_default is True
     assert config.model_name == "deepseek-v4-flash"
     assert config.endpoint_is_placeholder is False
+    assert config.extra_body["thinking"]["type"] == "disabled"
 
 
 def test_missing_api_key_dry_run_does_not_trigger_real_call(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -170,6 +171,25 @@ def test_cache_key_is_deterministic() -> None:
 
     assert first == second
     assert len(first) == 64
+    larger_generation_budget = build_cache_key(
+        provider="p",
+        model="m",
+        prompt_template="forced_json",
+        temperature=0.0,
+        input_hash="abc",
+        max_tokens=1024,
+    )
+    assert larger_generation_budget != first
+    non_thinking = build_cache_key(
+        provider="p",
+        model="m",
+        prompt_template="forced_json",
+        temperature=0.0,
+        input_hash="abc",
+        max_tokens=1024,
+        request_options={"thinking": {"type": "disabled"}},
+    )
+    assert non_thinking != larger_generation_budget
 
 
 def test_response_cache_hit_roundtrip() -> None:
@@ -226,6 +246,40 @@ def test_api_runner_cache_hit_and_resume() -> None:
     raw_rows = read_jsonl(cache_run_dir / "raw_responses.jsonl")
     assert cache_manifest["newly_processed_count"] == 1
     assert raw_rows[0]["cache_hit"] is True
+    assert "raw_payload" in raw_rows[0]
+
+
+def test_api_runner_can_bypass_cache_for_diagnostics() -> None:
+    workspace = _workspace("api_runner_no_cache")
+    config_path = _provider_config(workspace, cache_dir=workspace / "cache")
+    input_path = _input_jsonl(workspace, n=1)
+
+    first_run = run_api_observation(
+        provider_config_path=config_path,
+        input_jsonl=input_path,
+        output_dir=workspace / "first",
+        max_examples=1,
+        dry_run=True,
+        resume=False,
+        max_concurrency=None,
+        rate_limit=None,
+    )
+    second_run = run_api_observation(
+        provider_config_path=config_path,
+        input_jsonl=input_path,
+        output_dir=workspace / "second",
+        max_examples=1,
+        dry_run=True,
+        resume=False,
+        max_concurrency=None,
+        rate_limit=None,
+        cache_enabled_override=False,
+    )
+
+    raw_rows = read_jsonl(workspace / "second" / "raw_responses.jsonl")
+    assert first_run["cache_enabled"] is True
+    assert second_run["cache_enabled"] is False
+    assert raw_rows[0]["cache_hit"] is False
 
 
 def test_parser_strict_json_fenced_json_and_regex() -> None:

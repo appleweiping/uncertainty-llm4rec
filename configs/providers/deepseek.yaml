@@ -8,7 +8,10 @@ requires_endpoint_confirmation: false
 timeout_seconds: 60
 max_concurrency: 1
 temperature: 0.0
-max_tokens: 256
+max_tokens: 1024
+extra_body:
+  thinking:
+    type: disabled
 retry:
   max_attempts: 3
   backoff_seconds: 2.0

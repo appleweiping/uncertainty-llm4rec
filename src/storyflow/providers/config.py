@@ -43,6 +43,7 @@ class ProviderConfig:
     rate_limit: RateLimitConfig
     cache: CacheConfig
     dry_run_default: bool
+    extra_body: dict[str, Any]
     notes: str = ""
 
     @property
@@ -61,6 +62,7 @@ def provider_config_from_dict(config: dict[str, Any]) -> ProviderConfig:
     rate_limit = _nested(config, "rate_limit")
     cache = _nested(config, "cache")
     dry_run = _nested(config, "dry_run")
+    extra_body = _nested(config, "extra_body")
     return ProviderConfig(
         provider_name=str(config["provider_name"]),
         provider_family=str(config.get("provider_family") or "openai_compatible"),
@@ -85,6 +87,7 @@ def provider_config_from_dict(config: dict[str, Any]) -> ProviderConfig:
             cache_dir=str(cache.get("cache_dir") or "outputs/api_cache/default"),
         ),
         dry_run_default=bool(dry_run.get("default", True)),
+        extra_body=extra_body,
         notes=str(config.get("notes") or ""),
     )
 

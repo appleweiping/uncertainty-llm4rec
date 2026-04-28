@@ -38,6 +38,11 @@ DeepSeek is the current single-provider pilot target:
 - base URL: `https://api.deepseek.com`;
 - endpoint: `/chat/completions`;
 - API key env: `DEEPSEEK_API_KEY`.
+- max tokens: `1024`, raised after the first diagnostic showed
+  `deepseek-v4-flash` spent 256 completion tokens on `reasoning_content` and
+  returned empty final content with `finish_reason=length`.
+- extra body: `thinking.type=disabled`, because this observation task needs a
+  short final JSON answer rather than reasoning-only output.
 
 Future provider configs remain placeholders until the user confirms exact
 provider/model settings. Each config defines:
@@ -112,7 +117,7 @@ For the first smoke test, the intended limits are:
 Cache keys are deterministic over:
 
 ```text
-provider + model + prompt_template + temperature + prompt/input hash
+provider + model + prompt_template + temperature + prompt/input hash + max_tokens
 ```
 
 Cache files are written under the provider config's cache directory, currently
@@ -126,12 +131,17 @@ To avoid duplicate paid calls in a future real pilot:
 - do not delete `outputs/api_cache/...` until the run is complete;
 - run a small pilot before a full batch.
 
+For one-off provider diagnostics, `scripts/run_api_observation.py` supports
+`--no-cache`. Use it only for an approved tiny diagnostic request; normal smoke
+and pilot runs should keep cache enabled to avoid duplicate paid calls.
+
 ## Output Layers
 
 The API runner writes:
 
 - `request_records.jsonl`
-- `raw_responses.jsonl`
+- `raw_responses.jsonl` with extracted `raw_text` and ignored full provider
+  `raw_payload` for debugging
 - `parsed_predictions.jsonl`
 - `failed_cases.jsonl`
 - `grounded_predictions.jsonl`
@@ -139,8 +149,9 @@ The API runner writes:
 - `report.md`
 - `manifest.json`
 
-Raw responses are kept separate from parsed and grounded records. Parse
-failures are written to `failed_cases.jsonl` and do not silently disappear.
+Raw responses are kept separate from parsed and grounded records and remain in
+gitignored `outputs/`. Parse failures are written to `failed_cases.jsonl` and
+do not silently disappear.
 
 ## Analysis Layer
 
@@ -179,22 +190,31 @@ failures.
 
 ## Current Smoke Status
 
-On 2026-04-28, the user approved a DeepSeek smoke attempt with:
+On 2026-04-28, the user approved DeepSeek smoke and pilot work with:
 
 - provider: DeepSeek;
 - model: `deepseek-v4-flash`;
-- sample size: 5;
+- smoke sample size: 5;
+- pilot sample size: 20;
 - max concurrency: 1;
 - rate limit: 10 requests/minute;
 - budget label: `USER_APPROVED_SMOKE_20260428`.
 
 The first real attempt failed at local TLS certificate verification. After
 adding `certifi`, the retry reached the provider, but all five records returned
-empty response content and failed parsing. No grounded predictions, metrics, or
-paper evidence were produced. Ignored local outputs are under:
+empty final content because the model spent the completion budget on
+`reasoning_content`. Official DeepSeek docs state that the `thinking` parameter
+can switch between thinking and non-thinking mode. The active config therefore
+sets `thinking.type=disabled` for this short forced-JSON observation task.
+
+After that fix, the 5-example smoke and 20-example pilot both produced parsed
+and grounded predictions. The 20-example pilot is a small sanity pilot only,
+not a full run or paper result. Ignored local outputs are under:
 
 ```text
-outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_api_smoke_20260428/
+outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_api_smoke_non_thinking_20260428/
+outputs/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_api_pilot20_non_thinking_20260428/
+outputs/analysis/api_observations/deepseek/movielens_1m/sanity_50_users/test_forced_json_api_pilot20_non_thinking_20260428/
 ```
 
 No full API run has been executed by Codex in this repository.
