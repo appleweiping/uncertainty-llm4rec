@@ -35,7 +35,7 @@ If this rate is high, the original evaluator's order-preserving tie-break is uns
 
 ## 6. Prediction Distribution
 
-- prediction artifact present: `False`
+- prediction artifact present: `True`
 - output: `data_done/framework_day95_pointwise_prediction_distribution.csv`
 
 If prediction artifact is missing, sync `output-repaired/framework/day9_qwen_lora_beauty_pointwise_predictions.jsonl` from the server and rerun this audit.
@@ -47,7 +47,7 @@ If prediction artifact is missing, sync `output-repaired/framework/day9_qwen_lor
 
 ## 8. Conclusion
 
-Current audit status: `missing_server_artifact`.
+Current audit status: `eval_bug_or_order_bias_possible`.
 
 Do not write "pointwise baseline succeeded" until the independent safe eval is computed from the server prediction JSONL and reviewed.
 

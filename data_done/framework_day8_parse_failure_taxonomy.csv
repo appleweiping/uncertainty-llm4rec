@@ -1,2 +1,2 @@
-num_samples,notes
-0,prediction JSONL not found locally; run on server
+num_samples,non_json_rate,non_json_count,extra_explanatory_text_rate,extra_explanatory_text_count,missing_ranked_item_ids_rate,missing_ranked_item_ids_count,alternative_key_name_rate,alternative_key_name_count,incomplete_list_rate,incomplete_list_count,repeated_item_ids_rate,repeated_item_ids_count,malformed_quotes_or_brackets_rate,malformed_quotes_or_brackets_count,uses_item_titles_instead_of_ids_rate,uses_item_titles_instead_of_ids_count
+512,0.037109375,19,0.033203125,17,0.029296875,15,0.0,0,0.029296875,15,0.00390625,2,0.001953125,1,0.0,0

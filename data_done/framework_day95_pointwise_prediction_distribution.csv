@@ -1,2 +1,7 @@
 true_label,predicted_label,count,rate,parse_success_rate,mean_score_if_available
-missing_server_artifact,missing_server_artifact,0,0,0,NA
+0,0,2164,0.7044270833333334,1.0,0.0
+0,1,2,0.0006510416666666666,1.0,1.0
+0,None,394,0.12825520833333334,0.0,0.0
+1,0,434,0.14127604166666666,1.0,0.0
+1,1,4,0.0013020833333333333,1.0,1.0
+1,None,74,0.024088541666666668,0.0,0.0

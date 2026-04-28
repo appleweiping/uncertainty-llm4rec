@@ -1,2 +1,4 @@
-split,score_type,status,fallback_reason
-test,raw_confidence,missing_predictions,valid_or_test_prediction_missing
+split,score_type,num_rows,num_valid_rows,parse_success_rate,schema_valid_rate,accuracy,ECE,Brier,AUROC,high_conf_error_rate,mean_confidence,std_confidence,confidence_histogram,positive_label_rate,recommend_yes_rate,calibration_method,status,fallback_reason,delta_ECE_vs_raw,delta_Brier_vs_raw
+test,raw_confidence,52,52,1.0,1.0,0.19230769230769232,0.45769230769230773,0.36480769230769233,0.5,0.0,0.65,0.0,"[0, 0, 0, 0, 0, 0, 52, 0, 0, 0]",0.17307692307692307,0.9807692307692307,none,ok,,,
+test,logistic_calibrated_confidence,52,52,1.0,1.0,0.19230769230769232,7.344610891715786e-05,0.15532544918131316,0.5,0.0,0.19223424619877516,0.0,"[0, 52, 0, 0, 0, 0, 0, 0, 0, 0]",0.17307692307692307,0.9807692307692307,logistic,ok,,-0.4576188615833906,-0.20948224312637917
+test,isotonic_calibrated_confidence,52,52,1.0,1.0,0.19230769230769232,0.0,0.15532544378698226,0.5,0.0,0.19230769230769232,0.0,"[0, 52, 0, 0, 0, 0, 0, 0, 0, 0]",0.17307692307692307,0.9807692307692307,isotonic,ok,,-0.45769230769230773,-0.20948224852071007

@@ -1,5 +1,5 @@
 method,status,NDCG@10,MRR,HR@1,HR@3,NDCG@3,NDCG@5,notes,HR@10
-original_day9_pointwise_eval,missing_server_artifact,NA,NA,NA,NA,NA,NA,Need sync: output-repaired\framework\day9_qwen_lora_beauty_pointwise_predictions.jsonl,
-independent_safe_eval,missing_server_artifact,NA,NA,NA,NA,NA,NA,Need sync: output-repaired\framework\day9_qwen_lora_beauty_pointwise_predictions.jsonl,
-random_same_users,computed_without_predictions,0.5481770630527063,0.4049479166666667,0.1640625,0.505859375,0.355162989320596,0.48417108411923354,Deterministic seed=42 random ranking on same local test users.,1.0
-oracle,computed_without_predictions,1.0,1.0,1.0,1.0,1.0,1.0,Label-based upper bound only.,1.0
+original_day9_pointwise_eval,from_server_summary,0.9985583193498885,0.998046875,0.99609375,1.0,0.9985583193498885,0.9985583193498885,Original Day9 evaluator result.,
+independent_safe_eval,computed,0.4672424593050481,0.30345052083333335,0.08984375,0.265625,0.1879632619977701,0.33366476413953977,score from parsed model output; parse failure score=0.5; lexical candidate_id tie-break.,1.0
+random_same_users,computed,0.5519015474641107,0.4102864583333333,0.171875,0.494140625,0.3560228082449828,0.48441698271903616,deterministic seed=42 random ranking on same users.,1.0
+oracle,computed,1.0,1.0,1.0,1.0,1.0,1.0,label-based upper bound only.,1.0

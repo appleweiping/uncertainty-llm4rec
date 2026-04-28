@@ -2,15 +2,14 @@
 
 ## Local Artifact Status
 
-- pointwise prediction JSONL: `missing_server_artifact`
-- pointwise eval summary CSV: `missing_server_artifact`
+- pointwise prediction JSONL: `present`
+- pointwise eval summary CSV: `present`
 - formulation comparison CSV: `present`
 
 Missing files:
 
 ```text
-output-repaired\framework\day9_qwen_lora_beauty_pointwise_predictions.jsonl
-data_done\framework_day9_pointwise_eval_summary.csv
+none
 ```
 
 ## Interpretation Boundary

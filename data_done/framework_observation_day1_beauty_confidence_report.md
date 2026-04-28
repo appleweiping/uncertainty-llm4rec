@@ -6,41 +6,41 @@ This is a local Qwen/Qwen-LoRA confidence observation on `data_done/beauty` 5neg
 
 ## Prediction Directory
 
-`output-repaired\framework_observation\beauty_qwen_lora_confidence\predictions`
+`output-repaired/framework_observation/beauty_qwen_lora_confidence_refined_vllm/predictions`
 
 ## Raw Confidence Diagnostics
 
-- status: `pending_predictions`
-- test parse success: `0.0`
-- test schema valid: `0.0`
-- test accuracy: `0.0`
-- test ECE: `0.0`
-- test Brier: `0.0`
-- test AUROC: `NA`
+- status: `ready_for_interpretation`
+- test parse success: `1.0`
+- test schema valid: `1.0`
+- test accuracy: `0.19230769230769232`
+- test ECE: `0.45769230769230773`
+- test Brier: `0.36480769230769233`
+- test AUROC: `0.5`
 - test high-confidence error rate: `0.0`
 
 ## Confidence Collapse / Saturation Diagnostics
 
-- collapse status: `pending_predictions`
-- test confidence mean: `0.0`
+- collapse status: `low_unique_confidence_values`
+- test confidence mean: `0.65`
 - test confidence std: `0.0`
-- test confidence min/max: `NA` / `NA`
-- test confidence unique count: `0`
+- test confidence min/max: `0.65` / `0.65`
+- test confidence unique count: `1`
 - test confidence at 1.0 rate: `0.0`
 - test confidence >= 0.90 rate: `0.0`
 - test confidence >= 0.97 rate: `0.0`
-- recommend true/false rate: `0.0` / `0.0`
-- confidence correct/wrong mean: `NA` / `NA`
-- confidence gap correct-minus-wrong: `NA`
+- recommend true/false rate: `0.9807692307692307` / `0.019230769230769232`
+- confidence correct/wrong mean: `0.65` / `0.65`
+- confidence gap correct-minus-wrong: `0.0`
 
 If confidence mass concentrates near `0.97` or `1.0`, this should be interpreted as confidence collapse/saturation, not as method success. If confidence has meaningful variance but ECE/Brier are poor, the signal is informative but miscalibrated.
 
 ## Calibration
 
-- best available calibrated score: `NA`
-- best calibrated ECE: `NA`
-- best calibrated Brier: `NA`
-- interpretation: calibration benefit is pending or not yet established; inspect ECE/Brier after full predictions.
+- best available calibrated score: `isotonic_calibrated_confidence`
+- best calibrated ECE: `0.0`
+- best calibrated Brier: `0.15532544378698226`
+- interpretation: valid-set calibration reduces ECE/Brier and makes the raw confidence signal more usable.
 
 Calibration is fit on valid and evaluated on test. Raw confidence is verbalized confidence, not a calibrated probability.
 

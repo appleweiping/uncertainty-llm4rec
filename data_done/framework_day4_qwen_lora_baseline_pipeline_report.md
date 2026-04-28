@@ -26,9 +26,9 @@ The future framework will combine calibrated confidence uncertainty from the wee
 
 ## 7. Dry-Run Result
 
-- Status: `blocked`
-- Blocked reasons: `dependency_missing:peft, model_path_missing`
-- Label mask check: `skipped`
+- Status: `ready_for_server_smoke`
+- Blocked reasons: `none`
+- Label mask check: `success`
 - Dataset stats: `data_done/framework_day4_lora_dataset_stats.csv`
 - Sample prompts: `data_done/framework_day4_lora_sample_prompts.json`
 

@@ -2,13 +2,13 @@
 
 ## Diagnosis Inputs
 
-- parse success rate: `NA`
-- schema valid rate: `NA`
-- empty output rate: `None`
-- non-JSON rate: `None`
-- missing `ranked_item_ids` rate: `None`
-- too-few-items rate: `None`
-- extra-text rate: `None`
+- parse success rate: `0.8671875`
+- schema valid rate: `0.8515625`
+- empty output rate: `0.0`
+- non-JSON rate: `0.1328125`
+- missing `ranked_item_ids` rate: `0.015625`
+- too-few-items rate: `0.0`
+- extra-text rate: `0.0234375`
 
 ## Prompt Repair Candidates
 

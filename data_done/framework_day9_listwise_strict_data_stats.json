@@ -1,11 +1,11 @@
 {
   "domain": "beauty",
-  "source_root": "data_done_lora\\beauty",
+  "source_root": "data_done_lora/beauty",
   "prompt_style": "json_strict",
   "splits": {
     "train": {
-      "source_file": "data_done_lora\\beauty\\train_listwise.jsonl",
-      "output_file": "data_done_lora\\beauty\\train_listwise_json_strict.jsonl",
+      "source_file": "data_done_lora/beauty/train_listwise.jsonl",
+      "output_file": "data_done_lora/beauty/train_listwise_json_strict.jsonl",
       "rows": 622,
       "candidate_pool_size_mean": 6,
       "candidate_pool_size_min": 6,
@@ -13,8 +13,8 @@
       "full_ranking_output_rate": 1.0
     },
     "valid": {
-      "source_file": "data_done_lora\\beauty\\valid_listwise.jsonl",
-      "output_file": "data_done_lora\\beauty\\valid_listwise_json_strict.jsonl",
+      "source_file": "data_done_lora/beauty/valid_listwise.jsonl",
+      "output_file": "data_done_lora/beauty/valid_listwise_json_strict.jsonl",
       "rows": 622,
       "candidate_pool_size_mean": 6,
       "candidate_pool_size_min": 6,
@@ -22,8 +22,8 @@
       "full_ranking_output_rate": 1.0
     },
     "test": {
-      "source_file": "data_done_lora\\beauty\\test_listwise.jsonl",
-      "output_file": "data_done_lora\\beauty\\test_listwise_json_strict.jsonl",
+      "source_file": "data_done_lora/beauty/test_listwise.jsonl",
+      "output_file": "data_done_lora/beauty/test_listwise_json_strict.jsonl",
       "rows": 622,
       "candidate_pool_size_mean": 6,
       "candidate_pool_size_min": 6,

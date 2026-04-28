@@ -1,2 +1,2 @@
-eval_set,num_samples,notes
-missing_predictions,0,run on server with Day7 predictions
+eval_set,num_samples,raw_parse_success_rate,repaired_parse_success_rate,raw_schema_valid_rate,repaired_schema_valid_rate,invalid_item_rate,duplicate_item_rate,repaired_item_rate,NDCG@10_before,NDCG@10_after,MRR_before,MRR_after,HR@1_before,HR@1_after,HR@3_before,HR@3_after,NDCG@3_before,NDCG@3_after,NDCG@5_before,NDCG@5_after
+day7_qwen_lora_beauty_listwise_eval512_predictions.jsonl,512,0.83203125,0.833984375,0.802734375,0.802734375,0.0,0.0008103727714748784,0.0,0.5747020910676032,0.5752833340758808,0.41966145833333335,0.42063802083333335,0.255859375,0.255859375,0.47265625,0.474609375,0.3783225321219339,0.3795548167968782,0.4748823265080875,0.4761146111830317

@@ -1,5 +1,5 @@
-model_name_or_path: TODO_MODEL_PATH
-tokenizer_name_or_path: TODO_MODEL_PATH
+model_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
+tokenizer_name_or_path: /home/ajifang/models/Qwen/Qwen3-8B
 max_seq_len: 4096
 lora_rank: 16
 lora_alpha: 32
@@ -20,4 +20,4 @@ evaluation_mode: closed_candidate_ranking
 dry_run: true
 max_train_samples: 5
 max_eval_samples: 5
-notes: Scaffold only. Framework-Day4 dry-run does not start full training. Replace TODO_MODEL_PATH on the training server before use.
+notes: Scaffold only. Framework-Day4 dry-run does not start full training. Replace /home/ajifang/models/Qwen/Qwen3-8B on the training server before use.
