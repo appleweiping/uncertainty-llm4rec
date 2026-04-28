@@ -79,6 +79,35 @@ Overlay tags include:
 These labels are for triage. A small pilot taxonomy must not be reported as a
 general model behavior claim.
 
+## Recommended Actions
+
+Each case now includes machine-readable `recommended_actions`. The summary also
+aggregates `action_counts` and a short `recommended_next_actions` list. These
+actions are engineering triage hints, not experimental conclusions.
+
+Common action labels include:
+
+- `fix_parser_or_forced_json_prompt`
+- `inspect_provider_retry_rate_limit_or_network`
+- `inspect_catalog_coverage_and_title_normalization`
+- `tighten_prompt_to_catalog_groundable_titles`
+- `add_or_improve_retrieval_assisted_grounding`
+- `review_grounding_thresholds_and_candidate_margin`
+- `audit_self_verification_confidence_prompt`
+- `prioritize_popularity_confidence_residual_analysis`
+- `prioritize_overconfidence_case_review`
+- `prioritize_tail_underconfidence_calibration`
+- `preserve_hard_positive_before_naive_pruning`
+- `monitor_in_aggregate`
+
+Use these labels to choose the next non-API engineering task. For example,
+many `ungrounded_high_confidence` cases should lead to catalog coverage,
+normalization, retrieval-assisted grounding, or prompt constraints before
+spending more API budget. Many `self_verified_wrong` cases should lead to
+self-verification prompt audits. Many `generated_head_target_tail` or
+`generated_more_popular_than_target` cases should lead to popularity-confidence
+residual analysis.
+
 ## How To Use The Review
 
 Use the priority cases to decide the next engineering step:

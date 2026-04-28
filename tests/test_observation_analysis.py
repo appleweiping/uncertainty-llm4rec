@@ -282,8 +282,39 @@ def test_case_review_taxonomy_joins_history_and_catalog() -> None:
     assert summary["provider"] == "deepseek"
     assert summary["taxonomy_counts"]["wrong_high_confidence"] == 1
     assert "self_verified_wrong" not in summary["tag_counts"]
+    assert "prioritize_popularity_confidence_residual_analysis" in summary["action_counts"]
+    assert summary["recommended_next_actions"]
     assert "generated_more_popular_than_target" in cases[0]["taxonomy_tags"]
+    assert "prioritize_overconfidence_case_review" in cases[0]["recommended_actions"]
     assert cases[0]["history_titles_tail"] == ["A", "B", "C"]
+
+
+def test_case_review_recommends_grounding_actions_for_ungrounded_high_confidence() -> None:
+    workspace = _workspace("case_review_grounding_actions")
+    run_dir = workspace / "run"
+    run_dir.mkdir()
+    row = {
+        **_grounded_rows()[3],
+        "confidence": 0.88,
+        "is_likely_correct": "yes",
+    }
+    write_jsonl(run_dir / "grounded_predictions.jsonl", [row])
+    (run_dir / "manifest.json").write_text(
+        json.dumps({"provider": "mock", "dry_run": True, "api_called": False}),
+        encoding="utf-8",
+    )
+
+    manifest = review_observation_cases(
+        grounded_jsonl=run_dir / "grounded_predictions.jsonl",
+        manifest_json=run_dir / "manifest.json",
+        output_dir=workspace / "case_review",
+    )
+
+    summary = json.loads(Path(manifest["summary"]).read_text(encoding="utf-8"))
+    cases = read_jsonl(manifest["cases"])
+    assert summary["taxonomy_counts"]["ungrounded_high_confidence"] == 1
+    assert "tighten_prompt_to_catalog_groundable_titles" in summary["action_counts"]
+    assert "add_or_improve_retrieval_assisted_grounding" in cases[0]["recommended_actions"]
 
 
 def test_case_review_cli_run_dir() -> None:

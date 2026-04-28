@@ -427,8 +427,11 @@ python scripts/review_observation_cases.py --run-dir outputs/api_observations/de
 This writes ignored artifacts under `outputs/case_reviews/...`, including
 `case_review_summary.json`, `case_review_cases.jsonl`, and `case_review.md`.
 The review joins generated titles, grounded catalog items, target titles,
-confidence, popularity buckets, and the tail of the user's history. It is a
-pilot diagnostic, not a paper result.
+confidence, popularity buckets, and the tail of the user's history. It also
+writes machine-readable `recommended_actions` per case and
+`recommended_next_actions` in the summary, so pilot review can point to prompt,
+grounding, self-verification, popularity-residual, or tail-calibration follow
+ups. It is a pilot diagnostic, not a paper result.
 
 ## Amazon Beauty Sample Observation Gate
 

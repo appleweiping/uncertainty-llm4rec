@@ -153,6 +153,39 @@ def _taxonomy_tags(
     return sorted(set(tags))
 
 
+def _case_recommended_actions(primary_label: str, tags: Iterable[str]) -> list[str]:
+    tag_set = {str(tag) for tag in tags}
+    actions: list[str] = []
+    if primary_label.startswith("parse_"):
+        actions.append("fix_parser_or_forced_json_prompt")
+    if primary_label.startswith("provider_"):
+        actions.append("inspect_provider_retry_rate_limit_or_network")
+    if "grounding_failure" in tag_set:
+        actions.append("inspect_catalog_coverage_and_title_normalization")
+    if primary_label == "ungrounded_high_confidence":
+        actions.append("tighten_prompt_to_catalog_groundable_titles")
+        actions.append("add_or_improve_retrieval_assisted_grounding")
+    if "grounding_ambiguous" in tag_set or "fuzzy_grounding" in tag_set:
+        actions.append("review_grounding_thresholds_and_candidate_margin")
+    if "self_verified_wrong" in tag_set:
+        actions.append("audit_self_verification_confidence_prompt")
+    if (
+        "generated_more_popular_than_target" in tag_set
+        or "generated_head_target_tail" in tag_set
+        or "wrong_high_confidence_generated_head" in tag_set
+    ):
+        actions.append("prioritize_popularity_confidence_residual_analysis")
+    if primary_label == "wrong_high_confidence":
+        actions.append("prioritize_overconfidence_case_review")
+    if "correct_low_confidence_tail" in tag_set:
+        actions.append("prioritize_tail_underconfidence_calibration")
+    if primary_label == "correct_low_confidence":
+        actions.append("preserve_hard_positive_before_naive_pruning")
+    if not actions:
+        actions.append("monitor_in_aggregate")
+    return sorted(set(actions))
+
+
 def _case_record(
     row: dict[str, Any],
     *,
@@ -170,20 +203,22 @@ def _case_record(
         low_confidence_tau=low_confidence_tau,
         high_confidence_tau=high_confidence_tau,
     )
+    taxonomy_tags = _taxonomy_tags(
+        row,
+        generated_item=generated_item,
+        low_confidence_tau=low_confidence_tau,
+        high_confidence_tau=high_confidence_tau,
+        ambiguity_tau=ambiguity_tau,
+        popularity_ratio_tau=popularity_ratio_tau,
+    )
     return {
         "input_id": row.get("input_id"),
         "example_id": row.get("example_id"),
         "user_id": row.get("user_id") or (input_record or {}).get("user_id"),
         "split": row.get("split") or (input_record or {}).get("split"),
         "primary_failure_type": primary_label,
-        "taxonomy_tags": _taxonomy_tags(
-            row,
-            generated_item=generated_item,
-            low_confidence_tau=low_confidence_tau,
-            high_confidence_tau=high_confidence_tau,
-            ambiguity_tau=ambiguity_tau,
-            popularity_ratio_tau=popularity_ratio_tau,
-        ),
+        "taxonomy_tags": taxonomy_tags,
+        "recommended_actions": _case_recommended_actions(primary_label, taxonomy_tags),
         "history_length": row.get("history_length") or (input_record or {}).get("history_length"),
         "history_titles_tail": _tail(history_titles, max_history_titles),
         "generated_title": row.get("generated_title"),
@@ -226,10 +261,13 @@ def summarize_case_review(cases: Iterable[dict[str, Any]]) -> dict[str, Any]:
     records = list(cases)
     taxonomy_counts = Counter(str(row.get("primary_failure_type")) for row in records)
     tag_counts: Counter[str] = Counter()
+    action_counts: Counter[str] = Counter()
     bucket_taxonomy: dict[str, Counter[str]] = defaultdict(Counter)
     for row in records:
         for tag in row.get("taxonomy_tags") or []:
             tag_counts[str(tag)] += 1
+        for action in row.get("recommended_actions") or []:
+            action_counts[str(action)] += 1
         bucket = str(row.get("target_popularity_bucket") or "unknown")
         bucket_taxonomy[bucket][str(row.get("primary_failure_type"))] += 1
     return {
@@ -237,6 +275,14 @@ def summarize_case_review(cases: Iterable[dict[str, Any]]) -> dict[str, Any]:
         "case_count": len(records),
         "taxonomy_counts": dict(sorted(taxonomy_counts.items())),
         "tag_counts": dict(sorted(tag_counts.items())),
+        "action_counts": dict(sorted(action_counts.items())),
+        "recommended_next_actions": [
+            action
+            for action, _ in sorted(
+                action_counts.items(),
+                key=lambda item: (-item[1], item[0]),
+            )[:8]
+        ],
         "target_bucket_taxonomy_counts": {
             bucket: dict(sorted(counter.items()))
             for bucket, counter in sorted(bucket_taxonomy.items())
@@ -270,6 +316,10 @@ def case_review_markdown(summary: dict[str, Any], cases: Iterable[dict[str, Any]
     tag_rows = [
         f"| {name} | {count} |"
         for name, count in summary.get("tag_counts", {}).items()
+    ]
+    action_rows = [
+        f"| {name} | {count} |"
+        for name, count in summary.get("action_counts", {}).items()
     ]
     top_cases = records[:10]
     case_rows = []
@@ -312,6 +362,16 @@ def case_review_markdown(summary: dict[str, Any], cases: Iterable[dict[str, Any]
             "| tag | count |",
             "| --- | ---: |",
             *tag_rows,
+            "",
+            "## Recommended Next Actions",
+            "",
+            *[f"- {action}" for action in summary.get("recommended_next_actions", [])],
+            "",
+            "## Action Counts",
+            "",
+            "| action | count |",
+            "| --- | ---: |",
+            *action_rows,
             "",
             "## Priority Cases",
             "",
