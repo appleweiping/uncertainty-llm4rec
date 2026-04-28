@@ -49,6 +49,42 @@ Each JSONL record includes:
 The default template is `forced_json`, which asks for one generated item title,
 yes/no self-verification, and confidence in `[0, 1]`.
 
+## Catalog-Constrained Grounding Gate
+
+Case review can reveal many high-confidence generated titles that fail catalog
+grounding. Before spending more API budget, build a candidate-constrained input
+file to test whether the prompt, parser, and grounder behave correctly when the
+model is given explicit catalog titles:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --prompt-template catalog_constrained_json --candidate-count 20
+```
+
+This writes a separate ignored input file such as:
+
+```text
+outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_catalog_constrained_json_c20.jsonl
+```
+
+Each record adds:
+
+- `catalog_candidate_item_ids`;
+- `catalog_candidate_titles`;
+- `catalog_candidate_popularity_buckets`;
+- `candidate_policy`.
+
+The default candidate policy excludes the target item and marks
+`candidate_policy.target_in_candidates=false` to avoid answer leakage. The
+candidate list is built by round-robin sampling from head/mid/tail popularity
+buckets, with history-title fallback only when a tiny catalog lacks enough
+unseen candidates.
+
+This is a grounding diagnostic gate, not the main free-form generative
+recommendation setting. Because the target is excluded by default, correctness
+from this constrained prompt is not interpretable as recommendation accuracy.
+Use it to debug catalog coverage, parser behavior, and title grounding before
+returning to the normal `forced_json` observation flow.
+
 ## Run Mock Observation
 
 ```powershell

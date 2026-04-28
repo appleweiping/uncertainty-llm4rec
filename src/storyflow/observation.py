@@ -10,7 +10,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-from storyflow.generation import build_prompt, compute_prompt_hash
+from storyflow.generation import (
+    CATALOG_CONSTRAINED_JSON_TEMPLATE,
+    build_prompt,
+    compute_prompt_hash,
+)
 from storyflow.grounding import TitleGrounder
 from storyflow.metrics import (
     brier_score,
@@ -130,6 +134,99 @@ def _select_examples(
     return selected
 
 
+def _catalog_candidate_records(
+    example: dict[str, Any],
+    *,
+    catalog_rows: list[dict[str, Any]],
+    candidate_count: int,
+    allow_target_in_candidates: bool = False,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Build a deterministic catalog candidate list for diagnostic prompts.
+
+    The default policy excludes the target item so this cannot leak the answer.
+    It is meant for grounding diagnostics, not for correctness evaluation.
+    """
+
+    if candidate_count < 1:
+        raise ValueError("candidate_count must be >= 1")
+
+    history_ids = {str(item_id) for item_id in example.get("history_item_ids", [])}
+    target_item_id = str(example["target_item_id"])
+    excluded_ids = set(history_ids)
+    if not allow_target_in_candidates:
+        excluded_ids.add(target_item_id)
+
+    grouped: dict[str, list[dict[str, Any]]] = {bucket.value: [] for bucket in PopularityBucket}
+    for row in sorted(
+        catalog_rows,
+        key=lambda catalog_row: (
+            -int(catalog_row.get("popularity") or 0),
+            str(catalog_row.get("title") or ""),
+            str(catalog_row.get("item_id") or ""),
+        ),
+    ):
+        item_id = str(row["item_id"])
+        if item_id in excluded_ids:
+            continue
+        bucket = str(row.get("popularity_bucket") or "tail")
+        grouped.setdefault(bucket, []).append(row)
+
+    candidates: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    while len(candidates) < candidate_count:
+        made_progress = False
+        for bucket in ("head", "mid", "tail"):
+            bucket_rows = grouped.get(bucket, [])
+            while bucket_rows:
+                candidate = bucket_rows.pop(0)
+                item_id = str(candidate["item_id"])
+                if item_id not in seen_ids:
+                    candidates.append(candidate)
+                    seen_ids.add(item_id)
+                    made_progress = True
+                    break
+            if len(candidates) >= candidate_count:
+                break
+        if not made_progress:
+            break
+
+    fallback_history_count = 0
+    if len(candidates) < candidate_count:
+        catalog_by_id = {str(row["item_id"]): row for row in catalog_rows}
+        for item_id in example.get("history_item_ids", []):
+            item_id = str(item_id)
+            if item_id in seen_ids or item_id == target_item_id or item_id not in catalog_by_id:
+                continue
+            candidates.append(catalog_by_id[item_id])
+            seen_ids.add(item_id)
+            fallback_history_count += 1
+            if len(candidates) >= candidate_count:
+                break
+
+    candidate_ids = {str(candidate["item_id"]) for candidate in candidates}
+    policy = {
+        "name": (
+            "round_robin_popularity_allow_target"
+            if allow_target_in_candidates
+            else "round_robin_popularity_no_target"
+        ),
+        "candidate_count_requested": candidate_count,
+        "candidate_count_actual": len(candidates),
+        "allow_target_in_candidates": allow_target_in_candidates,
+        "target_in_candidates": target_item_id in candidate_ids,
+        "history_item_count_in_candidates": len(history_ids & candidate_ids),
+        "history_fallback_count": fallback_history_count,
+        "uses_target_title": target_item_id in candidate_ids,
+        "is_diagnostic_grounding_gate": True,
+        "correctness_not_interpretable_without_unbiased_candidate_generation": True,
+        "note": (
+            "Diagnostic catalog-constrained prompt candidate set. Default policy "
+            "excludes target item to prevent leakage."
+        ),
+    }
+    return candidates, policy
+
+
 def _enrich_example_from_catalog(
     example: dict[str, Any],
     *,
@@ -166,6 +263,8 @@ def build_observation_input_records(
     max_examples: int | None = None,
     stratify_by_popularity: bool = False,
     prompt_template: str = "forced_json",
+    candidate_count: int | None = None,
+    allow_target_in_candidates: bool = False,
 ) -> list[dict[str, Any]]:
     processed_dir = Path(processed_dir)
     catalog_csv = processed_dir / "item_catalog.csv"
@@ -184,36 +283,70 @@ def build_observation_input_records(
     )
     records: list[dict[str, Any]] = []
     for example in examples:
-        prompt = build_prompt(example["history_item_titles"], template=prompt_template)
+        candidate_records: list[dict[str, Any]] = []
+        candidate_policy: dict[str, Any] | None = None
+        if prompt_template == CATALOG_CONSTRAINED_JSON_TEMPLATE.name:
+            candidate_records, candidate_policy = _catalog_candidate_records(
+                example,
+                catalog_rows=catalog,
+                candidate_count=candidate_count or 20,
+                allow_target_in_candidates=allow_target_in_candidates,
+            )
+            if not candidate_records:
+                raise ValueError(
+                    "catalog_constrained_json requires at least one catalog candidate"
+                )
+            prompt = build_prompt(
+                example["history_item_titles"],
+                template=prompt_template,
+                candidate_titles=[candidate["title"] for candidate in candidate_records],
+            )
+        else:
+            prompt = build_prompt(example["history_item_titles"], template=prompt_template)
         prompt_hash = compute_prompt_hash(prompt)
         input_id = f"{dataset}:{processed_suffix}:{example['example_id']}:{prompt_hash[:12]}"
-        records.append(
-            {
-                "input_id": input_id,
-                "dataset": dataset,
-                "processed_suffix": processed_suffix,
-                "example_id": example["example_id"],
-                "user_id": example["user_id"],
-                "split": example["split"],
-                "history_item_ids": example["history_item_ids"],
-                "history_item_titles": example["history_item_titles"],
-                "history_timestamps": example.get("history_timestamps", []),
-                "history_length": int(example["history_length"]),
-                "target_item_id": example["target_item_id"],
-                "target_title": example["target_title"],
-                "target_timestamp": int(example["target_timestamp"]),
-                "target_popularity": int(example["target_item_popularity"]),
-                "target_popularity_bucket": example["target_popularity_bucket"],
-                "prompt_template": prompt_template,
-                "prompt": prompt,
-                "prompt_hash": prompt_hash,
-                "source": {
-                    "processed_dir": str(processed_dir),
-                    "catalog_csv": str(catalog_csv),
-                    "observation_examples": str(examples_jsonl),
-                },
-            }
-        )
+        record = {
+            "input_id": input_id,
+            "dataset": dataset,
+            "processed_suffix": processed_suffix,
+            "example_id": example["example_id"],
+            "user_id": example["user_id"],
+            "split": example["split"],
+            "history_item_ids": example["history_item_ids"],
+            "history_item_titles": example["history_item_titles"],
+            "history_timestamps": example.get("history_timestamps", []),
+            "history_length": int(example["history_length"]),
+            "target_item_id": example["target_item_id"],
+            "target_title": example["target_title"],
+            "target_timestamp": int(example["target_timestamp"]),
+            "target_popularity": int(example["target_item_popularity"]),
+            "target_popularity_bucket": example["target_popularity_bucket"],
+            "prompt_template": prompt_template,
+            "prompt": prompt,
+            "prompt_hash": prompt_hash,
+            "source": {
+                "processed_dir": str(processed_dir),
+                "catalog_csv": str(catalog_csv),
+                "observation_examples": str(examples_jsonl),
+            },
+        }
+        if candidate_records:
+            record.update(
+                {
+                    "catalog_candidate_item_ids": [
+                        str(candidate["item_id"]) for candidate in candidate_records
+                    ],
+                    "catalog_candidate_titles": [
+                        str(candidate["title"]) for candidate in candidate_records
+                    ],
+                    "catalog_candidate_popularity_buckets": [
+                        str(candidate.get("popularity_bucket") or "tail")
+                        for candidate in candidate_records
+                    ],
+                    "candidate_policy": candidate_policy,
+                }
+            )
+        records.append(record)
     return records
 
 
@@ -223,15 +356,19 @@ def default_observation_input_path(
     processed_suffix: str,
     split: str,
     prompt_template: str,
+    candidate_count: int | None = None,
     root: str | Path = ".",
 ) -> Path:
+    stem = f"{split}_{prompt_template}"
+    if prompt_template == CATALOG_CONSTRAINED_JSON_TEMPLATE.name:
+        stem = f"{stem}_c{candidate_count or 20}"
     return (
         Path(root)
         / "outputs"
         / "observation_inputs"
         / dataset
         / processed_suffix
-        / f"{split}_{prompt_template}.jsonl"
+        / f"{stem}.jsonl"
     )
 
 
@@ -244,6 +381,8 @@ def write_observation_inputs(
     split: str,
     prompt_template: str,
     stratify_by_popularity: bool,
+    candidate_count: int | None = None,
+    allow_target_in_candidates: bool = False,
 ) -> dict[str, Any]:
     output_path = Path(output_jsonl)
     write_jsonl(output_path, records)
@@ -258,6 +397,8 @@ def write_observation_inputs(
         "split": split,
         "prompt_template": prompt_template,
         "stratify_by_popularity": stratify_by_popularity,
+        "candidate_count": candidate_count,
+        "allow_target_in_candidates": allow_target_in_candidates,
         "input_count": len(records),
         "bucket_counts": bucket_counts,
         "output_jsonl": str(output_path),

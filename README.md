@@ -139,7 +139,8 @@ Implemented foundation modules:
   interaction filtering, k-core filtering, popularity computation, per-user
   leave-last splits, rolling examples, and global chronological split.
 - `storyflow.generation`: prompt templates for title-level next-item generation,
-  self-verification, probability confidence, and forced JSON output.
+  self-verification, probability confidence, forced JSON output, and a
+  catalog-constrained diagnostic prompt for grounding-gate checks.
 - `storyflow.providers.mock`: deterministic no-API mock provider for scaffold
   tests and observation pipeline sanity checks.
 - `storyflow.providers`: provider config loading, cache key utilities,
@@ -320,6 +321,18 @@ Build prompt JSONL inputs from processed examples:
 python scripts/build_observation_inputs.py --dataset movielens_1m --processed-suffix sanity_50_users --split test --max-examples 20 --stratify-by-popularity
 ```
 
+Build a target-leakage-safe catalog-constrained grounding diagnostic input:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --prompt-template catalog_constrained_json --candidate-count 20
+```
+
+The constrained prompt is a debug gate for catalog coverage, title
+normalization, parser behavior, and grounding. It is not the main free-form
+generative recommendation setting. By default the target item is excluded from
+the candidate list, so correctness from this constrained file is not
+interpretable as recommendation accuracy.
+
 Run the no-API mock observation pipeline:
 
 ```powershell
@@ -457,6 +470,19 @@ outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json
 This gate proves the Amazon Beauty sample is ready for prompt construction and
 future approved API observation. It is not a full Amazon run and not paper
 evidence.
+
+If pilot case review shows many ungrounded high-confidence titles, build the
+separate catalog-constrained diagnostic input before spending more API budget:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --prompt-template catalog_constrained_json --candidate-count 20
+```
+
+This produces ignored inputs under:
+
+```text
+outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_catalog_constrained_json_c20.jsonl
+```
 
 ## Tests
 

@@ -5,7 +5,10 @@ import json
 import uuid
 from pathlib import Path
 
-from storyflow.generation import build_forced_json_prompt
+from storyflow.generation import (
+    build_catalog_constrained_json_prompt,
+    build_forced_json_prompt,
+)
 from storyflow.observation import (
     build_observation_input_records,
     compute_observation_metrics,
@@ -127,6 +130,19 @@ def test_forced_json_prompt_is_generative_title_task() -> None:
     assert "confidence" in prompt
 
 
+def test_catalog_constrained_prompt_is_diagnostic_grounding_gate() -> None:
+    prompt = build_catalog_constrained_json_prompt(
+        ["Primer", "Arrival"],
+        ["The Matrix", "Toy Story"],
+    )
+
+    assert "catalog-grounding diagnostic" in prompt
+    assert "Catalog candidate titles" in prompt
+    assert "The Matrix" in prompt
+    assert "NO_GROUNDABLE_TITLE" in prompt
+    assert "confidence" in prompt
+
+
 def test_observation_input_records_have_prompt_schema() -> None:
     workspace = _workspace_tmp("observation_inputs")
     processed_dir = workspace / "processed"
@@ -159,6 +175,31 @@ def test_observation_input_records_have_prompt_schema() -> None:
     )
     assert output_jsonl.exists()
     assert manifest["input_count"] == 2
+
+
+def test_catalog_constrained_observation_inputs_exclude_target_by_default() -> None:
+    workspace = _workspace_tmp("constrained_observation_inputs")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+
+    records = build_observation_input_records(
+        dataset="synthetic_fixture",
+        processed_suffix="tiny",
+        split="test",
+        processed_dir=processed_dir,
+        max_examples=1,
+        prompt_template="catalog_constrained_json",
+        candidate_count=2,
+    )
+
+    assert len(records) == 1
+    record = records[0]
+    assert record["prompt_template"] == "catalog_constrained_json"
+    assert record["catalog_candidate_titles"]
+    assert record["target_item_id"] not in record["catalog_candidate_item_ids"]
+    assert record["candidate_policy"]["target_in_candidates"] is False
+    assert record["candidate_policy"]["is_diagnostic_grounding_gate"] is True
+    assert "Catalog candidate titles" in record["prompt"]
 
 
 def test_mock_provider_is_deterministic_without_api_key(monkeypatch) -> None:

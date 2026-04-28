@@ -108,6 +108,20 @@ self-verification prompt audits. Many `generated_head_target_tail` or
 `generated_more_popular_than_target` cases should lead to popularity-confidence
 residual analysis.
 
+For prompt and grounding triage, the repository now supports a
+`catalog_constrained_json` observation input template. It builds a separate
+diagnostic prompt with explicit catalog candidate titles and a default
+target-leakage guard:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --prompt-template catalog_constrained_json --candidate-count 20
+```
+
+This should be used only to debug whether failures come from catalog coverage,
+title normalization, parser behavior, or prompt wording. Because the default
+candidate policy excludes the target item, its correctness labels are not
+recommendation-accuracy evidence.
+
 ## How To Use The Review
 
 Use the priority cases to decide the next engineering step:

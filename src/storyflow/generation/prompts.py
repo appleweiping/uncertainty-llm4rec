@@ -31,6 +31,13 @@ FORCED_JSON_TEMPLATE = PromptTemplate(
     name="forced_json",
     description="Generate a JSON object with title, yes/no, and confidence.",
 )
+CATALOG_CONSTRAINED_JSON_TEMPLATE = PromptTemplate(
+    name="catalog_constrained_json",
+    description=(
+        "Diagnostic prompt that asks for a JSON title selected from a provided "
+        "catalog candidate list."
+    ),
+)
 
 
 def format_history_titles(history_titles: Iterable[str]) -> str:
@@ -39,6 +46,15 @@ def format_history_titles(history_titles: Iterable[str]) -> str:
     titles = [str(title).strip() for title in history_titles if str(title).strip()]
     if not titles:
         raise ValueError("history_titles must contain at least one non-empty title")
+    return "\n".join(f"{index + 1}. {title}" for index, title in enumerate(titles))
+
+
+def format_candidate_titles(candidate_titles: Iterable[str]) -> str:
+    """Format catalog candidate titles for diagnostic grounding prompts."""
+
+    titles = [str(title).strip() for title in candidate_titles if str(title).strip()]
+    if not titles:
+        raise ValueError("candidate_titles must contain at least one non-empty title")
     return "\n".join(f"{index + 1}. {title}" for index, title in enumerate(titles))
 
 
@@ -97,10 +113,37 @@ def build_forced_json_prompt(history_titles: Iterable[str]) -> str:
     )
 
 
+def build_catalog_constrained_json_prompt(
+    history_titles: Iterable[str],
+    candidate_titles: Iterable[str],
+) -> str:
+    """Diagnostic prompt for grounding-gate checks with catalog candidates."""
+
+    history = format_history_titles(history_titles)
+    candidates = format_candidate_titles(candidate_titles)
+    return (
+        "You are doing title-level generative recommendation.\n"
+        "This is a catalog-grounding diagnostic prompt: choose exactly one "
+        "groundable item title from the provided catalog candidate titles, "
+        "based on the user's chronological history.\n\n"
+        "User history:\n"
+        f"{history}\n\n"
+        "Catalog candidate titles:\n"
+        f"{candidates}\n\n"
+        "Return only valid JSON with this schema: "
+        '{"generated_title": string, "is_likely_correct": "yes" | "no", '
+        '"confidence": number}. The generated_title must exactly match one '
+        "candidate title. If no candidate is plausible, set generated_title "
+        'to "NO_GROUNDABLE_TITLE", is_likely_correct to "no", and confidence '
+        "to 0.0. Confidence must be in [0, 1]."
+    )
+
+
 def build_prompt(
     history_titles: Iterable[str],
     *,
     template: str = FORCED_JSON_TEMPLATE.name,
+    candidate_titles: Iterable[str] | None = None,
 ) -> str:
     """Build a prompt by template name."""
 
@@ -112,6 +155,10 @@ def build_prompt(
         return build_probability_confidence_prompt(history_titles)
     if template == FORCED_JSON_TEMPLATE.name:
         return build_forced_json_prompt(history_titles)
+    if template == CATALOG_CONSTRAINED_JSON_TEMPLATE.name:
+        if candidate_titles is None:
+            raise ValueError("candidate_titles are required for catalog_constrained_json")
+        return build_catalog_constrained_json_prompt(history_titles, candidate_titles)
     raise ValueError(f"unknown prompt template: {template}")
 
 

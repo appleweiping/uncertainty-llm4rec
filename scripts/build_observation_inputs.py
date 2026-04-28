@@ -27,6 +27,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--split", default="test")
     parser.add_argument("--max-examples", type=int)
     parser.add_argument("--prompt-template", default="forced_json")
+    parser.add_argument("--candidate-count", type=int)
+    parser.add_argument(
+        "--allow-target-in-candidates",
+        action="store_true",
+        help=(
+            "Only for controlled diagnostics. Default excludes target item "
+            "from catalog-constrained candidates to avoid answer leakage."
+        ),
+    )
     parser.add_argument("--stratify-by-popularity", action="store_true")
     parser.add_argument("--output-jsonl")
     args = parser.parse_args(argv)
@@ -44,6 +53,7 @@ def main(argv: list[str] | None = None) -> int:
         processed_suffix=args.processed_suffix,
         split=args.split,
         prompt_template=args.prompt_template,
+        candidate_count=args.candidate_count,
         root=ROOT,
     )
     records = build_observation_input_records(
@@ -54,6 +64,8 @@ def main(argv: list[str] | None = None) -> int:
         max_examples=args.max_examples,
         stratify_by_popularity=args.stratify_by_popularity,
         prompt_template=args.prompt_template,
+        candidate_count=args.candidate_count,
+        allow_target_in_candidates=args.allow_target_in_candidates,
     )
     manifest = write_observation_inputs(
         records,
@@ -63,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
         split=args.split,
         prompt_template=args.prompt_template,
         stratify_by_popularity=args.stratify_by_popularity,
+        candidate_count=args.candidate_count,
+        allow_target_in_candidates=args.allow_target_in_candidates,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True))
     return 0
