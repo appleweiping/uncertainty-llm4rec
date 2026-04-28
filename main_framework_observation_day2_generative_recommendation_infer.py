@@ -85,8 +85,10 @@ def _history_payload(row: dict[str, Any], cfg: dict[str, Any]) -> list[dict[str,
 
 
 def _candidate_payload(pool: list[dict[str, Any]], cfg: dict[str, Any]) -> list[dict[str, Any]]:
+    labels = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     return [
         {
+            "candidate_label": labels[idx],
             "candidate_number": idx + 1,
             "title": _truncate_text(row.get("candidate_title", ""), int(cfg.get("max_title_chars", 180))),
             "text": _truncate_text(row.get("candidate_text", ""), int(cfg.get("max_candidate_text_chars", 260))),

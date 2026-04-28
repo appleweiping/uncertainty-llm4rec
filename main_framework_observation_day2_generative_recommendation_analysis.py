@@ -18,6 +18,9 @@ DIAG_CSV = Path("data_done/framework_observation_day2_generative_candidate_groun
 CAL_CSV = Path("data_done/framework_observation_day2_generative_candidate_grounded_calibration.csv")
 REPORT_MD = Path("data_done/framework_observation_day2_generative_recommendation_report.md")
 COMPARISON_CSV = Path("data_done/framework_observation_day2_generative_vs_binary_observation_comparison.csv")
+DAY2B_COMPARE_CSV = Path("data_done/framework_observation_day2b_day2_vs_day2b_comparison.csv")
+
+PLACEHOLDER_TITLES = {"", "...", "n/a", "na", "unknown", "none", "null"}
 
 
 def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -67,6 +70,43 @@ def normalize_title(text: Any) -> str:
     return value
 
 
+def is_placeholder_title(text: Any) -> bool:
+    value = str(text or "").strip().lower()
+    normalized = normalize_title(value)
+    return value in PLACEHOLDER_TITLES or normalized in PLACEHOLDER_TITLES
+
+
+def explanatory_text_after_json(raw_text: Any) -> bool:
+    text = str(raw_text or "").strip()
+    if not text:
+        return False
+    start = text.find("{")
+    if start < 0:
+        return False
+    depth = 0
+    in_str = False
+    escape = False
+    for i in range(start, len(text)):
+        ch = text[i]
+        if escape:
+            escape = False
+            continue
+        if ch == "\\" and in_str:
+            escape = True
+            continue
+        if ch == '"':
+            in_str = not in_str
+        if in_str:
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return bool(text[i + 1 :].strip())
+    return False
+
+
 def _tokens(text: Any) -> set[str]:
     return {tok for tok in normalize_title(text).split() if len(tok) > 1}
 
@@ -104,6 +144,16 @@ def _load_catalog(path: Path) -> list[dict[str, Any]]:
 
 def _candidate_ranking(pred: dict[str, Any]) -> list[dict[str, Any]]:
     generated = pred.get("recommended_title", "")
+    if is_placeholder_title(generated):
+        return [
+            {
+                "item_id": str(cand.get("candidate_item_id", "")),
+                "title": str(cand.get("candidate_title", "")),
+                "score": 0.0,
+                "label": int(cand.get("label", 0)),
+            }
+            for cand in pred.get("candidate_pool", [])
+        ]
     ranking = []
     for cand in pred.get("candidate_pool", []):
         title = cand.get("candidate_title", "")
@@ -123,13 +173,16 @@ def _candidate_ranking(pred: dict[str, Any]) -> list[dict[str, Any]]:
 def ground_prediction(pred: dict[str, Any], catalog: list[dict[str, Any]], threshold: float = 0.35) -> dict[str, Any]:
     generated = pred.get("recommended_title", "")
     normalized_generated = normalize_title(generated)
+    placeholder_title = is_placeholder_title(generated)
+    empty_title = str(generated or "").strip() == ""
+    explanatory_after_json = explanatory_text_after_json(pred.get("raw_response", ""))
     candidate_pool = pred.get("candidate_pool", [])
     target_item_id = str(pred.get("target_item_id", ""))
 
     exact_candidates = [
         cand
         for cand in candidate_pool
-        if normalized_generated and normalized_generated == normalize_title(cand.get("candidate_title", ""))
+        if (not placeholder_title) and normalized_generated and normalized_generated == normalize_title(cand.get("candidate_title", ""))
     ]
     candidate_ranking = _candidate_ranking(pred)
     best_candidate = candidate_ranking[0] if candidate_ranking else {"item_id": "", "title": "", "score": 0.0}
@@ -148,14 +201,14 @@ def ground_prediction(pred: dict[str, Any], catalog: list[dict[str, Any]], thres
         matched_candidate_item_id = str(exact_candidates[0].get("candidate_item_id", ""))
         matched_candidate_title = str(exact_candidates[0].get("candidate_title", ""))
         candidate_match_score = 1.0
-    elif float(best_candidate.get("score", 0.0)) >= threshold:
+    elif (not placeholder_title) and float(best_candidate.get("score", 0.0)) >= threshold:
         method = "candidate_token_retrieval"
         matched_candidate_item_id = str(best_candidate.get("item_id", ""))
         matched_candidate_title = str(best_candidate.get("title", ""))
         candidate_match_score = float(best_candidate.get("score", 0.0))
 
     catalog_match = {"item_id": "", "title": "", "score": 0.0, "rank": 0}
-    if catalog:
+    if catalog and not placeholder_title:
         scored = []
         for item in catalog:
             score = 1.0 if normalized_generated and normalized_generated == item["normalized_title"] else token_similarity(generated, item["title"])
@@ -165,8 +218,10 @@ def ground_prediction(pred: dict[str, Any], catalog: list[dict[str, Any]], thres
         if scored:
             catalog_match = {**scored[0], "rank": 1}
 
+    candidate_title_exact_match = method == "candidate_normalized_exact"
     is_valid_candidate_title = bool(matched_candidate_item_id)
-    is_valid_catalog_item = is_valid_candidate_title or float(catalog_match.get("score", 0.0)) >= threshold
+    is_valid_catalog_item = (not placeholder_title) and (is_valid_candidate_title or float(catalog_match.get("score", 0.0)) >= threshold)
+    generation_valid = is_valid_catalog_item
     matched_item_id = matched_candidate_item_id or (str(catalog_match.get("item_id", "")) if is_valid_catalog_item else "")
     matched_title = matched_candidate_title or (str(catalog_match.get("title", "")) if is_valid_catalog_item else "")
     match_score = candidate_match_score if matched_candidate_item_id else float(catalog_match.get("score", 0.0))
@@ -174,16 +229,22 @@ def ground_prediction(pred: dict[str, Any], catalog: list[dict[str, Any]], thres
     top1_from_candidate_retrieval = candidate_ranking[0]["item_id"] if candidate_ranking else ""
     return {
         "normalized_recommended_title": normalized_generated,
+        "placeholder_title": placeholder_title,
+        "empty_title": empty_title,
+        "explanatory_text_after_json": explanatory_after_json,
         "matched_candidate_item_id": matched_candidate_item_id,
         "matched_candidate_title": matched_candidate_title,
         "candidate_match_method": method,
         "candidate_match_score": candidate_match_score,
+        "candidate_title_exact_match": candidate_title_exact_match,
         "matched_item_id": matched_item_id,
         "matched_title": matched_title,
         "match_score": match_score,
         "match_rank": int(catalog_match.get("rank", 0)),
         "is_valid_candidate_title": is_valid_candidate_title,
         "is_valid_catalog_item": is_valid_catalog_item,
+        "generation_valid": generation_valid,
+        "invalid_title": not generation_valid,
         "hallucination": not is_valid_catalog_item,
         "hit_target": hit_target,
         "target_rank_if_candidate_pool_available": target_rank,
@@ -295,8 +356,18 @@ def _summarize_split(rows: list[dict[str, Any]], split: str) -> dict[str, Any]:
         "num_users": n,
         "parse_success_rate": _safe_mean([1.0 if row.get("parse_success") else 0.0 for row in rows]),
         "schema_valid_rate": _safe_mean([1.0 if row.get("schema_valid") else 0.0 for row in rows]),
+        "generation_valid_rate": _safe_mean([1.0 if row.get("generation_valid") else 0.0 for row in rows]),
+        "placeholder_title_rate": _safe_mean([1.0 if row.get("placeholder_title") else 0.0 for row in rows]),
+        "empty_title_rate": _safe_mean([1.0 if row.get("empty_title") else 0.0 for row in rows]),
+        "invalid_title_rate": _safe_mean([1.0 if row.get("invalid_title") else 0.0 for row in rows]),
+        "explanatory_text_after_json_rate": _safe_mean([1.0 if row.get("explanatory_text_after_json") else 0.0 for row in rows]),
+        "candidate_title_exact_match_rate": _safe_mean([1.0 if row.get("candidate_title_exact_match") else 0.0 for row in rows]),
         "valid_candidate_title_rate": _safe_mean([1.0 if row.get("is_valid_candidate_title") else 0.0 for row in rows]),
         "catalog_match_rate": _safe_mean([1.0 if row.get("is_valid_catalog_item") else 0.0 for row in rows]),
+        "matched_title_hit_rate": _safe_mean([1.0 if row.get("hit_target") else 0.0 for row in rows]),
+        "matched_title_hit_rate_given_generation_valid": _safe_mean(
+            [1.0 if row.get("hit_target") else 0.0 for row in rows if row.get("generation_valid")]
+        ),
         "hallucination_rate": _safe_mean([1.0 if row.get("hallucination") else 0.0 for row in rows]),
         "HR@1": ranking["HR@1"],
         "MRR": ranking["MRR"],
@@ -356,6 +427,17 @@ def _calibration_rows(enriched_by_split: dict[str, list[dict[str, Any]]]) -> lis
                 }
             )
     return rows
+
+
+def _analysis_paths(cfg: dict[str, Any]) -> tuple[Path, Path, Path, Path]:
+    if cfg.get("analysis_diagnostics_csv"):
+        return (
+            Path(str(cfg["analysis_diagnostics_csv"])),
+            Path(str(cfg["analysis_calibration_csv"])),
+            Path(str(cfg["analysis_report_md"])),
+            Path(str(cfg.get("analysis_comparison_csv", COMPARISON_CSV))),
+        )
+    return DIAG_CSV, CAL_CSV, REPORT_MD, COMPARISON_CSV
 
 
 def _first_value(path: Path, candidates: list[str]) -> str:
@@ -426,8 +508,8 @@ def _comparison_rows(diag_rows: list[dict[str, Any]], cal_rows: list[dict[str, A
             "output_type": "recommended_title + confidence",
             "confidence_source": "verbalized_scalar",
             "parse_success": test_diag.get("parse_success_rate", "NA"),
-            "valid_output_rate": test_diag.get("schema_valid_rate", "NA"),
-            "recommendation_metric": test_diag.get("HR@1", "NA"),
+            "valid_output_rate": test_diag.get("generation_valid_rate", "NA"),
+            "recommendation_metric": test_diag.get("matched_title_hit_rate", "NA"),
             "confidence_ECE": raw_cal.get("ECE", "NA"),
             "confidence_AUROC": raw_cal.get("AUROC", "NA"),
             "hallucination_rate": test_diag.get("hallucination_rate", "NA"),
@@ -440,8 +522,8 @@ def _comparison_rows(diag_rows: list[dict[str, Any]], cal_rows: list[dict[str, A
             "output_type": "catalog-grounded title",
             "confidence_source": "catalog_match_score",
             "parse_success": test_diag.get("parse_success_rate", "NA"),
-            "valid_output_rate": test_diag.get("valid_candidate_title_rate", "NA"),
-            "recommendation_metric": test_diag.get("MRR", "NA"),
+            "valid_output_rate": test_diag.get("generation_valid_rate", "NA"),
+            "recommendation_metric": test_diag.get("matched_title_hit_rate", "NA"),
             "confidence_ECE": "diagnostic_after_run",
             "confidence_AUROC": "diagnostic_after_run",
             "hallucination_rate": test_diag.get("hallucination_rate", "NA"),
@@ -452,9 +534,14 @@ def _comparison_rows(diag_rows: list[dict[str, Any]], cal_rows: list[dict[str, A
     return old_rows + day2_rows
 
 
-def _write_report(diag_rows: list[dict[str, Any]], cal_rows: list[dict[str, Any]]) -> None:
+def _write_report(diag_rows: list[dict[str, Any]], cal_rows: list[dict[str, Any]], report_path: Path, day2b: bool) -> None:
+    title = (
+        "# Framework-Observation-Day2b Generative Recommendation Prompt/Parser Repair Report"
+        if day2b
+        else "# Framework-Observation-Day2 Generative Recommendation Smoke Report"
+    )
     lines = [
-        "# Framework-Observation-Day2 Generative Recommendation Smoke Report",
+        title,
         "",
         "Status: observation only. This is not training, CEP, evidence decomposition, or a continuation of yes/no confidence prompting.",
         "",
@@ -464,6 +551,13 @@ def _write_report(diag_rows: list[dict[str, Any]], cal_rows: list[dict[str, Any]
         "- Model: base Qwen3-8B first; LoRA remains optional.",
         "- Output schema: `recommended_title` plus raw verbalized `confidence`.",
         "- Evaluation: generated title is grounded back to the 6-item candidate pool and then to the catalog when needed.",
+        "- Placeholder titles such as `...`, empty strings, `N/A`, `unknown`, and `none` are generation-invalid.",
+        "",
+        "## Day2b Interpretation",
+        "",
+        "- Day2 exposed a placeholder/schema-following failure: parse/schema success can be superficial.",
+        "- Day2b tests whether removing placeholder examples and forcing exact candidate-title copying fixes output control.",
+        "- Main metrics are generation validity, exact candidate-title matching, matched-title hit rate, hallucination, and placeholder rate.",
         "",
         "## Diagnostics",
         "",
@@ -489,14 +583,72 @@ def _write_report(diag_rows: list[dict[str, Any]], cal_rows: list[dict[str, Any]
             "- If candidate-grounded title validity and HR@1 are reasonable, Day3 can expand to valid/test 500 or Beauty full.",
             "- If raw verbalized confidence collapses again, Day3 should add generation logprob, title retrieval margin, and title self-consistency agreement.",
             "- If hallucination is high, keep candidate-grounded generation and defer open-title full runs.",
+            "- If placeholder outputs persist, switch to the Day2c label-first generation fallback before expanding sample size.",
             "- If candidate-grounded generation is strong, later evidence observation or CEP can be considered, but Day2 itself is still observation.",
         ]
     )
-    REPORT_MD.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _day2b_comparison(day2_diag_path: Path, day2b_diag_rows: list[dict[str, Any]], day2b_cal_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    day2_rows = _read_csv(day2_diag_path)
+    if day2_rows:
+        day2_test = next((row for row in day2_rows if row.get("split") == "test"), day2_rows[-1])
+        rows.append(
+            {
+                "method": "base_qwen_candidate_grounded",
+                "prompt_version": "day2_placeholder_schema",
+                "num_users": day2_test.get("num_users", "NA"),
+                "parse_success_rate": day2_test.get("parse_success_rate", "NA"),
+                "schema_valid_rate": day2_test.get("schema_valid_rate", "NA"),
+                "generation_valid_rate": day2_test.get("generation_valid_rate", day2_test.get("catalog_match_rate", "NA")),
+                "placeholder_title_rate": day2_test.get("placeholder_title_rate", "0.87_observed"),
+                "candidate_title_exact_match_rate": day2_test.get("candidate_title_exact_match_rate", day2_test.get("valid_candidate_title_rate", "NA")),
+                "catalog_match_rate": day2_test.get("catalog_match_rate", "NA"),
+                "matched_title_hit_rate": day2_test.get("matched_title_hit_rate", day2_test.get("HR@1", "NA")),
+                "hallucination_rate": day2_test.get("hallucination_rate", "NA"),
+                "confidence_mean": day2_test.get("confidence_mean", "NA"),
+                "confidence_std": day2_test.get("confidence_std", "NA"),
+                "confidence_unique_count": day2_test.get("confidence_unique_count", "NA"),
+                "confidence_ECE_for_generation_correctness": day2_test.get("ECE_for_generation_correctness", "NA"),
+                "confidence_AUROC_for_generation_correctness": day2_test.get("AUROC_for_generation_correctness", "NA"),
+                "notes": "Day2 parse/schema looked good but most outputs were placeholder titles.",
+            }
+        )
+    if day2b_diag_rows:
+        test = next((row for row in day2b_diag_rows if row.get("split") == "test"), day2b_diag_rows[-1])
+        raw_cal = next(
+            (row for row in day2b_cal_rows if row.get("split") == "test" and row.get("score_type") == "raw_verbalized_confidence"),
+            {},
+        )
+        rows.append(
+            {
+                "method": "base_qwen_candidate_grounded",
+                "prompt_version": "day2b_no_placeholder_exact_title",
+                "num_users": test.get("num_users", "NA"),
+                "parse_success_rate": test.get("parse_success_rate", "NA"),
+                "schema_valid_rate": test.get("schema_valid_rate", "NA"),
+                "generation_valid_rate": test.get("generation_valid_rate", "NA"),
+                "placeholder_title_rate": test.get("placeholder_title_rate", "NA"),
+                "candidate_title_exact_match_rate": test.get("candidate_title_exact_match_rate", "NA"),
+                "catalog_match_rate": test.get("catalog_match_rate", "NA"),
+                "matched_title_hit_rate": test.get("matched_title_hit_rate", "NA"),
+                "hallucination_rate": test.get("hallucination_rate", "NA"),
+                "confidence_mean": test.get("confidence_mean", "NA"),
+                "confidence_std": test.get("confidence_std", "NA"),
+                "confidence_unique_count": test.get("confidence_unique_count", "NA"),
+                "confidence_ECE_for_generation_correctness": raw_cal.get("ECE", test.get("ECE_for_generation_correctness", "NA")),
+                "confidence_AUROC_for_generation_correctness": raw_cal.get("AUROC", test.get("AUROC_for_generation_correctness", "NA")),
+                "notes": "Day2b fixes output control if placeholder rate drops and generation validity rises.",
+            }
+        )
+    return rows
 
 
 def analyze(cfg: dict[str, Any], pred_dir: Path) -> dict[str, str]:
+    diag_path, cal_path, report_path, comparison_path = _analysis_paths(cfg)
     catalog = _load_catalog(Path(str(cfg.get("catalog_file", ""))))
     enriched_by_split: dict[str, list[dict[str, Any]]] = {}
     diag_rows = []
@@ -511,15 +663,20 @@ def analyze(cfg: dict[str, Any], pred_dir: Path) -> dict[str, str]:
         enriched_by_split[split] = enriched
         diag_rows.append(_summarize_split(enriched, split))
     cal_rows = _calibration_rows(enriched_by_split)
-    _write_csv(DIAG_CSV, diag_rows)
-    _write_csv(CAL_CSV, cal_rows)
-    _write_csv(COMPARISON_CSV, _comparison_rows(diag_rows, cal_rows))
-    _write_report(diag_rows, cal_rows)
+    _write_csv(diag_path, diag_rows)
+    _write_csv(cal_path, cal_rows)
+    _write_csv(comparison_path, _comparison_rows(diag_rows, cal_rows))
+    is_day2b = "day2b" in str(diag_path).lower() or "day2b" in str(report_path).lower()
+    _write_report(diag_rows, cal_rows, report_path, is_day2b)
+    if is_day2b:
+        day2_diag_path = Path(str(cfg.get("day2_diagnostics_csv", DIAG_CSV)))
+        _write_csv(DAY2B_COMPARE_CSV, _day2b_comparison(day2_diag_path, diag_rows, cal_rows))
     return {
-        "diagnostics": str(DIAG_CSV),
-        "calibration": str(CAL_CSV),
-        "report": str(REPORT_MD),
-        "comparison": str(COMPARISON_CSV),
+        "diagnostics": str(diag_path),
+        "calibration": str(cal_path),
+        "report": str(report_path),
+        "comparison": str(comparison_path),
+        "day2b_comparison": str(DAY2B_COMPARE_CSV) if is_day2b else "",
     }
 
 

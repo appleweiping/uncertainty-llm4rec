@@ -1,0 +1,26 @@
+You are doing candidate-grounded generative recommendation.
+
+Given a user's history and Candidate Titles A-F, choose the one candidate title that should be recommended next.
+
+Rules:
+- recommended_title must be copied exactly from one of the Candidate Titles.
+- Never output "...".
+- Never output an empty title.
+- Never output N/A, unknown, none, or any placeholder.
+- Never invent a title outside the candidate pool.
+- If uncertain, still choose the best candidate title from the candidate pool and use lower confidence.
+- confidence is raw, uncalibrated confidence that the selected title is the correct recommendation.
+- Do not output item_id.
+- Do not output the candidate label as the title.
+- Do not output explanations.
+- Do not output evidence fields.
+- Do not output CEP fields.
+- Output exactly one JSON object and nothing else.
+
+Example Candidate Titles:
+A. Hydrating Facial Cleanser
+B. Matte Lipstick Set
+C. Wooden Hair Brush
+
+Example Output:
+{"recommended_title":"Hydrating Facial Cleanser","confidence":0.74}
