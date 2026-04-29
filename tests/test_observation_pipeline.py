@@ -350,6 +350,54 @@ def test_observation_gate_script_writes_three_input_variants() -> None:
     )
 
 
+def test_observation_gate_script_supports_repeat_free_variants() -> None:
+    workspace = _workspace_tmp("observation_gate_no_repeat_script")
+    processed_dir = workspace / "processed"
+    output_manifest = workspace / "gate_manifest.json"
+    _write_processed_fixture(processed_dir)
+
+    code = gate_inputs_main(
+        [
+            "--dataset",
+            "synthetic_fixture",
+            "--processed-suffix",
+            "tiny",
+            "--processed-dir",
+            str(processed_dir),
+            "--split",
+            "test",
+            "--max-examples",
+            "3",
+            "--candidate-count",
+            "2",
+            "--stratify-by-popularity",
+            "--repeat-target-policy",
+            "exclude",
+            "--output-manifest",
+            str(output_manifest),
+        ]
+    )
+
+    manifest = json.loads(output_manifest.read_text(encoding="utf-8"))
+    variants = {variant["prompt_template"]: variant for variant in manifest["variants"]}
+    assert code == 0
+    assert manifest["repeat_target_policy"] == "exclude"
+    assert {variant["input_count"] for variant in variants.values()} == {3}
+    assert {
+        variant["repeat_counts"]["target_in_history_count"]
+        for variant in variants.values()
+    } == {0}
+    assert variants["catalog_constrained_json"]["candidate_summary"]["target_leak_count"] == 0
+    assert variants["retrieval_context_json"]["candidate_summary"]["target_leak_count"] == 0
+    assert Path(variants["forced_json"]["input_jsonl"]).name == (
+        "test_gate3_no_repeat_forced_json.jsonl"
+    )
+    assert (
+        Path(variants["retrieval_context_json"]["input_jsonl"]).name
+        == "test_gate3_no_repeat_retrieval_context_json_c2.jsonl"
+    )
+
+
 def test_mock_provider_is_deterministic_without_api_key(monkeypatch) -> None:
     monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
     catalog = [

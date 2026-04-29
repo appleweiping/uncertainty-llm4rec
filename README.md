@@ -413,6 +413,17 @@ manifest under `outputs/observation_inputs/...`. Gate files are named
 uses catalog titles as leakage-safe grounding context only; it does not call an
 API and does not produce a model result.
 
+For the Amazon Beauty full no-repeat slice after free-form grounding failures,
+build the leakage-safe comparison gate without calling an API:
+
+```powershell
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --max-examples 185 --stratify-by-popularity --candidate-count 20 --repeat-target-policy exclude
+```
+
+This writes ignored `test_gate185_no_repeat_*` inputs. The constrained variants
+exclude the held-out target by default, so they are prompt/grounding diagnostics
+and not recommendation-accuracy evidence.
+
 Run the no-API mock observation pipeline:
 
 ```powershell
@@ -582,6 +593,7 @@ spending more API budget:
 
 ```powershell
 python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --candidate-count 20
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --max-examples 185 --stratify-by-popularity --candidate-count 20 --repeat-target-policy exclude
 ```
 
 This produces ignored inputs under:

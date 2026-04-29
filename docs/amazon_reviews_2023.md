@@ -201,10 +201,13 @@ For the local Beauty full prepare, the full test split input was built with:
 ```powershell
 python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --stratify-by-popularity
 python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --max-examples 30 --stratify-by-popularity --candidate-count 20
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --max-examples 185 --stratify-by-popularity --candidate-count 20 --repeat-target-policy exclude
 ```
 
 The full free-form input contains 225 test examples. The diagnostic gate files
-contain 30 stratified examples and do not overwrite the 225-example input.
+contain either 30 stratified examples for quick QA or 185 repeat-free examples
+for no-repeat prompt/grounding comparison, and they do not overwrite the
+225-example input.
 
 The retrieval-context variant uses history-title token overlap to select
 catalog titles without including the held-out target by default. It is a

@@ -329,3 +329,14 @@ scoped full-slice observation artifact, not a paper conclusion. Because the
 free-form title-generation path shows substantial grounding and target-hit
 risk on this catalog, the next gate should compare retrieval-context or
 catalog-constrained prompts before any broader free-form API scale-up.
+
+Build the leakage-safe no-API comparison inputs for that next gate with:
+
+```powershell
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --max-examples 185 --stratify-by-popularity --candidate-count 20 --repeat-target-policy exclude
+```
+
+The command writes ignored `test_gate185_no_repeat_*` JSONL files and a gate
+manifest. It does not call an API. The retrieval-context and
+catalog-constrained variants exclude the held-out target by default, so they
+are prompt/grounding diagnostics rather than recommendation-accuracy evidence.

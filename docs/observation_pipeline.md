@@ -112,6 +112,13 @@ build all no-API gate inputs together:
 python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --max-examples 30 --stratify-by-popularity --candidate-count 20
 ```
 
+For the Amazon Beauty full no-repeat slice, use the same gate builder with the
+repeat-free policy and the exact approved slice size:
+
+```powershell
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --max-examples 185 --stratify-by-popularity --candidate-count 20 --repeat-target-policy exclude
+```
+
 This writes:
 
 - `test_gate30_forced_json.jsonl`: a gate-local free-form title-generation
@@ -125,7 +132,9 @@ This writes:
   policy, and output pointers.
 
 Gate files are intentionally name-spaced with `gate<N>` so they do not
-overwrite the full split input such as `test_forced_json.jsonl`.
+overwrite the full split input such as `test_forced_json.jsonl`. With
+`--repeat-target-policy exclude`, file names include `no_repeat`, for example
+`test_gate185_no_repeat_retrieval_context_json_c20.jsonl`.
 
 The retrieval-context prompt still asks for title-level generative
 recommendation and structured confidence, but it provides catalog titles as
