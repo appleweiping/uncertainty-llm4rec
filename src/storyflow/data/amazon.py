@@ -285,6 +285,30 @@ def inspect_amazon_config(
     return manifest
 
 
+def write_amazon_readiness_report_legacy_mojibake(manifest: dict[str, Any], path: str | Path) -> None:
+    lines = [
+        f"# Amazon Reviews 2023 readiness: {manifest.get('dataset')}",
+        "",
+        "本报告只说明入口和可恢复状态，不表示已经下载或处理 full data。",
+        "",
+        f"- 数据集: {manifest.get('hf_dataset')}",
+        f"- 类别: {manifest.get('category_name')}",
+        f"- 状态: {manifest.get('status')}",
+        f"- full download attempted: {manifest.get('full_download_attempted')}",
+        f"- full processed: {manifest.get('full_processed')}",
+        f"- reviews path exists: {manifest.get('raw_reviews_path_exists')}",
+        f"- metadata path exists: {manifest.get('raw_metadata_path_exists')}",
+        f"- 恢复/检查命令: `{manifest.get('resume_command')}`",
+        f"- full mode 命令模板: `{manifest.get('full_mode_command')}`",
+        "",
+        "## Warnings",
+        "",
+    ]
+    warnings = manifest.get("warnings") or []
+    lines.extend(f"- {warning}" for warning in warnings or ["None"])
+    Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def write_amazon_readiness_report(manifest: dict[str, Any], path: str | Path) -> None:
     lines = [
         f"# Amazon Reviews 2023 readiness: {manifest.get('dataset')}",

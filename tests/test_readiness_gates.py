@@ -6,9 +6,12 @@ import uuid
 from pathlib import Path
 
 from scripts.check_api_pilot_readiness import main as readiness_main
+from scripts.prepare_amazon_reviews_2023 import main as prepare_amazon_main
 from storyflow.data import inspect_amazon_config, prepare_amazon_from_jsonl, resolve_existing_raw_path
+from storyflow.data.amazon import write_amazon_readiness_report
 from storyflow.observation import write_jsonl
 from storyflow.providers import check_api_pilot_readiness
+from storyflow.utils.config import load_simple_yaml
 
 
 def _workspace(name: str) -> Path:
@@ -256,6 +259,78 @@ def test_amazon_local_path_resolution_and_schema_sample() -> None:
     assert manifest["raw_reviews_path_exists"] is True
     assert manifest["review_schema_sample"]["sample_records_read"] == 1
     assert "user_id" in manifest["review_schema_sample"]["fields_seen"]
+
+
+def test_amazon_readiness_report_uses_readable_chinese() -> None:
+    workspace = _workspace("amazon_readiness_report")
+    report_path = workspace / "readiness_report.md"
+    manifest = {
+        "dataset": "amazon_reviews_2023_tiny",
+        "hf_dataset": "fixture",
+        "category_name": "Tiny",
+        "status": "local_raw_available",
+        "full_download_attempted": False,
+        "full_processed": False,
+        "raw_reviews_path_exists": True,
+        "raw_metadata_path_exists": True,
+        "resume_command": "python scripts/inspect_amazon_reviews_2023.py --dataset tiny",
+        "full_mode_command": "python scripts/prepare_amazon_reviews_2023.py --dataset tiny --allow-full",
+        "warnings": [],
+    }
+
+    write_amazon_readiness_report(manifest, report_path)
+    text = report_path.read_text(encoding="utf-8")
+
+    assert "本报告只说明入口和可恢复状态" in text
+    assert "full processed: False" in text
+    assert "涓" not in text
+    assert "鎵" not in text
+
+
+def test_amazon_prepare_dry_run_writes_readable_chinese_report() -> None:
+    workspace = _workspace("amazon_prepare_dry_run_report")
+
+    code = prepare_amazon_main(
+        [
+            "--dataset",
+            "amazon_reviews_2023_beauty",
+            "--reviews-jsonl",
+            str(workspace / "missing_reviews.jsonl"),
+            "--metadata-jsonl",
+            str(workspace / "missing_meta.jsonl"),
+            "--dry-run",
+        ]
+    )
+
+    report_path = (
+        Path("outputs")
+        / "amazon_reviews_2023"
+        / "amazon_reviews_2023_beauty"
+        / "prepare"
+        / "prepare_readiness_report.md"
+    )
+    text = report_path.read_text(encoding="utf-8")
+    assert code == 0
+    assert "当前没有执行 full Amazon preprocessing" in text
+    assert "该报告不是 full processed result" in text
+    assert "涓" not in text
+    assert "鎵" not in text
+
+
+def test_local_amazon_configs_have_guarded_full_and_sample_commands() -> None:
+    datasets = [
+        "amazon_reviews_2023_beauty",
+        "amazon_reviews_2023_digital_music",
+        "amazon_reviews_2023_handmade",
+        "amazon_reviews_2023_health",
+    ]
+    for dataset in datasets:
+        config = load_simple_yaml(Path("configs") / "datasets" / f"{dataset}.yaml")
+        full_command = str(config.get("full_mode_command_template") or "")
+        sample_command = str(config.get("local_sample_command_template") or "")
+        assert "--allow-full" in full_command
+        assert "--sample-mode" in sample_command
+        assert "--max-records" in sample_command
 
 
 def test_amazon_sample_prepare_writes_manifest_and_popularity() -> None:

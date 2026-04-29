@@ -21,7 +21,7 @@ def _config_path(dataset: str) -> Path:
     return ROOT / "configs" / "datasets" / f"{dataset}.yaml"
 
 
-def _write_missing_report(
+def _write_missing_report_legacy_mojibake(
     *,
     dataset: str,
     reviews_jsonl: Path,
@@ -54,7 +54,7 @@ def _write_missing_report(
     return report
 
 
-def _write_full_guard_report(
+def _write_full_guard_report_legacy_mojibake(
     *,
     dataset: str,
     reviews_jsonl: Path,
@@ -85,6 +85,63 @@ def _write_full_guard_report(
         + "\n",
         encoding="utf-8",
     )
+    return report
+
+
+def _write_missing_report(
+    *,
+    dataset: str,
+    reviews_jsonl: Path,
+    metadata_jsonl: Path,
+    output_dir: Path,
+) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    report = output_dir / "prepare_readiness_report.md"
+    lines = [
+        f"# {dataset} prepare readiness",
+        "",
+        "当前没有执行 full Amazon preprocessing，因为所需 raw JSONL 文件不存在、未显式提供，或本次为 dry-run。",
+        "",
+        f"- reviews JSONL: `{reviews_jsonl}`",
+        f"- metadata JSONL: `{metadata_jsonl}`",
+        "- 恢复命令模板:",
+        "",
+        "```powershell",
+        f"python scripts/prepare_amazon_reviews_2023.py --dataset {dataset} --reviews-jsonl {reviews_jsonl} --metadata-jsonl {metadata_jsonl} --output-suffix full --allow-full",
+        "```",
+        "",
+        "该报告不是 full processed result。",
+    ]
+    report.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return report
+
+
+def _write_full_guard_report(
+    *,
+    dataset: str,
+    reviews_jsonl: Path,
+    metadata_jsonl: Path,
+    output_dir: Path,
+) -> Path:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    report = output_dir / "prepare_full_guard_report.md"
+    lines = [
+        f"# {dataset} full prepare guard",
+        "",
+        "检测到命令会处理 full Amazon raw JSONL，但没有提供 `--allow-full`。",
+        "",
+        "本项目要求 full Amazon preprocessing 只在明确批准后执行；local sample 请使用 `--sample-mode --max-records N`。",
+        "",
+        f"- reviews JSONL: `{reviews_jsonl}`",
+        f"- metadata JSONL: `{metadata_jsonl}`",
+        "",
+        "如果用户已经批准 full prepare，可恢复执行:",
+        "",
+        "```powershell",
+        f"python scripts/prepare_amazon_reviews_2023.py --dataset {dataset} --reviews-jsonl {reviews_jsonl} --metadata-jsonl {metadata_jsonl} --output-suffix full --allow-full",
+        "```",
+    ]
+    report.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return report
 
 
