@@ -237,6 +237,17 @@ failures.
 - Full run: larger provider/dataset run with explicit manifests, logs, cache,
   and budget controls.
 
+The readiness checker supports `--stage smoke`, `--stage pilot`, and
+`--stage full`. `full` has no default 20-example cap, but it still requires an
+explicit provider/model/rate/concurrency/budget gate, `--execute-api-intended`,
+an API key environment variable, cache enabled, and ignored outputs. Use it for
+approved full-slice runs such as Amazon Beauty no-repeat test observation:
+
+```powershell
+python scripts/check_api_pilot_readiness.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl --sample-size 185 --stage full --approved-provider deepseek --approved-model deepseek-v4-flash --approved-rate-limit 30 --approved-max-concurrency 3 --approved-budget-label USER_APPROVED_BEAUTY_FULL_NOREPEAT_20260429 --execute-api-intended
+python scripts/run_api_observation.py --provider-config configs/providers/deepseek.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl --output-dir outputs/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_api_full185_20260429 --max-examples 185 --execute-api --rate-limit 30 --max-concurrency 3 --run-stage full --run-label amazon_beauty_full_no_repeat_deepseek_20260429 --budget-label USER_APPROVED_BEAUTY_FULL_NOREPEAT_20260429
+```
+
 ## Current Smoke Status
 
 On 2026-04-28, the user approved DeepSeek smoke and pilot work with:
@@ -289,5 +300,32 @@ outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/sample_5k/
 outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/sample_5k/test_forced_json_api_pilot30_parallel_20260428/
 ```
 
-This is a local sample pilot only. No full API run has been executed by Codex in
-this repository.
+This is a local sample pilot only.
+
+## Current Amazon Beauty Full-Slice Status
+
+On 2026-04-29, the user-approved Amazon Beauty no-repeat full-slice observation
+was executed with:
+
+- provider: DeepSeek;
+- model: `deepseek-v4-flash`;
+- input: `outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl`;
+- sample/input count: 185 repeat-free test examples;
+- rate limit: 30 requests/minute;
+- max concurrency: 3;
+- run stage: `full`;
+- budget label: `USER_APPROVED_BEAUTY_FULL_NOREPEAT_20260429`.
+
+Artifacts are under ignored paths:
+
+```text
+outputs/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_api_full185_20260429/
+outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_api_full185_20260429/
+outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_api_full185_20260429/
+```
+
+The run completed with parsed/grounded outputs and no failed cases. It is a
+scoped full-slice observation artifact, not a paper conclusion. Because the
+free-form title-generation path shows substantial grounding and target-hit
+risk on this catalog, the next gate should compare retrieval-context or
+catalog-constrained prompts before any broader free-form API scale-up.

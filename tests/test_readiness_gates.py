@@ -174,6 +174,34 @@ def test_api_readiness_allows_explicit_over_20_pilot(monkeypatch) -> None:
     assert ready["warnings"]
 
 
+def test_api_readiness_supports_full_stage(monkeypatch) -> None:
+    workspace = _workspace("api_readiness_full")
+    config_path = _provider_config(workspace)
+    input_path = _input_jsonl(workspace, n=185)
+    monkeypatch.setenv("DEEPSEEK_TEST_KEY", "not-a-real-key-for-tests")
+
+    manifest = check_api_pilot_readiness(
+        provider_config_path=config_path,
+        input_jsonl=input_path,
+        sample_size=185,
+        stage="full",
+        approved_provider="deepseek",
+        approved_model="deepseek-v4-flash",
+        approved_rate_limit=30,
+        approved_max_concurrency=3,
+        approved_budget_label="unit-test-full-budget",
+        execute_api_intended=True,
+    )
+
+    assert manifest["status"] == "ready_for_execute_api"
+    assert manifest["stage"] == "full"
+    assert manifest["sample_size"] == 185
+    assert manifest["allow_over_20"] is False
+    assert "--max-examples 185" in manifest["command_template_after_approval"]
+    assert "--rate-limit 30" in manifest["command_template_after_approval"]
+    assert any("full stage" in warning for warning in manifest["warnings"])
+
+
 def test_api_readiness_cli_writes_manifest(monkeypatch) -> None:
     workspace = _workspace("api_readiness_cli")
     config_path = _provider_config(workspace)

@@ -31,8 +31,10 @@ mock provider support, no-API observation input/output flow, and pytest coverage
 for those foundations. Phase 2B API observation framework dry-run support and
 Amazon Reviews 2023 Beauty readiness gates are in place. Phase 2C observation
 analysis and local run registry utilities are now available for mock/dry-run
-schema sanity and approved pilot analysis. Full API observation, model
-training, simulation, and full experiment phases have not started.
+schema sanity and approved API analysis. A scoped DeepSeek Amazon Beauty
+no-repeat full-slice API observation has been executed, but multi-provider/full
+experiment, model training, simulation, and paper-result phases have not
+started.
 Processed-dataset audit tooling now checks repeat-target cases, chronological
 split integrity, title quality, and head/mid/tail coverage before scaling API
 observation.
@@ -66,7 +68,15 @@ readiness artifact. The ignored processed output is under
 items, 3315 interactions, and 2244 rolling observation examples after the
 configured filtering. Full test observation inputs have been built under
 ignored `outputs/observation_inputs/amazon_reviews_2023_beauty/full/`. This is
-not an experiment result, not an API full observation, and not server evidence.
+not an experiment result and not server evidence.
+
+An approved DeepSeek Amazon Beauty no-repeat full-slice observation has been
+executed on 185 repeat-free test inputs with `deepseek-v4-flash`, cache/resume,
+`--run-stage full`, 30 requests/minute, and max concurrency 3. Raw/parsed/
+grounded outputs, analysis, and case review are under ignored `outputs/` paths.
+This is a scoped API observation artifact, not a paper conclusion; current
+diagnostics indicate the next engineering gate should be retrieval-context or
+catalog-constrained grounding, not a larger free-form run.
 
 No model, toy model, full experiment, or server run has been executed. The mock
 observation pipeline is only a no-API sanity path and must not be reported as
@@ -228,6 +238,11 @@ through environment variables such as `DEEPSEEK_API_KEY`. Do not commit `.env`,
 sensitive API responses, or paid API caches. `.env.example` also lists future
 provider variables for later multi-model work, but Qwen API/Kimi/GLM and
 server Qwen3 remain future phases.
+
+DeepSeek readiness gates now distinguish `smoke`, `pilot`, and `full` stages.
+Full-stage API observation still requires an explicit provider/model/rate/
+concurrency/budget manifest, `--execute-api`, and `--run-stage full`;
+raw/parsed/grounded outputs remain under ignored `outputs/`.
 
 Large reference files such as PDFs and `recprefer.zip` must remain local under
 `references/` and are not committed. Commit only lightweight indexes and notes.

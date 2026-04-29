@@ -352,6 +352,32 @@ def test_api_runner_records_execution_mode_and_parallel_settings() -> None:
     assert {row["metadata"]["execution_mode"] for row in request_rows} == {"dry_run"}
 
 
+def test_api_runner_records_run_stage_in_manifest_and_metrics() -> None:
+    workspace = _workspace("api_runner_stage")
+    config_path = _provider_config(workspace, cache_dir=workspace / "cache")
+    input_path = _input_jsonl(workspace, n=2)
+    run_dir = workspace / "run"
+
+    manifest = run_api_observation(
+        provider_config_path=config_path,
+        input_jsonl=input_path,
+        output_dir=run_dir,
+        max_examples=2,
+        dry_run=True,
+        resume=False,
+        max_concurrency=None,
+        rate_limit=None,
+        run_label="stage-unit",
+        budget_label="stage-budget",
+        run_stage="full",
+    )
+
+    metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    assert manifest["run_stage"] == "full"
+    assert metrics["run_stage"] == "full"
+    assert manifest["note"] == "Dry-run does not call network or paid APIs."
+
+
 def test_parser_strict_json_fenced_json_and_regex() -> None:
     strict = parse_observation_response(
         '{"generated_title":"The Matrix","is_likely_correct":"YES","confidence":0.7}'

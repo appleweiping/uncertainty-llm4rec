@@ -215,6 +215,20 @@ def _generate_with_retry(
     raise ProviderExecutionError(str(last_error))
 
 
+def _run_note(*, dry_run: bool, run_stage: str) -> str:
+    if dry_run:
+        return "Dry-run does not call network or paid APIs."
+    if run_stage == "full":
+        return (
+            "Approved full-slice API observation artifact with cache/resume; "
+            "not a paper result until downstream analysis, scope labels, and "
+            "reviewer-facing caveats are finalized."
+        )
+    if run_stage == "smoke":
+        return "Approved tiny API smoke artifact; not a full run or paper result."
+    return "Approved API pilot artifact; not a full run or paper result."
+
+
 def run_api_observation(
     *,
     provider_config_path: Path,
@@ -228,7 +242,10 @@ def run_api_observation(
     cache_enabled_override: bool | None = None,
     run_label: str | None = None,
     budget_label: str | None = None,
+    run_stage: str = "pilot",
 ) -> dict[str, Any]:
+    if run_stage not in {"smoke", "pilot", "full"}:
+        raise ValueError("run_stage must be smoke, pilot, or full")
     config = load_provider_config(provider_config_path)
     output_dir = output_dir or _default_output_dir(
         provider=config.provider_name,
@@ -442,12 +459,9 @@ def run_api_observation(
                 "provider": config.provider_name,
                 "model": config.model_name,
                 "dry_run": dry_run,
+                "run_stage": run_stage,
                 "is_experiment_result": False,
-                "note": (
-                    "API framework dry-run metrics only; not paper evidence."
-                    if dry_run
-                    else "Approved small API smoke/pilot metrics only; not a full run or paper result."
-                ),
+                "note": _run_note(dry_run=dry_run, run_stage=run_stage),
             }
         )
         metrics_path.write_text(
@@ -489,15 +503,12 @@ def run_api_observation(
         "request_options": config.extra_body,
         "run_label": run_label,
         "budget_label": budget_label,
+        "run_stage": run_stage,
         "execution_mode": execution_mode,
         "cache_dir": str(_cache_dir(config.cache.cache_dir)),
         "api_called": not dry_run,
         "is_experiment_result": False,
-        "note": (
-            "Dry-run does not call network or paid APIs."
-            if dry_run
-            else "Approved small API smoke/pilot run; not a full run or paper result."
-        ),
+        "note": _run_note(dry_run=dry_run, run_stage=run_stage),
     }
     manifest_path.write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True),
@@ -521,6 +532,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-cache", action="store_true", help="Bypass provider cache for one-off diagnostics.")
     parser.add_argument("--run-label", help="Human-readable run label written to request records and manifest.")
     parser.add_argument("--budget-label", help="User-approved budget/provenance label written to request records and manifest.")
+    parser.add_argument("--run-stage", choices=["smoke", "pilot", "full"], default="pilot")
     args = parser.parse_args(argv)
 
     provider_config = _resolve(args.provider_config)
@@ -542,6 +554,7 @@ def main(argv: list[str] | None = None) -> int:
         cache_enabled_override=False if args.no_cache else None,
         run_label=args.run_label,
         budget_label=args.budget_label,
+        run_stage=args.run_stage,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True))
     return 0

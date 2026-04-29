@@ -1,4 +1,4 @@
-"""Readiness checks for tightly gated API observation pilots."""
+"""Readiness checks for tightly gated API observation runs."""
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ def check_api_pilot_readiness(
     execute_api_intended: bool = False,
     allow_over_20: bool = False,
 ) -> dict[str, Any]:
-    """Check whether a future real API pilot is allowed by project gates.
+    """Check whether a future real API observation run is allowed by gates.
 
     This function never calls the network and never prints API key values. It
     only checks whether the configured key environment variable is present.
@@ -56,17 +56,28 @@ def check_api_pilot_readiness(
     blockers: list[str] = []
     warnings: list[str] = []
 
-    if stage not in {"smoke", "pilot"}:
-        blockers.append("stage must be smoke or pilot")
-    max_allowed = 5 if stage == "smoke" else 20
+    allowed_stages = {"smoke", "pilot", "full"}
+    if stage not in allowed_stages:
+        blockers.append("stage must be smoke, pilot, or full")
+    max_allowed_by_stage = {"smoke": 5, "pilot": 20, "full": None}
+    max_allowed = max_allowed_by_stage.get(stage)
     if sample_size < 1:
         blockers.append("sample_size must be >= 1")
-    if sample_size > max_allowed and not (stage == "pilot" and allow_over_20):
+    if max_allowed is not None and sample_size > max_allowed and not (
+        stage == "pilot" and allow_over_20
+    ):
         blockers.append(f"{stage} sample_size must be <= {max_allowed}")
-    if stage == "pilot" and allow_over_20 and sample_size > max_allowed:
+    if (
+        stage == "pilot"
+        and allow_over_20
+        and max_allowed is not None
+        and sample_size > max_allowed
+    ):
         warnings.append(
             "pilot sample_size exceeds the default <=20 gate because allow_over_20 was explicitly set"
         )
+    if stage == "full" and allow_over_20:
+        warnings.append("allow_over_20 is ignored for full stage")
     if approved_provider and approved_provider != config.provider_name:
         blockers.append(
             f"approved_provider={approved_provider} does not match config provider={config.provider_name}"
@@ -113,6 +124,10 @@ def check_api_pilot_readiness(
     effective_rate = approved_rate_limit or config.rate_limit.requests_per_minute
     if effective_rate > 10 and stage == "smoke":
         warnings.append("recommended smoke-test rate_limit is <= 10 requests/minute")
+    if stage == "full":
+        warnings.append(
+            "full stage requires ignored raw/parsed/grounded outputs plus post-run analysis and case review"
+        )
     if not config.cache.enabled:
         blockers.append("provider cache must be enabled before real API execution")
 

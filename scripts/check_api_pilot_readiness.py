@@ -1,4 +1,4 @@
-"""Check DeepSeek/API pilot gates without making a network call."""
+"""Check DeepSeek/API observation gates without making a network call."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--provider-config", default="configs/providers/deepseek.yaml")
     parser.add_argument("--input-jsonl", required=True)
     parser.add_argument("--sample-size", type=int, default=5)
-    parser.add_argument("--stage", choices=["smoke", "pilot"], default="smoke")
+    parser.add_argument("--stage", choices=["smoke", "pilot", "full"], default="smoke")
     parser.add_argument("--approved-provider")
     parser.add_argument("--approved-model")
     parser.add_argument("--approved-rate-limit", type=int)
