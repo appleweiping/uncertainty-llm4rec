@@ -33,6 +33,9 @@ Amazon Reviews 2023 Beauty readiness gates are in place. Phase 2C observation
 analysis and local run registry utilities are now available for mock/dry-run
 schema sanity and approved pilot analysis. Full API observation, model
 training, simulation, and full experiment phases have not started.
+Processed-dataset audit tooling now checks repeat-target cases, chronological
+split integrity, title quality, and head/mid/tail coverage before scaling API
+observation.
 
 MovieLens 1M has also been verified as a local real-data sanity path from a
 manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
@@ -333,6 +336,20 @@ python scripts/validate_processed_dataset.py --dataset movielens_1m --processed-
 
 Validation outputs are written under `outputs/data_validation/...` and are
 ignored by git.
+
+Run the deeper processed observation audit when a validation warning or a
+scale-up decision needs split-level evidence:
+
+```powershell
+python scripts/audit_processed_dataset.py --dataset amazon_reviews_2023_beauty --processed-suffix full
+```
+
+Audit outputs are written under `outputs/data_audits/...` and include
+`dataset_audit_summary.json`, `dataset_audit_report.md`,
+`repeated_target_cases.jsonl`, and `duplicate_history_cases.jsonl`. Repeated
+target-in-history examples are warnings, not automatic blockers: in e-commerce
+they may be repeat purchase behavior or duplicate review artifacts, so future
+API/full reports should stratify them before making paper claims.
 
 ## Phase 2A Mock Observation
 

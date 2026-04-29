@@ -100,6 +100,20 @@ Validated processed output:
 - warning: at least one repeated-item example has target appearing in history
   and should be inspected before paper claims.
 
+Run the full processed observation audit after validation:
+
+```powershell
+python scripts/audit_processed_dataset.py --dataset amazon_reviews_2023_beauty --processed-suffix full
+```
+
+This writes ignored artifacts under
+`outputs/data_audits/amazon_reviews_2023_beauty/full/`. The audit does not
+change processed data. It counts repeated target-in-history examples, duplicate
+history items, chronological split boundaries, sequence-prefix alignment,
+history length distribution, bucket coverage, and title-quality issues. Repeat
+targets are not automatically leakage in e-commerce data, but they must be
+stratified or sensitivity-checked before full observation claims.
+
 This is a full preprocessing readiness artifact only. It is not an API full
 observation, not a model result, and not paper evidence.
 

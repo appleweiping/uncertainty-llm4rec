@@ -65,3 +65,42 @@ snapshot.
 - Passing validation means the processed data is structurally ready for
   observation input construction. It does not mean an API pilot or experiment
   has run.
+
+## Deeper Observation Audit
+
+When validation emits repeated-item warnings, or before scaling API observation
+from a processed dataset, run the deeper audit:
+
+```powershell
+python scripts/audit_processed_dataset.py --dataset amazon_reviews_2023_beauty --processed-suffix full
+```
+
+Default outputs are written under:
+
+```text
+outputs/data_audits/<dataset>/<processed_suffix>/
+```
+
+The audit writes:
+
+- `dataset_audit_summary.json`
+- `dataset_audit_report.md`
+- `repeated_target_cases.jsonl`
+- `duplicate_history_cases.jsonl`
+
+The audit checks:
+
+- target item appearing in the history, counted by split;
+- duplicate item ids inside histories;
+- target/history timestamp order and sequence-prefix alignment;
+- global chronological split boundary overlap;
+- history length distribution;
+- head/mid/tail bucket coverage by split;
+- empty target/history/catalog titles;
+- duplicate normalized catalog titles.
+
+Repeated target-in-history examples are warnings rather than automatic
+blockers, because Amazon/e-commerce data can contain repeat purchases or
+duplicate review artifacts. They still affect interpretation: full API or paper
+reports should either stratify these cases or run an exclusion sensitivity
+analysis before claiming confidence/correctness behavior.
