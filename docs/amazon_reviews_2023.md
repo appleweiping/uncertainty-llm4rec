@@ -227,6 +227,14 @@ provided candidate title, `0/185` targets appeared in the candidate list, and
 selected candidate buckets were head=49, mid=73, tail=40. These numbers are
 prompt/candidate QA signals for the Beauty gate, not paper evidence.
 
+Local status on 2026-04-29: the repeat-free catalog-constrained diagnostic
+input was also run through DeepSeek after readiness, 5-example dry-run, and
+5-example smoke gates. The completed ignored run has 185 rows, zero failed API
+cases, GroundHit `0.784`, `140/185` generated titles selected from the provided
+candidate set, and `0/185` targets in the candidate list. It produced more
+ungrounded low-confidence cases than retrieval-context (`40/185`), so it is a
+useful prompt/candidate QA comparison, not a recommendation-accuracy result.
+
 ## Server Guidance
 
 Full Amazon Beauty download and preprocessing should run on a server or local

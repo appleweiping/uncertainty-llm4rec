@@ -391,3 +391,51 @@ The new candidate diagnostics show that most grounded titles are selected from
 the provided candidate context, while target leakage is absent by construction.
 This is a prompt/candidate/grounding diagnostic artifact, not a paper
 conclusion or recommendation-accuracy result.
+
+## Current Amazon Beauty Catalog-Constrained Diagnostic Status
+
+On 2026-04-29, a matching user-approved DeepSeek catalog-constrained diagnostic
+was run on the same 185 repeat-free Amazon Beauty test inputs:
+
+- provider: DeepSeek;
+- model: `deepseek-v4-flash`;
+- input:
+  `outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_catalog_constrained_json_c20.jsonl`;
+- sample/input count: 185;
+- rate limit: 30 requests/minute;
+- max concurrency: 3;
+- run stage: `full`;
+- budget label:
+  `USER_APPROVED_BEAUTY_FULL_NOREPEAT_CATALOG_CONSTRAINED_20260429`.
+
+The gate order was readiness check, 5-example dry-run, 5-example real smoke,
+then cache/resume full185. Artifacts are under ignored paths:
+
+```text
+outputs/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_catalog_constrained_json_c20_api_full185_20260429/
+outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_catalog_constrained_json_c20_api_full185_20260429/
+outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_catalog_constrained_json_c20_api_full185_20260429/
+```
+
+Key diagnostic values:
+
+- count: 185;
+- failed cases: 0;
+- GroundHit: `0.784`;
+- target correctness: `0.0`, but this is not recommendation accuracy because
+  the target item is excluded from candidates by design;
+- mean confidence: `0.658`;
+- WBC_tau: `0.762`;
+- wrong-high-confidence count: 141;
+- ungrounded low-confidence count: 40;
+- candidate context rows: 185;
+- generated-in-candidate-set count/rate: `140/185` = `0.757`;
+- target-in-candidates count: 0;
+- mean selected candidate rank: `12.564`;
+- selected candidate buckets: head=29, mid=40, tail=71.
+
+Compared with retrieval-context, this catalog-constrained prompt is stricter
+about choosing exactly from round-robin head/mid/tail candidates, but it leaves
+more ungrounded `NO_GROUNDABLE_TITLE` cases and still preserves many
+wrong-high-confidence selections among target-excluded candidates. It is a
+prompt/candidate QA artifact, not a paper conclusion or method result.

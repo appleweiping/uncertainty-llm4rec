@@ -93,6 +93,16 @@ candidate title, all `185/185` examples excluded the held-out target, and the
 mean selected candidate rank was `5.586`. These are scope/QA diagnostics for
 candidate-prompt behavior, not recommendation-accuracy evidence.
 
+A matching user-approved catalog-constrained diagnostic has been executed on
+the same 185 repeat-free examples with target-excluding round-robin candidates.
+It completed with zero failed API cases and wrote ignored raw/parsed/grounded,
+analysis, case-review, and candidate-diagnostic artifacts. Unlike the
+retrieval-context gate, the catalog-constrained prompt produced GroundHit
+`0.784`, `40/185` ungrounded low-confidence outputs, and `140/185` grounded
+outputs that selected a provided candidate. Because all `185/185` candidate
+sets exclude the held-out target, this remains prompt/candidate/grounding QA
+and must not be treated as recommendation accuracy or a method result.
+
 No model, toy model, full experiment, or server run has been executed. The mock
 observation pipeline is only a no-API sanity path and must not be reported as
 model behavior. Synthetic fixture under
@@ -528,6 +538,12 @@ Current status markers:
   titles, target leakage was `0/185`, and selected candidate buckets were
   head=49, mid=73, tail=40. This remains prompt/candidate QA, not a paper
   result.
+- DeepSeek Amazon Beauty catalog-constrained diagnostic: executed for the same
+  185 repeat-free examples with round-robin target-excluding candidates. The
+  run had zero provider/parse failures, GroundHit `0.784`, candidate selection
+  `140/185`, target leakage `0/185`, selected candidate buckets head=29,
+  mid=40, tail=71, and `40/185` ungrounded low-confidence cases. This is a
+  prompt/candidate QA artifact, not recommendation accuracy.
 
 ## Phase 2C Observation Analysis
 
