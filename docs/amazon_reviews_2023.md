@@ -214,6 +214,13 @@ catalog titles without including the held-out target by default. It is a
 prompt/grounding readiness artifact only, not an API result and not paper
 evidence.
 
+Local status on 2026-04-29: the repeat-free retrieval-context diagnostic input
+above was run through DeepSeek after readiness passed. The completed ignored
+run has 185 grounded rows and zero failed cases. It shows that candidate
+context can make the model output catalog-groundable titles on this Beauty
+slice, but it must not be reported as recommendation accuracy because the
+held-out target is excluded from the diagnostic candidate list.
+
 ## Server Guidance
 
 Full Amazon Beauty download and preprocessing should run on a server or local

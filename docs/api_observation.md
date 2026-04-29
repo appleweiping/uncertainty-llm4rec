@@ -340,3 +340,44 @@ The command writes ignored `test_gate185_no_repeat_*` JSONL files and a gate
 manifest. It does not call an API. The retrieval-context and
 catalog-constrained variants exclude the held-out target by default, so they
 are prompt/grounding diagnostics rather than recommendation-accuracy evidence.
+
+## Current Amazon Beauty Retrieval-Context Diagnostic Status
+
+On 2026-04-29, a user-approved DeepSeek retrieval-context diagnostic was run on
+the same 185 repeat-free Amazon Beauty test inputs:
+
+- provider: DeepSeek;
+- model: `deepseek-v4-flash`;
+- input:
+  `outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_retrieval_context_json_c20.jsonl`;
+- sample/input count: 185;
+- rate limit: 30 requests/minute;
+- max concurrency: 3;
+- run stage: `full`;
+- budget label:
+  `USER_APPROVED_BEAUTY_FULL_NOREPEAT_RETRIEVAL_CONTEXT_RETRY_20260429`.
+
+The first attempt was blocked by local network permission and wrote 185
+provider-stage failures without raw responses. A retry with the same ignored
+artifact policy completed with `failed_count=0` and `total_grounded_count=185`.
+Artifacts are under ignored paths:
+
+```text
+outputs/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_retrieval_context_json_c20_api_full185_retry_20260429/
+outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_retrieval_context_json_c20_api_full185_retry_20260429/
+outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_retrieval_context_json_c20_api_full185_retry_20260429/
+```
+
+Key diagnostic values:
+
+- count: 185;
+- GroundHit: `0.973`;
+- failed cases: 0;
+- target correctness: `0.0`, but this is not a recommendation-accuracy metric
+  because the target item is excluded from candidates by design;
+- wrong-high-confidence count: 179;
+- WBC_tau: `0.968`.
+
+Compared with the free-form no-repeat slice, retrieval context substantially
+improves catalog grounding while preserving a strong overconfidence signal.
+This is a prompt/grounding diagnostic artifact, not a paper conclusion.

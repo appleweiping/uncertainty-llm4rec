@@ -8,7 +8,9 @@ does not record any completed server run.
 No server experiment, Qwen3-8B inference, Qwen3-8B + LoRA training, or
 large-scale baseline has been executed by Codex in this repository. Amazon
 Beauty full preprocessing has been executed locally as a data-readiness
-artifact, but no server full run or full API observation has been executed.
+artifact. User-approved DeepSeek local API full-slice diagnostics have been
+executed on Amazon Beauty repeat-free inputs; these are local API artifacts
+under ignored `outputs/`, not server runs and not paper conclusions.
 
 ## Server Responsibilities
 

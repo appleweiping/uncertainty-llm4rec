@@ -78,6 +78,16 @@ This is a scoped API observation artifact, not a paper conclusion; current
 diagnostics indicate the next engineering gate should be retrieval-context or
 catalog-constrained grounding, not a larger free-form run.
 
+A follow-up user-approved DeepSeek retrieval-context diagnostic has also been
+executed on the same 185 repeat-free test examples. After an initial local
+network-permission failure that produced provider-stage failures and no raw
+responses, the retry completed with cache/resume, 30 requests/minute, max
+concurrency 3, and zero failed cases. It raised GroundHit from the free-form
+slice's `0.173` to `0.973`, while target correctness remains uninterpretable as
+recommendation accuracy because the diagnostic candidate set excludes the
+held-out target by design. This artifact is evidence about prompt/candidate/
+grounding behavior, not a paper result or method claim.
+
 No model, toy model, full experiment, or server run has been executed. The mock
 observation pipeline is only a no-API sanity path and must not be reported as
 model behavior. Synthetic fixture under
@@ -504,6 +514,11 @@ Current status markers:
   local artifacts, not full-data results.
 - Amazon Beauty full processed data: produced locally and validated as a
   readiness artifact; ignored under `data/processed/...`, not paper evidence.
+- DeepSeek Amazon Beauty retrieval-context diagnostic: executed for the
+  185-example repeat-free full slice with zero failed cases. GroundHit improved
+  substantially versus the free-form path, but target-hit correctness is not a
+  recommendation metric because the held-out target is excluded from diagnostic
+  candidates.
 
 ## Phase 2C Observation Analysis
 
