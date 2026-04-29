@@ -276,3 +276,21 @@ The failure taxonomy tags ungrounded cases as near misses, weak catalog
 overlap, no catalog support, generic generated titles, duplicate-title risk, or
 high-confidence ungrounded predictions. These diagnostics are QA artifacts, not
 model behavior claims.
+
+## Baseline Observation Flow
+
+Lightweight baselines can enter the same generated-title observation schema:
+
+```powershell
+python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline popularity --max-examples 30
+python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline cooccurrence --max-examples 30
+```
+
+The baseline runner writes `raw_responses.jsonl`, `parsed_predictions.jsonl`,
+`grounded_predictions.jsonl`, `metrics.json`, `report.md`, and `manifest.json`
+under `outputs/observations/baselines/...`. The output contract matches the API
+and mock layers: a baseline selects a title, that title is grounded to the
+catalog, and confidence/correctness/popularity/grounding metrics are computed
+together. These baselines do not call APIs or train models; their confidence
+values are simple proxies and must not be treated as calibrated model
+confidence.

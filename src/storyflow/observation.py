@@ -583,10 +583,15 @@ def compute_observation_metrics(
 
 
 def observation_metrics_markdown(metrics: dict[str, Any], *, title: str) -> str:
+    provider = str(metrics.get("provider") or "unknown")
+    note = str(
+        metrics.get("note")
+        or "Observation metrics artifact. Interpret only with the run manifest and protocol."
+    )
     lines = [
         f"# {title}",
         "",
-        "This report is generated from `provider=mock`. It is a pipeline sanity check, not an API pilot and not a paper result.",
+        f"This report is generated from `provider={provider}`. {note}",
         "",
         "## Summary",
         "",

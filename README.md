@@ -95,6 +95,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
   cases, and local ignored run registry.
 - `docs/pilot_case_review.md`: pilot case-review and failure-taxonomy layer for
   prompt, grounding, and confidence triage before scaling.
+- `docs/baseline_observation.md`: lightweight popularity and train-split
+  co-occurrence baseline observation interface.
 - `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
   grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
@@ -156,6 +158,8 @@ Implemented foundation modules:
   helpers.
 - `storyflow.analysis.grounding_diagnostics`: catalog duplicate normalized
   title checks and optional grounding candidate margin audits.
+- `storyflow.baselines`: lightweight popularity and co-occurrence title
+  baselines that write the same grounded observation schema.
 - `tests/fixtures/`: synthetic records used only for tests.
 
 The remaining subpackages are intentionally lightweight placeholders for later
@@ -522,6 +526,27 @@ outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_catalog_con
 outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_retrieval_context_json_c20.jsonl
 outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_observation_gate_manifest.json
 ```
+
+## Baseline Observation
+
+Run lightweight non-LLM baselines through the same generated-title grounding and
+metrics schema:
+
+```powershell
+python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline popularity --max-examples 30
+python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline cooccurrence --max-examples 30
+```
+
+Implemented baselines:
+
+- `popularity`: most popular unseen catalog title with a normalized popularity
+  confidence proxy.
+- `cooccurrence`: train-split item co-occurrence over observation examples,
+  with popularity fallback.
+
+These baselines do not call APIs, do not read keys, and do not train models.
+They are sanity/reviewer-proofing artifacts until a full baseline protocol run
+is explicitly executed and documented.
 
 ## Tests
 

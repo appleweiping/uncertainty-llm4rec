@@ -5,6 +5,7 @@
 
 # Local research management reports
 local_reports/
+docs/reviewer_report.md
 
 # Raw data, caches, and generated artifacts
 data/raw/*
