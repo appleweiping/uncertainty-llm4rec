@@ -82,6 +82,7 @@ def _gate_output_path(
     prompt_template: str,
     candidate_count: int | None,
     max_examples: int | None,
+    repeat_target_policy: str = "all",
 ) -> Path:
     """Return a gate-specific path so diagnostics do not overwrite full inputs."""
 
@@ -91,6 +92,7 @@ def _gate_output_path(
         split=split,
         prompt_template=prompt_template,
         candidate_count=candidate_count,
+        repeat_target_policy=repeat_target_policy,
         root=ROOT,
     )
     if max_examples is None:
@@ -122,6 +124,12 @@ def main(argv: list[str] | None = None) -> int:
         "--allow-target-in-candidates",
         action="store_true",
         help="Diagnostic only. Default excludes held-out targets from candidate prompts.",
+    )
+    parser.add_argument(
+        "--repeat-target-policy",
+        default="all",
+        choices=["all", "exclude", "only"],
+        help="Filter gate inputs by target-in-history repeat status.",
     )
     parser.add_argument("--output-manifest")
     args = parser.parse_args(argv)
@@ -171,6 +179,7 @@ def main(argv: list[str] | None = None) -> int:
             candidate_count=candidate_count,
             allow_target_in_candidates=args.allow_target_in_candidates,
             candidate_policy=candidate_policy,
+            repeat_target_policy=args.repeat_target_policy,
         )
         output_jsonl = _gate_output_path(
             dataset=args.dataset,
@@ -179,6 +188,7 @@ def main(argv: list[str] | None = None) -> int:
             prompt_template=template,
             candidate_count=candidate_count,
             max_examples=args.max_examples,
+            repeat_target_policy=args.repeat_target_policy,
         )
         input_manifest = write_observation_inputs(
             records,
@@ -191,6 +201,7 @@ def main(argv: list[str] | None = None) -> int:
             candidate_count=candidate_count,
             allow_target_in_candidates=args.allow_target_in_candidates,
             candidate_policy=candidate_policy,
+            repeat_target_policy=args.repeat_target_policy,
         )
         variant_manifests.append(
             {
@@ -200,6 +211,7 @@ def main(argv: list[str] | None = None) -> int:
                 "manifest_json": str(Path(input_manifest["output_jsonl"]).with_suffix(".manifest.json")),
                 "input_count": input_manifest["input_count"],
                 "bucket_counts": _bucket_counts(records),
+                "repeat_counts": input_manifest["repeat_counts"],
                 "candidate_summary": _candidate_summary(records),
                 "is_experiment_result": False,
             }
@@ -225,6 +237,7 @@ def main(argv: list[str] | None = None) -> int:
         "stratify_by_popularity": args.stratify_by_popularity,
         "candidate_count": args.candidate_count,
         "allow_target_in_candidates": args.allow_target_in_candidates,
+        "repeat_target_policy": args.repeat_target_policy,
         "processed_dir": str(processed_dir),
         "variants": variant_manifests,
         "api_called": False,

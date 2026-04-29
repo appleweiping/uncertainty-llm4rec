@@ -38,6 +38,9 @@ Each JSONL record includes:
 
 - user id;
 - history item ids and titles;
+- repeat-target flags such as `target_in_history`,
+  `target_history_occurrence_count`, and
+  `target_same_timestamp_as_history`;
 - target item id and title;
 - target timestamp;
 - target popularity and bucket;
@@ -48,6 +51,21 @@ Each JSONL record includes:
 
 The default template is `forced_json`, which asks for one generated item title,
 yes/no self-verification, and confidence in `[0, 1]`.
+
+For e-commerce data, repeat purchases or duplicate review artifacts can put the
+held-out target item in the history. Build repeat-aware sensitivity inputs
+before full API scale-up:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy exclude
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy only
+```
+
+`--repeat-target-policy all` is the default and preserves the full split.
+`exclude` writes a repeat-free sensitivity file, and `only` writes a
+repeat-target diagnostic file. These inputs are ignored local artifacts and do
+not call an API. API/mock/baseline grounded outputs propagate the repeat flags
+so analysis can slice confidence/correctness/popularity by repeat status.
 
 ## Catalog-Constrained Grounding Gate
 

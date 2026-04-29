@@ -174,6 +174,17 @@ Raw responses are kept separate from parsed and grounded records and remain in
 gitignored `outputs/`. Parse failures are written to `failed_cases.jsonl` and
 do not silently disappear.
 
+Grounded predictions also preserve repeat-target fields from the observation
+input (`target_in_history`, `target_history_occurrence_count`,
+`target_same_timestamp_as_history`, and history duplicate counts). For Amazon
+Beauty full runs, use repeat-aware input files when reporting sensitivity to
+repeat purchase or duplicate review artifacts:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --repeat-target-policy exclude
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --repeat-target-policy only
+```
+
 ## Analysis Layer
 
 After a dry-run or approved pilot, generate analysis artifacts:

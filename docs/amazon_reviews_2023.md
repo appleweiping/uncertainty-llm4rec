@@ -114,6 +114,17 @@ history length distribution, bucket coverage, and title-quality issues. Repeat
 targets are not automatically leakage in e-commerce data, but they must be
 stratified or sensitivity-checked before full observation claims.
 
+Build repeat-aware observation input slices after audit:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy exclude
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy only
+```
+
+These inputs do not call an API and do not overwrite the default
+`test_forced_json.jsonl`; they write separate repeat-free and repeat-only files
+under ignored `outputs/observation_inputs/...`.
+
 This is a full preprocessing readiness artifact only. It is not an API full
 observation, not a model result, and not paper evidence.
 

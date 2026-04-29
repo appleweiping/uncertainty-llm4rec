@@ -41,6 +41,16 @@ def main(argv: list[str] | None = None) -> int:
             "from catalog-constrained candidates to avoid answer leakage."
         ),
     )
+    parser.add_argument(
+        "--repeat-target-policy",
+        default="all",
+        choices=["all", "exclude", "only"],
+        help=(
+            "Filter examples by whether the target item already appears in the "
+            "history. Use exclude for repeat-free sensitivity inputs and only "
+            "for repeat-target diagnostics."
+        ),
+    )
     parser.add_argument("--stratify-by-popularity", action="store_true")
     parser.add_argument("--output-jsonl")
     args = parser.parse_args(argv)
@@ -59,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
         split=args.split,
         prompt_template=args.prompt_template,
         candidate_count=args.candidate_count,
+        repeat_target_policy=args.repeat_target_policy,
         root=ROOT,
     )
     records = build_observation_input_records(
@@ -72,6 +83,7 @@ def main(argv: list[str] | None = None) -> int:
         candidate_count=args.candidate_count,
         allow_target_in_candidates=args.allow_target_in_candidates,
         candidate_policy=args.candidate_policy,
+        repeat_target_policy=args.repeat_target_policy,
     )
     manifest = write_observation_inputs(
         records,
@@ -84,6 +96,7 @@ def main(argv: list[str] | None = None) -> int:
         candidate_count=args.candidate_count,
         allow_target_in_candidates=args.allow_target_in_candidates,
         candidate_policy=args.candidate_policy,
+        repeat_target_policy=args.repeat_target_policy,
     )
     print(json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True))
     return 0

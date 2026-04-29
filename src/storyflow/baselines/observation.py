@@ -314,6 +314,19 @@ def run_baseline_observation(
                 "target_title": input_record["target_title"],
                 "target_popularity": input_record["target_popularity"],
                 "target_popularity_bucket": input_record["target_popularity_bucket"],
+                "target_in_history": bool(input_record.get("target_in_history", False)),
+                "target_history_occurrence_count": int(
+                    input_record.get("target_history_occurrence_count") or 0
+                ),
+                "target_same_timestamp_as_history": bool(
+                    input_record.get("target_same_timestamp_as_history", False)
+                ),
+                "history_duplicate_item_count": int(
+                    input_record.get("history_duplicate_item_count") or 0
+                ),
+                "history_unique_item_count": int(
+                    input_record.get("history_unique_item_count") or 0
+                ),
                 "grounded_item_id": grounded.item_id,
                 "grounding_status": grounded.status.value,
                 "grounding_score": grounded.score,

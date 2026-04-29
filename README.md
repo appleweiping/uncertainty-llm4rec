@@ -351,6 +351,19 @@ target-in-history examples are warnings, not automatic blockers: in e-commerce
 they may be repeat purchase behavior or duplicate review artifacts, so future
 API/full reports should stratify them before making paper claims.
 
+Build repeat-aware observation inputs for sensitivity analysis before a full
+API run:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy exclude
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy only
+```
+
+These write ignored files such as `test_no_repeat_forced_json.jsonl` and
+`test_repeat_only_forced_json.jsonl`. They do not call an API. Full reports
+should compare all / no-repeat / repeat-only slices when repeated purchases or
+duplicate reviews are present.
+
 ## Phase 2A Mock Observation
 
 Build prompt JSONL inputs from processed examples:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+from collections import Counter
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -133,6 +134,41 @@ def _select_examples(
         if not made_progress:
             break
     return selected
+
+
+def _repeat_target_features(example: dict[str, Any]) -> dict[str, Any]:
+    history_ids = [str(item_id) for item_id in example.get("history_item_ids", [])]
+    target_item_id = str(example.get("target_item_id"))
+    history_timestamps = [int(timestamp) for timestamp in example.get("history_timestamps", [])]
+    target_timestamp = int(example.get("target_timestamp") or 0)
+    duplicate_item_count = sum(count - 1 for count in Counter(history_ids).values() if count > 1)
+    target_history_occurrence_count = history_ids.count(target_item_id)
+    return {
+        "target_in_history": target_history_occurrence_count > 0,
+        "target_history_occurrence_count": target_history_occurrence_count,
+        "target_same_timestamp_as_history": target_timestamp in history_timestamps,
+        "history_duplicate_item_count": duplicate_item_count,
+        "history_unique_item_count": len(set(history_ids)),
+    }
+
+
+def _filter_examples_by_repeat_policy(
+    examples: list[dict[str, Any]],
+    *,
+    repeat_target_policy: str,
+) -> list[dict[str, Any]]:
+    if repeat_target_policy not in {"all", "exclude", "only"}:
+        raise ValueError(f"unknown repeat_target_policy: {repeat_target_policy}")
+    if repeat_target_policy == "all":
+        return examples
+    filtered: list[dict[str, Any]] = []
+    for example in examples:
+        target_in_history = bool(_repeat_target_features(example)["target_in_history"])
+        if repeat_target_policy == "exclude" and not target_in_history:
+            filtered.append(example)
+        elif repeat_target_policy == "only" and target_in_history:
+            filtered.append(example)
+    return filtered
 
 
 def _catalog_candidate_records(
@@ -320,6 +356,7 @@ def build_observation_input_records(
     candidate_count: int | None = None,
     allow_target_in_candidates: bool = False,
     candidate_policy: str = "round_robin_popularity",
+    repeat_target_policy: str = "all",
 ) -> list[dict[str, Any]]:
     processed_dir = Path(processed_dir)
     catalog_csv = processed_dir / "item_catalog.csv"
@@ -331,8 +368,12 @@ def build_observation_input_records(
         for example in read_jsonl(examples_jsonl)
         if str(example.get("split")) == split
     ]
-    examples = _select_examples(
+    examples = _filter_examples_by_repeat_policy(
         _sorted_examples(examples),
+        repeat_target_policy=repeat_target_policy,
+    )
+    examples = _select_examples(
+        examples,
         max_examples=max_examples,
         stratify_by_popularity=stratify_by_popularity,
     )
@@ -370,6 +411,7 @@ def build_observation_input_records(
         else:
             prompt = build_prompt(example["history_item_titles"], template=prompt_template)
         prompt_hash = compute_prompt_hash(prompt)
+        repeat_features = _repeat_target_features(example)
         input_id = f"{dataset}:{processed_suffix}:{example['example_id']}:{prompt_hash[:12]}"
         record = {
             "input_id": input_id,
@@ -382,12 +424,14 @@ def build_observation_input_records(
             "history_item_titles": example["history_item_titles"],
             "history_timestamps": example.get("history_timestamps", []),
             "history_length": int(example["history_length"]),
+            **repeat_features,
             "target_item_id": example["target_item_id"],
             "target_title": example["target_title"],
             "target_timestamp": int(example["target_timestamp"]),
             "target_popularity": int(example["target_item_popularity"]),
             "target_popularity_bucket": example["target_popularity_bucket"],
             "prompt_template": prompt_template,
+            "repeat_target_policy": repeat_target_policy,
             "prompt": prompt,
             "prompt_hash": prompt_hash,
             "source": {
@@ -427,9 +471,17 @@ def default_observation_input_path(
     split: str,
     prompt_template: str,
     candidate_count: int | None = None,
+    repeat_target_policy: str = "all",
     root: str | Path = ".",
 ) -> Path:
-    stem = f"{split}_{prompt_template}"
+    if repeat_target_policy not in {"all", "exclude", "only"}:
+        raise ValueError(f"unknown repeat_target_policy: {repeat_target_policy}")
+    repeat_prefix = ""
+    if repeat_target_policy == "exclude":
+        repeat_prefix = "no_repeat_"
+    elif repeat_target_policy == "only":
+        repeat_prefix = "repeat_only_"
+    stem = f"{split}_{repeat_prefix}{prompt_template}"
     if prompt_template in {
         CATALOG_CONSTRAINED_JSON_TEMPLATE.name,
         RETRIEVAL_CONTEXT_JSON_TEMPLATE.name,
@@ -457,6 +509,7 @@ def write_observation_inputs(
     candidate_count: int | None = None,
     allow_target_in_candidates: bool = False,
     candidate_policy: str = "round_robin_popularity",
+    repeat_target_policy: str = "all",
 ) -> dict[str, Any]:
     output_path = Path(output_jsonl)
     write_jsonl(output_path, records)
@@ -464,6 +517,16 @@ def write_observation_inputs(
     for record in records:
         bucket = str(record["target_popularity_bucket"])
         bucket_counts[bucket] = bucket_counts.get(bucket, 0) + 1
+    repeat_counts = {
+        "target_in_history_count": sum(bool(record.get("target_in_history")) for record in records),
+        "target_same_timestamp_as_history_count": sum(
+            bool(record.get("target_same_timestamp_as_history")) for record in records
+        ),
+        "duplicate_history_record_count": sum(
+            int(record.get("history_duplicate_item_count") or 0) > 0
+            for record in records
+        ),
+    }
     manifest = {
         "created_at_utc": utc_now_iso(),
         "dataset": dataset,
@@ -474,6 +537,8 @@ def write_observation_inputs(
         "candidate_count": candidate_count,
         "allow_target_in_candidates": allow_target_in_candidates,
         "candidate_policy": candidate_policy,
+        "repeat_target_policy": repeat_target_policy,
+        "repeat_counts": repeat_counts,
         "input_count": len(records),
         "bucket_counts": bucket_counts,
         "output_jsonl": str(output_path),
@@ -699,6 +764,19 @@ def run_mock_observation(
                 "target_title": input_record["target_title"],
                 "target_popularity": input_record["target_popularity"],
                 "target_popularity_bucket": input_record["target_popularity_bucket"],
+                "target_in_history": bool(input_record.get("target_in_history", False)),
+                "target_history_occurrence_count": int(
+                    input_record.get("target_history_occurrence_count") or 0
+                ),
+                "target_same_timestamp_as_history": bool(
+                    input_record.get("target_same_timestamp_as_history", False)
+                ),
+                "history_duplicate_item_count": int(
+                    input_record.get("history_duplicate_item_count") or 0
+                ),
+                "history_unique_item_count": int(
+                    input_record.get("history_unique_item_count") or 0
+                ),
                 "grounded_item_id": grounded.item_id,
                 "grounding_status": grounded.status.value,
                 "grounding_score": grounded.score,

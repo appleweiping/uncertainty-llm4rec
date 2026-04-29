@@ -14,6 +14,7 @@ from storyflow.generation import (
 from storyflow.observation import (
     build_observation_input_records,
     compute_observation_metrics,
+    default_observation_input_path,
     read_jsonl,
     run_mock_observation,
     write_observation_inputs,
@@ -119,6 +120,21 @@ def _write_processed_fixture(processed_dir: Path) -> None:
                 "target_popularity_bucket": "tail",
                 "split": "test",
             },
+            {
+                "example_id": "u4:2",
+                "user_id": "u4",
+                "history_item_ids": ["item-head", "item-mid"],
+                "history_item_titles": ["The Matrix", "Arrival"],
+                "history_timestamps": [1, 2],
+                "history_length": 2,
+                "target_item_id": "item-head",
+                "target_title": "The Matrix",
+                "target_item_title": "The Matrix",
+                "target_timestamp": 6,
+                "target_item_popularity": 100,
+                "target_popularity_bucket": "head",
+                "split": "test",
+            },
         ],
     )
 
@@ -189,6 +205,50 @@ def test_observation_input_records_have_prompt_schema() -> None:
     )
     assert output_jsonl.exists()
     assert manifest["input_count"] == 2
+    assert manifest["repeat_counts"]["target_in_history_count"] == 0
+
+
+def test_observation_input_records_support_repeat_target_policies() -> None:
+    workspace = _workspace_tmp("repeat_target_inputs")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+
+    all_records = build_observation_input_records(
+        dataset="synthetic_fixture",
+        processed_suffix="tiny",
+        split="test",
+        processed_dir=processed_dir,
+    )
+    no_repeat_records = build_observation_input_records(
+        dataset="synthetic_fixture",
+        processed_suffix="tiny",
+        split="test",
+        processed_dir=processed_dir,
+        repeat_target_policy="exclude",
+    )
+    repeat_only_records = build_observation_input_records(
+        dataset="synthetic_fixture",
+        processed_suffix="tiny",
+        split="test",
+        processed_dir=processed_dir,
+        repeat_target_policy="only",
+    )
+
+    assert len(all_records) == 4
+    assert len(no_repeat_records) == 3
+    assert len(repeat_only_records) == 1
+    assert repeat_only_records[0]["target_in_history"] is True
+    assert repeat_only_records[0]["target_history_occurrence_count"] == 1
+    assert repeat_only_records[0]["repeat_target_policy"] == "only"
+    assert "no_repeat" in str(
+        default_observation_input_path(
+            dataset="synthetic_fixture",
+            processed_suffix="tiny",
+            split="test",
+            prompt_template="forced_json",
+            repeat_target_policy="exclude",
+        )
+    )
 
 
 def test_catalog_constrained_observation_inputs_exclude_target_by_default() -> None:

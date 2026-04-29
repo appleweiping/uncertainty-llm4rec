@@ -104,3 +104,13 @@ blockers, because Amazon/e-commerce data can contain repeat purchases or
 duplicate review artifacts. They still affect interpretation: full API or paper
 reports should either stratify these cases or run an exclusion sensitivity
 analysis before claiming confidence/correctness behavior.
+
+Observation input construction supports that sensitivity analysis directly:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --repeat-target-policy exclude
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --repeat-target-policy only
+```
+
+The default policy is `all`. The builder records repeat metadata on each input
+and chooses non-overwriting default filenames for `exclude` and `only` runs.
