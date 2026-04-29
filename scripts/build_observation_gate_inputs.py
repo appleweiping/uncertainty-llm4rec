@@ -74,6 +74,36 @@ def _variant_candidate_policy(template: str) -> str:
     return "round_robin_popularity"
 
 
+def _gate_output_path(
+    *,
+    dataset: str,
+    processed_suffix: str,
+    split: str,
+    prompt_template: str,
+    candidate_count: int | None,
+    max_examples: int | None,
+) -> Path:
+    """Return a gate-specific path so diagnostics do not overwrite full inputs."""
+
+    base_path = default_observation_input_path(
+        dataset=dataset,
+        processed_suffix=processed_suffix,
+        split=split,
+        prompt_template=prompt_template,
+        candidate_count=candidate_count,
+        root=ROOT,
+    )
+    if max_examples is None:
+        return base_path
+    prefix = f"{split}_"
+    gate_stem = base_path.stem
+    if gate_stem.startswith(prefix):
+        gate_stem = f"{split}_gate{max_examples}_{gate_stem[len(prefix):]}"
+    else:
+        gate_stem = f"{gate_stem}_gate{max_examples}"
+    return base_path.with_name(f"{gate_stem}{base_path.suffix}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", required=True)
@@ -142,13 +172,13 @@ def main(argv: list[str] | None = None) -> int:
             allow_target_in_candidates=args.allow_target_in_candidates,
             candidate_policy=candidate_policy,
         )
-        output_jsonl = default_observation_input_path(
+        output_jsonl = _gate_output_path(
             dataset=args.dataset,
             processed_suffix=args.processed_suffix,
             split=args.split,
             prompt_template=template,
             candidate_count=candidate_count,
-            root=ROOT,
+            max_examples=args.max_examples,
         )
         input_manifest = write_observation_inputs(
             records,

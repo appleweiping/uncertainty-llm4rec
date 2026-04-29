@@ -96,13 +96,18 @@ python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_be
 
 This writes:
 
-- `test_forced_json.jsonl`: the main free-form title-generation input;
-- `test_catalog_constrained_json_c20.jsonl`: a round-robin head/mid/tail
+- `test_gate30_forced_json.jsonl`: a gate-local free-form title-generation
+  input;
+- `test_gate30_catalog_constrained_json_c20.jsonl`: a round-robin head/mid/tail
   catalog-constrained diagnostic;
-- `test_retrieval_context_json_c20.jsonl`: a retrieval-context diagnostic whose
-  candidates are selected by history-title token overlap and popularity;
+- `test_gate30_retrieval_context_json_c20.jsonl`: a retrieval-context
+  diagnostic whose candidates are selected by history-title token overlap and
+  popularity;
 - `test_observation_gate_manifest.json`: counts, target-leak checks, candidate
   policy, and output pointers.
+
+Gate files are intentionally name-spaced with `gate<N>` so they do not
+overwrite the full split input such as `test_forced_json.jsonl`.
 
 The retrieval-context prompt still asks for title-level generative
 recommendation and structured confidence, but it provides catalog titles as

@@ -81,6 +81,28 @@ explicitly approved:
 python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full --allow-full
 ```
 
+Local status on 2026-04-29: the command above was executed against the
+user-provided Beauty raw files and validated with:
+
+```powershell
+python scripts/validate_processed_dataset.py --dataset amazon_reviews_2023_beauty --processed-suffix full
+```
+
+Validated processed output:
+
+- path: `data/processed/amazon_reviews_2023_beauty/full/`;
+- users: 357;
+- catalog items: 479;
+- interactions: 3315;
+- observation examples: 2244;
+- split counts: train 1795, val 224, test 225;
+- validation status: `ok`;
+- warning: at least one repeated-item example has target appearing in history
+  and should be inspected before paper claims.
+
+This is a full preprocessing readiness artifact only. It is not an API full
+observation, not a model result, and not paper evidence.
+
 Small sample prepare command shape for local pipeline sanity:
 
 ```powershell
@@ -146,6 +168,19 @@ The v2 gate writes ignored JSONL inputs and a manifest under:
 outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/
 ```
 
+Gate JSONL files are name-spaced as `test_gate30_*.jsonl` so diagnostic inputs
+do not overwrite the full free-form split input `test_forced_json.jsonl`.
+
+For the local Beauty full prepare, the full test split input was built with:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --stratify-by-popularity
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --max-examples 30 --stratify-by-popularity --candidate-count 20
+```
+
+The full free-form input contains 225 test examples. The diagnostic gate files
+contain 30 stratified examples and do not overwrite the 225-example input.
+
 The retrieval-context variant uses history-title token overlap to select
 catalog titles without including the held-out target by default. It is a
 prompt/grounding readiness artifact only, not an API result and not paper
@@ -154,5 +189,6 @@ evidence.
 ## Server Guidance
 
 Full Amazon Beauty download and preprocessing should run on a server or local
-machine with enough disk, network, and runtime budget. Codex has not run this
-full pipeline and cannot claim server completion without logs/artifacts.
+machine with enough disk, network, and runtime budget. Codex has run local full
+preprocessing from already placed raw JSONL files, but has not run any server
+pipeline and cannot claim server completion without logs/artifacts.

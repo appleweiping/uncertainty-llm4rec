@@ -5,8 +5,10 @@ does not record any completed server run.
 
 ## Status
 
-No server experiment, Qwen3-8B inference, Qwen3-8B + LoRA training, large-scale
-baseline, or full Amazon run has been executed by Codex in this repository.
+No server experiment, Qwen3-8B inference, Qwen3-8B + LoRA training, or
+large-scale baseline has been executed by Codex in this repository. Amazon
+Beauty full preprocessing has been executed locally as a data-readiness
+artifact, but no server full run or full API observation has been executed.
 
 ## Server Responsibilities
 
@@ -74,8 +76,9 @@ scripts exist:
 ## Amazon Reviews 2023 Beauty Full Run Gate
 
 Amazon Beauty full download and preprocessing should run on a server or a local
-machine with large enough disk/network capacity. Codex has not run a full
-Amazon Beauty download or preprocessing job.
+machine with large enough disk/network capacity. A local full preprocessing job
+has been run on 2026-04-29 from already placed raw JSONL files; this is not a
+server run and not an experiment result.
 
 Required inputs:
 

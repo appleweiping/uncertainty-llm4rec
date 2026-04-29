@@ -56,6 +56,15 @@ pilot artifacts under ignored `outputs/` paths and was followed by analysis and
 case-review diagnostics. It is a small sample pilot only, not a full Amazon run
 and not paper evidence.
 
+Amazon Reviews 2023 Beauty full preprocessing has now been executed locally
+from user-provided raw JSONL files with `--allow-full` and validated as a data
+readiness artifact. The ignored processed output is under
+`data/processed/amazon_reviews_2023_beauty/full/` with 357 users, 479 catalog
+items, 3315 interactions, and 2244 rolling observation examples after the
+configured filtering. Full test observation inputs have been built under
+ignored `outputs/observation_inputs/amazon_reviews_2023_beauty/full/`. This is
+not an experiment result, not an API full observation, and not server evidence.
+
 No model, toy model, full experiment, or server run has been executed. The mock
 observation pipeline is only a no-API sanity path and must not be reported as
 model behavior. Synthetic fixture under
@@ -297,10 +306,12 @@ Inspect Amazon Reviews 2023 Beauty readiness without full download:
 python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run --sample-records 3
 ```
 
-Amazon Beauty full prepare is server/big-disk oriented and has not been run:
+Amazon Beauty full prepare has been run locally from the current raw JSONL
+files and remains ignored by git. Re-run only when raw data, preprocessing
+config, or code changes require regeneration:
 
 ```powershell
-python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full --allow-full
 ```
 
 Run a local Beauty sample prepare after raw JSONL files are present:
@@ -351,7 +362,9 @@ python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_be
 
 This writes free-form `forced_json`, round-robin `catalog_constrained_json`,
 and history-token-overlap `retrieval_context_json` input files plus a gate
-manifest under `outputs/observation_inputs/...`. The retrieval-context prompt
+manifest under `outputs/observation_inputs/...`. Gate files are named
+`test_gate30_*.jsonl` so they do not overwrite the full split input such as
+`test_forced_json.jsonl`. The retrieval-context prompt
 uses catalog titles as leakage-safe grounding context only; it does not call an
 API and does not produce a model result.
 
@@ -429,10 +442,12 @@ Current status markers:
 - DeepSeek Amazon Beauty sample pilot: succeeded for 30 approved sample records
   with max concurrency 3 and 30 requests/minute; outputs are ignored local
   pilot artifacts, not a full Amazon/API run and not paper evidence.
-- Amazon Beauty local raw files: available for readiness/sample checks.
+- Amazon Beauty local raw files: available for readiness/sample/full prepare
+  checks.
 - Amazon Beauty sample prepare gate: implemented; sample outputs are ignored
   local artifacts, not full-data results.
-- Amazon Beauty full processed data: not yet produced.
+- Amazon Beauty full processed data: produced locally and validated as a
+  readiness artifact; ignored under `data/processed/...`, not paper evidence.
 
 ## Phase 2C Observation Analysis
 
@@ -524,8 +539,9 @@ python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_be
 This produces ignored inputs under:
 
 ```text
-outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_catalog_constrained_json_c20.jsonl
-outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_retrieval_context_json_c20.jsonl
+outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_gate30_forced_json.jsonl
+outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_gate30_catalog_constrained_json_c20.jsonl
+outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_gate30_retrieval_context_json_c20.jsonl
 outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_observation_gate_manifest.json
 ```
 

@@ -279,6 +279,15 @@ def test_observation_gate_script_writes_three_input_variants() -> None:
     assert variants["forced_json"]["candidate_summary"]["candidate_record_count"] == 0
     assert variants["catalog_constrained_json"]["candidate_summary"]["target_leak_count"] == 0
     assert variants["retrieval_context_json"]["candidate_policy"] == "history_token_overlap"
+    assert Path(variants["forced_json"]["input_jsonl"]).name == "test_gate2_forced_json.jsonl"
+    assert (
+        Path(variants["catalog_constrained_json"]["input_jsonl"]).name
+        == "test_gate2_catalog_constrained_json_c2.jsonl"
+    )
+    assert (
+        Path(variants["retrieval_context_json"]["input_jsonl"]).name
+        == "test_gate2_retrieval_context_json_c2.jsonl"
+    )
 
 
 def test_mock_provider_is_deterministic_without_api_key(monkeypatch) -> None:
