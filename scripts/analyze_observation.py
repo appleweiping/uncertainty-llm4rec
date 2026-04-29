@@ -36,6 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--grounded-jsonl", help="Grounded predictions JSONL path.")
     parser.add_argument("--failed-jsonl", help="Failed cases JSONL path.")
     parser.add_argument("--manifest-json", help="Source observation manifest path.")
+    parser.add_argument("--input-jsonl", help="Source observation input JSONL for candidate diagnostics.")
     parser.add_argument("--output-dir", help="Analysis output directory under outputs/ by default.")
     parser.add_argument("--registry-jsonl", default="outputs/run_registry/observation_runs.jsonl")
     parser.add_argument("--source-label")
@@ -65,6 +66,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.manifest_json
         else (run_dir / "manifest.json" if run_dir else None)
     )
+    input_jsonl = _resolve(args.input_jsonl) if args.input_jsonl else None
     if not grounded_jsonl.exists():
         raise SystemExit(f"Grounded predictions not found: {grounded_jsonl}")
     output_dir = (
@@ -76,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
         grounded_jsonl=grounded_jsonl,
         failed_jsonl=failed_jsonl if failed_jsonl and failed_jsonl.exists() else None,
         manifest_json=manifest_json if manifest_json and manifest_json.exists() else None,
+        input_jsonl=input_jsonl,
         output_dir=output_dir,
         low_confidence_tau=args.low_confidence_tau,
         high_confidence_tau=args.high_confidence_tau,

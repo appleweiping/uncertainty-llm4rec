@@ -86,7 +86,12 @@ concurrency 3, and zero failed cases. It raised GroundHit from the free-form
 slice's `0.173` to `0.973`, while target correctness remains uninterpretable as
 recommendation accuracy because the diagnostic candidate set excludes the
 held-out target by design. This artifact is evidence about prompt/candidate/
-grounding behavior, not a paper result or method claim.
+grounding behavior, not a paper result or method claim. The analysis layer now
+adds candidate-set diagnostics for this prompt family: on the same ignored
+retrieval-context artifact, `162/185` grounded outputs selected a provided
+candidate title, all `185/185` examples excluded the held-out target, and the
+mean selected candidate rank was `5.586`. These are scope/QA diagnostics for
+candidate-prompt behavior, not recommendation-accuracy evidence.
 
 No model, toy model, full experiment, or server run has been executed. The mock
 observation pipeline is only a no-API sanity path and must not be reported as
@@ -188,8 +193,8 @@ Implemented foundation modules:
 - `storyflow.observation`: JSONL input construction, mock observation runner,
   grounding integration, metrics, reports, and resume support.
 - `storyflow.analysis`: observation analysis summaries, reliability diagram
-  data, head/mid/tail and repeat-target slices, risk case extraction, and
-  ignored run registry helpers.
+  data, head/mid/tail and repeat-target slices, candidate-prompt diagnostics,
+  risk case extraction, and ignored run registry helpers.
 - `storyflow.analysis.grounding_diagnostics`: catalog duplicate normalized
   title checks and optional grounding candidate margin audits.
 - `storyflow.baselines`: lightweight popularity and co-occurrence title
@@ -518,7 +523,11 @@ Current status markers:
   185-example repeat-free full slice with zero failed cases. GroundHit improved
   substantially versus the free-form path, but target-hit correctness is not a
   recommendation metric because the held-out target is excluded from diagnostic
-  candidates.
+  candidates. Candidate diagnostics have been added to the analysis layer for
+  this run: `162/185` grounded outputs selected one of the provided candidate
+  titles, target leakage was `0/185`, and selected candidate buckets were
+  head=49, mid=73, tail=40. This remains prompt/candidate QA, not a paper
+  result.
 
 ## Phase 2C Observation Analysis
 
@@ -535,12 +544,18 @@ Outputs are ignored by git and written under:
 
 The analysis report includes reliability diagram data, head/mid/tail summaries,
 repeat-target slices, wrong-high-confidence cases, correct-low-confidence cases,
-grounding failures, parse failure summaries, and an exploratory
-popularity-confidence slope. It also writes `repeat_summary.json`, so Amazon
+grounding failures, parse failure summaries, candidate-prompt diagnostics, and
+an exploratory popularity-confidence slope. It writes `repeat_summary.json` and
+`candidate_diagnostic_summary.json`, so Amazon
 Beauty runs can compare all / no-repeat / repeat-only behavior without mixing
 repeat purchase or duplicate-review diagnostics into ordinary next-item claims.
 When the source run is mock or dry-run, these are only pipeline sanity
 artifacts and must not be reported as real model behavior or paper evidence.
+For retrieval-context or catalog-constrained diagnostic prompts, the candidate
+summary reports generated-in-candidate-set rate, selected rank/score/bucket,
+target-leak status, and history-item copying. If the held-out target is
+excluded from candidates, target-hit correctness is not recommendation
+accuracy.
 
 Review concrete pilot cases and failure taxonomy:
 

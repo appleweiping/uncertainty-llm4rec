@@ -10,6 +10,8 @@ from scripts.review_observation_cases import main as review_main
 from storyflow.analysis import (
     analyze_observation_run,
     append_registry_record,
+    candidate_diagnostic_rows,
+    candidate_diagnostic_summary,
     popularity_confidence_slope,
     reliability_bins,
     review_observation_cases,
@@ -118,6 +120,70 @@ def _grounded_rows() -> list[dict[str, object]]:
     ]
 
 
+def _candidate_input_rows() -> list[dict[str, object]]:
+    return [
+        {
+            "input_id": "a",
+            "prompt_template": "retrieval_context_json",
+            "target_item_id": "i1",
+            "history_item_ids": ["h1", "h2"],
+            "catalog_candidate_item_ids": ["i1", "i9"],
+            "catalog_candidate_titles": ["Head Hit", "Other Tail"],
+            "catalog_candidate_popularity_buckets": ["head", "tail"],
+            "catalog_candidate_scores": [0.9, 0.1],
+            "candidate_policy": {
+                "name": "unit_target_included",
+                "target_in_candidates": True,
+            },
+        },
+        {
+            "input_id": "b",
+            "prompt_template": "retrieval_context_json",
+            "target_item_id": "i3",
+            "history_item_ids": ["h1", "h2"],
+            "catalog_candidate_item_ids": ["i9", "i2"],
+            "catalog_candidate_titles": ["Other Tail", "Popular Wrong"],
+            "catalog_candidate_popularity_buckets": ["tail", "mid"],
+            "catalog_candidate_scores": [0.7, 0.5],
+            "candidate_policy": {
+                "name": "unit_target_excluded",
+                "target_in_candidates": False,
+                "correctness_not_interpretable_without_unbiased_candidate_generation": True,
+            },
+        },
+        {
+            "input_id": "c",
+            "prompt_template": "retrieval_context_json",
+            "target_item_id": "i3",
+            "history_item_ids": ["i3"],
+            "catalog_candidate_item_ids": ["i9"],
+            "catalog_candidate_titles": ["Other Tail"],
+            "catalog_candidate_popularity_buckets": ["tail"],
+            "catalog_candidate_scores": [0.4],
+            "candidate_policy": {
+                "name": "unit_target_excluded",
+                "target_in_candidates": False,
+                "correctness_not_interpretable_without_unbiased_candidate_generation": True,
+            },
+        },
+        {
+            "input_id": "d",
+            "prompt_template": "retrieval_context_json",
+            "target_item_id": "i4",
+            "history_item_ids": [],
+            "catalog_candidate_item_ids": ["i10"],
+            "catalog_candidate_titles": ["Mid Candidate"],
+            "catalog_candidate_popularity_buckets": ["mid"],
+            "catalog_candidate_scores": [0.3],
+            "candidate_policy": {
+                "name": "unit_target_excluded",
+                "target_in_candidates": False,
+                "correctness_not_interpretable_without_unbiased_candidate_generation": True,
+            },
+        },
+    ]
+
+
 def test_reliability_and_summary_slices() -> None:
     rows = _grounded_rows()
     failed = [
@@ -169,6 +235,35 @@ def test_repeat_target_summary_separates_repeat_and_non_repeat_rows() -> None:
     assert summary["non_repeat_target"]["wrong_high_confidence_count"] == 1
 
 
+def test_candidate_diagnostics_join_input_candidate_context() -> None:
+    cases = candidate_diagnostic_rows(
+        _grounded_rows(),
+        input_rows=_candidate_input_rows(),
+    )
+    summary = candidate_diagnostic_summary(
+        _grounded_rows(),
+        input_rows=_candidate_input_rows(),
+    )
+
+    assert len(cases) == 4
+    assert cases[1]["generated_in_candidate_set"] is True
+    assert cases[1]["selected_candidate_rank"] == 2
+    assert cases[1]["selected_candidate_bucket"] == "mid"
+    assert cases[2]["generated_in_candidate_set"] is False
+    assert cases[2]["selected_history_item"] is True
+    assert summary["rows_with_candidate_context"] == 4
+    assert summary["generated_in_candidate_set_count"] == 2
+    assert summary["target_in_candidates_count"] == 1
+    assert summary["target_excluded_from_candidates_count"] == 3
+    assert summary["selected_candidate_bucket_counts"] == {"head": 1, "mid": 1}
+    assert summary["selected_candidate_rank_histogram"]["rank_2"] == 1
+    assert summary["selected_history_item_count"] == 1
+    assert (
+        summary["target_correctness_interpretable_as_recommendation_accuracy"]
+        is False
+    )
+
+
 def test_analyze_observation_run_writes_outputs_and_registry() -> None:
     workspace = _workspace("analysis")
     run_dir = workspace / "run"
@@ -189,11 +284,13 @@ def test_analyze_observation_run_writes_outputs_and_registry() -> None:
                 "dry_run": True,
                 "api_called": False,
                 "output_dir": str(run_dir),
+                "input_jsonl": str(run_dir / "inputs.jsonl"),
             },
             sort_keys=True,
         ),
         encoding="utf-8",
     )
+    write_jsonl(run_dir / "inputs.jsonl", _candidate_input_rows())
 
     analysis_manifest = analyze_observation_run(
         grounded_jsonl=grounded,
@@ -211,11 +308,19 @@ def test_analyze_observation_run_writes_outputs_and_registry() -> None:
     repeat_summary = json.loads(
         Path(analysis_manifest["repeat_summary"]).read_text(encoding="utf-8")
     )
+    candidate_summary = json.loads(
+        Path(analysis_manifest["candidate_diagnostic_summary"]).read_text(
+            encoding="utf-8"
+        )
+    )
+    candidate_cases = read_jsonl(analysis_manifest["candidate_diagnostic_cases"])
     risk_rows = read_jsonl(analysis_manifest["risk_cases"])
     registry_rows = read_jsonl(workspace / "registry.jsonl")
     assert summary["provider"] == "mock"
     assert summary["api_called"] is False
     assert repeat_summary["repeat_target"]["count"] == 2
+    assert candidate_summary["generated_in_candidate_set_count"] == 2
+    assert len(candidate_cases) == 4
     assert any(row["slice"] == "wrong_high_confidence" for row in risk_rows)
     assert registry_rows[0]["run_id"] == registry_record["run_id"]
 

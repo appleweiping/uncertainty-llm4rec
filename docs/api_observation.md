@@ -376,8 +376,18 @@ Key diagnostic values:
 - target correctness: `0.0`, but this is not a recommendation-accuracy metric
   because the target item is excluded from candidates by design;
 - wrong-high-confidence count: 179;
-- WBC_tau: `0.968`.
+- WBC_tau: `0.968`;
+- candidate context rows: 185;
+- generated-in-candidate-set count/rate: `162/185` = `0.876`;
+- grounded-not-in-candidate-set count: 18;
+- ungrounded-with-candidate-context count: 5;
+- target-in-candidates count: 0;
+- mean selected candidate rank: `5.586`;
+- selected candidate buckets: head=49, mid=73, tail=40.
 
 Compared with the free-form no-repeat slice, retrieval context substantially
 improves catalog grounding while preserving a strong overconfidence signal.
-This is a prompt/grounding diagnostic artifact, not a paper conclusion.
+The new candidate diagnostics show that most grounded titles are selected from
+the provided candidate context, while target leakage is absent by construction.
+This is a prompt/candidate/grounding diagnostic artifact, not a paper
+conclusion or recommendation-accuracy result.

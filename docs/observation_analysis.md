@@ -48,6 +48,14 @@ Use explicit files when a run directory uses a non-standard layout:
 python scripts/analyze_observation.py --grounded-jsonl path/to/grounded_predictions.jsonl --failed-jsonl path/to/failed_cases.jsonl --manifest-json path/to/manifest.json
 ```
 
+For catalog-constrained or retrieval-context prompt gates, the command reads
+the source `input_jsonl` from `manifest.json` when available. If a non-standard
+run has no manifest, pass it explicitly:
+
+```powershell
+python scripts/analyze_observation.py --grounded-jsonl path/to/grounded_predictions.jsonl --input-jsonl path/to/observation_inputs.jsonl
+```
+
 ## Outputs
 
 By default, outputs are written under `outputs/analysis/...`, which is ignored
@@ -57,6 +65,8 @@ by git:
 - `reliability_diagram.json`
 - `bucket_summary.json`
 - `repeat_summary.json`
+- `candidate_diagnostic_summary.json`
+- `candidate_diagnostic_cases.jsonl`
 - `risk_cases.jsonl`
 - `report.md`
 - `analysis_manifest.json`
@@ -86,6 +96,7 @@ The analysis layer reports:
 - head/mid/tail confidence, correctness, and grounding summaries;
 - repeat-target slices for `non_repeat_target`, `repeat_target`,
   `same_timestamp_repeat_target`, and missing repeat metadata;
+- candidate-prompt diagnostics for retrieval-context/catalog-constrained gates;
 - wrong-high-confidence cases;
 - correct-low-confidence cases;
 - grounding failure cases;
@@ -103,6 +114,21 @@ item in the user's history. Use `non_repeat_target` as the cleaner ordinary
 next-item probe and `repeat_target` as a separate diagnostic for repetition or
 history-copy behavior. Do not collapse these slices into one paper claim without
 reporting the sensitivity.
+
+Candidate diagnostics join each grounded output back to the source observation
+input and report:
+
+- whether candidate context exists;
+- whether the grounded generated item is in the provided candidate set;
+- selected candidate rank, score, and head/mid/tail bucket;
+- target-in-candidates and target-excluded counts;
+- whether the grounded item copies an item from the user's history;
+- confidence by selected candidate bucket.
+
+These diagnostics are required for leakage-safe retrieval-context runs. If the
+candidate policy excludes the held-out target, target-hit correctness is not a
+recommendation-accuracy metric; the run measures prompt/candidate/grounding
+behavior and confidence, not ordinary next-item success.
 
 ## Pilot And Full Run Use
 

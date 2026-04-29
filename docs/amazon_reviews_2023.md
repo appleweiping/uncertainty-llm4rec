@@ -221,6 +221,12 @@ context can make the model output catalog-groundable titles on this Beauty
 slice, but it must not be reported as recommendation accuracy because the
 held-out target is excluded from the diagnostic candidate list.
 
+The analysis layer now also writes candidate diagnostics for that run. The
+ignored diagnostic summary reports `162/185` grounded outputs selected a
+provided candidate title, `0/185` targets appeared in the candidate list, and
+selected candidate buckets were head=49, mid=73, tail=40. These numbers are
+prompt/candidate QA signals for the Beauty gate, not paper evidence.
+
 ## Server Guidance
 
 Full Amazon Beauty download and preprocessing should run on a server or local

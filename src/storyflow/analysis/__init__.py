@@ -21,6 +21,8 @@ from storyflow.analysis.grounding_diagnostics import (
 from storyflow.analysis.observation import (
     analyze_observation_run,
     bucket_summary,
+    candidate_diagnostic_rows,
+    candidate_diagnostic_summary,
     observation_analysis_markdown,
     popularity_confidence_slope,
     reliability_bins,
@@ -37,6 +39,8 @@ __all__ = [
     "analyze_grounding_diagnostics",
     "append_registry_record",
     "bucket_summary",
+    "candidate_diagnostic_rows",
+    "candidate_diagnostic_summary",
     "catalog_grounding_summary",
     "case_review_markdown",
     "classify_grounding_failure",

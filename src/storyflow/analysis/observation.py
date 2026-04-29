@@ -91,6 +91,25 @@ def _repeat_group(row: dict[str, Any]) -> str:
     return "repeat_target" if bool(row.get("target_in_history")) else "non_repeat_target"
 
 
+def _list_field(row: dict[str, Any], field: str) -> list[Any]:
+    value = row.get(field)
+    return value if isinstance(value, list) else []
+
+
+def _float_or_none(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _counter(values: Iterable[Any]) -> dict[str, int]:
+    counts = Counter(str(value) for value in values)
+    return dict(sorted(counts.items()))
+
+
 def reliability_bins(
     rows: Iterable[dict[str, Any]],
     *,
@@ -153,6 +172,258 @@ def reliability_by_popularity_bucket(
 def _status_counts(rows: Iterable[dict[str, Any]], field: str) -> dict[str, int]:
     counts = Counter(str(row.get(field) or "unknown") for row in rows)
     return dict(sorted(counts.items()))
+
+
+def candidate_diagnostic_rows(
+    grounded_rows: Iterable[dict[str, Any]],
+    *,
+    input_rows: Iterable[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Join grounded outputs with diagnostic candidate-set input metadata."""
+
+    inputs_by_id = {
+        str(row.get("input_id")): row
+        for row in (input_rows or [])
+        if row.get("input_id") is not None
+    }
+    rows: list[dict[str, Any]] = []
+    for grounded in grounded_rows:
+        input_id = str(grounded.get("input_id") or "")
+        source = inputs_by_id.get(input_id, {})
+        candidate_ids = [str(value) for value in _list_field(source, "catalog_candidate_item_ids")]
+        candidate_titles = [str(value) for value in _list_field(source, "catalog_candidate_titles")]
+        candidate_buckets = [
+            str(value) for value in _list_field(source, "catalog_candidate_popularity_buckets")
+        ]
+        candidate_scores = [
+            _float_or_none(value) for value in _list_field(source, "catalog_candidate_scores")
+        ]
+        policy = source.get("candidate_policy")
+        policy_dict = policy if isinstance(policy, dict) else {}
+        grounded_item_id = grounded.get("grounded_item_id")
+        grounded_id = str(grounded_item_id) if grounded_item_id is not None else None
+        target_item_id = source.get("target_item_id", grounded.get("target_item_id"))
+        target_id = str(target_item_id) if target_item_id is not None else None
+        history_ids = {str(value) for value in _list_field(source, "history_item_ids")}
+
+        selected_index: int | None = None
+        if grounded_id is not None and grounded_id in candidate_ids:
+            selected_index = candidate_ids.index(grounded_id)
+        target_in_candidates = (
+            target_id in candidate_ids if target_id is not None and candidate_ids else None
+        )
+        selected_score = (
+            candidate_scores[selected_index]
+            if selected_index is not None and selected_index < len(candidate_scores)
+            else None
+        )
+        selected_bucket = (
+            candidate_buckets[selected_index]
+            if selected_index is not None and selected_index < len(candidate_buckets)
+            else None
+        )
+        selected_title = (
+            candidate_titles[selected_index]
+            if selected_index is not None and selected_index < len(candidate_titles)
+            else None
+        )
+        top_score = candidate_scores[0] if candidate_scores else None
+        top_bucket = candidate_buckets[0] if candidate_buckets else None
+        rows.append(
+            {
+                "input_id": grounded.get("input_id"),
+                "example_id": grounded.get("example_id"),
+                "user_id": grounded.get("user_id"),
+                "prompt_template": source.get(
+                    "prompt_template",
+                    grounded.get("prompt_template"),
+                ),
+                "candidate_policy_name": policy_dict.get(
+                    "name",
+                    policy_dict.get("candidate_policy", source.get("candidate_policy")),
+                ),
+                "candidate_context_available": bool(candidate_ids),
+                "candidate_count": len(candidate_ids),
+                "target_item_id": target_item_id,
+                "target_in_candidates": target_in_candidates,
+                "target_excluded_from_candidates": (
+                    not target_in_candidates if target_in_candidates is not None else None
+                ),
+                "candidate_correctness_interpretable": not bool(
+                    policy_dict.get(
+                        "correctness_not_interpretable_without_unbiased_candidate_generation"
+                    )
+                ),
+                "generated_title": grounded.get("generated_title"),
+                "grounded_item_id": grounded_item_id,
+                "grounding_status": grounded.get("grounding_status"),
+                "confidence": grounded.get("confidence"),
+                "correctness": grounded.get("correctness"),
+                "target_popularity_bucket": grounded.get("target_popularity_bucket"),
+                "generated_in_candidate_set": selected_index is not None,
+                "selected_candidate_rank": (
+                    selected_index + 1 if selected_index is not None else None
+                ),
+                "selected_candidate_score": selected_score,
+                "selected_candidate_bucket": selected_bucket,
+                "selected_candidate_title": selected_title,
+                "selected_history_item": (
+                    grounded_id in history_ids if grounded_id is not None else False
+                ),
+                "top_candidate_score": top_score,
+                "top_candidate_bucket": top_bucket,
+                "input_row_joined": bool(source),
+            }
+        )
+    return rows
+
+
+def candidate_diagnostic_summary(
+    grounded_rows: Iterable[dict[str, Any]],
+    *,
+    input_rows: Iterable[dict[str, Any]] | None = None,
+    high_confidence_tau: float = 0.7,
+) -> dict[str, Any]:
+    """Summarize whether candidate-prompt outputs select from the provided set."""
+
+    rows = candidate_diagnostic_rows(grounded_rows, input_rows=input_rows)
+    context_rows = [row for row in rows if row["candidate_context_available"]]
+    selected_rows = [row for row in context_rows if row["generated_in_candidate_set"]]
+    grounded_not_selected_rows = [
+        row
+        for row in context_rows
+        if row.get("grounded_item_id") and not row["generated_in_candidate_set"]
+    ]
+    ungrounded_rows = [
+        row for row in context_rows if not row.get("grounded_item_id")
+    ]
+    rank_values = [
+        int(row["selected_candidate_rank"])
+        for row in selected_rows
+        if row.get("selected_candidate_rank") is not None
+    ]
+    selected_scores = [
+        float(row["selected_candidate_score"])
+        for row in selected_rows
+        if row.get("selected_candidate_score") is not None
+    ]
+    selected_confidences = [
+        float(row.get("confidence") or 0.0)
+        for row in selected_rows
+        if row.get("selected_candidate_score") is not None
+    ]
+    top_scores = [
+        float(row["top_candidate_score"])
+        for row in context_rows
+        if row.get("top_candidate_score") is not None
+    ]
+    top_confidences = [
+        float(row.get("confidence") or 0.0)
+        for row in context_rows
+        if row.get("top_candidate_score") is not None
+    ]
+
+    bucket_summaries: dict[str, dict[str, Any]] = {}
+    for bucket in ("head", "mid", "tail", "unknown"):
+        bucket_rows = [
+            row
+            for row in selected_rows
+            if str(row.get("selected_candidate_bucket") or "unknown") == bucket
+        ]
+        if not bucket_rows:
+            continue
+        bucket_summaries[bucket] = {
+            "count": len(bucket_rows),
+            "mean_confidence": _mean(float(row.get("confidence") or 0.0) for row in bucket_rows),
+            "correctness_rate": _rate(int(row.get("correctness") or 0) for row in bucket_rows),
+            "mean_selected_candidate_rank": _mean(
+                float(row.get("selected_candidate_rank") or 0.0) for row in bucket_rows
+            ),
+            "mean_selected_candidate_score": _mean(
+                float(row.get("selected_candidate_score") or 0.0)
+                for row in bucket_rows
+                if row.get("selected_candidate_score") is not None
+            ),
+            "wrong_high_confidence_count": sum(
+                int(row.get("correctness") or 0) == 0
+                and float(row.get("confidence") or 0.0) >= high_confidence_tau
+                for row in bucket_rows
+            ),
+        }
+
+    rank_histogram = _counter(
+        f"rank_{row['selected_candidate_rank']}"
+        if row.get("selected_candidate_rank") is not None
+        else (
+            "ungrounded"
+            if not row.get("grounded_item_id")
+            else "grounded_not_in_candidates"
+        )
+        for row in context_rows
+    )
+    target_excluded_count = sum(
+        row.get("target_in_candidates") is False for row in context_rows
+    )
+    summary = {
+        "candidate_context_available": bool(context_rows),
+        "count": len(rows),
+        "input_joined_count": sum(row["input_row_joined"] for row in rows),
+        "rows_with_candidate_context": len(context_rows),
+        "rows_without_candidate_context": len(rows) - len(context_rows),
+        "target_in_candidates_count": sum(
+            row.get("target_in_candidates") is True for row in context_rows
+        ),
+        "target_excluded_from_candidates_count": target_excluded_count,
+        "target_excluded_from_candidates_rate": (
+            target_excluded_count / len(context_rows) if context_rows else None
+        ),
+        "generated_in_candidate_set_count": len(selected_rows),
+        "generated_in_candidate_set_rate": (
+            len(selected_rows) / len(context_rows) if context_rows else None
+        ),
+        "grounded_not_in_candidate_set_count": len(grounded_not_selected_rows),
+        "ungrounded_with_candidate_context_count": len(ungrounded_rows),
+        "selected_history_item_count": sum(
+            row.get("selected_history_item") for row in context_rows
+        ),
+        "selected_history_item_rate": (
+            sum(row.get("selected_history_item") for row in context_rows)
+            / len(context_rows)
+            if context_rows
+            else None
+        ),
+        "mean_selected_candidate_rank": _mean(float(value) for value in rank_values),
+        "selected_candidate_rank_histogram": rank_histogram,
+        "selected_candidate_bucket_counts": _counter(
+            row.get("selected_candidate_bucket") or "unknown"
+            for row in selected_rows
+        ),
+        "selected_candidate_bucket_summary": bucket_summaries,
+        "candidate_policy_counts": _counter(
+            row.get("candidate_policy_name") or "unknown" for row in context_rows
+        ),
+        "prompt_template_counts": _counter(
+            row.get("prompt_template") or "unknown" for row in context_rows
+        ),
+        "selected_candidate_score_confidence_slope": _slope(
+            selected_scores,
+            selected_confidences,
+        ),
+        "top_candidate_score_confidence_slope": _slope(
+            top_scores,
+            top_confidences,
+        ),
+        "target_correctness_interpretable_as_recommendation_accuracy": not any(
+            not row.get("candidate_correctness_interpretable") for row in context_rows
+        ),
+        "note": (
+            "Candidate diagnostics measure whether candidate-prompt outputs are "
+            "groundable to the provided catalog context. If the target item is "
+            "excluded from candidates, target-hit correctness is not a "
+            "recommendation-accuracy metric."
+        ),
+    }
+    return summary
 
 
 def bucket_summary(rows: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -442,6 +713,7 @@ def summarize_observation_records(
     *,
     failed_rows: Iterable[dict[str, Any]] | None = None,
     manifest: dict[str, Any] | None = None,
+    input_rows: Iterable[dict[str, Any]] | None = None,
     low_confidence_tau: float = 0.5,
     high_confidence_tau: float = 0.7,
     n_bins: int = 10,
@@ -515,6 +787,11 @@ def summarize_observation_records(
             low_confidence_tau=low_confidence_tau,
             high_confidence_tau=high_confidence_tau,
             n_bins=n_bins,
+        ),
+        "candidate_diagnostic_summary": candidate_diagnostic_summary(
+            records,
+            input_rows=input_rows,
+            high_confidence_tau=high_confidence_tau,
         ),
         "quadrant_counts": {
             "correct_confident": sum(
@@ -599,6 +876,7 @@ def observation_analysis_markdown(summary: dict[str, Any]) -> str:
     slope = summary.get("popularity_confidence_slope", {})
     univariate = slope.get("univariate", {})
     controlled = slope.get("correctness_residualized", {})
+    candidate = summary.get("candidate_diagnostic_summary", {})
     lines = [
         "# Observation Analysis Report",
         "",
@@ -653,6 +931,16 @@ def observation_analysis_markdown(summary: dict[str, Any]) -> str:
             f"- Correctness-residualized slope: {controlled.get('slope')}",
             f"- Correctness-residualized correlation: {controlled.get('correlation')}",
             "",
+            "## Candidate Prompt Diagnostics",
+            "",
+            f"- Candidate context available: {candidate.get('candidate_context_available')}",
+            f"- Rows with candidate context: {candidate.get('rows_with_candidate_context')}",
+            f"- Generated-in-candidate-set rate: {candidate.get('generated_in_candidate_set_rate')}",
+            f"- Target-excluded rate: {candidate.get('target_excluded_from_candidates_rate')}",
+            f"- Selected history-item rate: {candidate.get('selected_history_item_rate')}",
+            f"- Mean selected candidate rank: {candidate.get('mean_selected_candidate_rank')}",
+            f"- Target correctness interpretable as recommendation accuracy: {candidate.get('target_correctness_interpretable_as_recommendation_accuracy')}",
+            "",
             "## Failure Summary",
             "",
             f"- Grounding status counts: {summary.get('grounding_summary', {}).get('status_counts')}",
@@ -673,6 +961,7 @@ def analyze_observation_run(
     output_dir: str | Path,
     failed_jsonl: str | Path | None = None,
     manifest_json: str | Path | None = None,
+    input_jsonl: str | Path | None = None,
     low_confidence_tau: float = 0.5,
     high_confidence_tau: float = 0.7,
     n_bins: int = 10,
@@ -687,10 +976,15 @@ def analyze_observation_run(
     grounded_rows = read_jsonl(grounded_path)
     failed_rows = read_jsonl(failed_path) if failed_path else []
     manifest = load_json(manifest_path) if manifest_path else {}
+    input_path = Path(input_jsonl) if input_jsonl else None
+    if input_path is None and manifest.get("input_jsonl"):
+        input_path = Path(str(manifest["input_jsonl"]))
+    input_rows = read_jsonl(input_path) if input_path and input_path.exists() else []
     summary = summarize_observation_records(
         grounded_rows,
         failed_rows=failed_rows,
         manifest=manifest,
+        input_rows=input_rows,
         low_confidence_tau=low_confidence_tau,
         high_confidence_tau=high_confidence_tau,
         n_bins=n_bins,
@@ -702,12 +996,15 @@ def analyze_observation_run(
             "grounded_jsonl": str(grounded_path),
             "failed_jsonl": str(failed_path) if failed_path else None,
             "source_manifest_json": str(manifest_path) if manifest_path else None,
+            "source_input_jsonl": str(input_path) if input_path else None,
         }
     )
     summary_path = output_path / "analysis_summary.json"
     reliability_path = output_path / "reliability_diagram.json"
     bucket_path = output_path / "bucket_summary.json"
     repeat_path = output_path / "repeat_summary.json"
+    candidate_summary_path = output_path / "candidate_diagnostic_summary.json"
+    candidate_cases_path = output_path / "candidate_diagnostic_cases.jsonl"
     risk_path = output_path / "risk_cases.jsonl"
     report_path = output_path / "report.md"
     manifest_out_path = output_path / "analysis_manifest.json"
@@ -746,6 +1043,19 @@ def analyze_observation_run(
         ),
         encoding="utf-8",
     )
+    candidate_summary_path.write_text(
+        json.dumps(
+            summary["candidate_diagnostic_summary"],
+            indent=2,
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    write_jsonl(
+        candidate_cases_path,
+        candidate_diagnostic_rows(grounded_rows, input_rows=input_rows),
+    )
     risk_rows: list[dict[str, Any]] = []
     for slice_name, rows in summary["risk_cases"].items():
         for row in rows:
@@ -763,11 +1073,14 @@ def analyze_observation_run(
         "reliability_diagram": str(reliability_path),
         "bucket_summary": str(bucket_path),
         "repeat_summary": str(repeat_path),
+        "candidate_diagnostic_summary": str(candidate_summary_path),
+        "candidate_diagnostic_cases": str(candidate_cases_path),
         "risk_cases": str(risk_path),
         "report": str(report_path),
         "source_grounded_jsonl": str(grounded_path),
         "source_failed_jsonl": str(failed_path) if failed_path else None,
         "source_manifest_json": str(manifest_path) if manifest_path else None,
+        "source_input_jsonl": str(input_path) if input_path else None,
         "provider": summary.get("provider"),
         "model": summary.get("model"),
         "dry_run": summary.get("dry_run"),
