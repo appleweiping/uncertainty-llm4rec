@@ -1,219 +1,244 @@
 # Self Review 2026-04-29
 
-This self-review follows the project rule to audit the research direction after
-several substantial commits. It is a governance artifact, not an experimental
-result.
+This self-review updates the earlier 2026-04-29 phase gate after the
+repeat-free Amazon Beauty full185 DeepSeek diagnostic sequence and the
+observation-run comparison layer. It is a governance artifact, not an
+experimental result.
 
 ## Current Phase
 
-Storyflow / TRUCE-Rec is between Phase 2C and Phase 3:
+Storyflow / TRUCE-Rec is between Phase 2C and Phase 3.
 
 - Phase 0 governance/scaffold is complete.
-- Phase 1 real-data preprocessing exists for MovieLens and Amazon Reviews 2023
-  local/sample/full entry points.
-- Phase 2 mock, API dry-run, DeepSeek pilot, observation analysis, case review,
-  grounding diagnostics, and lightweight baseline observation interface exist.
-- Phase 3 full observation is not complete because full Amazon prepared data,
-  larger API/full observation, Qwen3/server observation, and heavier baselines
-  are not yet executed.
+- Phase 1 data support has moved beyond MovieLens: Amazon Beauty local full
+  prepare was executed as a data-readiness artifact, and additional local raw
+  Amazon categories are available for later robustness.
+- Phase 2 mock/API dry-run/DeepSeek API observation, analysis, case review,
+  candidate diagnostics, comparison, grounding diagnostics, and lightweight
+  baseline interfaces exist.
+- Phase 3 is only partially open: one DeepSeek Amazon Beauty repeat-free
+  full-slice diagnostic family exists, but multi-provider observation,
+  Qwen3/server observation, heavy baselines, framework training, simulation,
+  and paper artifacts have not run.
 
 ## Mainline Check
 
-The project still matches the core Storyflow task:
+The project still matches the Storyflow task:
 
 ```text
 user history item titles
-  -> generated item title
+  -> generated/selected item title
   -> catalog grounding
-  -> correctness + confidence + popularity + grounding analysis
+  -> correctness + confidence + popularity + grounding + candidate analysis
 ```
 
-The current code does not collapse into ranking-only recommendation. Even the
-new baseline layer emits a title and writes the same grounded prediction schema
-as the API/mock runners.
+The code has not collapsed into a ranking-only recommender. Even popularity
+and co-occurrence baselines emit titles and pass through catalog grounding
+before metrics.
 
 ## Grounding Check
 
-All generated or selected titles in the current observation layers must be
-grounded before correctness:
+All current observation layers require grounding before correctness:
 
 - mock observation grounds `generated_title`;
 - API observation grounds parsed `generated_title`;
 - baseline observation grounds selected baseline title;
-- case review and grounding diagnostics operate on grounded predictions.
+- analysis, case review, candidate diagnostics, and comparison read grounded
+  prediction artifacts.
 
-Remaining risk: the free-form DeepSeek Amazon sample pilot had grounding
-failures in earlier diagnostics. This is a prompt/catalog QA risk, not a reason
-to remove grounding. The retrieval-context and catalog-constrained gates exist
-to diagnose it before scale-up.
+Current diagnostic evidence remains scoped:
+
+- free-form DeepSeek full185 has low GroundHit on Amazon Beauty and therefore
+  should not be scaled blindly;
+- retrieval-context improves prompt/candidate grounding behavior on the same
+  slice;
+- catalog-constrained is stricter but leaves more ungrounded low-confidence
+  cases;
+- both candidate-context diagnostics exclude the held-out target, so target-hit
+  correctness is not recommendation accuracy.
 
 ## Confidence Analysis Check
 
-The project analyzes confidence jointly with:
+The project currently analyzes confidence jointly with:
 
 - correctness;
-- GroundHit and grounding ambiguity;
-- head/mid/tail popularity bucket;
-- wrong-high-confidence cases;
-- correct-low-confidence cases;
-- Tail Underconfidence Gap;
-- exploratory popularity-confidence slope.
+- GroundHit and grounding status;
+- head/mid/tail target and generated buckets where available;
+- wrong-high-confidence and correct-low-confidence cases;
+- Tail Underconfidence Gap when correct head/tail rows exist;
+- exploratory popularity-confidence slope;
+- candidate-set adherence, selected rank, target-leak status, and
+  history-copying for candidate-context prompts.
 
-Remaining risk: current observed numbers are pilot/sample or baseline sanity
-artifacts. They must not be written as paper evidence until full runs exist.
+The newly added comparison layer correctly writes guardrails: it is prompt,
+candidate, and grounding QA, not a paper-result table and not a method
+improvement claim.
 
 ## Toy-Risk Check
 
-Risk status: yellow.
+Risk status: yellow, improving.
 
-The codebase has moved beyond synthetic fixtures and MovieLens:
+The project is no longer stuck at MovieLens or synthetic fixtures. Amazon
+Beauty full local preprocessing and DeepSeek full185 repeat-free diagnostics
+exist. However, the project can still look toy-like if it keeps adding small
+diagnostics without moving to cross-provider, server, baseline, and framework
+coverage.
 
-- local raw Amazon files exist for Beauty, Digital_Music, Handmade_Products,
-  and Health_and_Personal_Care;
-- Amazon Beauty sample prepare, validation, observation input gates, DeepSeek
-  sample pilot, case review, and baseline observation sanity exist;
-- additional local Amazon category configs and lightweight inspect gates exist.
+Immediate mitigation:
 
-The remaining toy-risk is staying too long at `sample_5k` and 30-example
-pilots. The next priority should be a concrete Amazon Beauty full-prepare or
-sample-to-full gate, not more small diagnostic layers unless they unblock full
-scale-up.
+- use the full185 prompt comparison to choose the next observation strategy;
+- add Qwen3/server observation scaffolding before claiming model-family
+  generality;
+- keep Amazon Beauty as the first full category, then extend to at least one
+  title-rich robustness category such as Video_Games or Books when the protocol
+  is stable.
 
 ## Dataset Route
 
 Current route is coherent:
 
 1. Synthetic fixtures: tests only.
-2. MovieLens 1M: local sanity and low-cost pilot substrate only.
-3. Amazon Beauty: first full e-commerce category.
-4. Digital_Music / Handmade / Health: local raw robustness categories after
-   Beauty is reproducible.
-5. Sports / Video_Games / Books: later robustness/server categories.
-6. Steam/Yelp: optional, source/license gated.
+2. MovieLens 1M: local sanity and low-cost API substrate only.
+3. Amazon Beauty: first full e-commerce category and current active full-slice
+   diagnostic substrate.
+4. Digital_Music, Handmade, and Health: local raw robustness candidates after
+   Beauty.
+5. Sports and Video_Games: larger robustness categories.
+6. Books: long-tail title-rich server-scale category.
+7. Steam/Yelp: optional, source/license gated.
 
-Immediate gap: `docs/dataset_matrix.md` still marks Beauty next action as
-validation/sample before full prepare. That should be updated after a real full
-prepare gate or full prepare run exists.
+Next dataset task should be either a reproducible cross-category sample gate
+or a server-ready full-category runbook, not another MovieLens milestone.
 
 ## Baseline Route
 
-Current baseline support is a correct first layer, not sufficient final
-coverage:
+Current support is a correct first layer, not sufficient final reviewer
+coverage.
 
-- implemented: popularity and train-split co-occurrence title baselines;
-- missing: ranking-to-title adapter for SASRec, BERT4Rec, GRU4Rec, LightGCN;
-- missing: generative recommendation baselines such as P5-like, TIGER-style, or
-  BIGRec-like references where feasible.
+- Implemented: popularity and train-split co-occurrence title baselines.
+- Needed next: ranking-to-title adapter contract for SASRec, BERT4Rec, GRU4Rec,
+  LightGCN, and similar sequential/ranking baselines.
+- Needed later: P5-like, TIGER/Semantic-ID-like, BIGRec/grounding-style, and
+  uncertainty-aware baselines if reproducible.
 
-Next baseline step should not be heavy training. The next safe step is a
-ranking-to-title output adapter and config contract so future trained baselines
-write the same observation schema.
+The next baseline step should stay API-free and training-free: define the
+output schema and conversion contract so future trained baselines enter the
+same grounding/confidence/analysis pipeline.
 
 ## Qwen3 / Server Route
 
-The server runbook separates local work from server work and does not claim any
-server result. Qwen3-8B and Qwen3-8B + LoRA remain planned.
+No server experiment, Qwen3-8B inference, or Qwen3-8B + LoRA training has been
+run by Codex. The server runbook is honest but still mostly a placeholder.
 
-Immediate gap: there is not yet a `scripts/server/` observation scaffold that
-defines the exact JSONL input/output contract for Qwen3-8B inference. This is a
-high-priority non-training task after the Amazon full-data gate.
+Priority gap:
+
+- add `scripts/server/` and `configs/server/` scaffolds for Qwen3-8B
+  observation I/O;
+- make the output schema match API observation: raw/parsed/grounded/failed,
+  manifest, cache/resume, and analysis compatibility;
+- do not run inference or training locally; do not claim server results.
 
 ## Framework Coherence
 
-The framework story is still conceptually coherent but not yet implemented.
 The unifying object remains:
 
 ```text
 C(u, i) ~= P(user accepts item i | user u, do(exposure=1))
 ```
 
-Planned modules should serve this object:
+Future CURE/TRUCE implementation must map each module to this object:
 
-- verbal confidence: noisy observation;
-- token/logprob/sampling evidence: generation evidence;
+- verbal confidence: noisy confidence observation;
+- token/logprob/sampling: generation evidence;
 - grounding confidence: title-to-item uncertainty;
 - popularity residual: confounding correction;
 - exposure-aware score: echo-risk control;
-- triage: distinguish noise from hard-tail-positive evidence.
+- triage: separate noise from hard-tail-positive evidence.
 
-Risk: if Phase 4 adds calibration, debiasing, reranking, and triage as separate
-tricks, the project will look stitched together. Implementation must start from
-the exposure-counterfactual confidence object and map each module to it.
+The project must avoid adding calibration, debiasing, reranking, and triage as
+unconnected tricks. Each future implementation and ablation should point back
+to exposure-counterfactual confidence.
 
 ## Reviewer-Attack Risks
 
-1. Single-provider evidence risk.
-   Current real API pilots are DeepSeek only. Mitigation: keep provider
-   abstraction and add Qwen/server observation scaffold before paper claims.
+1. Single-provider evidence.
+   DeepSeek diagnostics are useful but insufficient. Fix priority: add Qwen API
+   or Qwen3/server observation path before any paper claim of generality.
 
-2. Small-sample evidence risk.
-   Current Amazon API evidence is sample-level. Mitigation: move to Beauty
-   full-data prepare and full observation gates.
+2. Candidate-diagnostic correctness confusion.
+   Retrieval/context and catalog-constrained prompts exclude the target. Fix
+   priority: keep guardrails in comparison reports and never report their
+   target-hit correctness as recommendation accuracy.
 
 3. Grounding-failure confounding.
-   Confidence may reflect grounding ease instead of preference. Mitigation:
-   report GroundHit, ambiguity, failure taxonomy, and separate grounded vs
-   ungrounded analysis.
+   Free-form confidence may reflect catalog grounding ease. Fix priority:
+   report GroundHit, grounding status, ambiguity, and candidate adherence with
+   all confidence metrics.
 
-4. Popularity baseline insufficiency.
-   Lightweight baselines are not final reviewer-proof baselines. Mitigation:
-   add ranking-to-title adapter and later server-trained sequential baselines.
+4. Small-slice overinterpretation.
+   Full185 is a useful local full-slice diagnostic, not a full experimental
+   suite. Fix priority: add cross-provider and cross-category gates.
 
-5. Implicit-feedback target ambiguity.
-   Next item is not the only possible user utility truth. Mitigation: support
-   future-window and graded relevance when data allows.
+5. Baseline insufficiency.
+   Lightweight baselines are not final reviewer-proof baselines. Fix priority:
+   implement ranking-to-title adapter contracts before heavy training.
 
-6. Sample_5k stagnation.
-   Repeated pilots on sample data can look toy-like. Mitigation: prioritize
-   full Beauty prepare and validation.
+6. Implicit-feedback ambiguity.
+   Next item is not the only preference truth. Fix priority: support
+   future-window and graded relevance paths where data allows.
 
-7. Framework stitching risk.
-   CURE/TRUCE must not be a list of unrelated uncertainty tricks. Mitigation:
-   use exposure-counterfactual confidence as the common object.
+7. Popularity as relevance versus confounding.
+   Reviewers may argue popularity is valid signal. Fix priority: model
+   popularity-supported preference separately from popularity-only confidence.
 
-8. Server-result claim risk.
-   Qwen3/server paths are documented but not run. Mitigation: continue explicit
-   `not yet run` wording until logs/artifacts exist.
+8. Framework stitching.
+   CURE/TRUCE could look like a bag of tricks. Fix priority: implement feature
+   schema and scoring around `P(user accepts | do(exposure))`.
 
-9. API cost/cache contamination risk.
-   Earlier dry-run/API cache separation was fixed. Mitigation: keep
-   `execution_mode` in cache keys and maintain manifest gates.
+9. Server claim risk.
+   Qwen/server paths are not run. Fix priority: keep all server language as
+   planned/scaffold until logs/artifacts exist.
 
-10. Data leakage risk.
-    Candidate-constrained prompts can leak target items if configured
-    incorrectly. Mitigation: keep `allow_target_in_candidates=false` by default
-    and mark constrained prompts as diagnostic, not accuracy evidence.
+10. Long-term data breadth risk.
+    Beauty alone is not enough. Fix priority: after Beauty protocol is stable,
+    move to Video_Games/Books or another title-rich Amazon category.
 
 ## Priority Fixes
 
 P0:
 
-- Keep generated outputs, raw data, processed data, local reports, reviewer
-  report, and API caches untracked.
-- Do not claim pilot/full/server results without manifests and logs.
+- Keep raw responses, API cache, data, outputs, local reports, reviewer report,
+  PDFs, and zips untracked.
+- Keep all pilot/diagnostic/full-slice wording scoped and non-paper-result.
 
 P1:
 
-- Run or prepare a concrete Amazon Beauty full-data gate.
-- Validate full processed output before any full API observation.
+- Add Qwen3/server observation scaffold with compatible JSONL schema and no
+  inference claim.
+- Add ranking-to-title baseline adapter contract.
 
 P2:
 
-- Add Qwen3/server observation scaffold with the same JSONL schema and no
-  claim of execution.
+- Decide the next DeepSeek/Qwen API gate from the prompt comparison, not from a
+  vague desire to scale.
+- Add at least one cross-category Amazon readiness route after Beauty.
 
 P3:
 
-- Add ranking-to-title baseline adapter contract.
+- Start the CURE/TRUCE feature schema and scoring scaffold from
+  exposure-counterfactual confidence.
 
 P4:
 
-- Start CURE/TRUCE framework schema from exposure-counterfactual confidence,
-  not from disconnected calibration/debias/triage components.
+- Add echo simulation and data triage only after the observation and framework
+  objects are stable enough to avoid stitched-together design.
 
 ## Decision
 
-Go forward. The mainline remains valid, but the next work should reduce
-sample/pilot dependence. The strongest next non-server task is Amazon Beauty
-full prepare gate and validation; the strongest next server-oriented scaffold
-task is Qwen3-8B observation I/O without running inference.
+Go forward with caution. The mainline remains strong and non-toy, but the next
+work should reduce single-provider and prompt-diagnostic dependence. The
+strongest non-blocking next tasks are:
+
+1. Qwen3-8B/server observation scaffold without execution;
+2. ranking-to-title baseline adapter contract;
+3. CURE/TRUCE feature schema from exposure-counterfactual confidence.
