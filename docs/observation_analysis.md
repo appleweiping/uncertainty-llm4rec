@@ -80,6 +80,31 @@ outputs/run_registry/observation_runs.jsonl
 The registry is an ignored local index. It points to analysis artifacts and
 source run paths; it is not a paper result table.
 
+## Compare Prompt/Grounding Gates
+
+When multiple runs use the same input slice, compare their completed analysis
+summaries without touching raw API responses:
+
+```powershell
+python scripts/compare_observation_runs.py --run free_form=outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_api_full185_20260429/analysis_summary.json,outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_api_full185_20260429/case_review_summary.json --run retrieval_context=outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_retrieval_context_json_c20_api_full185_retry_20260429/analysis_summary.json,outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_retrieval_context_json_c20_api_full185_retry_20260429/case_review_summary.json --run catalog_constrained=outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_catalog_constrained_json_c20_api_full185_20260429/analysis_summary.json,outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_catalog_constrained_json_c20_api_full185_20260429/case_review_summary.json --output-dir outputs/analysis_comparisons/deepseek/amazon_reviews_2023_beauty/full/full185_prompt_gates_20260429 --source-label deepseek-beauty-full185-prompt-gates
+```
+
+This writes ignored comparison artifacts:
+
+- `comparison_summary.json`
+- `comparison_rows.jsonl`
+- `comparison_table.csv`
+- `report.md`
+- `comparison_manifest.json`
+
+The comparison layer reports GroundHit, confidence, WBC, grounding failure
+rate, candidate-set adherence, selected candidate rank, case-review taxonomy,
+and deltas against the first listed run. It also writes claim guardrails. If any
+candidate prompt excludes the held-out target, the comparison explicitly marks
+recommendation-accuracy comparison as disallowed. Use this for prompt,
+candidate, and grounding QA before more API spend; do not present it as a
+method improvement table.
+
 ## Metrics And Slices
 
 The analysis layer reports:

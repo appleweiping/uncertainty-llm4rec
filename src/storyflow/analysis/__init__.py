@@ -31,6 +31,12 @@ from storyflow.analysis.observation import (
     risk_case_slices,
     summarize_observation_records,
 )
+from storyflow.analysis.observation_comparison import (
+    compare_observation_summaries,
+    observation_comparison_markdown,
+    observation_comparison_row,
+    write_observation_comparison,
+)
 from storyflow.analysis.run_registry import append_registry_record, stable_run_id
 
 __all__ = [
@@ -44,10 +50,13 @@ __all__ = [
     "catalog_grounding_summary",
     "case_review_markdown",
     "classify_grounding_failure",
+    "compare_observation_summaries",
     "duplicate_title_groups",
     "grounding_diagnostics_markdown",
     "grounding_failure_review",
     "grounding_margin_summary",
+    "observation_comparison_markdown",
+    "observation_comparison_row",
     "observation_analysis_markdown",
     "popularity_confidence_slope",
     "reliability_bins",
@@ -59,4 +68,5 @@ __all__ = [
     "summarize_case_review",
     "summarize_observation_records",
     "dataset_audit_markdown",
+    "write_observation_comparison",
 ]

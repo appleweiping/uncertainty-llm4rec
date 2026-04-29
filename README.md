@@ -573,6 +573,17 @@ target-leak status, and history-item copying. If the held-out target is
 excluded from candidates, target-hit correctness is not recommendation
 accuracy.
 
+Compare completed prompt/grounding gate analyses on the same input slice:
+
+```powershell
+python scripts/compare_observation_runs.py --run free_form=outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_api_full185_20260429/analysis_summary.json,outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_api_full185_20260429/case_review_summary.json --run retrieval_context=outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_retrieval_context_json_c20_api_full185_retry_20260429/analysis_summary.json,outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_retrieval_context_json_c20_api_full185_retry_20260429/case_review_summary.json --run catalog_constrained=outputs/analysis/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_catalog_constrained_json_c20_api_full185_20260429/analysis_summary.json,outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_gate185_no_repeat_catalog_constrained_json_c20_api_full185_20260429/case_review_summary.json --output-dir outputs/analysis_comparisons/deepseek/amazon_reviews_2023_beauty/full/full185_prompt_gates_20260429 --source-label deepseek-beauty-full185-prompt-gates
+```
+
+This comparison reads only existing analysis/case-review summaries and writes
+ignored JSONL/CSV/Markdown artifacts. It is a prompt/candidate/grounding QA
+view, not a paper-result table or recommendation-accuracy comparison when
+diagnostic candidate sets exclude the held-out target.
+
 Review concrete pilot cases and failure taxonomy:
 
 ```powershell
