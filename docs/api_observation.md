@@ -197,8 +197,11 @@ This writes ignored files under `outputs/analysis/...` and appends a local
 pointer to `outputs/run_registry/observation_runs.jsonl`. The report includes
 reliability bins, head/mid/tail summaries, wrong-high-confidence cases,
 correct-low-confidence cases, grounding failures, parse failures, and a
-lightweight popularity-confidence slope diagnostic. Dry-run analysis is not a
-real API pilot and not paper evidence.
+lightweight popularity-confidence slope diagnostic. It also writes
+`repeat_summary.json` when grounded rows preserve repeat-target metadata, so
+Amazon Beauty full reports can separate no-repeat ordinary next-item probes
+from repeat-only diagnostics. Dry-run analysis is not a real API pilot and not
+paper evidence.
 
 For small real pilots, also generate case-review artifacts:
 

@@ -13,6 +13,7 @@ from storyflow.analysis import (
     popularity_confidence_slope,
     reliability_bins,
     review_observation_cases,
+    repeat_target_summary,
     summarize_observation_records,
 )
 from storyflow.observation import read_jsonl, write_jsonl
@@ -43,6 +44,10 @@ def _grounded_rows() -> list[dict[str, object]]:
             "grounding_status": "exact",
             "grounding_score": 1.0,
             "parse_strategy": "strict_json",
+            "target_in_history": False,
+            "target_history_occurrence_count": 0,
+            "target_same_timestamp_as_history": False,
+            "history_duplicate_item_count": 0,
         },
         {
             "input_id": "b",
@@ -61,6 +66,10 @@ def _grounded_rows() -> list[dict[str, object]]:
             "grounding_status": "normalized_exact",
             "grounding_score": 0.98,
             "parse_strategy": "fenced_json",
+            "target_in_history": False,
+            "target_history_occurrence_count": 0,
+            "target_same_timestamp_as_history": False,
+            "history_duplicate_item_count": 1,
         },
         {
             "input_id": "c",
@@ -79,6 +88,10 @@ def _grounded_rows() -> list[dict[str, object]]:
             "grounding_status": "exact",
             "grounding_score": 1.0,
             "parse_strategy": "regex",
+            "target_in_history": True,
+            "target_history_occurrence_count": 1,
+            "target_same_timestamp_as_history": False,
+            "history_duplicate_item_count": 1,
         },
         {
             "input_id": "d",
@@ -97,6 +110,10 @@ def _grounded_rows() -> list[dict[str, object]]:
             "grounding_status": "out_of_catalog",
             "grounding_score": 0.0,
             "parse_strategy": "strict_json",
+            "target_in_history": True,
+            "target_history_occurrence_count": 2,
+            "target_same_timestamp_as_history": True,
+            "history_duplicate_item_count": 2,
         },
     ]
 
@@ -121,8 +138,14 @@ def test_reliability_and_summary_slices() -> None:
     assert summary["quadrant_counts"]["wrong_high_confidence"] == 1
     assert summary["quadrant_counts"]["correct_low_confidence"] == 1
     assert summary["bucket_summary"]["head"]["count"] == 2
+    assert summary["repeat_target_summary"]["non_repeat_target"]["count"] == 2
+    assert summary["repeat_target_summary"]["repeat_target"]["count"] == 2
     assert summary["risk_cases"]["wrong_high_confidence"][0]["input_id"] == "b"
     assert summary["risk_cases"]["correct_low_confidence"][0]["input_id"] == "c"
+    assert (
+        summary["risk_cases"]["correct_low_confidence"][0]["target_in_history"]
+        is True
+    )
 
 
 def test_popularity_confidence_slope_has_controlled_field() -> None:
@@ -132,6 +155,18 @@ def test_popularity_confidence_slope_has_controlled_field() -> None:
     assert "univariate" in slope
     assert "correctness_residualized" in slope
     assert slope["univariate"]["slope"] is not None
+
+
+def test_repeat_target_summary_separates_repeat_and_non_repeat_rows() -> None:
+    summary = repeat_target_summary(_grounded_rows())
+
+    assert summary["all"]["count"] == 4
+    assert summary["non_repeat_target"]["count"] == 2
+    assert summary["repeat_target"]["count"] == 2
+    assert summary["same_timestamp_repeat_target"]["count"] == 1
+    assert summary["repeat_metadata_presence"]["rows_with_target_in_history_field"] == 4
+    assert summary["repeat_target"]["correctness_rate"] == 0.5
+    assert summary["non_repeat_target"]["wrong_high_confidence_count"] == 1
 
 
 def test_analyze_observation_run_writes_outputs_and_registry() -> None:
@@ -173,10 +208,14 @@ def test_analyze_observation_run_writes_outputs_and_registry() -> None:
     )
 
     summary = json.loads(Path(analysis_manifest["summary"]).read_text(encoding="utf-8"))
+    repeat_summary = json.loads(
+        Path(analysis_manifest["repeat_summary"]).read_text(encoding="utf-8")
+    )
     risk_rows = read_jsonl(analysis_manifest["risk_cases"])
     registry_rows = read_jsonl(workspace / "registry.jsonl")
     assert summary["provider"] == "mock"
     assert summary["api_called"] is False
+    assert repeat_summary["repeat_target"]["count"] == 2
     assert any(row["slice"] == "wrong_high_confidence" for row in risk_rows)
     assert registry_rows[0]["run_id"] == registry_record["run_id"]
 

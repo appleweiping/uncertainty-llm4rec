@@ -56,6 +56,7 @@ by git:
 - `analysis_summary.json`
 - `reliability_diagram.json`
 - `bucket_summary.json`
+- `repeat_summary.json`
 - `risk_cases.jsonl`
 - `report.md`
 - `analysis_manifest.json`
@@ -83,6 +84,8 @@ The analysis layer reports:
 - Tail Underconfidence Gap;
 - reliability diagram bins overall and by head/mid/tail bucket;
 - head/mid/tail confidence, correctness, and grounding summaries;
+- repeat-target slices for `non_repeat_target`, `repeat_target`,
+  `same_timestamp_repeat_target`, and missing repeat metadata;
 - wrong-high-confidence cases;
 - correct-low-confidence cases;
 - grounding failure cases;
@@ -93,6 +96,13 @@ The slope is a lightweight standard-library diagnostic over
 `confidence ~ log1p(target_popularity)` plus a correctness-residualized variant.
 It is a sanity diagnostic, not a causal claim. Causal popularity deconfounding
 belongs to later CURE/TRUCE framework work.
+
+Repeat-target slices are mandatory for Amazon Beauty full analysis because
+repeat purchases and duplicate review artifacts can place the held-out target
+item in the user's history. Use `non_repeat_target` as the cleaner ordinary
+next-item probe and `repeat_target` as a separate diagnostic for repetition or
+history-copy behavior. Do not collapse these slices into one paper claim without
+reporting the sensitivity.
 
 ## Pilot And Full Run Use
 

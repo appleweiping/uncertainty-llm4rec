@@ -226,6 +226,7 @@ Phase 2C reads these outputs without mutating them:
 - `analysis_summary.json`
 - `reliability_diagram.json`
 - `bucket_summary.json`
+- `repeat_summary.json`
 - `risk_cases.jsonl`
 - `report.md`
 - `analysis_manifest.json`
@@ -269,10 +270,10 @@ python scripts/analyze_observation.py --run-dir outputs/api_observations/deepsee
 ```
 
 The analysis layer reports reliability bins, head/mid/tail confidence and
-correctness, wrong-high-confidence cases, correct-low-confidence cases,
-grounding failures, parse failures, and an exploratory popularity-confidence
-slope. Analysis of mock or dry-run outputs is still only a schema sanity
-artifact and not paper evidence.
+correctness, repeat-target slices, wrong-high-confidence cases,
+correct-low-confidence cases, grounding failures, parse failures, and an
+exploratory popularity-confidence slope. Analysis of mock or dry-run outputs is
+still only a schema sanity artifact and not paper evidence.
 
 Run case review on an approved smoke/pilot output directory:
 

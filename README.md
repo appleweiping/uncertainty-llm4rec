@@ -168,8 +168,8 @@ Implemented foundation modules:
 - `storyflow.observation`: JSONL input construction, mock observation runner,
   grounding integration, metrics, reports, and resume support.
 - `storyflow.analysis`: observation analysis summaries, reliability diagram
-  data, head/mid/tail slices, risk case extraction, and ignored run registry
-  helpers.
+  data, head/mid/tail and repeat-target slices, risk case extraction, and
+  ignored run registry helpers.
 - `storyflow.analysis.grounding_diagnostics`: catalog duplicate normalized
   title checks and optional grounding candidate margin audits.
 - `storyflow.baselines`: lightweight popularity and co-occurrence title
@@ -493,10 +493,13 @@ Outputs are ignored by git and written under:
 - `outputs/run_registry/observation_runs.jsonl`
 
 The analysis report includes reliability diagram data, head/mid/tail summaries,
-wrong-high-confidence cases, correct-low-confidence cases, grounding failures,
-parse failure summaries, and an exploratory popularity-confidence slope. When
-the source run is mock or dry-run, these are only pipeline sanity artifacts and
-must not be reported as real model behavior or paper evidence.
+repeat-target slices, wrong-high-confidence cases, correct-low-confidence cases,
+grounding failures, parse failure summaries, and an exploratory
+popularity-confidence slope. It also writes `repeat_summary.json`, so Amazon
+Beauty runs can compare all / no-repeat / repeat-only behavior without mixing
+repeat purchase or duplicate-review diagnostics into ordinary next-item claims.
+When the source run is mock or dry-run, these are only pipeline sanity
+artifacts and must not be reported as real model behavior or paper evidence.
 
 Review concrete pilot cases and failure taxonomy:
 

@@ -25,6 +25,7 @@ from storyflow.analysis.observation import (
     popularity_confidence_slope,
     reliability_bins,
     reliability_by_popularity_bucket,
+    repeat_target_summary,
     risk_case_slices,
     summarize_observation_records,
 )
@@ -47,6 +48,7 @@ __all__ = [
     "popularity_confidence_slope",
     "reliability_bins",
     "reliability_by_popularity_bucket",
+    "repeat_target_summary",
     "review_observation_cases",
     "risk_case_slices",
     "stable_run_id",

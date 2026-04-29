@@ -85,6 +85,12 @@ def _bucket(row: dict[str, Any]) -> str:
     return str(row.get("target_popularity_bucket") or "unknown")
 
 
+def _repeat_group(row: dict[str, Any]) -> str:
+    if "target_in_history" not in row:
+        return "unknown"
+    return "repeat_target" if bool(row.get("target_in_history")) else "non_repeat_target"
+
+
 def reliability_bins(
     rows: Iterable[dict[str, Any]],
     *,
@@ -173,6 +179,122 @@ def bucket_summary(rows: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
                 for row in bucket_rows
             ),
         }
+    return summary
+
+
+def _slice_summary(
+    rows: Iterable[dict[str, Any]],
+    *,
+    low_confidence_tau: float,
+    high_confidence_tau: float,
+    n_bins: int,
+) -> dict[str, Any]:
+    records = list(rows)
+    probabilities = [_confidence(row) for row in records]
+    labels = [_correctness(row) for row in records]
+    grounded_flags = [_is_grounded(row) for row in records]
+    if not records:
+        return {
+            "count": 0,
+            "mean_confidence": None,
+            "correctness_rate": None,
+            "ground_hit_rate": None,
+            "mean_grounding_score": None,
+            "ece": None,
+            "brier": None,
+            "cbu_tau": None,
+            "wbc_tau": None,
+            "tail_underconfidence_gap": None,
+            "wrong_high_confidence_count": 0,
+            "correct_low_confidence_count": 0,
+            "popularity_bucket_counts": {},
+            "grounding_status_counts": {},
+        }
+    return {
+        "count": len(records),
+        "mean_confidence": _mean(probabilities),
+        "correctness_rate": _rate(labels),
+        "ground_hit_rate": _rate(grounded_flags),
+        "mean_grounding_score": _mean(
+            float(row.get("grounding_score") or 0.0) for row in records
+        ),
+        "ece": expected_calibration_error(probabilities, labels, n_bins=n_bins),
+        "brier": brier_score(probabilities, labels),
+        "cbu_tau": _finite_or_none(
+            cbu_tau(probabilities, labels, tau=low_confidence_tau)
+        ),
+        "wbc_tau": _finite_or_none(
+            wbc_tau(probabilities, labels, tau=high_confidence_tau)
+        ),
+        "tail_underconfidence_gap": _finite_or_none(
+            _tail_underconfidence_gap_or_nan(records)
+        ),
+        "wrong_high_confidence_count": sum(
+            _correctness(row) == 0 and _confidence(row) >= high_confidence_tau
+            for row in records
+        ),
+        "correct_low_confidence_count": sum(
+            _correctness(row) == 1 and _confidence(row) < low_confidence_tau
+            for row in records
+        ),
+        "popularity_bucket_counts": _status_counts(
+            records,
+            "target_popularity_bucket",
+        ),
+        "grounding_status_counts": _status_counts(records, "grounding_status"),
+    }
+
+
+def repeat_target_summary(
+    rows: Iterable[dict[str, Any]],
+    *,
+    low_confidence_tau: float = 0.5,
+    high_confidence_tau: float = 0.7,
+    n_bins: int = 10,
+) -> dict[str, Any]:
+    """Summarize observation outputs by target-in-history repeat status."""
+
+    records = list(rows)
+    groups: dict[str, list[dict[str, Any]]] = {
+        "all": records,
+        "non_repeat_target": [
+            row for row in records if _repeat_group(row) == "non_repeat_target"
+        ],
+        "repeat_target": [
+            row for row in records if _repeat_group(row) == "repeat_target"
+        ],
+        "unknown": [
+            row for row in records if _repeat_group(row) == "unknown"
+        ],
+        "same_timestamp_repeat_target": [
+            row for row in records if bool(row.get("target_same_timestamp_as_history"))
+        ],
+    }
+    summary = {
+        group: _slice_summary(
+            group_rows,
+            low_confidence_tau=low_confidence_tau,
+            high_confidence_tau=high_confidence_tau,
+            n_bins=n_bins,
+        )
+        for group, group_rows in groups.items()
+    }
+    summary["repeat_metadata_presence"] = {
+        "rows_with_target_in_history_field": sum(
+            "target_in_history" in row for row in records
+        ),
+        "rows_with_target_history_occurrence_count": sum(
+            "target_history_occurrence_count" in row for row in records
+        ),
+        "rows_with_same_timestamp_field": sum(
+            "target_same_timestamp_as_history" in row for row in records
+        ),
+    }
+    summary["note"] = (
+        "Repeat-target slices separate ordinary next-item probes from repeat "
+        "purchase or duplicate-review diagnostics. They are not conclusions by "
+        "themselves."
+    )
     return summary
 
 
@@ -266,6 +388,14 @@ def risk_case_slices(
             "correctness": row.get("correctness"),
             "target_popularity": row.get("target_popularity"),
             "target_popularity_bucket": row.get("target_popularity_bucket"),
+            "target_in_history": row.get("target_in_history"),
+            "target_history_occurrence_count": row.get(
+                "target_history_occurrence_count"
+            ),
+            "target_same_timestamp_as_history": row.get(
+                "target_same_timestamp_as_history"
+            ),
+            "history_duplicate_item_count": row.get("history_duplicate_item_count"),
         }
 
     wrong_high = sorted(
@@ -380,6 +510,12 @@ def summarize_observation_records(
             "parse_failure_examples": parse_failures[:max_cases],
         },
         "bucket_summary": bucket_summary(records),
+        "repeat_target_summary": repeat_target_summary(
+            records,
+            low_confidence_tau=low_confidence_tau,
+            high_confidence_tau=high_confidence_tau,
+            n_bins=n_bins,
+        ),
         "quadrant_counts": {
             "correct_confident": sum(
                 label == 1 and prob >= high_confidence_tau
@@ -439,6 +575,27 @@ def observation_analysis_markdown(summary: dict[str, Any]) -> str:
                 clc=row.get("correct_low_confidence_count"),
             )
         )
+    repeat_rows = []
+    for group in (
+        "non_repeat_target",
+        "repeat_target",
+        "same_timestamp_repeat_target",
+        "unknown",
+    ):
+        row = summary.get("repeat_target_summary", {}).get(group)
+        if not row or not row.get("count"):
+            continue
+        repeat_rows.append(
+            "| {group} | {count} | {conf} | {corr} | {ground} | {whc} | {clc} |".format(
+                group=group,
+                count=row.get("count"),
+                conf=row.get("mean_confidence"),
+                corr=row.get("correctness_rate"),
+                ground=row.get("ground_hit_rate"),
+                whc=row.get("wrong_high_confidence_count"),
+                clc=row.get("correct_low_confidence_count"),
+            )
+        )
     slope = summary.get("popularity_confidence_slope", {})
     univariate = slope.get("univariate", {})
     controlled = slope.get("correctness_residualized", {})
@@ -482,6 +639,12 @@ def observation_analysis_markdown(summary: dict[str, Any]) -> str:
             "| bucket | count | mean confidence | correctness | GroundHit | wrong-high-conf | correct-low-conf |",
             "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
             *bucket_rows,
+            "",
+            "## Repeat Target Slices",
+            "",
+            "| repeat group | count | mean confidence | correctness | GroundHit | wrong-high-conf | correct-low-conf |",
+            "| --- | ---: | ---: | ---: | ---: | ---: | ---: |",
+            *(repeat_rows or ["| none | 0 |  |  |  |  |  |"]),
             "",
             "## Popularity-Confidence Slope",
             "",
@@ -544,6 +707,7 @@ def analyze_observation_run(
     summary_path = output_path / "analysis_summary.json"
     reliability_path = output_path / "reliability_diagram.json"
     bucket_path = output_path / "bucket_summary.json"
+    repeat_path = output_path / "repeat_summary.json"
     risk_path = output_path / "risk_cases.jsonl"
     report_path = output_path / "report.md"
     manifest_out_path = output_path / "analysis_manifest.json"
@@ -573,6 +737,15 @@ def analyze_observation_run(
         ),
         encoding="utf-8",
     )
+    repeat_path.write_text(
+        json.dumps(
+            summary["repeat_target_summary"],
+            indent=2,
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
     risk_rows: list[dict[str, Any]] = []
     for slice_name, rows in summary["risk_cases"].items():
         for row in rows:
@@ -589,6 +762,7 @@ def analyze_observation_run(
         "summary": str(summary_path),
         "reliability_diagram": str(reliability_path),
         "bucket_summary": str(bucket_path),
+        "repeat_summary": str(repeat_path),
         "risk_cases": str(risk_path),
         "report": str(report_path),
         "source_grounded_jsonl": str(grounded_path),
