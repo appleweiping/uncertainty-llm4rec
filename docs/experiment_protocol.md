@@ -203,6 +203,36 @@ Training is server-oriented unless explicitly approved for a small local
 sanity check. Codex must not claim server training or inference has run unless
 the user provides logs or result files.
 
+## Qwen3 Server Observation Interface
+
+Qwen3-8B observation is a Phase 3 server interface, not a completed run. The
+committed scaffold is:
+
+- `configs/server/qwen3_8b_observation.yaml`;
+- `scripts/server/run_qwen3_observation.py`;
+- `storyflow.server`.
+
+By default, the script is plan-only and writes a server job manifest plus an
+API-compatible output contract. It must record `api_called=false`,
+`server_executed=false`, `model_inference_run=false`, and
+`is_experiment_result=false`.
+
+Actual server inference requires `--execute-server` and must write the same
+layers as API observation:
+
+```text
+request_records
+  -> raw_responses
+  -> parsed_predictions / failed_cases
+  -> grounded_predictions
+  -> metrics/report/manifest
+  -> analysis summary/risk cases/run registry
+```
+
+Every Qwen3 generated title must be grounded to the catalog before correctness
+or confidence metrics are computed. No local Codex run may be described as a
+server or Qwen3 result without user-provided logs and artifacts.
+
 ## Local Versus Server Split
 
 Local tasks:

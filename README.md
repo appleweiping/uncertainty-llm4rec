@@ -35,6 +35,9 @@ schema sanity and approved API analysis. A scoped DeepSeek Amazon Beauty
 no-repeat full-slice API observation has been executed, but multi-provider/full
 experiment, model training, simulation, and paper-result phases have not
 started.
+Qwen3-8B server observation scaffolding is now available as a plan/contract
+layer under `configs/server/`, `scripts/server/`, and `storyflow.server`; no
+Qwen3 inference, server run, or LoRA training has been executed.
 Processed-dataset audit tooling now checks repeat-target cases, chronological
 split integrity, title quality, and head/mid/tail coverage before scaling API
 observation.
@@ -154,6 +157,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
   non-toy, and reviewer-risk checks.
 - `docs/server_runbook.md`: server execution framework. It is a scaffold only;
   no server run has been performed by Codex.
+- `configs/server/qwen3_8b_observation.yaml`: Qwen3 server observation
+  contract. It is a plan/config scaffold only, not a completed inference run.
 - `references/README.md`: policy for local reference material such as
   `recprefer.zip`.
 
@@ -176,6 +181,7 @@ src/storyflow/triage/
 src/storyflow/models/
 src/storyflow/training/
 src/storyflow/baselines/
+src/storyflow/server/
 src/storyflow/utils/
 tests/
 ```
@@ -209,6 +215,8 @@ Implemented foundation modules:
   title checks and optional grounding candidate margin audits.
 - `storyflow.baselines`: lightweight popularity and co-occurrence title
   baselines that write the same grounded observation schema.
+- `storyflow.server`: Qwen3-8B server observation plan/execution contract that
+  mirrors API observation output layers while defaulting to plan-only mode.
 - `tests/fixtures/`: synthetic records used only for tests.
 
 The remaining subpackages are intentionally lightweight placeholders for later
@@ -583,6 +591,34 @@ This comparison reads only existing analysis/case-review summaries and writes
 ignored JSONL/CSV/Markdown artifacts. It is a prompt/candidate/grounding QA
 view, not a paper-result table or recommendation-accuracy comparison when
 diagnostic candidate sets exclude the held-out target.
+
+## Qwen3-8B Server Observation Scaffold
+
+Qwen3-8B observation is server-oriented. The committed scaffold prepares an
+API-compatible output contract and command plan without loading a model:
+
+```powershell
+python scripts/server/run_qwen3_observation.py --config configs/server/qwen3_8b_observation.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl --output-dir outputs/server_observations/qwen3_8b/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_plan --max-examples 20 --run-label qwen3_beauty_plan
+```
+
+The default command writes `request_records.jsonl`,
+`expected_output_contract.json`, `server_command_plan.md`, and `manifest.json`
+under ignored `outputs/`. It records `api_called=false`,
+`server_executed=false`, `model_inference_run=false`, and
+`is_experiment_result=false`.
+
+Actual server inference is guarded by an explicit flag and must be run only
+after the server environment, model source, input slice, output path, and
+artifact-return policy are approved and logged:
+
+```powershell
+python scripts/server/run_qwen3_observation.py --config configs/server/qwen3_8b_observation.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl --output-dir outputs/server_observations/qwen3_8b/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_server --execute-server --run-stage full --run-label qwen3_beauty_full_server
+```
+
+When executed on a server with `torch` and `transformers`, the script writes
+the same observation layers as the API runner: raw responses, parsed
+predictions, failed cases, grounded predictions, metrics, report, and manifest.
+Codex has not run this command locally or on a server.
 
 Review concrete pilot cases and failure taxonomy:
 

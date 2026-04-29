@@ -1,0 +1,49 @@
+# Qwen3-8B server observation scaffold.
+# This config is committed as a plan/execution contract only. Codex has not run
+# Qwen3-8B inference or Qwen3-8B + LoRA training.
+
+backend: qwen_server
+model_alias: qwen3_8b
+model_name: Qwen/Qwen3-8B
+run_family: title_level_generative_observation
+
+model:
+  source: Qwen/Qwen3-8B
+  revision: main
+  torch_dtype: bfloat16
+  device_map: auto
+  trust_remote_code: true
+  cache_dir: data/cache/hf/qwen3_8b
+
+generation:
+  max_new_tokens: 256
+  temperature: 0.0
+  top_p: 1.0
+  do_sample: false
+  repetition_penalty: 1.0
+
+batching:
+  batch_size: 1
+  max_examples_default: 20
+
+output_contract:
+  request_records: request_records.jsonl
+  raw_responses: raw_responses.jsonl
+  parsed_predictions: parsed_predictions.jsonl
+  failed_cases: failed_cases.jsonl
+  grounded_predictions: grounded_predictions.jsonl
+  metrics: metrics.json
+  report: report.md
+  manifest: manifest.json
+
+guards:
+  server_execution_required: true
+  requires_explicit_execute_server_flag: true
+  api_called: false
+  model_training: false
+  output_schema_matches_api_observation: true
+  grounding_required_before_correctness: true
+
+notes:
+  status: scaffold_not_run
+  claim_policy: planned/server-only until user provides server logs and manifests

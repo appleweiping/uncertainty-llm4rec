@@ -75,6 +75,64 @@ scripts exist:
 9. Copy only sanitized summaries, configs, logs, and metrics needed for local
    analysis.
 
+## Qwen3-8B Observation Scaffold
+
+The repository includes a server observation contract for Qwen3-8B:
+
+- config: `configs/server/qwen3_8b_observation.yaml`;
+- script: `scripts/server/run_qwen3_observation.py`;
+- package helper: `storyflow.server`;
+- default mode: plan-only, with no model loading and no inference;
+- guarded execution mode: `--execute-server`, intended only for approved server
+  hardware.
+
+Plan-only command from the repository root:
+
+```powershell
+python scripts/server/run_qwen3_observation.py --config configs/server/qwen3_8b_observation.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl --output-dir outputs/server_observations/qwen3_8b/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_plan --max-examples 20 --run-label qwen3_beauty_plan
+```
+
+The plan writes ignored artifacts:
+
+- `request_records.jsonl`;
+- `expected_output_contract.json`;
+- `server_command_plan.md`;
+- `manifest.json`.
+
+The plan manifest must contain:
+
+- `api_called=false`;
+- `server_executed=false`;
+- `model_inference_run=false`;
+- `model_training=false`;
+- `output_schema_matches_api_observation=true`;
+- `grounding_required_before_correctness=true`;
+- `is_experiment_result=false`.
+
+Approved server execution command shape:
+
+```powershell
+python scripts/server/run_qwen3_observation.py --config configs/server/qwen3_8b_observation.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl --output-dir outputs/server_observations/qwen3_8b/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_server --execute-server --run-stage full --run-label qwen3_beauty_full_server
+```
+
+This command requires a server Python environment with `torch`, `transformers`,
+the configured Qwen3 model source/cache path, sufficient GPU memory, the input
+JSONL, and the matching processed catalog CSV. It writes API-compatible layers:
+
+- `request_records.jsonl`;
+- `raw_responses.jsonl`;
+- `parsed_predictions.jsonl`;
+- `failed_cases.jsonl`;
+- `grounded_predictions.jsonl`;
+- `metrics.json`;
+- `report.md`;
+- `manifest.json`.
+
+Codex must not claim this server command has run unless the user provides the
+server manifest and logs. Qwen3 outputs must still be grounded to the catalog
+before correctness, confidence, popularity, or head/mid/tail metrics are
+reported.
+
 ## Amazon Reviews 2023 Beauty Full Run Gate
 
 Amazon Beauty full download and preprocessing should run on a server or a local

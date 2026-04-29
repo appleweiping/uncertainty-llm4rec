@@ -57,6 +57,14 @@ Health_and_Personal_Care. Beauty remains the first full-data category. DeepSeek
 is the current single API provider target; Qwen API, Kimi, GLM, and server
 Qwen3 remain later phases.
 
+The first Qwen3 server observation scaffold is now present as a plan/contract
+layer. It adds `configs/server/qwen3_8b_observation.yaml`,
+`scripts/server/run_qwen3_observation.py`, and `storyflow.server`. The default
+path writes an API-compatible server job plan without model loading,
+inference, training, API calls, or experimental claims. Actual Qwen3 inference
+remains server-only and requires explicit `--execute-server` plus user-provided
+logs/artifacts before any result can be claimed.
+
 ## Phase 0: Governance And Scaffold
 
 Goal: establish the repository rules, documentation skeleton, artifact policy,
