@@ -103,6 +103,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `docs/codex_execution_protocol.md`: required workflow for each Codex task.
 - `docs/change_requests/` and `docs/decision_log.md`: scoped research and
   data-route decisions.
+- `docs/reviews/`: periodic self-review artifacts for research-quality,
+  non-toy, and reviewer-risk checks.
 - `docs/server_runbook.md`: server execution framework. It is a scaffold only;
   no server run has been performed by Codex.
 - `references/README.md`: policy for local reference material such as
