@@ -45,8 +45,9 @@ deterministic risk/echo scoring, and a reranking contract around
 scaffold code only. A feature builder now converts existing grounded
 observation JSONL into this schema with manifests. Split-audited histogram
 calibration and popularity residualization scaffolds record fit/eval provenance
-for feature JSONL files; they are not learned model results and no method
-result is claimed.
+for feature JSONL files. A deterministic reranker can now consume raw,
+calibrated, or residualized feature rows and write a provenance manifest; none
+of these are learned model results and no method result is claimed.
 Processed-dataset audit tooling now checks repeat-target cases, chronological
 split integrity, title quality, and head/mid/tail coverage before scaling API
 observation.
@@ -231,9 +232,10 @@ Implemented foundation modules:
 - `storyflow.confidence`: exposure-counterfactual confidence feature schema,
   grounded-observation feature builder, popularity residual/deconfounding,
   echo-risk/risk components, deterministic CURE/TRUCE score, reranking
-  scaffold, split-audited histogram calibration scaffold, and split-audited
-  popularity residualization scaffold. This is not a trained calibrator,
-  reranker, or result.
+  scaffold, split-audited histogram calibration scaffold, split-audited
+  popularity residualization scaffold, and a JSONL reranking contract that can
+  consume calibrated/residualized confidence proxies. This is not a trained
+  calibrator, reranker, or result.
 - `storyflow.server`: Qwen3-8B server observation plan/execution contract that
   mirrors API observation output layers while defaulting to plan-only mode.
 - `tests/fixtures/`: synthetic records used only for tests.
@@ -808,6 +810,21 @@ popularity. It records `api_called=false`,
 `is_experiment_result=false`; it must not be interpreted as a learned
 deconfounding method or paper evidence.
 
+Rerank raw, calibrated, or residualized feature rows through the same
+CURE/TRUCE scoring contract:
+
+```powershell
+python scripts/rerank_confidence_features.py --features-jsonl outputs/confidence_residuals/<source-run>/popularity_residualized_features.jsonl --confidence-source calibrated_residualized --group-key input_id --top-k 1
+```
+
+This writes ignored `reranked_features.jsonl` and `manifest.json` under
+`outputs/confidence_reranking/...` by default. The command groups rows by the
+requested key, records which confidence source was selected or used as a
+fallback, recomputes risk/echo/information-gain components, and emits
+`cure_truce_rerank` records with `api_called=false`, `model_training=false`,
+`server_executed=false`, and `is_experiment_result=false`. It is a deterministic
+integration contract, not a trained reranker and not paper evidence.
+
 ## Tests
 
 Run the local test suite:
@@ -823,7 +840,7 @@ Tail Underconfidence Gap, prompt construction, mock provider parsing,
 observation input schema, grounding/correctness integration, metrics reporting,
 resume behavior, baseline ranking-to-title adapter behavior, and CURE/TRUCE
 exposure-confidence feature-building/scoring/reranking/calibration/popularity
-residualization scaffold behavior.
+residualization plus calibrated/residualized JSONL reranking scaffold behavior.
 Tests use small committed fixtures only and do not download data or call APIs.
 
 ## Basic Checks

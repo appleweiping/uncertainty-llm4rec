@@ -264,6 +264,15 @@ fit-split popularity-bucket mean baseline, with a recentered
 learned deconfounding method, not a full-result analysis, and not paper
 evidence.
 
+Raw, calibrated, or residualized feature rows can then be passed through
+`scripts/rerank_confidence_features.py`. The command defaults to
+`confidence_source=calibrated_residualized`, groups rows by `input_id`, writes
+ignored `reranked_features.jsonl` plus a manifest under
+`outputs/confidence_reranking/`, and records the selected confidence source,
+fallback status, score components, action, rank, and false API/training/server
+flags. This is a deterministic reranker contract only. It is not a trained
+CURE/TRUCE reranker, not a Qwen3 result, and not paper evidence.
+
 Training is server-oriented unless explicitly approved for a small local
 sanity check. Codex must not claim server training or inference has run unless
 the user provides logs or result files.

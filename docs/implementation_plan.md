@@ -81,8 +81,11 @@ schema/scoring/feature-contract code only. A split-audited histogram
 calibration scaffold now records fit/eval provenance and refuses split overlap
 by default. A split-audited popularity residual scaffold now fits a
 popularity-bucket confidence baseline on declared fit splits and applies it to
-evaluation splits only. These are not learned calibrators/deconfounders, no
-reranker has been evaluated on real outputs, and no method result is claimed.
+evaluation splits only. A deterministic JSONL reranker now consumes raw,
+calibrated, or residualized feature rows and records confidence-source
+fallbacks plus rank manifests. These are not learned
+calibrators/deconfounders/rerankers, no reranker has been evaluated as a method
+on real outputs, and no method result is claimed.
 
 ## Phase 0: Governance And Scaffold
 
@@ -220,7 +223,12 @@ Planned deliverables:
   popularity-bucket mean confidence baseline on train/fit splits, writes
   residualized feature JSONL plus manifest, and records API/training/server
   flags as false.
-- Exposure-aware scoring and reranking.
+- Current scaffold: `scripts/rerank_confidence_features.py` consumes feature,
+  calibrated, or residualized feature JSONL, groups candidates by input id,
+  recomputes CURE/TRUCE risk/echo/information-gain components, and writes
+  reranked rows plus a manifest with API/training/server flags as false.
+- Learned exposure-aware scoring and reranking after approved observation and
+  utility targets exist.
 - RecBrier-style confidence objective where feasible.
 - Risk-aware preference optimization design.
 - Qwen3-8B + LoRA training scripts and configs for server execution.

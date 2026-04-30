@@ -27,9 +27,11 @@ src/storyflow/confidence/exposure.py
 src/storyflow/confidence/features.py
 src/storyflow/confidence/calibration.py
 src/storyflow/confidence/residuals.py
+src/storyflow/confidence/reranking.py
 scripts/build_confidence_features.py
 scripts/calibrate_confidence_features.py
 scripts/residualize_confidence_features.py
+scripts/rerank_confidence_features.py
 ```
 
 Implemented objects:
@@ -42,6 +44,8 @@ Implemented objects:
   only on declared fit splits.
 - `PopularityResidualModel`: split-audited popularity-bucket mean baseline fit
   only on declared fit splits.
+- `SelectedRerankConfidence`: records the selected confidence proxy, available
+  sources, fallback status, and missing-source status for reranking.
 
 Implemented functions:
 
@@ -59,6 +63,10 @@ Implemented functions:
   with explicit fit/eval split provenance and leakage guards.
 - `residualize_feature_rows`: fit and apply a popularity residual scaffold
   with explicit fit/eval split provenance and leakage guards.
+- `rerank_confidence_features_jsonl`: group feature rows, choose raw,
+  calibrated, residualized, or combined confidence proxies, recompute
+  CURE/TRUCE risk/echo/information-gain components, and write reranked JSONL
+  plus a manifest.
 
 These functions use no API, no model loading, no training, and no data
 download.
@@ -160,6 +168,37 @@ This scaffold is a deconfounding contract for later learned CURE/TRUCE modules.
 It is not a learned popularity correction, not a Qwen3 result, and not paper
 evidence.
 
+## Reranker Contract
+
+Run the deterministic reranker on raw, calibrated, or residualized feature rows:
+
+```powershell
+python scripts/rerank_confidence_features.py --features-jsonl outputs/confidence_residuals/<source-run>/popularity_residualized_features.jsonl --confidence-source calibrated_residualized --group-key input_id --top-k 1
+```
+
+Default output:
+
+```text
+outputs/confidence_reranking/<source-run>/reranked_features.jsonl
+outputs/confidence_reranking/<source-run>/manifest.json
+```
+
+The reranker supports these confidence sources:
+
+- `score`: `score.estimated_exposure_confidence`;
+- `calibrated`: `calibration.calibrated_probability`, with optional fallback;
+- `residualized`: `popularity_residualization.deconfounded_confidence_proxy`,
+  with optional fallback;
+- `calibrated_residualized`: average of calibrated and residualized proxies
+  when both are present, otherwise fallback unless strict mode is requested.
+
+Each output row receives a `cure_truce_rerank` record with the selected
+confidence source, fallback reason, group id, rank, score, action, components,
+and false API/training/server/result flags. The manifest records input/output
+row counts, group counts, split counts, selected-source counts, fallback
+counts, and the row contract. This module is an integration scaffold for later
+learned rerankers, not a trained CURE/TRUCE reranker and not paper evidence.
+
 The generated feature rows include:
 
 - `feature`: serialized `ExposureConfidenceFeatures`;
@@ -220,6 +259,7 @@ python -m pytest tests/test_confidence_framework.py
 python -m pytest tests/test_confidence_feature_builder.py
 python -m pytest tests/test_confidence_calibration.py
 python -m pytest tests/test_confidence_residuals.py
+python -m pytest tests/test_confidence_reranking.py
 ```
 
 The tests cover:
@@ -241,6 +281,10 @@ The tests cover:
 - split-fit-only popularity residualization;
 - popularity bucket fallback to fit-split global mean;
 - residual output/manifest writing without API keys or model training.
+- calibrated/residualized confidence-source selection;
+- reranking grouped JSONL rows with stable ranks and `top_k`;
+- fallback recording and strict missing-source errors;
+- rerank output/manifest writing without API keys or model training.
 
 ## Next Steps
 
@@ -250,8 +294,9 @@ Short-term framework work should remain API-free:
    evidence supports richer deconfounding.
 2. Extend calibration targets from correctness labels toward exposure-
    counterfactual utility once approved exposure/relevance evidence exists.
-3. Add reranker integration that can consume API, Qwen3, and baseline
-   grounded outputs.
+3. Extend reranker integration from deterministic JSONL scoring toward learned
+   calibration/reranking once approved observation artifacts and utility
+   labels exist.
 4. Only after approved server artifacts exist, connect Qwen3-8B + LoRA
    training objectives to this feature schema.
 
