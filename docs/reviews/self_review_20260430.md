@@ -2,7 +2,8 @@
 
 This self-review follows the Qwen3 server observation scaffold, the
 ranking-JSONL baseline adapter, and the first Phase 4 CURE/TRUCE framework
-scaffold commits. It is a governance and research-quality artifact, not an
+scaffold commits. It was updated after the CURE/TRUCE JSONL reranker contract
+was added. It is a governance and research-quality artifact, not an
 experimental result.
 
 ## Current Phase
@@ -24,8 +25,9 @@ Storyflow / TRUCE-Rec is now between Phase 3 and early Phase 4.
 - Phase 4 is partially open as API-free scaffold work: feature schema,
   grounded-observation feature builder, deterministic CURE/TRUCE scoring,
   split-audited histogram calibration, and split-audited popularity
-  residualization are implemented and tested. None of these are learned method
-  results or paper evidence.
+  residualization are implemented and tested. The calibrated/residualized JSONL
+  reranker contract is also implemented and tested. None of these are learned
+  method results or paper evidence.
 
 ## External Reviewer Blocker Status
 
@@ -116,15 +118,17 @@ Implemented pieces:
   baseline on declared fit splits and applies it to evaluation splits only.
   Unknown generated-item popularity remains `unknown`; the residualizer does
   not borrow held-out target buckets.
-- deterministic scoring/reranking code exists as a contract, but it has not
-  been evaluated as a method.
+- `rerank_confidence_features_jsonl` consumes raw, calibrated, or residualized
+  feature rows; records selected confidence source and fallback provenance; and
+  writes rank/action/risk/echo/information-gain components plus a manifest.
+  It is deterministic integration code, not a trained reranker.
 
 This is coherent with Storyflow because each module serves the same object:
 verbal confidence is treated as noisy evidence; grounding confidence captures
 title-to-item uncertainty; popularity residualization is a confounding
-correction; echo/risk scoring is an exposure-control contract. The main risk is
-now less "no framework implementation" and more "the pieces must be connected
-without turning into disconnected tricks."
+correction; reranking uses the selected confidence proxy to control exposure
+risk. The main risk is now less "no framework implementation" and more "do not
+overclaim deterministic scaffolds as learned CURE/TRUCE method evidence."
 
 ## Toy-Risk Check
 
@@ -143,8 +147,9 @@ Immediate mitigation:
   readiness route for Video_Games or Books after the protocol stabilizes;
 - use the Qwen3 server scaffold for approved server observation rather than
   making local Qwen claims;
-- connect calibrated/residualized feature outputs to the reranking contract
-  before adding more isolated framework modules.
+- move the next API-free framework work toward baseline provenance,
+  exposure-simulation, or triage contracts that consume the same grounded
+  feature/rerank schema, instead of adding another independent trick.
 
 ## Dataset Route
 
@@ -213,13 +218,15 @@ as a scaffold:
 - popularity residual: confounding correction already implemented as a
   split-audited bucket-mean scaffold;
 - exposure-aware score: echo-risk control implemented as deterministic
-  contract, not an evaluated method;
+  contract, and the JSONL reranker now consumes calibrated/residualized
+  confidence proxies with manifest provenance;
 - triage: separate likely noise from hard-tail-positive evidence.
 
 The next framework step should not add another independent trick. It should
-wire calibrated and residualized feature outputs into the reranking/manifest
-contract, preserving split provenance and the non-result status until approved
-observation artifacts are used.
+either add baseline artifact manifest validation, or make echo simulation/data
+triage consume the same grounded feature/rerank records. Any learned
+calibrator/reranker or utility target must wait for approved observation
+artifacts and explicit server/training gates.
 
 ## Reviewer-Attack Risks
 
@@ -238,12 +245,12 @@ observation artifacts are used.
    Mitigation: report GroundHit, grounding status, ambiguity, candidate
    adherence, and ungrounded-high-confidence cases with all confidence metrics.
 
-4. Framework stitching.
+4. Framework stitching and scaffold overclaim.
    Priority: high. Calibration, popularity residualization, reranking, and
-   triage could still look disconnected if each module evolves separately.
-   Mitigation: make the next implementation consume the existing calibrated
-   and residualized feature contracts instead of adding a parallel scoring
-   path.
+   triage could still look disconnected or be mistaken for a learned method.
+   Mitigation: every next module must consume the existing grounded
+   feature/rerank contracts, keep false API/training/server/result flags, and
+   remain tied to `C(u, i) ~= P(user accepts | do(exposure=1))`.
 
 5. Baseline insufficiency.
    Priority: high. Lightweight baselines are not final reviewer-proof coverage.
@@ -285,9 +292,9 @@ P0:
 
 P1:
 
-- Connect calibrated/residualized feature rows to the CURE/TRUCE reranking
-  contract without making method-result claims.
 - Add a baseline artifact manifest contract for future trained rankers.
+- Add echo-simulation or data-triage scaffolds only if they consume existing
+  grounded feature/rerank records and stay explicitly synthetic/scaffold.
 
 P2:
 
@@ -306,11 +313,14 @@ P3:
 
 Go forward. The previous baseline blocker is closed, the project remains
 title-level and grounding-first, and Phase 4 is now partially implemented as
-tested scaffolding. The next non-blocking engineering work should be either:
+tested scaffolding. The calibrated/residualized reranker contract is now also
+closed by `f857eac feat: add CURE TRUCE reranker contract`. The next
+non-blocking engineering work should be either:
 
-1. connect calibrated/residualized feature outputs into the CURE/TRUCE reranker
-   contract with manifest provenance; or
-2. add baseline artifact manifest validation before any heavy baseline run.
+1. add baseline artifact manifest validation before any heavy baseline run; or
+2. add an API-free echo simulation/data-triage scaffold that consumes the
+   existing feature/rerank JSONL contract and labels outputs as synthetic or
+   scaffold-only.
 
 Do not start Qwen3 inference, LoRA training, server execution, or another real
 API expansion without explicit user approval and concrete run gates.
