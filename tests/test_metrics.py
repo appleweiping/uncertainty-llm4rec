@@ -6,10 +6,13 @@ import pytest
 
 from storyflow.grounding import ground_title
 from storyflow.metrics import (
+    area_under_risk_coverage_curve,
     brier_score,
     cbu_tau,
     expected_calibration_error,
     ground_hit_rate,
+    selective_risk_curve,
+    selective_risk_summary,
     tail_underconfidence_gap,
     wbc_tau,
 )
@@ -41,6 +44,24 @@ def test_cbu_and_wbc_tau() -> None:
     assert wbc_tau(probabilities, labels, tau=0.7) == pytest.approx(0.5)
     assert math.isnan(cbu_tau([0.1, 0.2], [0, 0], tau=0.5))
     assert math.isnan(wbc_tau([0.9, 0.8], [1, 1], tau=0.5))
+
+
+def test_selective_risk_curve_and_aurc() -> None:
+    probabilities = [0.9, 0.8, 0.2, 0.1]
+    labels = [1, 0, 1, 0]
+
+    curve = selective_risk_curve(probabilities, labels)
+    summary = selective_risk_summary(probabilities, labels)
+
+    assert curve[0]["coverage"] == pytest.approx(0.25)
+    assert curve[0]["risk"] == pytest.approx(0.0)
+    assert curve[1]["risk"] == pytest.approx(0.5)
+    assert area_under_risk_coverage_curve(probabilities, labels) == pytest.approx(
+        (0.0 + 0.5 + (1.0 / 3.0) + 0.5) / 4.0
+    )
+    assert summary["aurc"] == pytest.approx((0.0 + 0.5 + (1.0 / 3.0) + 0.5) / 4.0)
+    assert summary["optimal_aurc"] == pytest.approx((0.0 + 0.0 + (1.0 / 3.0) + 0.5) / 4.0)
+    assert summary["excess_aurc"] == pytest.approx(0.125)
 
 
 def test_ground_hit_rate() -> None:

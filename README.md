@@ -158,8 +158,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `docs/observation_pipeline.md`: Phase 2A no-API generative observation flow.
 - `docs/api_observation.md`: Phase 2B provider config, dry-run, cache, resume,
   parsing, and real-pilot guardrails.
-- `docs/observation_analysis.md`: analysis reports, reliability data, risk
-  cases, and local ignored run registry.
+- `docs/observation_analysis.md`: analysis reports, reliability/selective-risk
+  data, risk cases, and local ignored run registry.
 - `docs/pilot_case_review.md`: pilot case-review and failure-taxonomy layer for
   prompt, grounding, and confidence triage before scaling.
 - `docs/baseline_observation.md`: lightweight popularity, train-split
@@ -217,8 +217,8 @@ Implemented foundation modules:
   prediction, grounded prediction, confidence, and observation example records.
 - `storyflow.grounding`: title normalization, exact match, normalized exact
   match, stdlib fuzzy match, grounding score, and ambiguity placeholder.
-- `storyflow.metrics`: ECE, Brier score, CBU_tau, WBC_tau, GroundHit,
-  popularity bucket assignment, and Tail Underconfidence Gap.
+- `storyflow.metrics`: ECE, Brier score, CBU_tau, WBC_tau, AURC/selective
+  risk, GroundHit, popularity bucket assignment, and Tail Underconfidence Gap.
 - `storyflow.data`: MovieLens 1M reading, title cleaning, chronological sorting,
   interaction filtering, k-core filtering, popularity computation, per-user
   leave-last splits, rolling examples, and global chronological split.
@@ -234,8 +234,9 @@ Implemented foundation modules:
 - `storyflow.observation`: JSONL input construction, mock observation runner,
   grounding integration, metrics, reports, and resume support.
 - `storyflow.analysis`: observation analysis summaries, reliability diagram
-  data, head/mid/tail and repeat-target slices, candidate-prompt diagnostics,
-  risk case extraction, and ignored run registry helpers.
+  data, selective-risk/AURC curves, head/mid/tail and repeat-target slices,
+  candidate-prompt diagnostics, risk case extraction, and ignored run registry
+  helpers.
 - `storyflow.analysis.grounding_diagnostics`: catalog duplicate normalized
   title checks and optional grounding candidate margin audits.
 - `storyflow.baselines`: lightweight popularity and co-occurrence title
@@ -642,11 +643,12 @@ Outputs are ignored by git and written under:
 - `outputs/analysis/...`
 - `outputs/run_registry/observation_runs.jsonl`
 
-The analysis report includes reliability diagram data, head/mid/tail summaries,
-repeat-target slices, wrong-high-confidence cases, correct-low-confidence cases,
-grounding failures, parse failure summaries, candidate-prompt diagnostics, and
-an exploratory popularity-confidence slope. It writes `repeat_summary.json` and
-`candidate_diagnostic_summary.json`, so Amazon
+The analysis report includes reliability diagram data, selective-risk/AURC
+curves, head/mid/tail summaries, repeat-target slices,
+wrong-high-confidence cases, correct-low-confidence cases, grounding failures,
+parse failure summaries, candidate-prompt diagnostics, and an exploratory
+popularity-confidence slope. It writes `repeat_summary.json`,
+`selective_risk_curve.json`, and `candidate_diagnostic_summary.json`, so Amazon
 Beauty runs can compare all / no-repeat / repeat-only behavior without mixing
 repeat purchase or duplicate-review diagnostics into ordinary next-item claims.
 Analysis manifests and the ignored run registry now also include a
@@ -952,9 +954,10 @@ python -m pytest
 ```
 
 Current tests cover schema validation, title normalization, grounding,
-calibration metrics, GroundHit, k-core filtering, interaction filtering,
-chronological sorting, leave-last splits, rolling examples, popularity buckets,
-Tail Underconfidence Gap, prompt construction, mock provider parsing,
+calibration metrics, AURC/selective risk, GroundHit, k-core filtering,
+interaction filtering, chronological sorting, leave-last splits, rolling
+examples, popularity buckets, Tail Underconfidence Gap, prompt construction,
+mock provider parsing,
 observation input schema, grounding/correctness integration, metrics reporting,
 resume behavior, baseline ranking-to-title adapter behavior, and CURE/TRUCE
 exposure-confidence feature-building/scoring/reranking/calibration/popularity

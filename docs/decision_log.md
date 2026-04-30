@@ -10,3 +10,4 @@ experimental results.
 | 2026-04-30 | Add Amazon Reviews 2023 cross-category readiness matrix and complete server-scale configs for Video_Games, Sports_and_Outdoors, and Books. | Go | `docs/change_requests/CR-20260430-amazon-cross-category-readiness.md` |
 | 2026-04-30 | Add approval checklist helper for real expansion gates: API provider, Qwen3/server, Amazon full prepare, and trained baseline artifacts. | Go | `docs/change_requests/CR-20260430-expansion-approval-gates.md` |
 | 2026-04-30 | Add non-executing expansion run packets for one selected guarded track before any real execution approval. | Go | `docs/change_requests/CR-20260430-expansion-run-packets.md` |
+| 2026-04-30 | Implement AURC/selective-risk diagnostics in grounded observation analysis. | Go | `docs/change_requests/CR-20260430-selective-risk-analysis.md` |

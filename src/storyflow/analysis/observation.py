@@ -14,6 +14,7 @@ from storyflow.metrics import (
     cbu_tau,
     expected_calibration_error,
     ground_hit_rate,
+    selective_risk_summary,
     tail_underconfidence_gap,
     wbc_tau,
 )
@@ -475,12 +476,16 @@ def _slice_summary(
             "brier": None,
             "cbu_tau": None,
             "wbc_tau": None,
+            "aurc": None,
+            "excess_aurc": None,
+            "selective_risk": None,
             "tail_underconfidence_gap": None,
             "wrong_high_confidence_count": 0,
             "correct_low_confidence_count": 0,
             "popularity_bucket_counts": {},
             "grounding_status_counts": {},
         }
+    selective = selective_risk_summary(probabilities, labels)
     return {
         "count": len(records),
         "mean_confidence": _mean(probabilities),
@@ -497,6 +502,9 @@ def _slice_summary(
         "wbc_tau": _finite_or_none(
             wbc_tau(probabilities, labels, tau=high_confidence_tau)
         ),
+        "aurc": _finite_or_none(float(selective["aurc"])),
+        "excess_aurc": _finite_or_none(float(selective["excess_aurc"])),
+        "selective_risk": selective,
         "tail_underconfidence_gap": _finite_or_none(
             _tail_underconfidence_gap_or_nan(records)
         ),
@@ -844,6 +852,7 @@ def summarize_observation_records(
 
     confidence_metrics: dict[str, Any] = {}
     if records:
+        selective = selective_risk_summary(probabilities, labels)
         confidence_metrics = {
             "ece": expected_calibration_error(probabilities, labels, n_bins=n_bins),
             "brier": brier_score(probabilities, labels),
@@ -853,6 +862,9 @@ def summarize_observation_records(
             "wbc_tau": _finite_or_none(
                 wbc_tau(probabilities, labels, tau=high_confidence_tau)
             ),
+            "aurc": _finite_or_none(float(selective["aurc"])),
+            "excess_aurc": _finite_or_none(float(selective["excess_aurc"])),
+            "selective_risk": selective,
             "tail_underconfidence_gap": _finite_or_none(
                 _tail_underconfidence_gap_or_nan(records)
             ),
@@ -1031,7 +1043,17 @@ def observation_analysis_markdown(summary: dict[str, Any]) -> str:
         f"- Brier: {metrics.get('brier')}",
         f"- CBU_tau: {metrics.get('cbu_tau')}",
         f"- WBC_tau: {metrics.get('wbc_tau')}",
+        f"- AURC: {metrics.get('aurc')}",
+        f"- Excess AURC: {metrics.get('excess_aurc')}",
         f"- Tail Underconfidence Gap: {metrics.get('tail_underconfidence_gap')}",
+        "",
+        "## Selective Risk",
+        "",
+        "Rows are retained from high to low confidence; this diagnoses confidence-ranked risk and is not an exposure-utility result by itself.",
+        "",
+        f"- Base risk: {metrics.get('selective_risk', {}).get('base_risk')}",
+        f"- Error count: {metrics.get('selective_risk', {}).get('error_count')}",
+        f"- Optimal AURC: {metrics.get('selective_risk', {}).get('optimal_aurc')}",
         "",
         "## Quadrants",
         "",
@@ -1130,6 +1152,7 @@ def analyze_observation_run(
     )
     summary_path = output_path / "analysis_summary.json"
     reliability_path = output_path / "reliability_diagram.json"
+    selective_risk_path = output_path / "selective_risk_curve.json"
     bucket_path = output_path / "bucket_summary.json"
     repeat_path = output_path / "repeat_summary.json"
     candidate_summary_path = output_path / "candidate_diagnostic_summary.json"
@@ -1148,6 +1171,15 @@ def analyze_observation_run(
                 "overall": summary["reliability_overall"],
                 "by_popularity_bucket": summary["reliability_by_popularity_bucket"],
             },
+            indent=2,
+            ensure_ascii=False,
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    selective_risk_path.write_text(
+        json.dumps(
+            summary["confidence_metrics"].get("selective_risk", {}),
             indent=2,
             ensure_ascii=False,
             sort_keys=True,
@@ -1200,6 +1232,7 @@ def analyze_observation_run(
         "analysis_dir": str(output_path),
         "summary": str(summary_path),
         "reliability_diagram": str(reliability_path),
+        "selective_risk_curve": str(selective_risk_path),
         "bucket_summary": str(bucket_path),
         "repeat_summary": str(repeat_path),
         "candidate_diagnostic_summary": str(candidate_summary_path),

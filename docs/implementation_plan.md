@@ -27,8 +27,9 @@ suite. Implemented foundation modules are intentionally lightweight:
 - `storyflow.grounding` provides transparent title normalization, exact match,
   normalized exact match, stdlib fuzzy match, grounding confidence, and an
   ambiguity placeholder.
-- `storyflow.metrics` provides ECE, Brier score, CBU_tau, WBC_tau, GroundHit,
-  head/mid/tail popularity buckets, and Tail Underconfidence Gap.
+- `storyflow.metrics` provides ECE, Brier score, CBU_tau, WBC_tau,
+  AURC/selective risk, GroundHit, head/mid/tail popularity buckets, and Tail
+  Underconfidence Gap.
 - `tests/fixtures/` contains synthetic fixtures only for unit tests and
   pipeline sanity checks.
 
@@ -46,10 +47,10 @@ Amazon download.
 
 Phase 2C adds observation analysis and an ignored local run registry. It reads
 grounded prediction outputs, failed cases, and manifests to produce reliability
-diagram data, head/mid/tail summaries, wrong-high-confidence cases,
-correct-low-confidence cases, grounding/parse failure summaries, and an
-exploratory popularity-confidence slope. Mock/dry-run analysis remains a schema
-sanity artifact, not experimental evidence.
+diagram data, selective-risk/AURC curves, head/mid/tail summaries,
+wrong-high-confidence cases, correct-low-confidence cases, grounding/parse
+failure summaries, and an exploratory popularity-confidence slope. Mock/dry-run
+analysis remains a schema sanity artifact, not experimental evidence.
 
 The current readiness gate recognizes user-provided local Amazon Reviews 2023
 raw files for Beauty, Digital_Music, Handmade_Products, and
@@ -214,8 +215,8 @@ Planned deliverables:
   ambiguity, out-of-catalog rate, duplicate title rate, fuzzy/semantic match
   status.
 - Confidence metrics: ECE, adaptive ECE if implemented, Brier score, CBU_tau,
-  WBC_tau, AURC/selective risk if implemented, and reliability diagram data by
-  popularity bucket.
+  WBC_tau, AURC/selective risk, and reliability diagram data by popularity
+  bucket.
 - Popularity-confidence coupling analysis, tail underconfidence, and
   wrong-high-confidence analysis.
 

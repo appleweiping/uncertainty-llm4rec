@@ -125,6 +125,84 @@ def wbc_tau(
     return sum(prob > tau for prob in wrong_probs) / len(wrong_probs)
 
 
+def selective_risk_curve(
+    probabilities: Iterable[float],
+    labels: Iterable[int],
+) -> list[dict[str, float | int]]:
+    """Risk-coverage curve when retaining rows from high to low confidence."""
+
+    probs = _as_float_list("probabilities", probabilities)
+    y = _as_label_list(labels)
+    _validate_same_length(probs, y)
+
+    ranked = sorted(
+        enumerate(zip(probs, y)),
+        key=lambda item: (-item[1][0], item[0]),
+    )
+    total = len(ranked)
+    errors = 0
+    curve: list[dict[str, float | int]] = []
+    for rank, (_, (probability, label)) in enumerate(ranked, start=1):
+        errors += int(label == 0)
+        risk = errors / rank
+        curve.append(
+            {
+                "rank": rank,
+                "coverage": rank / total,
+                "confidence_threshold": probability,
+                "selected_count": rank,
+                "error_count": errors,
+                "risk": risk,
+                "accuracy": 1.0 - risk,
+            }
+        )
+    return curve
+
+
+def area_under_risk_coverage_curve(
+    probabilities: Iterable[float],
+    labels: Iterable[int],
+) -> float:
+    """Discrete AURC: mean selective risk over prefix coverages."""
+
+    curve = selective_risk_curve(probabilities, labels)
+    return sum(float(point["risk"]) for point in curve) / len(curve)
+
+
+def selective_risk_summary(
+    probabilities: Iterable[float],
+    labels: Iterable[int],
+) -> dict[str, float | int | str | list[dict[str, float | int]]]:
+    """Summarize confidence-sorted selective risk and excess AURC."""
+
+    probs = _as_float_list("probabilities", probabilities)
+    y = _as_label_list(labels)
+    _validate_same_length(probs, y)
+
+    curve = selective_risk_curve(probs, y)
+    aurc = sum(float(point["risk"]) for point in curve) / len(curve)
+    optimal_probs = [float(label) for label in y]
+    optimal_curve = selective_risk_curve(optimal_probs, y)
+    optimal_aurc = sum(float(point["risk"]) for point in optimal_curve) / len(
+        optimal_curve
+    )
+    error_count = sum(1 for label in y if label == 0)
+    return {
+        "count": len(y),
+        "error_count": error_count,
+        "base_risk": error_count / len(y),
+        "aurc": aurc,
+        "optimal_aurc": optimal_aurc,
+        "excess_aurc": aurc - optimal_aurc,
+        "curve": curve,
+        "note": (
+            "Rows are retained from high to low confidence. AURC is a "
+            "selective-risk diagnostic, not evidence of exposure utility by "
+            "itself."
+        ),
+    }
+
+
 def ground_hit_rate(
     grounded_predictions: Iterable[GroundedPredictionRecord | bool],
 ) -> float:

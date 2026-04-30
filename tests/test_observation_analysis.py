@@ -203,6 +203,9 @@ def test_reliability_and_summary_slices() -> None:
     assert summary["count"] == 4
     assert summary["parse_failure_count"] == 1
     assert summary["grounding_summary"]["failure_count"] == 1
+    assert summary["confidence_metrics"]["aurc"] is not None
+    assert summary["confidence_metrics"]["excess_aurc"] is not None
+    assert summary["confidence_metrics"]["selective_risk"]["count"] == 4
     assert summary["quadrant_counts"]["wrong_high_confidence"] == 1
     assert summary["quadrant_counts"]["correct_low_confidence"] == 1
     assert summary["bucket_summary"]["head"]["count"] == 2
@@ -349,6 +352,9 @@ def test_analyze_observation_run_writes_outputs_and_registry() -> None:
         )
     )
     candidate_cases = read_jsonl(analysis_manifest["candidate_diagnostic_cases"])
+    selective_risk = json.loads(
+        Path(analysis_manifest["selective_risk_curve"]).read_text(encoding="utf-8")
+    )
     risk_rows = read_jsonl(analysis_manifest["risk_cases"])
     registry_rows = read_jsonl(workspace / "registry.jsonl")
     assert summary["provider"] == "mock"
@@ -356,6 +362,8 @@ def test_analyze_observation_run_writes_outputs_and_registry() -> None:
     assert summary["api_called"] is False
     assert repeat_summary["repeat_target"]["count"] == 2
     assert candidate_summary["generated_in_candidate_set_count"] == 2
+    assert selective_risk["count"] == 4
+    assert selective_risk["curve"][0]["coverage"] == 0.25
     assert len(candidate_cases) == 4
     assert any(row["slice"] == "wrong_high_confidence" for row in risk_rows)
     assert registry_rows[0]["run_id"] == registry_record["run_id"]

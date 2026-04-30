@@ -63,6 +63,7 @@ by git:
 
 - `analysis_summary.json`
 - `reliability_diagram.json`
+- `selective_risk_curve.json`
 - `bucket_summary.json`
 - `repeat_summary.json`
 - `candidate_diagnostic_summary.json`
@@ -133,6 +134,8 @@ The analysis layer reports:
 - Brier score;
 - CBU_tau;
 - WBC_tau;
+- AURC and excess AURC;
+- selective-risk curve data ordered from high to low confidence;
 - Tail Underconfidence Gap;
 - reliability diagram bins overall and by head/mid/tail bucket;
 - head/mid/tail confidence, correctness, and grounding summaries;
@@ -171,6 +174,12 @@ These diagnostics are required for leakage-safe retrieval-context runs. If the
 candidate policy excludes the held-out target, target-hit correctness is not a
 recommendation-accuracy metric; the run measures prompt/candidate/grounding
 behavior and confidence, not ordinary next-item success.
+
+Selective-risk outputs sort grounded rows from high to low confidence and
+report risk at each retained coverage level. They diagnose whether confidence
+is usable for abstention, triage, or exposure control. They are not evidence of
+real exposure utility unless backed by an approved run, manifests, and the
+appropriate exposure/counterfactual evaluation.
 
 ## Pilot And Full Run Use
 
