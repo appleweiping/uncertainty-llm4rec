@@ -3,7 +3,9 @@
 This self-review follows the Qwen3 server observation scaffold, the
 ranking-JSONL baseline adapter, and the first Phase 4 CURE/TRUCE framework
 scaffold commits. It was updated after the CURE/TRUCE JSONL reranker contract
-was added. It is a governance and research-quality artifact, not an
+was added, and updated again after the baseline artifact validator, baseline
+source run-manifest validator, and baseline-aware analysis registry guardrails
+were completed. It is a governance and research-quality artifact, not an
 experimental result.
 
 ## Current Phase
@@ -19,9 +21,11 @@ Storyflow / TRUCE-Rec is now between Phase 3 and early Phase 4.
   run registry are implemented.
 - Phase 3 is partially open: Qwen3-8B server observation has a plan/execution
   contract, and baseline observation now supports popularity, co-occurrence,
-  and ranking-JSONL-to-title conversion. No Qwen3 inference, server run, LoRA
-  training, heavy baseline training, or paper-result experiment has been run by
-  Codex.
+  and ranking-JSONL-to-title conversion. The baseline route now also has a
+  source run-manifest validator, a ranking artifact validator, and
+  baseline-aware source semantics in the analysis registry. No Qwen3
+  inference, server run, LoRA training, heavy baseline training, or
+  paper-result experiment has been run by Codex.
 - Phase 4 is partially open as API-free scaffold work: feature schema,
   grounded-observation feature builder, deterministic CURE/TRUCE scoring,
   split-audited histogram calibration, and split-audited popularity
@@ -32,14 +36,27 @@ Storyflow / TRUCE-Rec is now between Phase 3 and early Phase 4.
 ## External Reviewer Blocker Status
 
 The ignored `docs/reviewer_report.md` from 2026-04-29 flagged an unclosed
-baseline observation change as a blocker. That blocker is resolved by commit
-`bc4deec feat: add ranking baseline adapter`, which:
+baseline observation change as a blocker. The first blocker was resolved by
+commit `bc4deec feat: add ranking baseline adapter`, which:
 
 - keeps baseline outputs title-level;
 - grounds selected titles before correctness/confidence/popularity analysis;
 - adds a ranking-JSONL adapter contract for future SASRec/BERT4Rec/GRU4Rec/
   LightGCN-style rankers;
 - runs and passes the dedicated baseline tests and the full pytest suite.
+
+The follow-up reviewer-proofing gap is now also closed at the contract level:
+
+- `500564b feat: add baseline artifact validation gate` validates coverage,
+  schema, catalog compatibility, history overlap, split declarations, and
+  upstream provenance before a ranking artifact enters `ranking_jsonl`.
+- `31be990 feat: add baseline run manifest validation` validates the upstream
+  baseline source run manifest, including run identity, split separation,
+  command/git/seed provenance, declared artifact paths, and leakage guard
+  flags.
+- `c309775 feat: add baseline-aware analysis registry` preserves
+  `source_kind`, `claim_scope`, `confidence_semantics`, and claim guardrails so
+  baseline confidence proxies are not confused with calibrated LLM confidence.
 
 The reviewer report itself remains ignored and is not committed.
 
@@ -171,20 +188,27 @@ server-ready full-category runbook for a title-rich domain.
 
 ## Baseline Route
 
-Current support is a stronger first layer, not sufficient final reviewer
-coverage.
+Current support is now a stronger contract layer, not sufficient final
+reviewer coverage.
 
 - Implemented: popularity title baseline.
 - Implemented: train-split co-occurrence title baseline.
 - Implemented: ranking-JSONL-to-title adapter contract.
-- Needed next: baseline artifact manifests that record model family, training
-  split, seed, config, and ranked-output provenance.
+- Implemented: source run-manifest validation for future trained rankers.
+- Implemented: ranking artifact validation before title-grounded adaptation.
+- Implemented: analysis registry semantics that mark baseline confidence as a
+  non-calibrated proxy.
+- Needed next: one approved trained baseline artifact, produced outside this
+  local Codex task or on server, must pass both validation gates before it is
+  adapted into grounded title observations.
 - Needed later: trained SASRec/BERT4Rec/GRU4Rec/LightGCN runs, followed by
   P5-like, TIGER/Semantic-ID-like, BIGRec/grounding-style, and uncertainty-
   aware generative baselines where reproducible.
 
-The correct next baseline step is still API-free and training-free: standardize
-the artifact manifest and split-audit contract before any heavy baseline run.
+The correct next baseline step is no longer another local manifest scaffold.
+It is to use the contract on an actual trained ranking artifact after user
+approval, while keeping local work focused on API-free modules that consume the
+same grounded observation/feature schema.
 
 ## Qwen3 / Server Route
 
@@ -254,8 +278,9 @@ artifacts and explicit server/training gates.
 
 5. Baseline insufficiency.
    Priority: high. Lightweight baselines are not final reviewer-proof coverage.
-   Mitigation: add baseline artifact manifests, then run approved heavy
-   baselines through the ranking-to-title adapter.
+   Mitigation: the manifest and artifact gates now exist; next, an approved
+   SASRec/BERT4Rec/GRU4Rec/LightGCN artifact must pass both gates and then flow
+   through ranking-to-title grounding before analysis.
 
 6. Small-slice overinterpretation.
    Priority: medium-high. Full185 is a scoped diagnostic family, not a full
@@ -292,7 +317,8 @@ P0:
 
 P1:
 
-- Add a baseline artifact manifest contract for future trained rankers.
+- Use the baseline source-manifest and artifact gates on the first approved
+  trained ranking artifact; do not train or claim one locally without approval.
 - Add echo-simulation or data-triage scaffolds only if they consume existing
   grounded feature/rerank records and stay explicitly synthetic/scaffold.
 
@@ -314,13 +340,16 @@ P3:
 Go forward. The previous baseline blocker is closed, the project remains
 title-level and grounding-first, and Phase 4 is now partially implemented as
 tested scaffolding. The calibrated/residualized reranker contract is now also
-closed by `f857eac feat: add CURE TRUCE reranker contract`. The next
-non-blocking engineering work should be either:
+closed by `f857eac feat: add CURE TRUCE reranker contract`. The baseline
+contract layer is also stronger after `500564b`, `31be990`, and `c309775`.
+The next non-blocking engineering work should be either:
 
-1. add baseline artifact manifest validation before any heavy baseline run; or
-2. add an API-free echo simulation/data-triage scaffold that consumes the
+1. add an API-free echo simulation/data-triage scaffold that consumes the
    existing feature/rerank JSONL contract and labels outputs as synthetic or
-   scaffold-only.
+   scaffold-only; or
+2. add an Amazon cross-category readiness/sample gate, prioritizing a
+   title-rich category such as Video_Games or Books without downloading full
+   data or claiming results.
 
 Do not start Qwen3 inference, LoRA training, server execution, or another real
 API expansion without explicit user approval and concrete run gates.
