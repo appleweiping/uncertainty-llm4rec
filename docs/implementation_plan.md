@@ -70,7 +70,9 @@ rankers can emit ranked item IDs keyed by observation `input_id`; the adapter
 filters history items, selects a catalog title, grounds that title, and writes
 the same confidence/correctness/popularity/grounding schema as API and mock
 observation. It is a contract for later trained baselines, not a trained
-baseline result.
+baseline result. A baseline artifact validation gate now records coverage,
+schema, catalog compatibility, split declarations, and provenance for external
+ranking JSONL files before they enter the adapter.
 
 The first Phase 4 CURE/TRUCE scaffold is present in `storyflow.confidence`.
 It defines `ExposureConfidenceFeatures`, deterministic popularity residual,
@@ -227,6 +229,10 @@ Planned deliverables:
   calibrated, or residualized feature JSONL, groups candidates by input id,
   recomputes CURE/TRUCE risk/echo/information-gain components, and writes
   reranked rows plus a manifest with API/training/server flags as false.
+- Current baseline gate: `scripts/validate_baseline_artifact.py` validates
+  external ranking JSONL artifacts for coverage, candidate schema, score
+  metadata, catalog compatibility, history overlap, and split/dataset
+  provenance before `ranking_jsonl` adaptation.
 - Learned exposure-aware scoring and reranking after approved observation and
   utility targets exist.
 - RecBrier-style confidence objective where feasible.

@@ -742,6 +742,18 @@ Implemented baselines:
   catalog title, grounds it, and records non-calibrated rank/score confidence
   metadata.
 
+Validate any external ranking artifact before adapting it:
+
+```powershell
+python scripts/validate_baseline_artifact.py --ranking-jsonl outputs/baseline_rankings/sasrec/sample_5k/test_rankings.jsonl --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline-family sasrec --model-family SASRec --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --trained-splits train --strict
+```
+
+The validator writes an ignored manifest under
+`outputs/baseline_artifact_validation/...` and checks input coverage, ranking
+schema, score metadata, catalog item IDs, history overlap, and split/provenance
+declarations. It does not run the ranker, call APIs, train models, download
+data, or create a paper result.
+
 These baselines do not call APIs, do not read keys, and do not train models.
 They are sanity/reviewer-proofing artifacts until a full baseline protocol run
 is explicitly executed and documented.

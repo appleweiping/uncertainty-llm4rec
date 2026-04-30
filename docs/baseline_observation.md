@@ -93,6 +93,29 @@ parsed and grounded outputs. Confidence is a rank/score proxy used only to keep
 the common analysis schema executable; it must not be described as calibrated
 model confidence unless a later calibration stage validates it.
 
+## Artifact Validation Gate
+
+Before an externally trained ranker artifact is adapted through
+`ranking_jsonl`, validate the local ranking JSONL against the observation input
+slice:
+
+```powershell
+python scripts/validate_baseline_artifact.py --ranking-jsonl outputs/baseline_rankings/sasrec/sample_5k/test_rankings.jsonl --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline-family sasrec --model-family SASRec --run-label sasrec_sample_5k_test --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --trained-splits train --strict
+```
+
+The validator writes an ignored manifest under
+`outputs/baseline_artifact_validation/...` by default. It checks input coverage,
+duplicate `input_id` values, candidate-list schema, score length/type, catalog
+item-id coverage, already-seen history items, split/dataset declarations, and
+basic provenance such as upstream config/source manifests when supplied. It
+does not execute the ranker, call APIs, train a model, download data, or turn
+the ranking file into a paper result.
+
+Use `--allow-missing-inputs` only for an explicitly documented diagnostic. Use
+`--fail-on-extra-rankings` when the ranking artifact should exactly match the
+selected input slice. Extra ranking rows are otherwise treated as a warning so
+a full ranking artifact can still be validated on a smaller observation slice.
+
 ## Next Extensions
 
 Later baseline phases should plug trained ranking or generative baseline

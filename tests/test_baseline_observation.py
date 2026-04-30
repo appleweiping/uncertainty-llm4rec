@@ -8,12 +8,14 @@ from pathlib import Path
 import pytest
 
 from scripts.run_baseline_observation import main as baseline_main
+from scripts.validate_baseline_artifact import main as validate_baseline_main
 from storyflow.baselines import (
     CooccurrenceTitleBaseline,
     PopularityTitleBaseline,
     RankingJsonlTitleBaseline,
     parse_ranking_candidates,
     run_baseline_observation,
+    validate_baseline_artifact,
 )
 from storyflow.observation import (
     build_observation_input_records,
@@ -404,3 +406,137 @@ def test_baseline_observation_cli_runs_ranking_jsonl_adapter(monkeypatch) -> Non
     assert manifest["baseline"] == "ranking_jsonl"
     assert manifest["strict_ranking"] is True
     assert manifest["api_called"] is False
+
+
+def test_validate_baseline_artifact_writes_pass_manifest() -> None:
+    workspace = _workspace_tmp("baseline_artifact_valid")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+    input_jsonl = _input_jsonl(workspace, processed_dir)
+    inputs = read_jsonl(input_jsonl)
+    ranking_jsonl = workspace / "ranking.jsonl"
+    output_manifest = workspace / "validation_manifest.json"
+    write_jsonl(
+        ranking_jsonl,
+        [
+            {
+                "input_id": inputs[0]["input_id"],
+                "ranked_item_ids": ["item-tail", "item-head"],
+                "scores": [2.0, 1.0],
+                "run_id": "sasrec-fixture",
+            },
+            {
+                "input_id": inputs[1]["input_id"],
+                "ranked_items": [{"item_id": "item-head", "score": 4.0}],
+                "run_id": "sasrec-fixture",
+            },
+        ],
+    )
+
+    manifest = validate_baseline_artifact(
+        ranking_jsonl=ranking_jsonl,
+        input_jsonl=input_jsonl,
+        baseline_family="sasrec",
+        model_family="SASRec",
+        run_label="sasrec-fixture",
+        dataset="synthetic_fixture",
+        processed_suffix="tiny",
+        split="test",
+        trained_splits=["train"],
+        seed=7,
+        output_manifest_json=output_manifest,
+        strict=True,
+    )
+
+    assert manifest["validation_status"] == "passed"
+    assert manifest["coverage"]["selected_input_count"] == 2
+    assert manifest["coverage"]["missing_input_count"] == 0
+    assert manifest["quality"]["target_item_in_ranking_count"] == 2
+    assert manifest["validator_api_called"] is False
+    assert manifest["validator_model_training"] is False
+    assert manifest["validator_server_executed"] is False
+    assert manifest["is_experiment_result"] is False
+    assert output_manifest.exists()
+
+
+def test_validate_baseline_artifact_flags_schema_and_coverage_failures() -> None:
+    workspace = _workspace_tmp("baseline_artifact_invalid")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+    input_jsonl = _input_jsonl(workspace, processed_dir)
+    inputs = read_jsonl(input_jsonl)
+    ranking_jsonl = workspace / "ranking.jsonl"
+    write_jsonl(
+        ranking_jsonl,
+        [
+            {
+                "input_id": inputs[0]["input_id"],
+                "ranked_item_ids": ["item-tail", "item-tail", "unknown-item"],
+                "scores": [1.0],
+            }
+        ],
+    )
+
+    manifest = validate_baseline_artifact(
+        ranking_jsonl=ranking_jsonl,
+        input_jsonl=input_jsonl,
+        baseline_family="sasrec",
+        strict=True,
+    )
+    error_codes = manifest["problem_summary"]["errors"]
+
+    assert manifest["validation_status"] == "failed"
+    assert error_codes["missing_input_ranking"] == 1
+    assert error_codes["score_length_mismatch"] == 1
+    assert error_codes["duplicate_candidate_item_id"] == 1
+    assert error_codes["unknown_catalog_item_id"] == 1
+
+
+def test_validate_baseline_artifact_cli_does_not_require_api_key(monkeypatch) -> None:
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    workspace = _workspace_tmp("baseline_artifact_cli")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+    input_jsonl = _input_jsonl(workspace, processed_dir)
+    inputs = read_jsonl(input_jsonl)
+    ranking_jsonl = workspace / "ranking.jsonl"
+    output_manifest = workspace / "cli_validation_manifest.json"
+    write_jsonl(
+        ranking_jsonl,
+        [
+            {"input_id": inputs[0]["input_id"], "ranked_item_ids": ["item-tail"]},
+            {"input_id": inputs[1]["input_id"], "ranked_item_ids": ["item-head"]},
+        ],
+    )
+
+    code = validate_baseline_main(
+        [
+            "--ranking-jsonl",
+            str(ranking_jsonl),
+            "--input-jsonl",
+            str(input_jsonl),
+            "--baseline-family",
+            "sasrec",
+            "--model-family",
+            "SASRec",
+            "--run-label",
+            "sasrec-fixture",
+            "--dataset",
+            "synthetic_fixture",
+            "--processed-suffix",
+            "tiny",
+            "--split",
+            "test",
+            "--trained-splits",
+            "train",
+            "--output-manifest-json",
+            str(output_manifest),
+            "--strict",
+        ]
+    )
+    manifest = json.loads(output_manifest.read_text(encoding="utf-8"))
+
+    assert code == 0
+    assert manifest["validation_status"] == "passed"
+    assert manifest["baseline_family"] == "sasrec"
+    assert manifest["validator_api_called"] is False

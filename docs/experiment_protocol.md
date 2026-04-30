@@ -204,6 +204,15 @@ unless a later calibration stage validates them. No ranking baseline output
 should bypass title grounding or be reported as a paper result without a full
 protocol run and manifest.
 
+External ranking artifacts must pass a validation-manifest gate before they are
+adapted into grounded title predictions. The gate checks coverage over the
+selected observation input slice, duplicate records, supported ranking JSONL
+schema, score metadata, catalog item-id compatibility, already-seen history
+items, split/dataset declarations, and upstream provenance fields where
+available. This gate does not train or run the upstream ranker; it only records
+whether the local artifact is safe to enter the title-grounding observation
+path.
+
 ## Framework Stage
 
 The framework stage targets Qwen3-8B + LoRA or a comparable small-model

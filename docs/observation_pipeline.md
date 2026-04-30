@@ -330,3 +330,14 @@ rankers: it reads local ranked item IDs, filters history items, looks up the
 selected catalog title, then writes the same grounded schema. These baselines do
 not call APIs or train models; their confidence values are simple proxies and
 must not be treated as calibrated model confidence.
+
+Validate external ranking artifacts before adapting them:
+
+```powershell
+python scripts/validate_baseline_artifact.py --ranking-jsonl outputs/baseline_rankings/sasrec/sample_5k/test_rankings.jsonl --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline-family sasrec --model-family SASRec --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --trained-splits train --strict
+```
+
+The validation manifest is an ignored reproducibility gate. It checks coverage,
+schema, score metadata, catalog-id compatibility, history-item overlap, and
+declared split/dataset provenance without executing the ranker or producing a
+method result.
