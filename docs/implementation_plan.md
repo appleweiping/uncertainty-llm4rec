@@ -79,8 +79,10 @@ grounded-observation feature builder around
 `C(u, i) ~= P(user accepts item i | user u, do(exposure=1))`. This is tested
 schema/scoring/feature-contract code only. A split-audited histogram
 calibration scaffold now records fit/eval provenance and refuses split overlap
-by default; it is not a learned calibrator, no reranker has been evaluated on
-real outputs, and no method result is claimed.
+by default. A split-audited popularity residual scaffold now fits a
+popularity-bucket confidence baseline on declared fit splits and applies it to
+evaluation splits only. These are not learned calibrators/deconfounders, no
+reranker has been evaluated on real outputs, and no method result is claimed.
 
 ## Phase 0: Governance And Scaffold
 
@@ -214,6 +216,10 @@ Planned deliverables:
   calibrator extensions for exposure-counterfactual utility targets.
 - Popularity residual/deconfounding module that separates preference-supported
   popularity from popularity-only confidence.
+- Current scaffold: `scripts/residualize_confidence_features.py` fits a
+  popularity-bucket mean confidence baseline on train/fit splits, writes
+  residualized feature JSONL plus manifest, and records API/training/server
+  flags as false.
 - Exposure-aware scoring and reranking.
 - RecBrier-style confidence objective where feasible.
 - Risk-aware preference optimization design.

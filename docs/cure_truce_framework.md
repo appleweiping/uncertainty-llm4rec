@@ -26,8 +26,10 @@ The scaffold lives in:
 src/storyflow/confidence/exposure.py
 src/storyflow/confidence/features.py
 src/storyflow/confidence/calibration.py
+src/storyflow/confidence/residuals.py
 scripts/build_confidence_features.py
 scripts/calibrate_confidence_features.py
+scripts/residualize_confidence_features.py
 ```
 
 Implemented objects:
@@ -37,6 +39,8 @@ Implemented objects:
 - `CureTruceScore`: score, estimated exposure confidence, risk, echo risk,
   information gain, popularity residual, action, and score components.
 - `HistogramCalibrator`: split-audited fixed-width calibration scaffold fit
+  only on declared fit splits.
+- `PopularityResidualModel`: split-audited popularity-bucket mean baseline fit
   only on declared fit splits.
 
 Implemented functions:
@@ -52,6 +56,8 @@ Implemented functions:
 - `build_confidence_features`: convert existing grounded observation JSONL
   into CURE/TRUCE feature records plus a manifest.
 - `calibrate_feature_rows`: fit and apply a histogram calibration scaffold
+  with explicit fit/eval split provenance and leakage guards.
+- `residualize_feature_rows`: fit and apply a popularity residual scaffold
   with explicit fit/eval split provenance and leakage guards.
 
 These functions use no API, no model loading, no training, and no data
@@ -112,6 +118,48 @@ By default the command refuses any overlap between fit and evaluation splits.
 `--allow-same-split-eval` exists only for explicitly labeled diagnostics and
 must not be used for method claims.
 
+## Popularity Residual Scaffold
+
+Run the popularity residual scaffold only on feature JSONL files that contain
+proper split provenance:
+
+```powershell
+python scripts/residualize_confidence_features.py --features-jsonl outputs/confidence_features/<source-run>/features.jsonl --fit-splits train --eval-splits validation,test
+```
+
+Default output:
+
+```text
+outputs/confidence_residuals/<source-run>/popularity_residualized_features.jsonl
+outputs/confidence_residuals/<source-run>/manifest.json
+```
+
+The current scaffold fits a popularity-bucket mean baseline from the selected
+probability source, defaulting to `score.estimated_exposure_confidence`, on the
+declared fit split only. Evaluation rows receive a
+`popularity_residualization` record with:
+
+- source probability;
+- popularity bucket and percentile when available;
+- popularity-only baseline probability;
+- `popularity_residual_confidence`, defined as source confidence minus the
+  popularity-only baseline;
+- recentered `deconfounded_confidence_proxy`;
+- fit/eval split provenance and fallback status.
+
+If generated-item popularity is unknown, the residualizer keeps the bucket as
+`unknown` and may fall back to the fit-split global mean. It must not borrow
+`target_popularity_bucket` for wrong generated items.
+
+The manifest records split counts, bucket counts, fit/eval overlap guard
+status, residual summaries by head/mid/tail bucket, and
+`api_called=false`, `model_training=false`, `server_executed=false`, and
+`is_experiment_result=false`.
+
+This scaffold is a deconfounding contract for later learned CURE/TRUCE modules.
+It is not a learned popularity correction, not a Qwen3 result, and not paper
+evidence.
+
 The generated feature rows include:
 
 - `feature`: serialized `ExposureConfidenceFeatures`;
@@ -171,6 +219,7 @@ Run the dedicated scaffold tests:
 python -m pytest tests/test_confidence_framework.py
 python -m pytest tests/test_confidence_feature_builder.py
 python -m pytest tests/test_confidence_calibration.py
+python -m pytest tests/test_confidence_residuals.py
 ```
 
 The tests cover:
@@ -189,12 +238,16 @@ The tests cover:
 - fit-split-only histogram calibration;
 - fit/eval overlap refusal;
 - calibration output/manifest writing without API keys or model training.
+- split-fit-only popularity residualization;
+- popularity bucket fallback to fit-split global mean;
+- residual output/manifest writing without API keys or model training.
 
 ## Next Steps
 
 Short-term framework work should remain API-free:
 
-1. Add a learned or fit-on-observation popularity residual module.
+1. Extend residualization beyond bucket means once approved observation
+   evidence supports richer deconfounding.
 2. Extend calibration targets from correctness labels toward exposure-
    counterfactual utility once approved exposure/relevance evidence exists.
 3. Add reranker integration that can consume API, Qwen3, and baseline

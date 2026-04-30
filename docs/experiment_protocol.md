@@ -233,7 +233,10 @@ future calibrators and rerankers; it is not a trained probability, not a Qwen3
 result, and not paper evidence. The current histogram calibration scaffold is
 also only a split-provenance and leakage-guard contract: it fits on declared
 fit splits, evaluates on declared evaluation splits, and records both in a
-manifest.
+manifest. The current popularity residual scaffold is likewise only a
+split-provenance and leakage-guard contract: it fits a popularity-bucket mean
+confidence baseline on declared fit splits, applies it to declared evaluation
+splits, and writes residualized feature rows plus a manifest.
 
 Grounded observation outputs can be converted into the feature schema with
 `scripts/build_confidence_features.py`. The feature builder may join the
@@ -249,6 +252,17 @@ explicit diagnostic flag is used, and writes ignored calibrated feature rows
 plus a manifest. Its first target is `feature.correctness_label`; later
 exposure-counterfactual utility targets require approved exposure/relevance
 evidence and must not be simulated into method claims.
+
+The same feature rows can be passed through
+`scripts/residualize_confidence_features.py`. The command defaults to fitting
+on train and applying to validation/test, refuses fit/eval overlap unless an
+explicit diagnostic flag is used, and writes ignored
+`popularity_residualized_features.jsonl` plus a manifest under
+`outputs/confidence_residuals/`. The residual is source confidence minus the
+fit-split popularity-bucket mean baseline, with a recentered
+`deconfounded_confidence_proxy` for later framework modules. This is not a
+learned deconfounding method, not a full-result analysis, and not paper
+evidence.
 
 Training is server-oriented unless explicitly approved for a small local
 sanity check. Codex must not claim server training or inference has run unless

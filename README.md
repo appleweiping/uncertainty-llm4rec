@@ -43,9 +43,10 @@ The first CURE/TRUCE framework scaffold is also present under
 deterministic risk/echo scoring, and a reranking contract around
 `C(u, i) ~= P(user accepts item i | user u, do(exposure=1))`. This is tested
 scaffold code only. A feature builder now converts existing grounded
-observation JSONL into this schema with manifests. A split-audited histogram
-calibration scaffold records fit/eval provenance for feature JSONL files; it is
-not a learned model result and no method result is claimed.
+observation JSONL into this schema with manifests. Split-audited histogram
+calibration and popularity residualization scaffolds record fit/eval provenance
+for feature JSONL files; they are not learned model results and no method
+result is claimed.
 Processed-dataset audit tooling now checks repeat-target cases, chronological
 split integrity, title quality, and head/mid/tail coverage before scaling API
 observation.
@@ -156,7 +157,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `docs/baseline_observation.md`: lightweight popularity, train-split
   co-occurrence, and ranking-to-title baseline observation interface.
 - `docs/cure_truce_framework.md`: exposure-counterfactual confidence feature
-  schema and deterministic CURE/TRUCE scoring scaffold.
+  schema, deterministic CURE/TRUCE scoring, calibration, and popularity
+  residualization scaffolds.
 - `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
   grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
@@ -227,10 +229,11 @@ Implemented foundation modules:
   baselines plus a ranking-JSONL adapter that write the same grounded
   observation schema.
 - `storyflow.confidence`: exposure-counterfactual confidence feature schema,
-  grounded-observation feature builder, popularity residual, echo-risk/risk
-  components, deterministic CURE/TRUCE score, reranking scaffold, and
-  split-audited histogram calibration scaffold. This is not a trained
-  calibrator or result.
+  grounded-observation feature builder, popularity residual/deconfounding,
+  echo-risk/risk components, deterministic CURE/TRUCE score, reranking
+  scaffold, split-audited histogram calibration scaffold, and split-audited
+  popularity residualization scaffold. This is not a trained calibrator,
+  reranker, or result.
 - `storyflow.server`: Qwen3-8B server observation plan/execution contract that
   mirrors API observation output layers while defaulting to plan-only mode.
 - `tests/fixtures/`: synthetic records used only for tests.
@@ -786,6 +789,25 @@ split overlap unless `--allow-same-split-eval` is explicitly passed for a
 diagnostic, records `api_called=false` and `model_training=false`, and must not
 be interpreted as a learned CURE/TRUCE result.
 
+Fit and apply the split-audited popularity residual scaffold on the same feature
+rows:
+
+```powershell
+python scripts/residualize_confidence_features.py --features-jsonl outputs/confidence_features/<source-run>/features.jsonl --fit-splits train --eval-splits validation,test
+```
+
+This writes ignored `popularity_residualized_features.jsonl` and
+`manifest.json` under `outputs/confidence_residuals/...` by default. The
+scaffold fits a popularity-bucket mean confidence baseline on the requested fit
+split and applies it only to evaluation splits, producing
+`popularity_residual_confidence` and a recentered
+`deconfounded_confidence_proxy`. If generated-item popularity is unknown, the
+bucket stays `unknown`; the residualizer does not borrow held-out target
+popularity. It records `api_called=false`,
+`model_training=false`, `server_executed=false`, and
+`is_experiment_result=false`; it must not be interpreted as a learned
+deconfounding method or paper evidence.
+
 ## Tests
 
 Run the local test suite:
@@ -800,8 +822,8 @@ chronological sorting, leave-last splits, rolling examples, popularity buckets,
 Tail Underconfidence Gap, prompt construction, mock provider parsing,
 observation input schema, grounding/correctness integration, metrics reporting,
 resume behavior, baseline ranking-to-title adapter behavior, and CURE/TRUCE
-exposure-confidence feature-building/scoring/reranking/calibration scaffold
-behavior.
+exposure-confidence feature-building/scoring/reranking/calibration/popularity
+residualization scaffold behavior.
 Tests use small committed fixtures only and do not download data or call APIs.
 
 ## Basic Checks
