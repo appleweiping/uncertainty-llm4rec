@@ -74,10 +74,11 @@ baseline result.
 
 The first Phase 4 CURE/TRUCE scaffold is present in `storyflow.confidence`.
 It defines `ExposureConfidenceFeatures`, deterministic popularity residual,
-echo-risk/risk components, a CURE/TRUCE score, and a reranking contract around
+echo-risk/risk components, a CURE/TRUCE score, a reranking contract, and a
+grounded-observation feature builder around
 `C(u, i) ~= P(user accepts item i | user u, do(exposure=1))`. This is tested
-schema/scoring code only. No calibrator has been trained, no reranker has been
-evaluated on real outputs, and no method result is claimed.
+schema/scoring/feature-contract code only. No calibrator has been trained, no
+reranker has been evaluated on real outputs, and no method result is claimed.
 
 ## Phase 0: Governance And Scaffold
 
@@ -205,6 +206,8 @@ Planned deliverables:
   residuals, and counterfactual stability where feasible.
 - Initial typed feature and deterministic scoring scaffold around
   exposure-counterfactual confidence.
+- Grounded observation JSONL to CURE/TRUCE feature JSONL builder with manifest
+  provenance and generated-item popularity guards.
 - Calibrator for correctness and exposure-counterfactual utility targets.
 - Popularity residual/deconfounding module that separates preference-supported
   popularity from popularity-only confidence.

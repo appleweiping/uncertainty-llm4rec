@@ -42,8 +42,9 @@ The first CURE/TRUCE framework scaffold is also present under
 `storyflow.confidence`: it defines exposure-counterfactual confidence features,
 deterministic risk/echo scoring, and a reranking contract around
 `C(u, i) ~= P(user accepts item i | user u, do(exposure=1))`. This is tested
-scaffold code only; no calibrator has been trained and no method result is
-claimed.
+scaffold code only. A feature builder now converts existing grounded
+observation JSONL into this schema with manifests; no calibrator has been
+trained and no method result is claimed.
 Processed-dataset audit tooling now checks repeat-target cases, chronological
 split integrity, title quality, and head/mid/tail coverage before scaling API
 observation.
@@ -225,8 +226,9 @@ Implemented foundation modules:
   baselines plus a ranking-JSONL adapter that write the same grounded
   observation schema.
 - `storyflow.confidence`: exposure-counterfactual confidence feature schema,
-  popularity residual, echo-risk/risk components, deterministic CURE/TRUCE
-  score, and reranking scaffold. This is not a trained calibrator or result.
+  grounded-observation feature builder, popularity residual, echo-risk/risk
+  components, deterministic CURE/TRUCE score, and reranking scaffold. This is
+  not a trained calibrator or result.
 - `storyflow.server`: Qwen3-8B server observation plan/execution contract that
   mirrors API observation output layers while defaulting to plan-only mode.
 - `tests/fixtures/`: synthetic records used only for tests.
@@ -757,6 +759,18 @@ This scaffold does not call APIs, train a model, run Qwen3, or prove the
 framework. It is a tested contract for later calibrators, rerankers, server
 training, and triage modules.
 
+Build CURE/TRUCE feature records from an existing grounded observation output:
+
+```powershell
+python scripts/build_confidence_features.py --grounded-jsonl outputs/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_api_full185_20260429/grounded_predictions.jsonl --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl --catalog-csv data/processed/amazon_reviews_2023_beauty/full/item_catalog.csv
+```
+
+This writes ignored `features.jsonl` and `manifest.json` under
+`outputs/confidence_features/...` by default. If no catalog is supplied, the
+builder does not substitute target popularity for wrong generated items; it
+marks generated-item popularity as unknown so later calibrators cannot absorb a
+target-popularity leak.
+
 ## Tests
 
 Run the local test suite:
@@ -771,8 +785,8 @@ chronological sorting, leave-last splits, rolling examples, popularity buckets,
 Tail Underconfidence Gap, prompt construction, mock provider parsing,
 observation input schema, grounding/correctness integration, metrics reporting,
 resume behavior, baseline ranking-to-title adapter behavior, and CURE/TRUCE
-exposure-confidence scoring/reranking scaffold behavior. Tests use small
-committed fixtures only and do not download data or call APIs.
+exposure-confidence feature-building/scoring/reranking scaffold behavior.
+Tests use small committed fixtures only and do not download data or call APIs.
 
 ## Basic Checks
 

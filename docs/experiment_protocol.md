@@ -232,6 +232,13 @@ labels separate. The deterministic CURE/TRUCE score is a testable contract for
 future calibrators and rerankers; it is not a trained probability, not a Qwen3
 result, and not paper evidence.
 
+Grounded observation outputs can be converted into the feature schema with
+`scripts/build_confidence_features.py`. The feature builder may join the
+processed item catalog to attach generated-item popularity. When catalog data
+is absent and the grounded item is not the target, generated-item popularity
+must remain unknown rather than borrowing target popularity. This protects the
+popularity residual and echo-risk analysis from target leakage.
+
 Training is server-oriented unless explicitly approved for a small local
 sanity check. Codex must not claim server training or inference has run unless
 the user provides logs or result files.

@@ -24,6 +24,8 @@ The scaffold lives in:
 
 ```text
 src/storyflow/confidence/exposure.py
+src/storyflow/confidence/features.py
+scripts/build_confidence_features.py
 ```
 
 Implemented objects:
@@ -43,9 +45,40 @@ Implemented functions:
 - `compute_risk_penalty`: grounding, ambiguity, and overclaim risk.
 - `score_cure_truce_candidate`: deterministic CURE/TRUCE score.
 - `rerank_cure_truce`: deterministic reranking by score with stable tie break.
+- `build_confidence_features`: convert existing grounded observation JSONL
+  into CURE/TRUCE feature records plus a manifest.
 
 These functions use no API, no model loading, no training, and no data
 download.
+
+## Feature Builder
+
+Build feature records from a completed grounded observation output:
+
+```powershell
+python scripts/build_confidence_features.py --grounded-jsonl outputs/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_api_full185_20260429/grounded_predictions.jsonl --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl --catalog-csv data/processed/amazon_reviews_2023_beauty/full/item_catalog.csv
+```
+
+Default output:
+
+```text
+outputs/confidence_features/<source-run>/features.jsonl
+outputs/confidence_features/<source-run>/manifest.json
+```
+
+The builder joins generated-item popularity only when it has the grounded item
+catalog row. If no catalog is supplied and a prediction is wrong, it marks
+generated popularity as unknown instead of reusing target popularity. This
+guard prevents a target-leak artifact from entering later popularity residual
+or echo-risk calibration.
+
+The generated feature rows include:
+
+- `feature`: serialized `ExposureConfidenceFeatures`;
+- `score`: deterministic CURE/TRUCE scaffold score;
+- `metadata`: source run, target fields, popularity-source provenance, and
+  feature-source notes;
+- `is_experiment_result=false`.
 
 ## Feature Families
 
@@ -96,6 +129,7 @@ Run the dedicated scaffold tests:
 
 ```powershell
 python -m pytest tests/test_confidence_framework.py
+python -m pytest tests/test_confidence_feature_builder.py
 ```
 
 The tests cover:
@@ -107,17 +141,20 @@ The tests cover:
 - popularity residual sign;
 - reranking toward safer novel tail candidates when echo penalty is high;
 - deterministic `top_k` behavior.
+- grounded JSONL to feature JSONL conversion;
+- generated-item catalog popularity join;
+- target-popularity leak guard when catalog data is unavailable;
+- CLI manifest writing without API keys.
 
 ## Next Steps
 
 Short-term framework work should remain API-free:
 
-1. Add a JSONL feature builder from grounded observation outputs.
-2. Add a calibrator placeholder that records train/validation split provenance.
-3. Add a learned or fit-on-observation popularity residual module.
-4. Add reranker integration that can consume API, Qwen3, and baseline
+1. Add a calibrator placeholder that records train/validation split provenance.
+2. Add a learned or fit-on-observation popularity residual module.
+3. Add reranker integration that can consume API, Qwen3, and baseline
    grounded outputs.
-5. Only after approved server artifacts exist, connect Qwen3-8B + LoRA
+4. Only after approved server artifacts exist, connect Qwen3-8B + LoRA
    training objectives to this feature schema.
 
 No current file in this scaffold is an experimental result.
