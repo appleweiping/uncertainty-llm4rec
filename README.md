@@ -38,6 +38,12 @@ started.
 Qwen3-8B server observation scaffolding is now available as a plan/contract
 layer under `configs/server/`, `scripts/server/`, and `storyflow.server`; no
 Qwen3 inference, server run, or LoRA training has been executed.
+The first CURE/TRUCE framework scaffold is also present under
+`storyflow.confidence`: it defines exposure-counterfactual confidence features,
+deterministic risk/echo scoring, and a reranking contract around
+`C(u, i) ~= P(user accepts item i | user u, do(exposure=1))`. This is tested
+scaffold code only; no calibrator has been trained and no method result is
+claimed.
 Processed-dataset audit tooling now checks repeat-target cases, chronological
 split integrity, title quality, and head/mid/tail coverage before scaling API
 observation.
@@ -147,6 +153,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
   prompt, grounding, and confidence triage before scaling.
 - `docs/baseline_observation.md`: lightweight popularity, train-split
   co-occurrence, and ranking-to-title baseline observation interface.
+- `docs/cure_truce_framework.md`: exposure-counterfactual confidence feature
+  schema and deterministic CURE/TRUCE scoring scaffold.
 - `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
   grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
@@ -216,6 +224,9 @@ Implemented foundation modules:
 - `storyflow.baselines`: lightweight popularity and co-occurrence title
   baselines plus a ranking-JSONL adapter that write the same grounded
   observation schema.
+- `storyflow.confidence`: exposure-counterfactual confidence feature schema,
+  popularity residual, echo-risk/risk components, deterministic CURE/TRUCE
+  score, and reranking scaffold. This is not a trained calibrator or result.
 - `storyflow.server`: Qwen3-8B server observation plan/execution contract that
   mirrors API observation output layers while defaulting to plan-only mode.
 - `tests/fixtures/`: synthetic records used only for tests.
@@ -726,6 +737,26 @@ These baselines do not call APIs, do not read keys, and do not train models.
 They are sanity/reviewer-proofing artifacts until a full baseline protocol run
 is explicitly executed and documented.
 
+## CURE/TRUCE Framework Scaffold
+
+The first framework code is a local, deterministic scaffold for
+exposure-counterfactual confidence:
+
+```text
+C(u, i) ~= P(user accepts item i | user u, do(exposure=1))
+```
+
+`storyflow.confidence.ExposureConfidenceFeatures` keeps verbal confidence,
+generation evidence, grounding confidence/ambiguity, popularity pressure,
+history alignment, novelty, and observation labels separate. The CURE/TRUCE
+score combines estimated exposure confidence, preference evidence, information
+gain, grounding/overclaim risk, and echo risk, then emits a heuristic action:
+`recommend`, `diversify`, `explore`, or `abstain`.
+
+This scaffold does not call APIs, train a model, run Qwen3, or prove the
+framework. It is a tested contract for later calibrators, rerankers, server
+training, and triage modules.
+
 ## Tests
 
 Run the local test suite:
@@ -739,8 +770,9 @@ calibration metrics, GroundHit, k-core filtering, interaction filtering,
 chronological sorting, leave-last splits, rolling examples, popularity buckets,
 Tail Underconfidence Gap, prompt construction, mock provider parsing,
 observation input schema, grounding/correctness integration, metrics reporting,
-resume behavior, and baseline ranking-to-title adapter behavior. Tests use
-small committed fixtures only and do not download data or call APIs.
+resume behavior, baseline ranking-to-title adapter behavior, and CURE/TRUCE
+exposure-confidence scoring/reranking scaffold behavior. Tests use small
+committed fixtures only and do not download data or call APIs.
 
 ## Basic Checks
 

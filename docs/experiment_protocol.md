@@ -219,6 +219,19 @@ Planned components:
 - uncertainty-guided data triage that distinguishes noise from hard tail
   positives.
 
+The current committed scaffold starts with the common object:
+
+```text
+C(u, i) ~= P(user accepts item i | user u, do(exposure=1))
+```
+
+`storyflow.confidence.ExposureConfidenceFeatures` keeps preference evidence,
+verbal confidence, generation evidence, grounding confidence/ambiguity,
+popularity pressure, history alignment, novelty, and observed correctness
+labels separate. The deterministic CURE/TRUCE score is a testable contract for
+future calibrators and rerankers; it is not a trained probability, not a Qwen3
+result, and not paper evidence.
+
 Training is server-oriented unless explicitly approved for a small local
 sanity check. Codex must not claim server training or inference has run unless
 the user provides logs or result files.
