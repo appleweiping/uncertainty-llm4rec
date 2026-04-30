@@ -358,3 +358,163 @@ explicit approval, manifests, and artifact-return rules.
 
 Do not start Qwen3 inference, LoRA training, server execution, or another real
 API expansion without explicit user approval and concrete run gates.
+
+## Late Addendum: Expansion Gates And Run Packets
+
+This addendum follows three additional governance/readiness commits:
+
+- `3b9b57d Add Amazon cross-category readiness matrix`
+- `9544fc0 Add expansion approval checklist`
+- `56f2fca Add expansion run packet builder`
+
+These commits do not execute experiments. They add API-free, server-free,
+training-free, and data-download-free gates for deciding what a real expansion
+would require before execution.
+
+### Mainline Check After The Latest Commits
+
+The project still remains a title-level generative recommendation project:
+
+```text
+history item titles
+  -> generated or selected item title
+  -> catalog grounding
+  -> correctness + confidence + popularity + grounding + head/mid/tail analysis
+  -> exposure-aware confidence framework
+```
+
+The latest helpers do not introduce ranking-only evaluation. The baseline
+artifact path still requires ranking output to be converted to a catalog title,
+grounded, and analyzed with the same confidence/correctness/popularity schema
+as API, mock, and future server observation.
+
+### Grounding And Correctness Check
+
+No new path bypasses grounding. The run-packet helper explicitly records
+`grounding_required_before_correctness=true`. This matters because future
+expansion tracks can otherwise look operationally different:
+
+- API provider expansion produces generated titles and verbal confidence.
+- Qwen3/server expansion produces generated titles from a local/server model.
+- Amazon full prepare produces the catalog and observation examples that future
+  generated titles must ground against.
+- Trained baseline artifact expansion selects item IDs or ranks, then converts
+  them to catalog titles before grounding and analysis.
+
+The risk is now less "missing grounding guard" and more "a future executor
+could treat a packet as permission to run." The docs and packet flags state
+that packets are not authorization and not paper evidence.
+
+### Confidence And Popularity Check
+
+The current analysis contract still requires confidence to be interpreted with:
+
+- correctness;
+- GroundHit and grounding status;
+- generated-item and target popularity where available;
+- head/mid/tail buckets;
+- wrong-high-confidence and correct-low-confidence cases;
+- candidate-set diagnostics for constrained prompts;
+- explicit proxy semantics for baselines.
+
+The new expansion gates help by forcing future real runs to declare source
+kind, budget label, artifact locations, and command shape before execution.
+They do not add new confidence metrics and do not claim new findings.
+
+### Data Route Check
+
+The Amazon cross-category readiness matrix improves the data ladder:
+
+- Beauty remains the first full e-commerce category and the active prepared
+  category.
+- Digital_Music, Handmade_Products, and Health_and_Personal_Care remain local
+  raw robustness candidates.
+- Video_Games and Sports_and_Outdoors now have completed config/readiness
+  templates.
+- Books now has a server-scale title-rich config path.
+
+This reduces the "stuck on MovieLens/mock" risk, but it does not itself solve
+the final experiment breadth problem. The next actual data step must be an
+approved raw placement/full-prepare path for a title-rich category such as
+Video_Games or Books, or a justified robustness category after Beauty.
+
+### API And Server Claim Check
+
+The approval checklist and run packet strengthen the API/server boundary:
+
+- packets keep `api_called=false`;
+- packets keep `server_executed=false`;
+- packets keep `model_inference_run=false`;
+- packets keep `model_training=false`;
+- packets keep `data_downloaded=false`;
+- packets keep `full_data_processed=false`;
+- packets keep `is_experiment_result=false`.
+
+This is the right wording. A packet may include an approval-required command
+shape containing `--execute-api`, `--execute-server`, or `--allow-full`, but it
+does not execute those commands and does not authorize them by itself.
+
+### Current Reviewer-Attack Risks After The Addendum
+
+1. Over-gating instead of running real expansions.
+   Priority: high. The project now has many safe gates. The next meaningful
+   progress should use one gate after explicit approval rather than adding
+   another governance layer.
+
+2. Single-provider dependence.
+   Priority: high. DeepSeek observations are useful diagnostics but not
+   cross-model evidence. Qwen API, Qwen3/server, Kimi, or GLM expansion still
+   needs approval and real artifacts.
+
+3. Baseline evidence gap.
+   Priority: high. The baseline path is architecturally reviewer-proof, but no
+   trained SASRec/BERT4Rec/GRU4Rec/LightGCN artifact has entered the pipeline.
+
+4. Grounding-failure confounding.
+   Priority: high. Amazon Beauty free-form title generation remains affected
+   by catalog grounding difficulty. Candidate prompts are QA gates, not
+   recommendation-accuracy settings.
+
+5. Deterministic scaffold overclaim.
+   Priority: high. CURE/TRUCE feature, calibration, residualization, rerank,
+   simulation, and triage code are scaffolds/contracts unless trained/evaluated
+   under approved real runs.
+
+6. Data breadth and scale.
+   Priority: medium-high. Beauty alone is too narrow. Cross-category configs
+   are ready, but full data/raw placement and server/manual processing still
+   require explicit approval and manifests.
+
+7. Implicit-feedback target ambiguity.
+   Priority: medium. Next-item correctness remains a limited preference
+   target. Future-window and graded relevance support should be used when data
+   allows.
+
+8. Popularity residual interpretation.
+   Priority: medium. Popularity can be both useful preference evidence and a
+   confounder. Current residualization is a split-audited scaffold, not causal
+   proof.
+
+9. Run-packet misuse.
+   Priority: medium. A packet is an execution specification, not a run. Any
+   final report must distinguish packet generation from actual execution.
+
+10. Reviewer report staleness.
+    Priority: low-medium. The ignored reviewer report is from 2026-04-29 and
+    flagged blockers that are now closed. Keep reading future reviewer updates
+    before new work.
+
+### Priority Decision
+
+Go forward, but stop adding new approval-only layers unless a real execution
+path needs one missing field. The next highest-value non-blocking task is
+either:
+
+- generate a concrete run packet for one user-approved track after the missing
+  provider/server/data/artifact details are known; or
+- continue API-free framework integration only where it consumes existing
+  grounded observation, feature, rerank, simulation, or triage schemas.
+
+Without explicit approval, do not call a real API, execute Qwen3/server
+inference, train Qwen3-8B + LoRA, train large baselines, or run full data
+preparation.
