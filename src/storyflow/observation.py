@@ -171,6 +171,40 @@ def _filter_examples_by_repeat_policy(
     return filtered
 
 
+def _sorted_candidate_catalog(catalog_rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(
+        catalog_rows,
+        key=lambda catalog_row: (
+            -int(catalog_row.get("popularity") or 0),
+            str(catalog_row.get("title") or ""),
+            str(catalog_row.get("item_id") or ""),
+        ),
+    )
+
+
+def _candidate_groups_by_bucket(
+    sorted_catalog_rows: list[dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {bucket.value: [] for bucket in PopularityBucket}
+    for row in sorted_catalog_rows:
+        bucket = str(row.get("popularity_bucket") or "tail")
+        grouped.setdefault(bucket, []).append(row)
+    return grouped
+
+
+def _candidate_token_index(catalog_rows: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    token_index: dict[str, list[dict[str, Any]]] = {}
+    for row in catalog_rows:
+        title_tokens = {
+            token
+            for token in normalize_title(str(row.get("title") or "")).split()
+            if len(token) >= 3
+        }
+        for token in title_tokens:
+            token_index.setdefault(token, []).append(row)
+    return token_index
+
+
 def _catalog_candidate_records(
     example: dict[str, Any],
     *,
@@ -178,6 +212,9 @@ def _catalog_candidate_records(
     candidate_count: int,
     allow_target_in_candidates: bool = False,
     candidate_policy: str = "round_robin_popularity",
+    sorted_catalog_rows: list[dict[str, Any]] | None = None,
+    catalog_groups_by_bucket: dict[str, list[dict[str, Any]]] | None = None,
+    catalog_token_index: dict[str, list[dict[str, Any]]] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Build a deterministic catalog candidate list for diagnostic prompts.
 
@@ -197,20 +234,12 @@ def _catalog_candidate_records(
     if candidate_policy not in {"round_robin_popularity", "history_token_overlap"}:
         raise ValueError(f"unknown candidate_policy: {candidate_policy}")
 
-    grouped: dict[str, list[dict[str, Any]]] = {bucket.value: [] for bucket in PopularityBucket}
-    for row in sorted(
-        catalog_rows,
-        key=lambda catalog_row: (
-            -int(catalog_row.get("popularity") or 0),
-            str(catalog_row.get("title") or ""),
-            str(catalog_row.get("item_id") or ""),
-        ),
-    ):
-        item_id = str(row["item_id"])
-        if item_id in excluded_ids:
-            continue
-        bucket = str(row.get("popularity_bucket") or "tail")
-        grouped.setdefault(bucket, []).append(row)
+    sorted_rows = sorted_catalog_rows or _sorted_candidate_catalog(catalog_rows)
+    if catalog_groups_by_bucket is None:
+        catalog_groups_by_bucket = _candidate_groups_by_bucket(sorted_rows)
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for bucket, bucket_rows in catalog_groups_by_bucket.items():
+        grouped[bucket] = list(bucket_rows)
 
     candidates: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -225,16 +254,22 @@ def _catalog_candidate_records(
                 if len(token) < 3:
                     continue
                 token_weights[token] = token_weights.get(token, 0.0) + recency_weight
-        scored_rows: list[tuple[float, dict[str, Any]]] = []
-        for row in catalog_rows:
-            item_id = str(row["item_id"])
-            if item_id in excluded_ids:
-                continue
-            title_tokens = set(normalize_title(str(row.get("title") or "")).split())
-            score = sum(token_weights.get(token, 0.0) for token in title_tokens)
-            if score <= 0:
-                continue
-            scored_rows.append((score, row))
+        scored_by_id: dict[str, float] = {}
+        scored_row_by_id: dict[str, dict[str, Any]] = {}
+        if catalog_token_index is None:
+            catalog_token_index = _candidate_token_index(catalog_rows)
+        for token, weight in token_weights.items():
+            for row in catalog_token_index.get(token, []):
+                item_id = str(row["item_id"])
+                if item_id in excluded_ids:
+                    continue
+                scored_by_id[item_id] = scored_by_id.get(item_id, 0.0) + weight
+                scored_row_by_id[item_id] = row
+        scored_rows = [
+            (score, scored_row_by_id[item_id])
+            for item_id, score in scored_by_id.items()
+            if score > 0
+        ]
         scored_rows.sort(
             key=lambda item: (
                 -item[0],
@@ -261,7 +296,7 @@ def _catalog_candidate_records(
                 while bucket_rows:
                     candidate = bucket_rows.pop(0)
                     item_id = str(candidate["item_id"])
-                    if item_id not in seen_ids:
+                    if item_id not in seen_ids and item_id not in excluded_ids:
                         candidates.append(candidate)
                         candidate_scores.setdefault(item_id, 0.0)
                         seen_ids.add(item_id)
@@ -362,6 +397,9 @@ def build_observation_input_records(
     catalog_csv = processed_dir / "item_catalog.csv"
     examples_jsonl = processed_dir / "observation_examples.jsonl"
     catalog = load_catalog_rows(catalog_csv)
+    sorted_catalog = _sorted_candidate_catalog(catalog)
+    catalog_groups = _candidate_groups_by_bucket(sorted_catalog)
+    catalog_token_index = _candidate_token_index(catalog)
     catalog_by_id = {row["item_id"]: row for row in catalog}
     examples = [
         _enrich_example_from_catalog(example, catalog_by_id=catalog_by_id)
@@ -398,6 +436,9 @@ def build_observation_input_records(
                 candidate_count=candidate_count or 20,
                 allow_target_in_candidates=allow_target_in_candidates,
                 candidate_policy=effective_candidate_policy,
+                sorted_catalog_rows=sorted_catalog,
+                catalog_groups_by_bucket=catalog_groups,
+                catalog_token_index=catalog_token_index,
             )
             if not candidate_records:
                 raise ValueError(

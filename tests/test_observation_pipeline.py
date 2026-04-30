@@ -276,6 +276,117 @@ def test_catalog_constrained_observation_inputs_exclude_target_by_default() -> N
     assert "Catalog candidate titles" in record["prompt"]
 
 
+def test_catalog_candidates_exclude_history_and_target_with_prebuilt_indexes() -> None:
+    workspace = _workspace_tmp("candidate_leak_guard")
+    processed_dir = workspace / "processed"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    with (processed_dir / "item_catalog.csv").open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "item_id",
+                "title",
+                "title_normalized",
+                "genres",
+                "popularity",
+                "popularity_bucket",
+            ],
+        )
+        writer.writeheader()
+        writer.writerows(
+            [
+                {
+                    "item_id": "item-history-head",
+                    "title": "History Head",
+                    "title_normalized": "history head",
+                    "genres": "Test",
+                    "popularity": 100,
+                    "popularity_bucket": "head",
+                },
+                {
+                    "item_id": "item-target-mid",
+                    "title": "Target Mid",
+                    "title_normalized": "target mid",
+                    "genres": "Test",
+                    "popularity": 80,
+                    "popularity_bucket": "mid",
+                },
+                {
+                    "item_id": "item-history-tail",
+                    "title": "History Tail",
+                    "title_normalized": "history tail",
+                    "genres": "Test",
+                    "popularity": 10,
+                    "popularity_bucket": "tail",
+                },
+                {
+                    "item_id": "item-safe-head",
+                    "title": "Safe Head",
+                    "title_normalized": "safe head",
+                    "genres": "Test",
+                    "popularity": 70,
+                    "popularity_bucket": "head",
+                },
+                {
+                    "item_id": "item-safe-mid",
+                    "title": "Safe Mid",
+                    "title_normalized": "safe mid",
+                    "genres": "Test",
+                    "popularity": 60,
+                    "popularity_bucket": "mid",
+                },
+                {
+                    "item_id": "item-safe-tail",
+                    "title": "Safe Tail",
+                    "title_normalized": "safe tail",
+                    "genres": "Test",
+                    "popularity": 5,
+                    "popularity_bucket": "tail",
+                },
+            ]
+        )
+    write_jsonl(
+        processed_dir / "observation_examples.jsonl",
+        [
+            {
+                "example_id": "u-leak:2",
+                "user_id": "u-leak",
+                "history_item_ids": ["item-history-head", "item-history-tail"],
+                "history_item_titles": ["History Head", "History Tail"],
+                "history_timestamps": [1, 2],
+                "history_length": 2,
+                "target_item_id": "item-target-mid",
+                "target_title": "Target Mid",
+                "target_item_title": "Target Mid",
+                "target_timestamp": 3,
+                "target_item_popularity": 80,
+                "target_popularity_bucket": "mid",
+                "split": "test",
+            }
+        ],
+    )
+
+    records = build_observation_input_records(
+        dataset="synthetic_fixture",
+        processed_suffix="tiny",
+        split="test",
+        processed_dir=processed_dir,
+        prompt_template="catalog_constrained_json",
+        candidate_count=3,
+    )
+
+    record = records[0]
+    excluded_ids = set(record["history_item_ids"]) | {record["target_item_id"]}
+    assert set(record["catalog_candidate_item_ids"]).isdisjoint(excluded_ids)
+    assert record["catalog_candidate_item_ids"] == [
+        "item-safe-head",
+        "item-safe-mid",
+        "item-safe-tail",
+    ]
+    assert record["candidate_policy"]["target_in_candidates"] is False
+    assert record["candidate_policy"]["history_item_count_in_candidates"] == 0
+
+
 def test_retrieval_context_observation_inputs_use_history_overlap_policy() -> None:
     workspace = _workspace_tmp("retrieval_context_observation_inputs")
     processed_dir = workspace / "processed"
