@@ -65,6 +65,13 @@ inference, training, API calls, or experimental claims. Actual Qwen3 inference
 remains server-only and requires explicit `--execute-server` plus user-provided
 logs/artifacts before any result can be claimed.
 
+The baseline route now includes a ranking-JSONL-to-title adapter. External
+rankers can emit ranked item IDs keyed by observation `input_id`; the adapter
+filters history items, selects a catalog title, grounds that title, and writes
+the same confidence/correctness/popularity/grounding schema as API and mock
+observation. It is a contract for later trained baselines, not a trained
+baseline result.
+
 ## Phase 0: Governance And Scaffold
 
 Goal: establish the repository rules, documentation skeleton, artifact policy,
@@ -162,7 +169,8 @@ Planned deliverables:
 - Multi-provider observation for official large-model APIs.
 - Local/server Qwen3-8B observation support when feasible.
 - Baseline observation support for sequential recommenders and generative
-  LLM4Rec baselines in phased order.
+  LLM4Rec baselines in phased order, including ranking-to-title conversion
+  before any ranking output enters the shared analysis layer.
 - Metrics for Recall@K, NDCG@K, Hit Ratio@K, MRR@K, coverage, and tail coverage.
 - Generative/title metrics: GroundHit, grounding confidence, grounding
   ambiguity, out-of-catalog rate, duplicate title rate, fuzzy/semantic match

@@ -24,7 +24,19 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--baseline",
         default="popularity",
-        choices=["popularity", "cooccurrence"],
+        choices=["popularity", "cooccurrence", "ranking_jsonl"],
+    )
+    parser.add_argument(
+        "--ranking-jsonl",
+        help=(
+            "External ranking baseline JSONL with input_id plus ranked_item_ids "
+            "or ranked_items. Required for baseline=ranking_jsonl."
+        ),
+    )
+    parser.add_argument(
+        "--strict-ranking",
+        action="store_true",
+        help="Fail instead of falling back to popularity when a ranking row is missing or unusable.",
     )
     parser.add_argument("--output-dir")
     parser.add_argument("--max-examples", type=int)
@@ -37,6 +49,15 @@ def main(argv: list[str] | None = None) -> int:
         input_jsonl = ROOT / input_jsonl
     if not input_jsonl.exists():
         raise SystemExit(f"Observation input JSONL not found: {input_jsonl}")
+
+    ranking_jsonl = Path(args.ranking_jsonl) if args.ranking_jsonl else None
+    if ranking_jsonl is not None and not ranking_jsonl.is_absolute():
+        ranking_jsonl = ROOT / ranking_jsonl
+    if args.baseline == "ranking_jsonl":
+        if ranking_jsonl is None:
+            raise SystemExit("--ranking-jsonl is required when --baseline ranking_jsonl")
+        if not ranking_jsonl.exists():
+            raise SystemExit(f"Ranking JSONL not found: {ranking_jsonl}")
 
     output_dir = (
         Path(args.output_dir)
@@ -54,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
         input_jsonl=input_jsonl,
         output_dir=output_dir,
         baseline=args.baseline,
+        ranking_jsonl=ranking_jsonl,
+        strict_ranking=args.strict_ranking,
         max_examples=args.max_examples,
         resume=args.resume,
     )

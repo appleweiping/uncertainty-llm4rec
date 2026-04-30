@@ -317,6 +317,7 @@ Lightweight baselines can enter the same generated-title observation schema:
 ```powershell
 python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline popularity --max-examples 30
 python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline cooccurrence --max-examples 30
+python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline ranking_jsonl --ranking-jsonl outputs/baseline_rankings/sasrec/sample_5k/test_rankings.jsonl --max-examples 30 --strict-ranking
 ```
 
 The baseline runner writes `raw_responses.jsonl`, `parsed_predictions.jsonl`,
@@ -324,6 +325,8 @@ The baseline runner writes `raw_responses.jsonl`, `parsed_predictions.jsonl`,
 under `outputs/observations/baselines/...`. The output contract matches the API
 and mock layers: a baseline selects a title, that title is grounded to the
 catalog, and confidence/correctness/popularity/grounding metrics are computed
-together. These baselines do not call APIs or train models; their confidence
-values are simple proxies and must not be treated as calibrated model
-confidence.
+together. The `ranking_jsonl` adapter is the contract for future trained
+rankers: it reads local ranked item IDs, filters history items, looks up the
+selected catalog title, then writes the same grounded schema. These baselines do
+not call APIs or train models; their confidence values are simple proxies and
+must not be treated as calibrated model confidence.

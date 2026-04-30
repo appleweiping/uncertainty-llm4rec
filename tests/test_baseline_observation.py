@@ -5,10 +5,14 @@ import json
 import uuid
 from pathlib import Path
 
+import pytest
+
 from scripts.run_baseline_observation import main as baseline_main
 from storyflow.baselines import (
     CooccurrenceTitleBaseline,
     PopularityTitleBaseline,
+    RankingJsonlTitleBaseline,
+    parse_ranking_candidates,
     run_baseline_observation,
 )
 from storyflow.observation import (
@@ -183,6 +187,77 @@ def test_cooccurrence_baseline_uses_train_split_counts() -> None:
     assert output.score_source == "train_split_cooccurrence"
 
 
+def test_ranking_candidate_parser_accepts_common_shapes() -> None:
+    list_shape = parse_ranking_candidates(
+        {"input_id": "x", "ranked_item_ids": ["a", "b"], "scores": [3.0, 1.0]}
+    )
+    dict_shape = parse_ranking_candidates(
+        {"input_id": "x", "ranked_items": [{"item_id": "c", "score": "2.5"}]}
+    )
+
+    assert [candidate.item_id for candidate in list_shape] == ["a", "b"]
+    assert list_shape[0].score == 3.0
+    assert dict_shape[0].item_id == "c"
+    assert dict_shape[0].score == 2.5
+
+
+def test_ranking_jsonl_baseline_filters_history_and_uses_catalog_title() -> None:
+    workspace = _workspace_tmp("ranking_jsonl_baseline")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+    input_jsonl = _input_jsonl(workspace, processed_dir)
+    inputs = read_jsonl(input_jsonl)
+    ranking_jsonl = workspace / "ranking.jsonl"
+    write_jsonl(
+        ranking_jsonl,
+        [
+            {
+                "input_id": inputs[0]["input_id"],
+                "ranked_item_ids": ["item-mid", "item-tail", "item-head"],
+                "scores": [10.0, 4.0, 1.0],
+                "run_id": "sasrec-fixture",
+            }
+        ],
+    )
+    catalog_rows = list(csv.DictReader((processed_dir / "item_catalog.csv").open(encoding="utf-8")))
+    baseline = RankingJsonlTitleBaseline(
+        catalog_rows=catalog_rows,
+        ranking_jsonl=ranking_jsonl,
+        fallback_to_popularity=False,
+    )
+
+    output = baseline.predict(inputs[0])
+
+    assert output.generated_title == "Tail Balm"
+    assert output.selected_item_id == "item-tail"
+    assert output.selected_rank == 2
+    assert output.candidate_count == 3
+    assert output.source_record_id == "sasrec-fixture"
+    assert output.score_source == "ranking_jsonl_softmax_score"
+
+
+def test_ranking_jsonl_baseline_strict_mode_rejects_missing_prediction() -> None:
+    workspace = _workspace_tmp("ranking_jsonl_missing")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+    input_jsonl = _input_jsonl(workspace, processed_dir)
+    inputs = read_jsonl(input_jsonl)
+    ranking_jsonl = workspace / "ranking.jsonl"
+    write_jsonl(
+        ranking_jsonl,
+        [{"input_id": "different-input", "ranked_item_ids": ["item-head"]}],
+    )
+    catalog_rows = list(csv.DictReader((processed_dir / "item_catalog.csv").open(encoding="utf-8")))
+    baseline = RankingJsonlTitleBaseline(
+        catalog_rows=catalog_rows,
+        ranking_jsonl=ranking_jsonl,
+        fallback_to_popularity=False,
+    )
+
+    with pytest.raises(ValueError, match="missing_input"):
+        baseline.predict(inputs[0])
+
+
 def test_run_baseline_observation_writes_schema_and_resumes() -> None:
     workspace = _workspace_tmp("baseline_runner")
     processed_dir = workspace / "processed"
@@ -219,6 +294,48 @@ def test_run_baseline_observation_writes_schema_and_resumes() -> None:
     assert (output_dir / "report.md").exists()
 
 
+def test_run_ranking_jsonl_observation_writes_adapter_metadata() -> None:
+    workspace = _workspace_tmp("ranking_jsonl_runner")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+    input_jsonl = _input_jsonl(workspace, processed_dir)
+    inputs = read_jsonl(input_jsonl)
+    ranking_jsonl = workspace / "ranking.jsonl"
+    write_jsonl(
+        ranking_jsonl,
+        [
+            {
+                "input_id": inputs[0]["input_id"],
+                "ranked_items": [
+                    {"item_id": "item-mid", "score": 7.0},
+                    {"item_id": "item-tail", "score": 3.0},
+                ],
+            },
+            {
+                "input_id": inputs[1]["input_id"],
+                "ranked_items": [{"item_id": "item-head", "score": 5.0}],
+            },
+        ],
+    )
+    output_dir = workspace / "ranking_run"
+
+    manifest = run_baseline_observation(
+        input_jsonl=input_jsonl,
+        output_dir=output_dir,
+        baseline="ranking_jsonl",
+        ranking_jsonl=ranking_jsonl,
+        max_examples=2,
+    )
+    grounded = read_jsonl(output_dir / "grounded_predictions.jsonl")
+
+    assert manifest["baseline"] == "ranking_jsonl"
+    assert manifest["ranking_jsonl"] == str(ranking_jsonl)
+    assert grounded[0]["generated_title"] == "Tail Balm"
+    assert grounded[0]["baseline_selected_rank"] == 2
+    assert grounded[0]["baseline_candidate_count"] == 2
+    assert grounded[0]["api_called"] is False
+
+
 def test_baseline_observation_cli_does_not_require_api_key(monkeypatch) -> None:
     monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
     workspace = _workspace_tmp("baseline_cli")
@@ -245,4 +362,45 @@ def test_baseline_observation_cli_does_not_require_api_key(monkeypatch) -> None:
     assert code == 0
     assert manifest["provider"] == "baseline"
     assert manifest["baseline"] == "popularity"
+    assert manifest["api_called"] is False
+
+
+def test_baseline_observation_cli_runs_ranking_jsonl_adapter(monkeypatch) -> None:
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+    workspace = _workspace_tmp("baseline_cli_ranking")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+    input_jsonl = _input_jsonl(workspace, processed_dir)
+    inputs = read_jsonl(input_jsonl)
+    ranking_jsonl = workspace / "ranking.jsonl"
+    write_jsonl(
+        ranking_jsonl,
+        [
+            {"input_id": inputs[0]["input_id"], "ranked_item_ids": ["item-tail"]},
+            {"input_id": inputs[1]["input_id"], "ranked_item_ids": ["item-head"]},
+        ],
+    )
+    output_dir = workspace / "cli_ranking_run"
+
+    code = baseline_main(
+        [
+            "--input-jsonl",
+            str(input_jsonl),
+            "--baseline",
+            "ranking_jsonl",
+            "--ranking-jsonl",
+            str(ranking_jsonl),
+            "--output-dir",
+            str(output_dir),
+            "--max-examples",
+            "2",
+            "--strict-ranking",
+            "--no-resume",
+        ]
+    )
+    manifest = json.loads((output_dir / "manifest.json").read_text(encoding="utf-8"))
+
+    assert code == 0
+    assert manifest["baseline"] == "ranking_jsonl"
+    assert manifest["strict_ranking"] is True
     assert manifest["api_called"] is False

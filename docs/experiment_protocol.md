@@ -184,6 +184,26 @@ or duplicate review artifacts can put the held-out target in the user history.
 These artifacts are required for reproducibility in later pilots/full runs, but
 analysis of mock or dry-run outputs remains a sanity check only.
 
+## Baseline Observation Contract
+
+Baselines must enter the project through the same title-level path:
+
+```text
+baseline selected/ranked item
+  -> catalog title
+  -> grounded prediction
+  -> correctness + confidence proxy + popularity + grounding analysis
+```
+
+Lightweight popularity and train-split co-occurrence baselines are local sanity
+layers. The `ranking_jsonl` adapter is the contract for later SASRec,
+BERT4Rec, GRU4Rec, LightGCN, and similar ranking baselines: they may produce a
+ranked item list, but the project evaluates the selected title only after
+catalog lookup and grounding. Rank/score-derived confidence values are proxies
+unless a later calibration stage validates them. No ranking baseline output
+should bypass title grounding or be reported as a paper result without a full
+protocol run and manifest.
+
 ## Framework Stage
 
 The framework stage targets Qwen3-8B + LoRA or a comparable small-model

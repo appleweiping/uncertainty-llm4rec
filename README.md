@@ -145,8 +145,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
   cases, and local ignored run registry.
 - `docs/pilot_case_review.md`: pilot case-review and failure-taxonomy layer for
   prompt, grounding, and confidence triage before scaling.
-- `docs/baseline_observation.md`: lightweight popularity and train-split
-  co-occurrence baseline observation interface.
+- `docs/baseline_observation.md`: lightweight popularity, train-split
+  co-occurrence, and ranking-to-title baseline observation interface.
 - `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
   grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
@@ -214,7 +214,8 @@ Implemented foundation modules:
 - `storyflow.analysis.grounding_diagnostics`: catalog duplicate normalized
   title checks and optional grounding candidate margin audits.
 - `storyflow.baselines`: lightweight popularity and co-occurrence title
-  baselines that write the same grounded observation schema.
+  baselines plus a ranking-JSONL adapter that write the same grounded
+  observation schema.
 - `storyflow.server`: Qwen3-8B server observation plan/execution contract that
   mirrors API observation output layers while defaulting to plan-only mode.
 - `tests/fixtures/`: synthetic records used only for tests.
@@ -706,6 +707,7 @@ metrics schema:
 ```powershell
 python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline popularity --max-examples 30
 python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline cooccurrence --max-examples 30
+python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline ranking_jsonl --ranking-jsonl outputs/baseline_rankings/sasrec/sample_5k/test_rankings.jsonl --max-examples 30 --strict-ranking
 ```
 
 Implemented baselines:
@@ -714,6 +716,11 @@ Implemented baselines:
   confidence proxy.
 - `cooccurrence`: train-split item co-occurrence over observation examples,
   with popularity fallback.
+- `ranking_jsonl`: converts externally produced ranked item IDs, such as a
+  future SASRec/BERT4Rec/GRU4Rec/LightGCN run, into the same title-level
+  baseline schema. The adapter filters history items, looks up the selected
+  catalog title, grounds it, and records non-calibrated rank/score confidence
+  metadata.
 
 These baselines do not call APIs, do not read keys, and do not train models.
 They are sanity/reviewer-proofing artifacts until a full baseline protocol run
@@ -732,8 +739,8 @@ calibration metrics, GroundHit, k-core filtering, interaction filtering,
 chronological sorting, leave-last splits, rolling examples, popularity buckets,
 Tail Underconfidence Gap, prompt construction, mock provider parsing,
 observation input schema, grounding/correctness integration, metrics reporting,
-and resume behavior. Tests use small committed fixtures only and do not
-download data or call APIs.
+resume behavior, and baseline ranking-to-title adapter behavior. Tests use
+small committed fixtures only and do not download data or call APIs.
 
 ## Basic Checks
 
