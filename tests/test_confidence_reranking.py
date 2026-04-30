@@ -220,6 +220,8 @@ def test_rerank_confidence_features_jsonl_writes_manifest_without_api() -> None:
     assert manifest["reranker_schema_version"] == "cure_truce_reranker_v1"
     assert manifest["input_row_count"] == 3
     assert manifest["output_row_count"] == 2
+    assert manifest["selective_risk_diagnostics"]["overall"]["count"] == 2
+    assert manifest["selective_risk_diagnostics"]["api_called"] is False
     assert stored_manifest["api_called"] is False
     assert stored_manifest["model_training"] is False
     assert stored_manifest["server_executed"] is False

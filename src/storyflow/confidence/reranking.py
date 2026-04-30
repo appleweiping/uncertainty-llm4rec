@@ -25,6 +25,7 @@ from storyflow.confidence.exposure import (
     popularity_pressure,
 )
 from storyflow.confidence.calibration import row_split
+from storyflow.confidence.diagnostics import selective_risk_diagnostics
 from storyflow.observation import read_jsonl, utc_now_iso, write_jsonl
 
 RERANKER_SCHEMA_VERSION = "cure_truce_reranker_v1"
@@ -378,6 +379,7 @@ def rerank_confidence_feature_rows(
         scored_count += 1
 
     output_rows: list[dict[str, Any]] = []
+    selective_risk_entries: list[dict[str, Any]] = []
     group_sizes: list[int] = []
     for group_id in group_order:
         group_rows = grouped[group_id]
@@ -395,6 +397,14 @@ def rerank_confidence_feature_rows(
             row["cure_truce_rerank"]["rank"] = rank
             row["cure_truce_rerank"]["group_size_before_top_k"] = len(group_rows)
             row["cure_truce_rerank"]["top_k"] = top_k
+            components = row["cure_truce_rerank"]["components"]["components"]
+            selective_risk_entries.append(
+                {
+                    "selected_confidence": row["cure_truce_rerank"]["selected_confidence"],
+                    "correctness_label": components.get("correctness_label"),
+                    "popularity_bucket": components.get("popularity_bucket") or "unknown",
+                }
+            )
             output_rows.append(row)
 
     action_counts = Counter(row["cure_truce_rerank"]["action"] for row in output_rows)
@@ -423,6 +433,10 @@ def rerank_confidence_feature_rows(
         "selected_confidence_source_counts": dict(sorted(source_counts.items())),
         "fallback_count": fallback_count,
         "zero_confidence_fallback_count": zero_fallback_count,
+        "selective_risk_diagnostics": selective_risk_diagnostics(
+            selective_risk_entries,
+            requested_confidence_source=confidence_source,
+        ),
         "api_called": False,
         "model_training": False,
         "server_executed": False,

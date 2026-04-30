@@ -181,6 +181,13 @@ is usable for abstention, triage, or exposure control. They are not evidence of
 real exposure utility unless backed by an approved run, manifests, and the
 appropriate exposure/counterfactual evaluation.
 
+Downstream Phase 4/5 contracts reuse this idea in compact form: CURE/TRUCE
+rerank and diagnostic triage manifests record AURC/selective-risk summaries for
+their selected confidence source and head/mid/tail slices. Those compact
+diagnostics help check that calibration, residualization, reranking, and triage
+remain connected to the same confidence-risk object, but they still are not
+method results by themselves.
+
 ## Pilot And Full Run Use
 
 For a future real API pilot, run analysis only after:

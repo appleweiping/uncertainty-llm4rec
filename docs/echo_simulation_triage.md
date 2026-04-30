@@ -92,6 +92,12 @@ The triage layer adds `data_triage` to each row with:
 - correctness label when available;
 - popularity bucket, grounding, novelty, and echo-risk diagnostics.
 
+The triage manifest also records `selective_risk_diagnostics`: a compact AURC
+and selective-risk summary over the requested confidence source, both overall
+and by popularity bucket. This connects observation-level selective risk to
+the downstream triage contract without treating the triage output as a result
+or a final pruning policy.
+
 Important reason codes:
 
 - `hard_tail_positive_underconfident`: keep and upweight underconfident correct
@@ -126,6 +132,8 @@ python -m pytest
 
 - Synthetic exposure simulation is a diagnostic scaffold.
 - Triage reason codes and suggested weights are not proof of noise detection.
+- Triage selective-risk diagnostics are decision-support metadata, not
+  exposure-utility evidence.
 - No output from this layer should be reported as a method result without
   approved observation artifacts, training/evaluation protocol, and complete
   manifests.

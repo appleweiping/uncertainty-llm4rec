@@ -45,11 +45,14 @@ scaffold code only. A feature builder now converts existing grounded
 observation JSONL into this schema with manifests. Split-audited histogram
 calibration and popularity residualization scaffolds record fit/eval provenance
 for feature JSONL files. A deterministic reranker can now consume raw,
-calibrated, or residualized feature rows and write a provenance manifest; none
-of these are learned model results and no method result is claimed.
+calibrated, or residualized feature rows and write a provenance manifest with
+compact selective-risk diagnostics; none of these are learned model results and
+no method result is claimed.
 The first Phase 5 echo simulation and data triage scaffolds are also present:
 they consume existing CURE/TRUCE feature rows, write ignored manifests, and
-mark synthetic feedback / diagnostic triage as non-result artifacts.
+mark synthetic feedback / diagnostic triage as non-result artifacts. Triage
+manifests now also carry compact AURC/selective-risk summaries for the chosen
+confidence source, overall and by head/mid/tail bucket.
 Processed-dataset audit tooling now checks repeat-target cases, chronological
 split integrity, title quality, and head/mid/tail coverage before scaling API
 observation.
@@ -247,8 +250,10 @@ Implemented foundation modules:
   echo-risk/risk components, deterministic CURE/TRUCE score, reranking
   scaffold, split-audited histogram calibration scaffold, split-audited
   popularity residualization scaffold, and a JSONL reranking contract that can
-  consume calibrated/residualized confidence proxies. This is not a trained
-  calibrator, reranker, or result.
+  consume calibrated/residualized confidence proxies. Rerank and triage
+  manifests reuse compact selective-risk diagnostics to keep downstream
+  decisions tied to confidence-risk behavior. This is not a trained calibrator,
+  reranker, or result.
 - `storyflow.simulation`: synthetic confidence-guided exposure feedback
   simulation over CURE/TRUCE feature rows, with Exposure Gini, tail exposure
   share, entropy, and confidence-drift summaries. This is not real user
@@ -942,8 +947,10 @@ This writes ignored `triaged_features.jsonl` and `manifest.json` under
 `outputs/confidence_triage/...`. Triage records add reason codes such as
 `hard_tail_positive_underconfident`, `wrong_high_confidence`,
 `popularity_or_echo_overconfident`, and `grounding_uncertain`. The scaffold
-suggests weights and review actions; it is not a final pruning policy and it
-explicitly avoids naive high-uncertainty deletion of hard tail positives.
+suggests weights and review actions. The manifest also records compact
+selective-risk/AURC diagnostics overall and by popularity bucket for the
+selected confidence source. It is not a final pruning policy and it explicitly
+avoids naive high-uncertainty deletion of hard tail positives.
 
 ## Tests
 

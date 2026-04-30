@@ -86,7 +86,7 @@ by default. A split-audited popularity residual scaffold now fits a
 popularity-bucket confidence baseline on declared fit splits and applies it to
 evaluation splits only. A deterministic JSONL reranker now consumes raw,
 calibrated, or residualized feature rows and records confidence-source
-fallbacks plus rank manifests. These are not learned
+fallbacks, compact selective-risk diagnostics, and rank manifests. These are not learned
 calibrators/deconfounders/rerankers, no reranker has been evaluated as a method
 on real outputs, and no method result is claimed.
 
@@ -94,8 +94,9 @@ The first Phase 5 scaffold is present in `storyflow.simulation` and
 `storyflow.triage`. It consumes the existing CURE/TRUCE feature rows to run
 synthetic confidence-guided exposure policies and diagnostic data-triage
 reason codes. It writes ignored manifests with API/training/server/result flags
-set to false. It is not real user feedback, not a trained pruning policy, and
-not paper evidence.
+set to false. Triage manifests also include compact selective-risk/AURC
+diagnostics over the chosen confidence source and head/mid/tail slices. It is
+not real user feedback, not a trained pruning policy, and not paper evidence.
 
 An expansion approval helper is also available at
 `scripts/build_expansion_approval_checklist.py`. It writes ignored
@@ -293,7 +294,8 @@ Planned deliverables:
 - Current scaffold: `scripts/triage_confidence_features.py` consumes the same
   feature rows and writes diagnostic reason codes plus suggested weights for
   hard tail positives, wrong-high-confidence rows, grounding uncertainty, and
-  popularity/echo overconfidence.
+  popularity/echo overconfidence. Its manifest records compact
+  selective-risk/AURC summaries for the selected confidence source.
 - Future: multi-round feedback loop with approved exposure/relevance evidence
   rather than synthetic proxies.
 - Noise injection experiments for controlled validation.

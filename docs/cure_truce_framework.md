@@ -25,6 +25,7 @@ The scaffold lives in:
 ```text
 src/storyflow/confidence/exposure.py
 src/storyflow/confidence/features.py
+src/storyflow/confidence/diagnostics.py
 src/storyflow/confidence/calibration.py
 src/storyflow/confidence/residuals.py
 src/storyflow/confidence/reranking.py
@@ -50,6 +51,8 @@ Implemented objects:
   only on declared fit splits.
 - `SelectedRerankConfidence`: records the selected confidence proxy, available
   sources, fallback status, and missing-source status for reranking.
+- `selective_risk_diagnostics`: compact AURC/selective-risk diagnostic over
+  selected confidence sources, with head/mid/tail bucket slices.
 - `ExposureSimulationConfig`: deterministic synthetic exposure-policy
   configuration over existing feature rows.
 - `TriageConfig`: diagnostic reason-code thresholds for uncertainty-aware data
@@ -74,13 +77,15 @@ Implemented functions:
 - `rerank_confidence_features_jsonl`: group feature rows, choose raw,
   calibrated, residualized, or combined confidence proxies, recompute
   CURE/TRUCE risk/echo/information-gain components, and write reranked JSONL
-  plus a manifest.
+  plus a manifest with compact selective-risk diagnostics for the retained
+  rows.
 - `simulate_exposure_feedback_jsonl`: run synthetic utility/confidence/CURE
   exposure policies over feature rows and write exposure records, metrics, and
   a manifest.
 - `triage_features_jsonl`: assign diagnostic reason codes and suggested
   weights for likely-noise candidates, hard tail positives, grounding
-  uncertainty, and popularity/echo overconfidence.
+  uncertainty, and popularity/echo overconfidence; its manifest includes
+  compact selective-risk diagnostics over the selected confidence source.
 
 These functions use no API, no model loading, no training, and no data
 download.
@@ -210,7 +215,8 @@ Each output row receives a `cure_truce_rerank` record with the selected
 confidence source, fallback reason, group id, rank, score, action, components,
 and false API/training/server/result flags. The manifest records input/output
 row counts, group counts, split counts, selected-source counts, fallback
-counts, and the row contract. This module is an integration scaffold for later
+counts, compact selective-risk/AURC diagnostics overall and by popularity
+bucket, and the row contract. This module is an integration scaffold for later
 learned rerankers, not a trained CURE/TRUCE reranker and not paper evidence.
 
 The generated feature rows include:
@@ -283,7 +289,10 @@ feedback update is synthetic and diagnostic only.
 The triage command writes `triaged_features.jsonl` and `manifest.json` under
 `outputs/confidence_triage/...`. It adds reason codes and suggested weights
 without deleting data. In particular, underconfident correct tail rows are
-tagged as hard positives to keep, not pruned as high-uncertainty noise.
+tagged as hard positives to keep, not pruned as high-uncertainty noise. Its
+manifest also records compact selective-risk/AURC diagnostics for the chosen
+confidence source and the head/mid/tail slices, without writing the full curve
+into the triage manifest.
 
 Both manifests record `api_called=false`, `model_training=false`,
 `server_executed=false`, and `is_experiment_result=false`.
@@ -324,6 +333,7 @@ The tests cover:
 - reranking grouped JSONL rows with stable ranks and `top_k`;
 - fallback recording and strict missing-source errors;
 - rerank output/manifest writing without API keys or model training.
+- compact selective-risk diagnostics in rerank and triage manifests.
 - synthetic exposure policies, Exposure Gini/tail-share summaries, and
   confidence drift without API calls or model training.
 - triage reason codes that preserve hard tail positives and downweight

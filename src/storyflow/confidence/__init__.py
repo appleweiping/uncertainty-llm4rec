@@ -16,6 +16,7 @@ from storyflow.confidence.calibration import (
     row_split,
     summarize_calibration_examples,
 )
+from storyflow.confidence.diagnostics import selective_risk_diagnostics
 from storyflow.confidence.exposure import (
     CureTruceScore,
     CureTruceWeights,
@@ -111,5 +112,6 @@ __all__ = [
     "score_rerank_feature_row",
     "score_cure_truce_candidate",
     "select_rerank_confidence",
+    "selective_risk_diagnostics",
     "summarize_calibration_examples",
 ]

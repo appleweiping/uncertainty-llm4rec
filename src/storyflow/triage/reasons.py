@@ -21,6 +21,7 @@ from storyflow.confidence import (
     compute_echo_risk,
     feature_from_rerank_row,
     select_rerank_confidence,
+    selective_risk_diagnostics,
 )
 from storyflow.observation import read_jsonl, utc_now_iso, write_jsonl
 
@@ -226,6 +227,7 @@ def triage_feature_rows(
         raise ValueError("cannot triage an empty feature row collection")
 
     output_rows: list[dict[str, Any]] = []
+    selective_risk_entries: list[dict[str, Any]] = []
     action_counts: Counter[str] = Counter()
     reason_counts: Counter[str] = Counter()
     bucket_counts: Counter[str] = Counter()
@@ -237,6 +239,13 @@ def triage_feature_rows(
         output_rows.append(output)
         action_counts[triage["action"]] += 1
         bucket_counts[str(triage["popularity_bucket"])] += 1
+        selective_risk_entries.append(
+            {
+                "selected_confidence": triage["selected_confidence"],
+                "correctness_label": triage["correctness_label"],
+                "popularity_bucket": triage["popularity_bucket"],
+            }
+        )
         for reason in triage["reason_codes"]:
             reason_counts[str(reason)] += 1
 
@@ -259,6 +268,10 @@ def triage_feature_rows(
             for row in output_rows
             if "hard_tail_positive_underconfident" in row["data_triage"]["reason_codes"]
             and row["data_triage"]["action"] == "keep"
+        ),
+        "selective_risk_diagnostics": selective_risk_diagnostics(
+            selective_risk_entries,
+            requested_confidence_source=config.confidence_source,
         ),
         "api_called": False,
         "model_training": False,

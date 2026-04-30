@@ -316,6 +316,8 @@ def test_triage_jsonl_and_cli_write_non_result_manifest() -> None:
     assert manifest["model_training"] is False
     assert manifest["server_executed"] is False
     assert manifest["is_experiment_result"] is False
+    assert manifest["selective_risk_diagnostics"]["overall"]["count"] == 4
+    assert "head" in manifest["selective_risk_diagnostics"]["by_popularity_bucket"]
     assert len(rows) == 4
     assert "data_triage" in rows[0]
 
