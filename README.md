@@ -64,8 +64,8 @@ run.
 After Beauty was stabilized, local full preprocessing was also run from
 already placed raw JSONL files for Digital_Music, Handmade_Products, and
 Health_and_Personal_Care. These are ignored data-readiness artifacts and
-observation-input substrates only, not API runs or paper evidence. Under the
-current 5-core/global-chronological setting, Digital_Music and Handmade are
+observation-input substrates only. Under the current
+5-core/global-chronological setting, Digital_Music and Handmade are
 repeat-heavy diagnostic domains, while Health_and_Personal_Care provides the
 most useful additional no-repeat test slice for local observation planning.
 
@@ -144,6 +144,35 @@ retrieval-context gate, the catalog-constrained prompt produced GroundHit
 outputs that selected a provided candidate. Because all `185/185` candidate
 sets exclude the held-out target, this remains prompt/candidate/grounding QA
 and must not be treated as recommendation accuracy or a method result.
+
+On 2026-04-30, after the user approved DeepSeek provider/model and an
+unlimited fast-but-controlled budget, the local processed Amazon domains were
+run through the free-form forced-JSON observation path with cache/resume,
+60 requests/minute, and max concurrency 5. This covers the currently local
+processed domains only, not missing raw-data categories such as Video_Games,
+Sports, or Books. The full-stage API observation artifacts are under ignored
+`outputs/` paths and are not committed:
+
+- Beauty full test: 225/225 records, failed cases 0, GroundHit `0.316`,
+  target correctness `0.160`, ECE `0.648`, WBC_tau `0.974`, wrong-high
+  confidence count 184, ungrounded-high-confidence count 153.
+- Health_and_Personal_Care full test: 72/72 records, failed cases 0, GroundHit
+  `0.181`, target correctness `0.083`, ECE `0.691`, WBC_tau `0.955`,
+  wrong-high confidence count 63, ungrounded-high-confidence count 56.
+- Handmade_Products full test: 28/28 records, failed cases 0, GroundHit
+  `1.000`, target correctness `0.786`, ECE `0.171`, wrong-high confidence
+  count 6. This domain is repeat-heavy and should be interpreted as a repeat
+  / history-copy diagnostic, not broad next-item evidence.
+- Digital_Music full test: 10/10 records, failed cases 0, GroundHit `1.000`,
+  target correctness `1.000`, ECE `0.080`, wrong-high confidence count 0.
+  This slice is all repeat-target and is only a repeat/copy-history sanity
+  diagnostic.
+
+These observations sharpen the next engineering priority: compare
+retrieval-context and catalog-constrained gates on Health and inspect
+overconfidence/ungrounded cases before any paper-facing claim. They are real
+API artifacts with manifests, but they are not calibrated model results, not
+server results, and not evidence of a trained TRUCE/CURE method.
 
 No model, toy model, full experiment, or server run has been executed. The mock
 observation pipeline is only a no-API sanity path and must not be reported as

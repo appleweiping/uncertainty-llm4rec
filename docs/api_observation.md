@@ -439,3 +439,61 @@ about choosing exactly from round-robin head/mid/tail candidates, but it leaves
 more ungrounded `NO_GROUNDABLE_TITLE` cases and still preserves many
 wrong-high-confidence selections among target-excluded candidates. It is a
 prompt/candidate QA artifact, not a paper conclusion or method result.
+
+## Current Local Amazon All-Domain Free-Form Status
+
+On 2026-04-30, after the user approved DeepSeek provider/model and an
+unlimited fast-but-controlled budget, the currently local processed Amazon
+domains were run through the free-form forced-JSON observation path. This is
+the local processed-domain scope only:
+
+- included: Beauty, Health_and_Personal_Care, Handmade_Products,
+  Digital_Music;
+- not included: Amazon categories whose raw files are not yet local or not yet
+  processed, such as Video_Games, Sports_and_Outdoors, and Books.
+
+Execution settings:
+
+- provider: DeepSeek;
+- model: `deepseek-v4-flash`;
+- rate limit: 60 requests/minute;
+- max concurrency: 5;
+- cache/resume: enabled;
+- run stage: `full`;
+- budget label:
+  `USER_APPROVED_AMAZON_LOCAL_ALLDOMAIN_UNLIMITED_FAST_20260430`.
+
+Before the real API calls, each domain passed the readiness checker and a
+5-example dry-run smoke. The real runs completed with no failed API cases:
+
+| Domain | Count | Failed | GroundHit | Target correctness | ECE | WBC_tau | Wrong-high confidence | Ungrounded-high confidence |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Beauty | 225 | 0 | 0.316 | 0.160 | 0.648 | 0.974 | 184 | 153 |
+| Health_and_Personal_Care | 72 | 0 | 0.181 | 0.083 | 0.691 | 0.955 | 63 | 56 |
+| Handmade_Products | 28 | 0 | 1.000 | 0.786 | 0.171 | 1.000 | 6 | 0 |
+| Digital_Music | 10 | 0 | 1.000 | 1.000 | 0.080 | 0.000 | 0 | 0 |
+
+Ignored artifact roots:
+
+```text
+outputs/api_observations/deepseek/amazon_reviews_2023_beauty/full/test_forced_json_full225_alldomain_20260430/
+outputs/api_observations/deepseek/amazon_reviews_2023_health/full/test_forced_json_full72_alldomain_20260430/
+outputs/api_observations/deepseek/amazon_reviews_2023_handmade/full/test_forced_json_full28_alldomain_20260430/
+outputs/api_observations/deepseek/amazon_reviews_2023_digital_music/full/test_forced_json_full10_alldomain_20260430/
+outputs/analysis/api_observations/deepseek/*/full/test_forced_json_full*_alldomain_20260430/
+outputs/case_reviews/api_observations/deepseek/*/full/test_forced_json_full*_alldomain_20260430/
+outputs/grounding_diagnostics/amazon_reviews_2023_*/full/
+```
+
+Interpretation guardrails:
+
+- This is a real API observation artifact with manifests, not a trained method
+  result or paper conclusion.
+- Beauty and Health show strong free-form grounding and overconfidence risks,
+  which supports the next gate: retrieval-context and catalog-constrained
+  comparisons on Health before broader claims.
+- Handmade_Products and Digital_Music are repeat-heavy under the current local
+  5-core split. Their high target correctness mainly diagnoses repeat/history
+  copying behavior and must not be generalized as recommendation accuracy.
+- Confidence values are model-reported confidence, not calibrated
+  exposure-counterfactual confidence.
