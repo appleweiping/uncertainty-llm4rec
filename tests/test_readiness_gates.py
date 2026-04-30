@@ -6,6 +6,7 @@ import uuid
 from pathlib import Path
 
 from scripts.check_api_pilot_readiness import main as readiness_main
+from scripts.inspect_amazon_category_matrix import main as amazon_matrix_main
 from scripts.prepare_amazon_reviews_2023 import main as prepare_amazon_main
 from storyflow.data import inspect_amazon_config, prepare_amazon_from_jsonl, resolve_existing_raw_path
 from storyflow.data.amazon import write_amazon_readiness_report
@@ -351,6 +352,9 @@ def test_local_amazon_configs_have_guarded_full_and_sample_commands() -> None:
         "amazon_reviews_2023_digital_music",
         "amazon_reviews_2023_handmade",
         "amazon_reviews_2023_health",
+        "amazon_reviews_2023_video_games",
+        "amazon_reviews_2023_sports",
+        "amazon_reviews_2023_books",
     ]
     for dataset in datasets:
         config = load_simple_yaml(Path("configs") / "datasets" / f"{dataset}.yaml")
@@ -359,6 +363,39 @@ def test_local_amazon_configs_have_guarded_full_and_sample_commands() -> None:
         assert "--allow-full" in full_command
         assert "--sample-mode" in sample_command
         assert "--max-records" in sample_command
+
+
+def test_amazon_category_matrix_writes_readiness_artifacts() -> None:
+    workspace = _workspace("amazon_category_matrix")
+    output_dir = workspace / "matrix"
+
+    code = amazon_matrix_main(
+        [
+            "--datasets",
+            "amazon_reviews_2023_video_games",
+            "amazon_reviews_2023_books",
+            "--output-dir",
+            str(output_dir),
+        ]
+    )
+
+    manifest = json.loads((output_dir / "amazon_category_matrix.json").read_text(encoding="utf-8"))
+    report = (output_dir / "amazon_category_matrix.md").read_text(encoding="utf-8")
+    csv_text = (output_dir / "amazon_category_matrix.csv").read_text(encoding="utf-8")
+
+    assert code == 0
+    assert manifest["api_called"] is False
+    assert manifest["server_executed"] is False
+    assert manifest["full_download_attempted"] is False
+    assert manifest["is_experiment_result"] is False
+    assert manifest["dataset_count"] == 2
+    assert {row["dataset"] for row in manifest["records"]} == {
+        "amazon_reviews_2023_video_games",
+        "amazon_reviews_2023_books",
+    }
+    assert all("--allow-full" in row["full_mode_command_template"] for row in manifest["records"])
+    assert "readiness artifact only" in report
+    assert "amazon_reviews_2023_books" in csv_text
 
 
 def test_amazon_sample_prepare_writes_manifest_and_popularity() -> None:

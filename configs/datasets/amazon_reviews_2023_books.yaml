@@ -1,0 +1,55 @@
+name: amazon_reviews_2023_books
+status: server_scale_entry
+type: amazon_reviews_2023
+description: Amazon Reviews 2023 Books entry for long-tail title-rich generative recommendation robustness.
+category_name: Books
+source_name: McAuley-Lab Amazon Reviews 2023
+source_url: https://huggingface.co/datasets/McAuley-Lab/Amazon-Reviews-2023
+hf_dataset: McAuley-Lab/Amazon-Reviews-2023
+hf_review_config: raw_review_Books
+hf_meta_config: raw_meta_Books
+hf_split: full
+raw_dir: data/raw/amazon_reviews_2023_books
+interim_dir: data/interim/amazon_reviews_2023_books
+processed_dir: data/processed/amazon_reviews_2023_books
+cache_dir: data/cache/amazon_reviews_2023_books
+raw_reviews_path: data/raw/amazon_reviews_2023_books/Books.jsonl
+raw_reviews_path_gz: data/raw/amazon_reviews_2023_books/Books.jsonl.gz
+raw_metadata_path: data/raw/amazon_reviews_2023_books/meta_Books.jsonl
+raw_metadata_path_gz: data/raw/amazon_reviews_2023_books/meta_Books.jsonl.gz
+expected_review_fields:
+  user_id: user_id
+  item_id: parent_asin
+  rating: rating
+  timestamp: timestamp
+  review_text: text
+expected_metadata_fields:
+  item_id: parent_asin
+  title: title
+  category: categories
+  brand: store
+title_field: title
+user_id_field: user_id
+item_id_field: parent_asin
+rating_field: rating
+review_text_field: text
+timestamp_field: timestamp
+metadata_join_key: parent_asin
+metadata_join_plan: Join reviews.parent_asin to metadata.parent_asin; use metadata.title as the catalog title and keep category/store metadata when available.
+license_note: Check Hugging Face dataset card and McAuley Lab usage terms before full download.
+server_scale: true
+requires_large_download: true
+local_sample_mode: server_or_manual_raw_required
+local_sample_max_records: 5000
+local_sample_command_template: python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_books --sample-mode --max-records 5000 --output-suffix sample_5k --min-user-interactions 1 --user-k-core 1 --item-k-core 1 --min-history 1 --max-history 20
+server_full_mode: long_tail_title_rich_after_beauty
+full_mode_command_template: python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_books --reviews-jsonl data/raw/amazon_reviews_2023_books/Books.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_books/meta_Books.jsonl --output-suffix full --allow-full
+preprocess_min_user_interactions: 4
+preprocess_user_k_core: 5
+preprocess_item_k_core: 5
+preprocess_min_history: 3
+preprocess_max_history: 50
+preprocess_split_policy: global_chronological
+preprocess_leave_last_policy: leave_last_two
+head_fraction: 0.2
+tail_fraction: 0.2

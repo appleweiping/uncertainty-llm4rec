@@ -53,6 +53,11 @@ mark synthetic feedback / diagnostic triage as non-result artifacts.
 Processed-dataset audit tooling now checks repeat-target cases, chronological
 split integrity, title quality, and head/mid/tail coverage before scaling API
 observation.
+An API-free Amazon cross-category readiness matrix now covers Beauty,
+Digital_Music, Handmade_Products, Health_and_Personal_Care, Video_Games,
+Sports_and_Outdoors, and Books config gates. It writes ignored readiness
+artifacts only; no full cross-category data download or experiment has been
+run.
 
 MovieLens 1M has also been verified as a local real-data sanity path from a
 manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
@@ -295,6 +300,8 @@ Dataset configs live under `configs/datasets/`:
 - `amazon_reviews_2023_sports.yaml`: Hugging Face entry for
   Sports_and_Outdoors.
 - `amazon_reviews_2023_video_games.yaml`: Hugging Face entry for Video_Games.
+- `amazon_reviews_2023_books.yaml`: server-scale Books entry for long-tail
+  title-rich robustness after Beauty.
 - `steam.yaml`: planned/server-scale placeholder until a verified source is
   selected.
 
@@ -388,6 +395,17 @@ Inspect Amazon Reviews 2023 Beauty readiness without full download:
 ```powershell
 python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run --sample-records 3
 ```
+
+Inspect the cross-category Amazon readiness matrix without downloading data:
+
+```powershell
+python scripts/inspect_amazon_category_matrix.py --sample-records 3
+```
+
+This writes ignored JSON/CSV/Markdown artifacts under
+`outputs/amazon_reviews_2023/category_matrix/` and records
+`api_called=false`, `server_executed=false`, `full_download_attempted=false`,
+and `is_experiment_result=false`.
 
 Amazon Beauty full prepare has been run locally from the current raw JSONL
 files and remains ignored by git. Re-run only when raw data, preprocessing

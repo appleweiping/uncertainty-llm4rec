@@ -1,16 +1,15 @@
 # Self Review 2026-04-30
 
 This self-review follows the Qwen3 server observation scaffold, the
-ranking-JSONL baseline adapter, and the first Phase 4 CURE/TRUCE framework
-scaffold commits. It was updated after the CURE/TRUCE JSONL reranker contract
-was added, and updated again after the baseline artifact validator, baseline
-source run-manifest validator, and baseline-aware analysis registry guardrails
-were completed. It is a governance and research-quality artifact, not an
-experimental result.
+ranking-JSONL baseline adapter, the Phase 4 CURE/TRUCE framework scaffold, the
+first Phase 5 echo simulation / data-triage scaffold, and the Amazon
+cross-category readiness matrix. It is a governance and research-quality
+artifact, not an experimental result.
 
 ## Current Phase
 
-Storyflow / TRUCE-Rec is now between Phase 3 and early Phase 4.
+Storyflow / TRUCE-Rec is now between Phase 3, early Phase 4, and scaffolded
+Phase 5.
 
 - Phase 0 governance/scaffold is complete.
 - Phase 1 data support is beyond MovieLens: Amazon Beauty local full
@@ -32,6 +31,12 @@ Storyflow / TRUCE-Rec is now between Phase 3 and early Phase 4.
   residualization are implemented and tested. The calibrated/residualized JSONL
   reranker contract is also implemented and tested. None of these are learned
   method results or paper evidence.
+- Phase 5 has an API-free scaffold: synthetic exposure simulation and
+  diagnostic data triage consume CURE/TRUCE feature rows and write ignored
+  non-result manifests.
+- Cross-category data readiness now includes a matrix over configured Amazon
+  Reviews 2023 categories, including server-scale Books, Video_Games, and
+  Sports_and_Outdoors entries. This is readiness only, not a full data run.
 
 ## External Reviewer Blocker Status
 
@@ -182,9 +187,10 @@ Current route is coherent:
 6. Books: long-tail title-rich server-scale category.
 7. Steam/Yelp: optional and source/license gated.
 
-Next dataset work should not return to MovieLens. It should either make an
-Amazon cross-category sample/readiness path reproducible or prepare a
-server-ready full-category runbook for a title-rich domain.
+Next dataset work should not return to MovieLens. The cross-category readiness
+path is now reproducible; the next dataset step should be to use it to decide
+which title-rich category, likely Video_Games or Books, gets raw placement and
+server/manual full-preparation approval after Beauty.
 
 ## Baseline Route
 
@@ -246,11 +252,10 @@ as a scaffold:
   confidence proxies with manifest provenance;
 - triage: separate likely noise from hard-tail-positive evidence.
 
-The next framework step should not add another independent trick. It should
-either add baseline artifact manifest validation, or make echo simulation/data
-triage consume the same grounded feature/rerank records. Any learned
-calibrator/reranker or utility target must wait for approved observation
-artifacts and explicit server/training gates.
+The next framework step should not add another independent trick. Echo
+simulation/data triage now consume the same grounded feature/rerank records.
+Any learned calibrator/reranker or utility target must wait for approved
+observation artifacts and explicit server/training gates.
 
 ## Reviewer-Attack Risks
 
@@ -324,9 +329,9 @@ P1:
 
 P2:
 
-- Add a cross-category Amazon readiness route after Beauty, prioritizing a
-  title-rich domain such as Video_Games or Books when storage/server planning
-  is clear.
+- Use the cross-category Amazon readiness matrix to plan raw placement and
+  server/manual preparation for a title-rich category such as Video_Games or
+  Books.
 - Prepare a user-approval checklist for the next real API/provider expansion
   without running it.
 
@@ -342,14 +347,11 @@ title-level and grounding-first, and Phase 4 is now partially implemented as
 tested scaffolding. The calibrated/residualized reranker contract is now also
 closed by `f857eac feat: add CURE TRUCE reranker contract`. The baseline
 contract layer is also stronger after `500564b`, `31be990`, and `c309775`.
-The next non-blocking engineering work should be either:
-
-1. add an API-free echo simulation/data-triage scaffold that consumes the
-   existing feature/rerank JSONL contract and labels outputs as synthetic or
-   scaffold-only; or
-2. add an Amazon cross-category readiness/sample gate, prioritizing a
-   title-rich category such as Video_Games or Books without downloading full
-   data or claiming results.
+The next non-blocking engineering work should be to prepare approval gates for
+the next real expansion: either a trained ranking artifact entering the
+validated baseline path, a Qwen3/server observation run, or a title-rich Amazon
+category raw-placement/full-prepare step. Do not run any of these without
+explicit approval, manifests, and artifact-return rules.
 
 Do not start Qwen3 inference, LoRA training, server execution, or another real
 API expansion without explicit user approval and concrete run gates.

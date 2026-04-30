@@ -209,6 +209,28 @@ Every server full run must preserve:
 Only sanitized manifests, logs, and metrics should be copied back for local
 analysis. Raw data and full processed data remain uncommitted.
 
+## Amazon Cross-Category Readiness Matrix
+
+Before adding another Amazon full run, inspect configured category readiness
+without downloading data:
+
+```powershell
+python scripts/inspect_amazon_category_matrix.py --sample-records 3
+```
+
+This writes ignored JSON/CSV/Markdown artifacts under
+`outputs/amazon_reviews_2023/category_matrix/`. It records whether raw review
+and metadata JSONL files exist for Beauty, Digital_Music, Handmade_Products,
+Health_and_Personal_Care, Video_Games, Sports_and_Outdoors, and Books. It also
+records guarded sample/full command templates and marks `api_called=false`,
+`server_executed=false`, `full_download_attempted=false`, and
+`is_experiment_result=false`.
+
+Video_Games and Books are the preferred title-rich robustness candidates after
+Beauty. Their full preparation remains server/manual-raw gated and must not be
+claimed until raw files, commands, logs, manifests, and validation artifacts are
+available.
+
 ## Baseline Ranking Run Manifest Contract
 
 Large SASRec, BERT4Rec, GRU4Rec, LightGCN, and similar baseline runs must write

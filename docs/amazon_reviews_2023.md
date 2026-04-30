@@ -39,8 +39,16 @@ Additional local raw Amazon category configs currently registered:
 - `configs/datasets/amazon_reviews_2023_handmade.yaml`
 - `configs/datasets/amazon_reviews_2023_health.yaml`
 
+Server-scale Amazon category configs currently registered:
+
+- `configs/datasets/amazon_reviews_2023_video_games.yaml`
+- `configs/datasets/amazon_reviews_2023_sports.yaml`
+- `configs/datasets/amazon_reviews_2023_books.yaml`
+
 Beauty remains the first full-data gate; the extra categories are robustness
-candidates after the Beauty path is stable.
+candidates after the Beauty path is stable. Books and Video_Games are
+especially useful as title-rich domains, but their full processing remains
+server/manual-raw gated.
 
 ## Lightweight Inspect
 
@@ -65,6 +73,22 @@ python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beau
 
 If network, license, login, or dependency conditions fail, the script records a
 clear status and recovery command instead of silently skipping.
+
+Cross-category readiness matrix:
+
+```powershell
+python scripts/inspect_amazon_category_matrix.py --sample-records 3
+```
+
+This command writes ignored artifacts under:
+
+```text
+outputs/amazon_reviews_2023/category_matrix/
+```
+
+The matrix records raw review/metadata file availability, guarded sample/full
+command templates, and the next action for each configured Amazon category. It
+does not download full data, call APIs, train models, or create paper evidence.
 
 ## Prepare Entry
 
@@ -241,3 +265,8 @@ Full Amazon Beauty download and preprocessing should run on a server or local
 machine with enough disk, network, and runtime budget. Codex has run local full
 preprocessing from already placed raw JSONL files, but has not run any server
 pipeline and cannot claim server completion without logs/artifacts.
+
+For Video_Games, Sports_and_Outdoors, and Books, first run the cross-category
+readiness matrix, then place the raw review and metadata JSONL files at the
+configured paths before any sample/full prepare. Full prepare still requires
+`--allow-full`, a machine with enough storage/runtime, and a recorded manifest.
