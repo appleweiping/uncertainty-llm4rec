@@ -292,6 +292,28 @@ fallback status, score components, action, rank, and false API/training/server
 flags. This is a deterministic reranker contract only. It is not a trained
 CURE/TRUCE reranker, not a Qwen3 result, and not paper evidence.
 
+The same feature rows can now enter a Phase 5 scaffold:
+
+```text
+CURE/TRUCE feature rows
+  -> synthetic exposure simulation
+  -> diagnostic data triage
+```
+
+`scripts/simulate_echo_exposure.py` evaluates API-free synthetic policies:
+`utility_only`, `confidence_only`, `utility_confidence`, and `cure_truce`.
+The feedback signal is explicitly synthetic: it uses an existing correctness
+label when available, otherwise the preference-score proxy. The command
+reports Exposure Gini, head/mid/tail exposure share, entropy, and confidence
+drift, but these diagnostics must not be described as real feedback or method
+evidence.
+
+`scripts/triage_confidence_features.py` writes diagnostic reason codes and
+suggested weights. It separates likely-noise candidates, grounding uncertainty,
+popularity/echo overconfidence, and hard tail positives. It must not be used as
+a final pruning policy without later approved training/evaluation evidence,
+and it explicitly preserves underconfident hard tail positives.
+
 Training is server-oriented unless explicitly approved for a small local
 sanity check. Codex must not claim server training or inference has run unless
 the user provides logs or result files.

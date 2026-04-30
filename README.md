@@ -33,8 +33,7 @@ Amazon Reviews 2023 Beauty readiness gates are in place. Phase 2C observation
 analysis and local run registry utilities are now available for mock/dry-run
 schema sanity and approved API analysis. A scoped DeepSeek Amazon Beauty
 no-repeat full-slice API observation has been executed, but multi-provider/full
-experiment, model training, simulation, and paper-result phases have not
-started.
+experiment, model training, and paper-result phases have not started.
 Qwen3-8B server observation scaffolding is now available as a plan/contract
 layer under `configs/server/`, `scripts/server/`, and `storyflow.server`; no
 Qwen3 inference, server run, or LoRA training has been executed.
@@ -48,6 +47,9 @@ calibration and popularity residualization scaffolds record fit/eval provenance
 for feature JSONL files. A deterministic reranker can now consume raw,
 calibrated, or residualized feature rows and write a provenance manifest; none
 of these are learned model results and no method result is claimed.
+The first Phase 5 echo simulation and data triage scaffolds are also present:
+they consume existing CURE/TRUCE feature rows, write ignored manifests, and
+mark synthetic feedback / diagnostic triage as non-result artifacts.
 Processed-dataset audit tooling now checks repeat-target cases, chronological
 split integrity, title quality, and head/mid/tail coverage before scaling API
 observation.
@@ -160,6 +162,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `docs/cure_truce_framework.md`: exposure-counterfactual confidence feature
   schema, deterministic CURE/TRUCE scoring, calibration, and popularity
   residualization scaffolds.
+- `docs/echo_simulation_triage.md`: synthetic confidence-guided exposure
+  simulation and diagnostic data-triage contracts.
 - `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
   grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
@@ -236,6 +240,13 @@ Implemented foundation modules:
   popularity residualization scaffold, and a JSONL reranking contract that can
   consume calibrated/residualized confidence proxies. This is not a trained
   calibrator, reranker, or result.
+- `storyflow.simulation`: synthetic confidence-guided exposure feedback
+  simulation over CURE/TRUCE feature rows, with Exposure Gini, tail exposure
+  share, entropy, and confidence-drift summaries. This is not real user
+  feedback and not paper evidence.
+- `storyflow.triage`: diagnostic reason-code triage over CURE/TRUCE feature
+  rows, separating likely-noise candidates from hard tail positives without
+  using naive high-uncertainty pruning as a final policy.
 - `storyflow.server`: Qwen3-8B server observation plan/execution contract that
   mirrors API observation output layers while defaulting to plan-only mode.
 - `tests/fixtures/`: synthetic records used only for tests.
@@ -702,8 +713,8 @@ The output is ignored under:
 outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl
 ```
 
-This gate proves the Amazon Beauty sample is ready for prompt construction and
-future approved API observation. It is not a full Amazon run and not paper
+This gate checks that the Amazon Beauty sample is ready for prompt construction
+and future approved API observation. It is not a full Amazon run and not paper
 evidence.
 
 If pilot case review shows many ungrounded high-confidence titles, build the
@@ -859,6 +870,35 @@ fallback, recomputes risk/echo/information-gain components, and emits
 `server_executed=false`, and `is_experiment_result=false`. It is a deterministic
 integration contract, not a trained reranker and not paper evidence.
 
+## Echo Simulation And Data Triage
+
+The first Phase 5 scaffold consumes the same CURE/TRUCE feature rows. It does
+not call APIs, train models, execute server jobs, or create paper evidence.
+
+Run synthetic confidence-guided exposure simulation:
+
+```powershell
+python scripts/simulate_echo_exposure.py --features-jsonl outputs/confidence_residuals/<source-run>/popularity_residualized_features.jsonl --policies utility_only,confidence_only,utility_confidence,cure_truce --rounds 3 --confidence-source calibrated_residualized
+```
+
+This writes ignored `exposure_records.jsonl`, `simulation_summary.json`, and
+`manifest.json` under `outputs/echo_simulation/...`. The manifest marks
+`synthetic_feedback=true`, `api_called=false`, `model_training=false`,
+`server_executed=false`, and `is_experiment_result=false`.
+
+Run diagnostic data triage:
+
+```powershell
+python scripts/triage_confidence_features.py --features-jsonl outputs/confidence_residuals/<source-run>/popularity_residualized_features.jsonl --confidence-source calibrated_residualized
+```
+
+This writes ignored `triaged_features.jsonl` and `manifest.json` under
+`outputs/confidence_triage/...`. Triage records add reason codes such as
+`hard_tail_positive_underconfident`, `wrong_high_confidence`,
+`popularity_or_echo_overconfident`, and `grounding_uncertain`. The scaffold
+suggests weights and review actions; it is not a final pruning policy and it
+explicitly avoids naive high-uncertainty deletion of hard tail positives.
+
 ## Tests
 
 Run the local test suite:
@@ -874,7 +914,8 @@ Tail Underconfidence Gap, prompt construction, mock provider parsing,
 observation input schema, grounding/correctness integration, metrics reporting,
 resume behavior, baseline ranking-to-title adapter behavior, and CURE/TRUCE
 exposure-confidence feature-building/scoring/reranking/calibration/popularity
-residualization plus calibrated/residualized JSONL reranking scaffold behavior.
+residualization plus calibrated/residualized JSONL reranking scaffold behavior,
+synthetic echo simulation, and diagnostic data-triage reason codes.
 Tests use small committed fixtures only and do not download data or call APIs.
 
 ## Basic Checks

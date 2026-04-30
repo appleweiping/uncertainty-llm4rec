@@ -28,10 +28,14 @@ src/storyflow/confidence/features.py
 src/storyflow/confidence/calibration.py
 src/storyflow/confidence/residuals.py
 src/storyflow/confidence/reranking.py
+src/storyflow/simulation/exposure.py
+src/storyflow/triage/reasons.py
 scripts/build_confidence_features.py
 scripts/calibrate_confidence_features.py
 scripts/residualize_confidence_features.py
 scripts/rerank_confidence_features.py
+scripts/simulate_echo_exposure.py
+scripts/triage_confidence_features.py
 ```
 
 Implemented objects:
@@ -46,6 +50,10 @@ Implemented objects:
   only on declared fit splits.
 - `SelectedRerankConfidence`: records the selected confidence proxy, available
   sources, fallback status, and missing-source status for reranking.
+- `ExposureSimulationConfig`: deterministic synthetic exposure-policy
+  configuration over existing feature rows.
+- `TriageConfig`: diagnostic reason-code thresholds for uncertainty-aware data
+  triage.
 
 Implemented functions:
 
@@ -67,6 +75,12 @@ Implemented functions:
   calibrated, residualized, or combined confidence proxies, recompute
   CURE/TRUCE risk/echo/information-gain components, and write reranked JSONL
   plus a manifest.
+- `simulate_exposure_feedback_jsonl`: run synthetic utility/confidence/CURE
+  exposure policies over feature rows and write exposure records, metrics, and
+  a manifest.
+- `triage_features_jsonl`: assign diagnostic reason codes and suggested
+  weights for likely-noise candidates, hard tail positives, grounding
+  uncertainty, and popularity/echo overconfidence.
 
 These functions use no API, no model loading, no training, and no data
 download.
@@ -250,6 +264,30 @@ Actions are heuristic and meant for tests:
 The score must not be described as a learned CURE/TRUCE method until it is
 calibrated and evaluated on approved observation artifacts.
 
+## Echo Simulation And Triage Contracts
+
+The Phase 5 scaffold consumes the same feature rows as calibration,
+residualization, and reranking:
+
+```powershell
+python scripts/simulate_echo_exposure.py --features-jsonl outputs/confidence_residuals/<source-run>/popularity_residualized_features.jsonl --policies utility_only,confidence_only,utility_confidence,cure_truce --rounds 3 --confidence-source calibrated_residualized
+python scripts/triage_confidence_features.py --features-jsonl outputs/confidence_residuals/<source-run>/popularity_residualized_features.jsonl --confidence-source calibrated_residualized
+```
+
+The exposure simulation writes `exposure_records.jsonl`,
+`simulation_summary.json`, and `manifest.json` under
+`outputs/echo_simulation/...`. It reports Exposure Gini, head/mid/tail exposure
+share, entropy, synthetic feedback proxy mean, and confidence drift. The
+feedback update is synthetic and diagnostic only.
+
+The triage command writes `triaged_features.jsonl` and `manifest.json` under
+`outputs/confidence_triage/...`. It adds reason codes and suggested weights
+without deleting data. In particular, underconfident correct tail rows are
+tagged as hard positives to keep, not pruned as high-uncertainty noise.
+
+Both manifests record `api_called=false`, `model_training=false`,
+`server_executed=false`, and `is_experiment_result=false`.
+
 ## Tests
 
 Run the dedicated scaffold tests:
@@ -260,6 +298,7 @@ python -m pytest tests/test_confidence_feature_builder.py
 python -m pytest tests/test_confidence_calibration.py
 python -m pytest tests/test_confidence_residuals.py
 python -m pytest tests/test_confidence_reranking.py
+python -m pytest tests/test_echo_simulation_triage.py
 ```
 
 The tests cover:
@@ -285,6 +324,10 @@ The tests cover:
 - reranking grouped JSONL rows with stable ranks and `top_k`;
 - fallback recording and strict missing-source errors;
 - rerank output/manifest writing without API keys or model training.
+- synthetic exposure policies, Exposure Gini/tail-share summaries, and
+  confidence drift without API calls or model training.
+- triage reason codes that preserve hard tail positives and downweight
+  wrong-high-confidence popularity/echo cases.
 
 ## Next Steps
 
@@ -294,10 +337,12 @@ Short-term framework work should remain API-free:
    evidence supports richer deconfounding.
 2. Extend calibration targets from correctness labels toward exposure-
    counterfactual utility once approved exposure/relevance evidence exists.
-3. Extend reranker integration from deterministic JSONL scoring toward learned
+3. Extend synthetic echo simulation toward approved exposure/relevance
+   evidence only after clear manifests exist.
+4. Extend reranker integration from deterministic JSONL scoring toward learned
    calibration/reranking once approved observation artifacts and utility
    labels exist.
-4. Only after approved server artifacts exist, connect Qwen3-8B + LoRA
+5. Only after approved server artifacts exist, connect Qwen3-8B + LoRA
    training objectives to this feature schema.
 
 No current file in this scaffold is an experimental result.

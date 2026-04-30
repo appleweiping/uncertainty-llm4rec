@@ -89,6 +89,13 @@ fallbacks plus rank manifests. These are not learned
 calibrators/deconfounders/rerankers, no reranker has been evaluated as a method
 on real outputs, and no method result is claimed.
 
+The first Phase 5 scaffold is present in `storyflow.simulation` and
+`storyflow.triage`. It consumes the existing CURE/TRUCE feature rows to run
+synthetic confidence-guided exposure policies and diagnostic data-triage
+reason codes. It writes ignored manifests with API/training/server/result flags
+set to false. It is not real user feedback, not a trained pruning policy, and
+not paper evidence.
+
 ## Phase 0: Governance And Scaffold
 
 Goal: establish the repository rules, documentation skeleton, artifact policy,
@@ -263,12 +270,17 @@ data triage without deleting long-tail signal.
 
 Planned deliverables:
 
-- Confidence-induced exposure simulation.
-- Multi-round feedback loop with deterministic seeds.
-- Exposure Gini, tail exposure share, category entropy, and confidence drift.
-- Uncertainty-guided triage with decomposition of likely noise, epistemic hard
-  positives, aleatoric ambiguity, grounding uncertainty, and popularity-induced
-  confidence.
+- Current scaffold: `scripts/simulate_echo_exposure.py` consumes CURE/TRUCE
+  feature rows and runs deterministic synthetic policies:
+  `utility_only`, `confidence_only`, `utility_confidence`, and `cure_truce`.
+  It reports Exposure Gini, head/mid/tail exposure share, entropy, and
+  confidence drift with `synthetic_feedback=true`.
+- Current scaffold: `scripts/triage_confidence_features.py` consumes the same
+  feature rows and writes diagnostic reason codes plus suggested weights for
+  hard tail positives, wrong-high-confidence rows, grounding uncertainty, and
+  popularity/echo overconfidence.
+- Future: multi-round feedback loop with approved exposure/relevance evidence
+  rather than synthetic proxies.
 - Noise injection experiments for controlled validation.
 - Tests for simulation determinism and triage behavior.
 
