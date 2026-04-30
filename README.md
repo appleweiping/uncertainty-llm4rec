@@ -43,8 +43,9 @@ The first CURE/TRUCE framework scaffold is also present under
 deterministic risk/echo scoring, and a reranking contract around
 `C(u, i) ~= P(user accepts item i | user u, do(exposure=1))`. This is tested
 scaffold code only. A feature builder now converts existing grounded
-observation JSONL into this schema with manifests; no calibrator has been
-trained and no method result is claimed.
+observation JSONL into this schema with manifests. A split-audited histogram
+calibration scaffold records fit/eval provenance for feature JSONL files; it is
+not a learned model result and no method result is claimed.
 Processed-dataset audit tooling now checks repeat-target cases, chronological
 split integrity, title quality, and head/mid/tail coverage before scaling API
 observation.
@@ -227,8 +228,9 @@ Implemented foundation modules:
   observation schema.
 - `storyflow.confidence`: exposure-counterfactual confidence feature schema,
   grounded-observation feature builder, popularity residual, echo-risk/risk
-  components, deterministic CURE/TRUCE score, and reranking scaffold. This is
-  not a trained calibrator or result.
+  components, deterministic CURE/TRUCE score, reranking scaffold, and
+  split-audited histogram calibration scaffold. This is not a trained
+  calibrator or result.
 - `storyflow.server`: Qwen3-8B server observation plan/execution contract that
   mirrors API observation output layers while defaulting to plan-only mode.
 - `tests/fixtures/`: synthetic records used only for tests.
@@ -771,6 +773,19 @@ builder does not substitute target popularity for wrong generated items; it
 marks generated-item popularity as unknown so later calibrators cannot absorb a
 target-popularity leak.
 
+Fit and apply the split-audited calibration scaffold on feature rows that
+contain a proper train/evaluation split:
+
+```powershell
+python scripts/calibrate_confidence_features.py --features-jsonl outputs/confidence_features/<source-run>/features.jsonl --fit-splits train --eval-splits validation,test --n-bins 10
+```
+
+This writes ignored `calibrated_features.jsonl` and `manifest.json` under
+`outputs/confidence_calibration/...` by default. The command refuses fit/eval
+split overlap unless `--allow-same-split-eval` is explicitly passed for a
+diagnostic, records `api_called=false` and `model_training=false`, and must not
+be interpreted as a learned CURE/TRUCE result.
+
 ## Tests
 
 Run the local test suite:
@@ -785,7 +800,8 @@ chronological sorting, leave-last splits, rolling examples, popularity buckets,
 Tail Underconfidence Gap, prompt construction, mock provider parsing,
 observation input schema, grounding/correctness integration, metrics reporting,
 resume behavior, baseline ranking-to-title adapter behavior, and CURE/TRUCE
-exposure-confidence feature-building/scoring/reranking scaffold behavior.
+exposure-confidence feature-building/scoring/reranking/calibration scaffold
+behavior.
 Tests use small committed fixtures only and do not download data or call APIs.
 
 ## Basic Checks

@@ -230,7 +230,10 @@ verbal confidence, generation evidence, grounding confidence/ambiguity,
 popularity pressure, history alignment, novelty, and observed correctness
 labels separate. The deterministic CURE/TRUCE score is a testable contract for
 future calibrators and rerankers; it is not a trained probability, not a Qwen3
-result, and not paper evidence.
+result, and not paper evidence. The current histogram calibration scaffold is
+also only a split-provenance and leakage-guard contract: it fits on declared
+fit splits, evaluates on declared evaluation splits, and records both in a
+manifest.
 
 Grounded observation outputs can be converted into the feature schema with
 `scripts/build_confidence_features.py`. The feature builder may join the
@@ -238,6 +241,14 @@ processed item catalog to attach generated-item popularity. When catalog data
 is absent and the grounded item is not the target, generated-item popularity
 must remain unknown rather than borrowing target popularity. This protects the
 popularity residual and echo-risk analysis from target leakage.
+
+Feature rows with proper train/validation/test provenance can be passed through
+`scripts/calibrate_confidence_features.py`. The command defaults to
+`fit_splits=train` and `eval_splits=validation,test`, refuses overlap unless an
+explicit diagnostic flag is used, and writes ignored calibrated feature rows
+plus a manifest. Its first target is `feature.correctness_label`; later
+exposure-counterfactual utility targets require approved exposure/relevance
+evidence and must not be simulated into method claims.
 
 Training is server-oriented unless explicitly approved for a small local
 sanity check. Codex must not claim server training or inference has run unless

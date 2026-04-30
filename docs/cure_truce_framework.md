@@ -2,7 +2,7 @@
 
 This document records the first Phase 4 implementation scaffold for the
 Storyflow / TRUCE-Rec framework. It is a code contract and test target, not a
-trained calibrator, model result, or paper claim.
+trained model result or paper claim.
 
 ## Unified Object
 
@@ -25,7 +25,9 @@ The scaffold lives in:
 ```text
 src/storyflow/confidence/exposure.py
 src/storyflow/confidence/features.py
+src/storyflow/confidence/calibration.py
 scripts/build_confidence_features.py
+scripts/calibrate_confidence_features.py
 ```
 
 Implemented objects:
@@ -34,6 +36,8 @@ Implemented objects:
 - `CureTruceWeights`: deterministic scaffold weights for controlled tests.
 - `CureTruceScore`: score, estimated exposure confidence, risk, echo risk,
   information gain, popularity residual, action, and score components.
+- `HistogramCalibrator`: split-audited fixed-width calibration scaffold fit
+  only on declared fit splits.
 
 Implemented functions:
 
@@ -47,6 +51,8 @@ Implemented functions:
 - `rerank_cure_truce`: deterministic reranking by score with stable tie break.
 - `build_confidence_features`: convert existing grounded observation JSONL
   into CURE/TRUCE feature records plus a manifest.
+- `calibrate_feature_rows`: fit and apply a histogram calibration scaffold
+  with explicit fit/eval split provenance and leakage guards.
 
 These functions use no API, no model loading, no training, and no data
 download.
@@ -71,6 +77,40 @@ catalog row. If no catalog is supplied and a prediction is wrong, it marks
 generated popularity as unknown instead of reusing target popularity. This
 guard prevents a target-leak artifact from entering later popularity residual
 or echo-risk calibration.
+
+## Calibration Scaffold
+
+Run the calibration scaffold only on feature JSONL files that contain proper
+split provenance:
+
+```powershell
+python scripts/calibrate_confidence_features.py --features-jsonl outputs/confidence_features/<source-run>/features.jsonl --fit-splits train --eval-splits validation,test --n-bins 10
+```
+
+Default output:
+
+```text
+outputs/confidence_calibration/<source-run>/calibrated_features.jsonl
+outputs/confidence_calibration/<source-run>/manifest.json
+```
+
+The current scaffold fits a fixed-width empirical mapping from the selected
+probability source, defaulting to `score.estimated_exposure_confidence`, to
+`feature.correctness_label`. This is the first calibration target for
+correctness-labeled observation rows, not the final
+exposure-counterfactual-utility target. The manifest records:
+
+- fit splits and evaluation splits;
+- split counts in the input feature file;
+- fit/eval overlap guard status;
+- probability source and label source;
+- source and calibrated ECE/Brier summaries on evaluation splits;
+- `api_called=false`, `model_training=false`, `server_executed=false`, and
+  `is_experiment_result=false`.
+
+By default the command refuses any overlap between fit and evaluation splits.
+`--allow-same-split-eval` exists only for explicitly labeled diagnostics and
+must not be used for method claims.
 
 The generated feature rows include:
 
@@ -130,6 +170,7 @@ Run the dedicated scaffold tests:
 ```powershell
 python -m pytest tests/test_confidence_framework.py
 python -m pytest tests/test_confidence_feature_builder.py
+python -m pytest tests/test_confidence_calibration.py
 ```
 
 The tests cover:
@@ -145,13 +186,17 @@ The tests cover:
 - generated-item catalog popularity join;
 - target-popularity leak guard when catalog data is unavailable;
 - CLI manifest writing without API keys.
+- fit-split-only histogram calibration;
+- fit/eval overlap refusal;
+- calibration output/manifest writing without API keys or model training.
 
 ## Next Steps
 
 Short-term framework work should remain API-free:
 
-1. Add a calibrator placeholder that records train/validation split provenance.
-2. Add a learned or fit-on-observation popularity residual module.
+1. Add a learned or fit-on-observation popularity residual module.
+2. Extend calibration targets from correctness labels toward exposure-
+   counterfactual utility once approved exposure/relevance evidence exists.
 3. Add reranker integration that can consume API, Qwen3, and baseline
    grounded outputs.
 4. Only after approved server artifacts exist, connect Qwen3-8B + LoRA

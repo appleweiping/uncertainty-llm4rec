@@ -1,5 +1,21 @@
 """Confidence extraction, calibration, and exposure-aware scoring modules."""
 
+from storyflow.confidence.calibration import (
+    CALIBRATOR_SCHEMA_VERSION,
+    DEFAULT_PROBABILITY_SOURCE,
+    SUPPORTED_PROBABILITY_SOURCES,
+    CalibrationBin,
+    CalibrationExample,
+    HistogramCalibrator,
+    apply_histogram_calibrator,
+    calibrate_feature_rows,
+    collect_calibration_examples,
+    fit_histogram_calibrator,
+    row_label,
+    row_probability,
+    row_split,
+    summarize_calibration_examples,
+)
 from storyflow.confidence.exposure import (
     CureTruceScore,
     CureTruceWeights,
@@ -22,20 +38,34 @@ from storyflow.confidence.features import (
 )
 
 __all__ = [
+    "CALIBRATOR_SCHEMA_VERSION",
+    "DEFAULT_PROBABILITY_SOURCE",
     "FEATURE_SCHEMA_VERSION",
+    "SUPPORTED_PROBABILITY_SOURCES",
+    "CalibrationBin",
+    "CalibrationExample",
     "CatalogFeatureIndex",
     "CureTruceScore",
     "CureTruceWeights",
     "ExposureConfidenceFeatures",
+    "HistogramCalibrator",
+    "apply_histogram_calibrator",
     "build_confidence_features",
+    "calibrate_feature_rows",
     "confidence_feature_record",
+    "collect_calibration_examples",
     "compute_echo_risk",
     "compute_information_gain",
     "compute_popularity_residual_confidence",
     "compute_risk_penalty",
     "estimate_exposure_confidence",
     "feature_from_grounded_row",
+    "fit_histogram_calibrator",
     "popularity_pressure",
     "rerank_cure_truce",
+    "row_label",
+    "row_probability",
+    "row_split",
     "score_cure_truce_candidate",
+    "summarize_calibration_examples",
 ]
