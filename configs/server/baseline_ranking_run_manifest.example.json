@@ -1,0 +1,34 @@
+{
+  "schema_version": "baseline_ranking_run_manifest_v1",
+  "baseline_family": "sasrec",
+  "model_family": "SASRec",
+  "run_label": "sasrec_amazon_beauty_full_test_example",
+  "dataset": "amazon_reviews_2023_beauty",
+  "processed_suffix": "full",
+  "train_splits": [
+    "train"
+  ],
+  "validation_splits": [
+    "validation"
+  ],
+  "evaluation_split": "test",
+  "input_jsonl": "outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl",
+  "ranking_jsonl": "outputs/baseline_rankings/sasrec/amazon_reviews_2023_beauty/full/test_rankings.jsonl",
+  "ranking_output_schema": "ranking_jsonl_v1",
+  "config_path": "configs/server/baselines/sasrec_amazon_beauty.yaml",
+  "processed_manifest": "data/processed/amazon_reviews_2023_beauty/full/preprocess_manifest.json",
+  "train_manifest": "runs/baselines/sasrec/amazon_reviews_2023_beauty/full/train_manifest.json",
+  "stdout_log": "runs/baselines/sasrec/amazon_reviews_2023_beauty/full/stdout.log",
+  "stderr_log": "runs/baselines/sasrec/amazon_reviews_2023_beauty/full/stderr.log",
+  "command": "python scripts/server/train_sasrec.py --config configs/server/baselines/sasrec_amazon_beauty.yaml",
+  "git_commit": "REPLACE_WITH_COMMIT",
+  "seed": 20260430,
+  "grounding_required_before_correctness": true,
+  "uses_heldout_targets_for_training": false,
+  "api_called": false,
+  "server_executed": true,
+  "model_training_run": true,
+  "is_experiment_result": false,
+  "is_paper_result": false,
+  "notes": "Template only. Do not claim execution without server logs, artifacts, and validation manifests."
+}

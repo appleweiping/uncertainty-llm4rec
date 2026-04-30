@@ -233,6 +233,11 @@ Planned deliverables:
   external ranking JSONL artifacts for coverage, candidate schema, score
   metadata, catalog compatibility, history overlap, and split/dataset
   provenance before `ranking_jsonl` adaptation.
+- Current baseline source gate: `scripts/validate_baseline_run_manifest.py`
+  validates upstream baseline run manifests for baseline/model/run identity,
+  train/evaluation split separation, command/git/seed provenance, declared
+  artifact paths, and grounding/leakage guard flags before a ranking JSONL is
+  treated as a source artifact.
 - Learned exposure-aware scoring and reranking after approved observation and
   utility targets exist.
 - RecBrier-style confidence objective where feasible.

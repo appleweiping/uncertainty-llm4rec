@@ -96,14 +96,24 @@ model confidence unless a later calibration stage validates it.
 ## Artifact Validation Gate
 
 Before an externally trained ranker artifact is adapted through
-`ranking_jsonl`, validate the local ranking JSONL against the observation input
-slice:
+`ranking_jsonl`, validate the source run manifest and then validate the local
+ranking JSONL against the observation input slice:
 
 ```powershell
+python scripts/validate_baseline_run_manifest.py --manifest-json runs/baselines/sasrec/amazon_reviews_2023_beauty/full/run_manifest.json --strict
 python scripts/validate_baseline_artifact.py --ranking-jsonl outputs/baseline_rankings/sasrec/sample_5k/test_rankings.jsonl --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline-family sasrec --model-family SASRec --run-label sasrec_sample_5k_test --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --trained-splits train --strict
 ```
 
-The validator writes an ignored manifest under
+The source run manifest uses `baseline_ranking_run_manifest_v1`; a template is
+available at `configs/server/baseline_ranking_run_manifest.example.json`. The
+validator writes an ignored manifest under
+`outputs/baseline_run_manifest_validation/...` and checks required provenance,
+train/evaluation split separation, command/git/seed metadata, declared input
+and ranking artifact paths, and the flags
+`grounding_required_before_correctness=true` and
+`uses_heldout_targets_for_training=false`.
+
+The artifact validator writes an ignored manifest under
 `outputs/baseline_artifact_validation/...` by default. It checks input coverage,
 duplicate `input_id` values, candidate-list schema, score length/type, catalog
 item-id coverage, already-seen history items, split/dataset declarations, and

@@ -745,10 +745,16 @@ Implemented baselines:
 Validate any external ranking artifact before adapting it:
 
 ```powershell
+python scripts/validate_baseline_run_manifest.py --manifest-json runs/baselines/sasrec/amazon_reviews_2023_beauty/full/run_manifest.json --strict
 python scripts/validate_baseline_artifact.py --ranking-jsonl outputs/baseline_rankings/sasrec/sample_5k/test_rankings.jsonl --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_forced_json.jsonl --baseline-family sasrec --model-family SASRec --dataset amazon_reviews_2023_beauty --processed-suffix sample_5k --split test --trained-splits train --strict
 ```
 
-The validator writes an ignored manifest under
+The run-manifest validator writes an ignored manifest under
+`outputs/baseline_run_manifest_validation/...` and checks upstream run
+provenance, train/eval split declarations, artifact paths, command/git/seed
+metadata, and grounding/leakage guard flags. It must pass before a future
+large baseline ranking file is treated as a source artifact. The artifact
+validator then writes an ignored manifest under
 `outputs/baseline_artifact_validation/...` and checks input coverage, ranking
 schema, score metadata, catalog item IDs, history overlap, and split/provenance
 declarations. It does not run the ranker, call APIs, train models, download

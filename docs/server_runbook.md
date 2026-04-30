@@ -209,6 +209,30 @@ Every server full run must preserve:
 Only sanitized manifests, logs, and metrics should be copied back for local
 analysis. Raw data and full processed data remain uncommitted.
 
+## Baseline Ranking Run Manifest Contract
+
+Large SASRec, BERT4Rec, GRU4Rec, LightGCN, and similar baseline runs must write
+a source run manifest before their ranking JSONL is adapted through
+`ranking_jsonl`. A safe template is committed at
+`configs/server/baseline_ranking_run_manifest.example.json`.
+
+Required validation command after copying the manifest and declared safe logs
+or ranking paths back to the local repository:
+
+```powershell
+python scripts/validate_baseline_run_manifest.py --manifest-json runs/baselines/sasrec/amazon_reviews_2023_beauty/full/run_manifest.json --strict
+```
+
+The validator records an ignored manifest under
+`outputs/baseline_run_manifest_validation/...`. It checks required provenance,
+train/evaluation split separation, command/git/seed metadata, path existence
+and hashes when available, and the leakage guards
+`grounding_required_before_correctness=true` and
+`uses_heldout_targets_for_training=false`. It does not execute the baseline,
+call APIs, train models, download data, or create a paper result. The ranking
+JSONL must still pass `scripts/validate_baseline_artifact.py` before grounded
+title-level observation.
+
 ## Required Run Artifacts
 
 Every future server run should produce:
