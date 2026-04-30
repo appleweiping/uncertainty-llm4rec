@@ -61,6 +61,13 @@ Digital_Music, Handmade_Products, Health_and_Personal_Care, Video_Games,
 Sports_and_Outdoors, and Books config gates. It writes ignored readiness
 artifacts only; no full cross-category data download or experiment has been
 run.
+After Beauty was stabilized, local full preprocessing was also run from
+already placed raw JSONL files for Digital_Music, Handmade_Products, and
+Health_and_Personal_Care. These are ignored data-readiness artifacts and
+observation-input substrates only, not API runs or paper evidence. Under the
+current 5-core/global-chronological setting, Digital_Music and Handmade are
+repeat-heavy diagnostic domains, while Health_and_Personal_Care provides the
+most useful additional no-repeat test slice for local observation planning.
 
 MovieLens 1M has also been verified as a local real-data sanity path from a
 manually placed `data/raw/movielens_1m/ml-1m.zip` archive. The small
@@ -92,6 +99,18 @@ items, 3315 interactions, and 2244 rolling observation examples after the
 configured filtering. Full test observation inputs have been built under
 ignored `outputs/observation_inputs/amazon_reviews_2023_beauty/full/`. This is
 not an experiment result and not server evidence.
+
+Additional local Amazon full-prepare readiness artifacts now exist under
+ignored `data/processed/` and `outputs/observation_inputs/` paths:
+Digital_Music has 20 users, 29 catalog items, 157 interactions, 97 rolling
+examples, and 10 test inputs, all repeat-target; Handmade_Products has 89
+users, 95 catalog items, 546 interactions, 279 rolling examples, 28 test
+inputs, and only 2 no-repeat test inputs; Health_and_Personal_Care has 157
+users, 175 catalog items, 1189 interactions, 718 rolling examples, 72 test
+inputs, 60 no-repeat inputs, and 12 repeat-only inputs. Health also has
+target-excluding no-repeat gate inputs for forced-JSON, retrieval-context, and
+catalog-constrained prompts. These artifacts did not call an API or train a
+model.
 
 An approved DeepSeek Amazon Beauty no-repeat full-slice observation has been
 executed on 185 repeat-free test inputs with `deepseek-v4-flash`, cache/resume,
@@ -439,12 +458,16 @@ It records `api_called=false`, `server_executed=false`,
 `model_training=false`, `data_downloaded=false`, and
 `is_experiment_result=false`.
 
-Amazon Beauty full prepare has been run locally from the current raw JSONL
-files and remains ignored by git. Re-run only when raw data, preprocessing
-config, or code changes require regeneration:
+Amazon Beauty, Digital_Music, Handmade_Products, and
+Health_and_Personal_Care full prepare have been run locally from the current
+raw JSONL files and remain ignored by git. Re-run only when raw data,
+preprocessing config, or code changes require regeneration:
 
 ```powershell
 python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full --allow-full
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_digital_music --reviews-jsonl data/raw/amazon_reviews_2023_digital_music/Digital_Music.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_digital_music/meta_Digital_Music.jsonl --output-suffix full --allow-full
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_handmade --reviews-jsonl data/raw/amazon_reviews_2023_handmade/Handmade_Products.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_handmade/meta_Handmade_Products.jsonl --output-suffix full --allow-full
+python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_health --reviews-jsonl data/raw/amazon_reviews_2023_health/Health_and_Personal_Care.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_health/meta_Health_and_Personal_Care.jsonl --output-suffix full --allow-full
 ```
 
 Run a local Beauty sample prepare after raw JSONL files are present:
@@ -487,12 +510,24 @@ API run:
 ```powershell
 python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy exclude
 python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_beauty --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy only
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_health --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy exclude
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_health --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy only
 ```
 
 These write ignored files such as `test_no_repeat_forced_json.jsonl` and
 `test_repeat_only_forced_json.jsonl`. They do not call an API. Full reports
 should compare all / no-repeat / repeat-only slices when repeated purchases or
 duplicate reviews are present.
+
+For Health_and_Personal_Care no-repeat prompt/grounding QA before any API
+spend:
+
+```powershell
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_health --processed-suffix full --split test --max-examples 60 --stratify-by-popularity --candidate-count 20 --repeat-target-policy exclude
+```
+
+This writes target-excluding forced-JSON, retrieval-context, and
+catalog-constrained gate inputs under ignored `outputs/observation_inputs/`.
 
 ## Phase 2A Mock Observation
 

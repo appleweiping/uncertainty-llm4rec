@@ -50,6 +50,23 @@ candidates after the Beauty path is stable. Books and Video_Games are
 especially useful as title-rich domains, but their full processing remains
 server/manual-raw gated.
 
+Local status on 2026-04-30: after Beauty was stabilized, Digital_Music,
+Handmade_Products, and Health_and_Personal_Care were also processed locally
+from already placed raw JSONL files with `--allow-full`. These outputs are
+data-readiness artifacts only, remain ignored by git, and are not API/model
+runs or paper evidence. The current 5-core/global-chronological manifests are:
+
+| dataset | users | catalog items | interactions | rolling examples | test | no-repeat test | repeat-only test | note |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Digital_Music | 20 | 29 | 157 | 97 | 10 | 0 | 10 | Repeat-heavy diagnostic domain under current filtering. |
+| Handmade_Products | 89 | 95 | 546 | 279 | 28 | 2 | 26 | Repeat-heavy; no-repeat slice too small for main observation. |
+| Health_and_Personal_Care | 157 | 175 | 1189 | 718 | 72 | 60 | 12 | Best current additional local no-repeat observation substrate. |
+
+Health validation reports one duplicate normalized title group, so grounding
+ambiguity should be tracked in analysis. Digital_Music and Handmade are still
+useful for repeat/copy-history diagnostics, but not as primary no-repeat
+domains unless preprocessing settings are revisited.
+
 ## Lightweight Inspect
 
 Default dry-run/readiness command:
@@ -238,6 +255,21 @@ catalog titles without including the held-out target by default. It is a
 prompt/grounding readiness artifact only, not an API result and not paper
 evidence.
 
+For the local Health_and_Personal_Care full prepare, the full test split and
+repeat-aware inputs were built with:
+
+```powershell
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_health --processed-suffix full --split test --stratify-by-popularity
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_health --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy exclude
+python scripts/build_observation_inputs.py --dataset amazon_reviews_2023_health --processed-suffix full --split test --stratify-by-popularity --repeat-target-policy only
+python scripts/build_observation_gate_inputs.py --dataset amazon_reviews_2023_health --processed-suffix full --split test --max-examples 60 --stratify-by-popularity --candidate-count 20 --repeat-target-policy exclude
+```
+
+The Health full free-form input contains 72 test examples; the repeat-free
+input and the target-excluding forced-JSON/retrieval-context/catalog-constrained
+gate variants each contain 60 no-repeat examples. These are observation inputs
+only; no DeepSeek/API call has been made for Health.
+
 Local status on 2026-04-29: the repeat-free retrieval-context diagnostic input
 above was run through DeepSeek after readiness passed. The completed ignored
 run has 185 grounded rows and zero failed cases. It shows that candidate
@@ -270,3 +302,5 @@ For Video_Games, Sports_and_Outdoors, and Books, first run the cross-category
 readiness matrix, then place the raw review and metadata JSONL files at the
 configured paths before any sample/full prepare. Full prepare still requires
 `--allow-full`, a machine with enough storage/runtime, and a recorded manifest.
+For the local raw categories already processed, do not treat the manifests as
+paper evidence; use them to choose the next approved observation slice.
