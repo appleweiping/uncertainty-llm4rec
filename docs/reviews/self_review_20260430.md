@@ -1,12 +1,13 @@
 # Self Review 2026-04-30
 
-This self-review follows the Qwen3 server observation scaffold and the
-ranking-JSONL baseline adapter commits. It is a governance and research-quality
-artifact, not an experimental result.
+This self-review follows the Qwen3 server observation scaffold, the
+ranking-JSONL baseline adapter, and the first Phase 4 CURE/TRUCE framework
+scaffold commits. It is a governance and research-quality artifact, not an
+experimental result.
 
 ## Current Phase
 
-Storyflow / TRUCE-Rec is still between Phase 2C and Phase 3.
+Storyflow / TRUCE-Rec is now between Phase 3 and early Phase 4.
 
 - Phase 0 governance/scaffold is complete.
 - Phase 1 data support is beyond MovieLens: Amazon Beauty local full
@@ -20,6 +21,11 @@ Storyflow / TRUCE-Rec is still between Phase 2C and Phase 3.
   and ranking-JSONL-to-title conversion. No Qwen3 inference, server run, LoRA
   training, heavy baseline training, or paper-result experiment has been run by
   Codex.
+- Phase 4 is partially open as API-free scaffold work: feature schema,
+  grounded-observation feature builder, deterministic CURE/TRUCE scoring,
+  split-audited histogram calibration, and split-audited popularity
+  residualization are implemented and tested. None of these are learned method
+  results or paper evidence.
 
 ## External Reviewer Blocker Status
 
@@ -88,6 +94,38 @@ adapter records score/rank metadata for schema compatibility, but it must not
 be described as calibrated model confidence unless a later calibration stage
 validates it.
 
+## Phase 4 Scaffold Check
+
+The Phase 4 scaffold now has concrete code around the unified target:
+
+```text
+C(u, i) ~= P(user accepts item i | user u, do(exposure=1))
+```
+
+Implemented pieces:
+
+- `ExposureConfidenceFeatures` keeps preference evidence, verbal confidence,
+  generation evidence, grounding confidence/ambiguity, popularity pressure,
+  history alignment, novelty, correctness label, and grounded status separate.
+- `build_confidence_features` converts grounded observation JSONL into
+  feature JSONL, with generated-item popularity provenance and a guard against
+  borrowing target popularity for wrong predictions.
+- `calibrate_feature_rows` fits a split-audited histogram scaffold on declared
+  fit splits and applies it to declared evaluation splits only.
+- `residualize_feature_rows` fits a split-audited popularity-bucket confidence
+  baseline on declared fit splits and applies it to evaluation splits only.
+  Unknown generated-item popularity remains `unknown`; the residualizer does
+  not borrow held-out target buckets.
+- deterministic scoring/reranking code exists as a contract, but it has not
+  been evaluated as a method.
+
+This is coherent with Storyflow because each module serves the same object:
+verbal confidence is treated as noisy evidence; grounding confidence captures
+title-to-item uncertainty; popularity residualization is a confounding
+correction; echo/risk scoring is an exposure-control contract. The main risk is
+now less "no framework implementation" and more "the pieces must be connected
+without turning into disconnected tricks."
+
 ## Toy-Risk Check
 
 Risk status: yellow, improving.
@@ -105,8 +143,8 @@ Immediate mitigation:
   readiness route for Video_Games or Books after the protocol stabilizes;
 - use the Qwen3 server scaffold for approved server observation rather than
   making local Qwen claims;
-- connect the next framework code directly to exposure-counterfactual
-  confidence.
+- connect calibrated/residualized feature outputs to the reranking contract
+  before adding more isolated framework modules.
 
 ## Dataset Route
 
@@ -166,19 +204,22 @@ The unifying object remains:
 C(u, i) ~= P(user accepts item i | user u, do(exposure=1))
 ```
 
-Future CURE/TRUCE implementation must make this object explicit in code, not
-only in prose:
+Current CURE/TRUCE implementation makes this object explicit in code, but only
+as a scaffold:
 
 - verbal confidence: noisy observation of exposure-counterfactual confidence;
 - token/logprob/sampling: generation evidence;
 - grounding confidence: title-to-item uncertainty;
-- popularity residual: confounding correction;
-- exposure-aware score: echo-risk control;
+- popularity residual: confounding correction already implemented as a
+  split-audited bucket-mean scaffold;
+- exposure-aware score: echo-risk control implemented as deterministic
+  contract, not an evaluated method;
 - triage: separate likely noise from hard-tail-positive evidence.
 
-The next framework scaffold should define a typed feature schema and scoring
-contract around this object before adding calibrators, rerankers, or triage
-rules.
+The next framework step should not add another independent trick. It should
+wire calibrated and residualized feature outputs into the reranking/manifest
+contract, preserving split provenance and the non-result status until approved
+observation artifacts are used.
 
 ## Reviewer-Attack Risks
 
@@ -198,9 +239,11 @@ rules.
    adherence, and ungrounded-high-confidence cases with all confidence metrics.
 
 4. Framework stitching.
-   Priority: high. Calibration, debiasing, reranking, and triage could look
-   disconnected. Mitigation: implement feature schema and scoring around
-   `P(user accepts | do(exposure))`.
+   Priority: high. Calibration, popularity residualization, reranking, and
+   triage could still look disconnected if each module evolves separately.
+   Mitigation: make the next implementation consume the existing calibrated
+   and residualized feature contracts instead of adding a parallel scoring
+   path.
 
 5. Baseline insufficiency.
    Priority: high. Lightweight baselines are not final reviewer-proof coverage.
@@ -219,8 +262,9 @@ rules.
 
 8. Popularity as relevance versus confounding.
    Priority: medium. Reviewers may object that popularity is valid signal.
-   Mitigation: separate preference-supported popularity from popularity-only
-   confidence residuals.
+   Mitigation: keep residualization split-audited, report it as a popularity-
+   only confidence baseline, and avoid treating popularity residuals as proof
+   of preference deconfounding before learned/evaluated evidence exists.
 
 9. Server claim risk.
    Priority: medium. Server scripts exist but have not run. Mitigation: keep
@@ -241,7 +285,8 @@ P0:
 
 P1:
 
-- Start the CURE/TRUCE feature schema from exposure-counterfactual confidence.
+- Connect calibrated/residualized feature rows to the CURE/TRUCE reranking
+  contract without making method-result claims.
 - Add a baseline artifact manifest contract for future trained rankers.
 
 P2:
@@ -260,7 +305,12 @@ P3:
 ## Decision
 
 Go forward. The previous baseline blocker is closed, the project remains
-title-level and grounding-first, and the next non-blocking engineering work
-should begin Phase 4 carefully: define the CURE/TRUCE feature and scoring
-schema around exposure-counterfactual confidence before implementing a full
-calibrator, reranker, or training objective.
+title-level and grounding-first, and Phase 4 is now partially implemented as
+tested scaffolding. The next non-blocking engineering work should be either:
+
+1. connect calibrated/residualized feature outputs into the CURE/TRUCE reranker
+   contract with manifest provenance; or
+2. add baseline artifact manifest validation before any heavy baseline run.
+
+Do not start Qwen3 inference, LoRA training, server execution, or another real
+API expansion without explicit user approval and concrete run gates.
