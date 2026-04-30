@@ -75,6 +75,17 @@ scripts exist:
 9. Copy only sanitized summaries, configs, logs, and metrics needed for local
    analysis.
 
+Before any real server, full-data, API, or trained-baseline expansion, generate
+the local approval checklist:
+
+```powershell
+python scripts/build_expansion_approval_checklist.py
+```
+
+The command writes ignored artifacts under
+`outputs/approval_gates/next_expansion/`. It does not execute the server, call
+an API, train a model, download data, or authorize a run by itself.
+
 ## Qwen3-8B Observation Scaffold
 
 The repository includes a server observation contract for Qwen3-8B:

@@ -96,6 +96,13 @@ reason codes. It writes ignored manifests with API/training/server/result flags
 set to false. It is not real user feedback, not a trained pruning policy, and
 not paper evidence.
 
+An expansion approval helper is also available at
+`scripts/build_expansion_approval_checklist.py`. It writes ignored
+approval-only manifests for API provider expansion, Qwen3/server observation,
+Amazon full-category preparation, and trained baseline artifacts. It does not
+execute any of those paths and records API/server/training/data/result flags as
+false.
+
 ## Phase 0: Governance And Scaffold
 
 Goal: establish the repository rules, documentation skeleton, artifact policy,

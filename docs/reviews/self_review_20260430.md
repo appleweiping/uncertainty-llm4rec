@@ -37,6 +37,9 @@ Phase 5.
 - Cross-category data readiness now includes a matrix over configured Amazon
   Reviews 2023 categories, including server-scale Books, Video_Games, and
   Sports_and_Outdoors entries. This is readiness only, not a full data run.
+- A local expansion approval checklist now covers API provider expansion,
+  Qwen3/server observation, Amazon full prepare, and trained baseline artifact
+  gates. It writes ignored non-result manifests only.
 
 ## External Reviewer Blocker Status
 
@@ -347,8 +350,8 @@ title-level and grounding-first, and Phase 4 is now partially implemented as
 tested scaffolding. The calibrated/residualized reranker contract is now also
 closed by `f857eac feat: add CURE TRUCE reranker contract`. The baseline
 contract layer is also stronger after `500564b`, `31be990`, and `c309775`.
-The next non-blocking engineering work should be to prepare approval gates for
-the next real expansion: either a trained ranking artifact entering the
+The next non-blocking engineering work should be to use the approval gates to
+choose a real expansion path: either a trained ranking artifact entering the
 validated baseline path, a Qwen3/server observation run, or a title-rich Amazon
 category raw-placement/full-prepare step. Do not run any of these without
 explicit approval, manifests, and artifact-return rules.

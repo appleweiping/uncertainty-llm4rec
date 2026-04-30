@@ -169,6 +169,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
   residualization scaffolds.
 - `docs/echo_simulation_triage.md`: synthetic confidence-guided exposure
   simulation and diagnostic data-triage contracts.
+- `docs/expansion_approval_gates.md`: approval checklist helper for real API,
+  Qwen3/server, Amazon full-prepare, and trained-baseline expansions.
 - `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
   grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
@@ -406,6 +408,19 @@ This writes ignored JSON/CSV/Markdown artifacts under
 `outputs/amazon_reviews_2023/category_matrix/` and records
 `api_called=false`, `server_executed=false`, `full_download_attempted=false`,
 and `is_experiment_result=false`.
+
+Generate approval checklists before any real expansion:
+
+```powershell
+python scripts/build_expansion_approval_checklist.py
+```
+
+This writes ignored JSON/Markdown artifacts under
+`outputs/approval_gates/next_expansion/`. It covers API provider expansion,
+Qwen3/server observation, Amazon full prepare, and trained baseline artifacts.
+It records `api_called=false`, `server_executed=false`,
+`model_training=false`, `data_downloaded=false`, and
+`is_experiment_result=false`.
 
 Amazon Beauty full prepare has been run locally from the current raw JSONL
 files and remains ignored by git. Re-run only when raw data, preprocessing
