@@ -518,3 +518,111 @@ either:
 Without explicit approval, do not call a real API, execute Qwen3/server
 inference, train Qwen3-8B + LoRA, train large baselines, or run full data
 preparation.
+
+## Late Addendum: Selective-Risk Observation To Framework Bridge
+
+This addendum follows two additional API-free commits:
+
+- `692b5d6 feat: add selective risk observation analysis`
+- `a24033e feat: add selective risk diagnostics to rerank triage`
+
+These commits do not call APIs, download data, train models, execute server
+jobs, or create paper evidence. They connect the observation-analysis risk
+view to Phase 4/5 framework contracts.
+
+### What Changed
+
+Observation analysis now writes AURC / selective-risk metrics and full
+selective-risk curve artifacts for grounded observation runs. This helps
+answer whether model-reported or proxy confidence can support abstention,
+triage, or exposure control when rows are retained from high to low
+confidence.
+
+The CURE/TRUCE rerank and triage contracts now reuse a compact version of the
+same diagnostic. Their manifests record:
+
+- selected confidence source;
+- labeled row count;
+- skipped missing-confidence and missing-label counts;
+- overall AURC / excess AURC / base risk;
+- head/mid/tail/unknown popularity bucket slices;
+- false API/training/server/result flags.
+
+This is a coherence improvement rather than a result. It prevents
+observation, rerank, and triage from drifting into separate metrics that look
+like unrelated tricks.
+
+### Mainline Alignment
+
+The project still uses the title-level generative recommendation path:
+
+```text
+history titles
+  -> generated or selected title
+  -> catalog grounding
+  -> correctness + confidence + popularity + grounding + head/mid/tail
+  -> selective-risk / calibration / exposure-aware diagnostics
+```
+
+Selective risk is only computed after grounded rows expose a correctness
+label. If labels are missing, the compact downstream diagnostic records zero
+labeled rows rather than inventing a result.
+
+### Framework Coherence Check
+
+The unifying target remains:
+
+```text
+C(u, i) ~= P(user accepts item i | user u, do(exposure=1))
+```
+
+The new diagnostics serve that target in three ways:
+
+- Observation: asks whether raw confidence can support selective retention or
+  abstention under grounded correctness labels.
+- Rerank: checks whether the chosen raw/calibrated/residualized confidence
+  proxy still has risk-ordering signal after deterministic CURE/TRUCE scoring.
+- Triage: checks whether the confidence source used for reason codes is also
+  aligned with error risk, while preserving hard-tail positives.
+
+This reduces the "stitched method" risk because the same confidence-risk
+object now appears in measurement, decision scoring, and triage metadata.
+
+### Remaining Limits
+
+1. Selective risk is not exposure-counterfactual utility.
+   Priority: high. It uses correctness labels and confidence ordering, not
+   real user exposure or acceptance evidence.
+
+2. Compact downstream diagnostics are not full plots.
+   Priority: medium. Full curves remain in observation analysis; rerank and
+   triage manifests intentionally keep compact summaries.
+
+3. Baseline confidence is still a proxy.
+   Priority: medium-high. If selective risk is computed for baseline
+   observations, the registry and manifest must preserve
+   `confidence_semantics=non_calibrated_baseline_proxy`.
+
+4. Deterministic rerank/triage scaffolds are not learned CURE/TRUCE results.
+   Priority: high. The new AURC fields should help inspect contract behavior,
+   not claim improved recommendation or calibration.
+
+5. Future exposure utility still needs approved evidence.
+   Priority: high. Real exposure logs, IPS/DR style evaluation, approved
+   server runs, or carefully labeled synthetic simulations are needed before
+   moving from correctness-selective risk to exposure-counterfactual claims.
+
+### Priority Decision After This Addendum
+
+Go forward. The selective-risk bridge is aligned with Storyflow and helps keep
+Phase 4/5 modules tied to observation evidence. The next non-blocking work
+should either:
+
+- strengthen real-execution readiness for Qwen3/server, trained baselines, or
+  title-rich Amazon categories without running them; or
+- add a small API-free contract that consumes existing grounded feature rows
+  and keeps all non-result flags explicit.
+
+Do not run real API expansion, Qwen3/server inference, LoRA training, large
+baseline training, or additional full-data processing without explicit user
+approval and concrete run gates.
