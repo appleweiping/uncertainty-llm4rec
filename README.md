@@ -170,7 +170,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `docs/echo_simulation_triage.md`: synthetic confidence-guided exposure
   simulation and diagnostic data-triage contracts.
 - `docs/expansion_approval_gates.md`: approval checklist helper for real API,
-  Qwen3/server, Amazon full-prepare, and trained-baseline expansions.
+  Qwen3/server, Amazon full-prepare, and trained-baseline expansions, plus a
+  non-executing run-packet helper for one selected expansion track.
 - `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
   grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
@@ -257,6 +258,16 @@ Implemented foundation modules:
 - `storyflow.server`: Qwen3-8B server observation plan/execution contract that
   mirrors API observation output layers while defaulting to plan-only mode.
 - `tests/fixtures/`: synthetic records used only for tests.
+
+Expansion gate scripts:
+
+- `scripts/build_expansion_approval_checklist.py`: writes an ignored approval
+  checklist for API, Qwen3/server, Amazon full-prepare, and trained-baseline
+  expansion tracks. It does not execute anything.
+- `scripts/build_expansion_run_packet.py`: writes an ignored non-executing run
+  packet for one selected expansion track, including missing confirmations,
+  safe preflight commands, approval-required command shape, expected artifacts,
+  and forbidden claims. It does not authorize or execute the run.
 
 The remaining subpackages are intentionally lightweight placeholders for later
 phases.

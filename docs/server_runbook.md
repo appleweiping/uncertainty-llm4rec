@@ -86,6 +86,18 @@ The command writes ignored artifacts under
 `outputs/approval_gates/next_expansion/`. It does not execute the server, call
 an API, train a model, download data, or authorize a run by itself.
 
+After selecting one expansion track, generate a non-executing run packet:
+
+```powershell
+python scripts/build_expansion_run_packet.py --track qwen3_server --run-label qwen3_beauty_plan_packet --input-jsonl <input-jsonl> --target-output-dir <server-output-dir>
+```
+
+The packet writes ignored artifacts under `outputs/run_packets/` by default. It
+lists missing confirmations, safe preflight commands, approval-required command
+shape, expected artifacts, and forbidden claims. It still does not execute a
+server command, call an API, process full data, train a model, or authorize
+execution by itself.
+
 ## Qwen3-8B Observation Scaffold
 
 The repository includes a server observation contract for Qwen3-8B:

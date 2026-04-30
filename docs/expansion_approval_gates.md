@@ -48,6 +48,40 @@ The manifest records:
 - `full_data_processed=false`;
 - `is_experiment_result=false`.
 
+## Run Packet
+
+After choosing one expansion track, generate a non-executing run packet before
+asking for execution approval:
+
+```powershell
+python scripts/build_expansion_run_packet.py --track api_provider --run-label deepseek_next_smoke --provider-config configs/providers/deepseek.yaml --provider deepseek --model deepseek-v4-flash --input-jsonl <input-jsonl> --sample-size 5 --rate-limit 10 --max-concurrency 1 --budget-label <budget-label>
+```
+
+Default ignored output:
+
+```text
+outputs/run_packets/<track>/<run_label>/
+```
+
+The packet records:
+
+- provided and missing confirmations;
+- safe local preflight commands;
+- the command shape that still requires explicit approval;
+- expected artifacts;
+- forbidden claims;
+- `api_called=false`;
+- `server_executed=false`;
+- `model_training=false`;
+- `data_downloaded=false`;
+- `full_data_processed=false`;
+- `is_experiment_result=false`.
+
+The packet can say that all required fields are present, but it still does not
+authorize execution by itself. Real API calls, server commands, full data
+preparation, training, and trained-baseline adaptation still require explicit
+user approval in the current task.
+
 ## Tracks
 
 ### API Provider
@@ -87,6 +121,6 @@ before adding more baseline families.
 
 ## Claim Policy
 
-This helper does not run an API, execute a server command, train a model,
-download data, process full data, or adapt a baseline artifact. Its output is a
-readiness/approval artifact only and must not be used as paper evidence.
+These helpers do not run an API, execute a server command, train a model,
+download data, process full data, or adapt a baseline artifact. Their outputs
+are readiness/approval artifacts only and must not be used as paper evidence.

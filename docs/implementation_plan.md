@@ -103,6 +103,13 @@ Amazon full-category preparation, and trained baseline artifacts. It does not
 execute any of those paths and records API/server/training/data/result flags as
 false.
 
+`scripts/build_expansion_run_packet.py` adds the next approval layer for one
+selected track. It writes an ignored, non-executing run packet with provided
+and missing confirmations, safe preflight commands, approval-required command
+shape, expected artifacts, and forbidden claims. It is still not authorization
+to call an API, execute a server command, process full data, train a model, or
+adapt a trained baseline artifact.
+
 ## Phase 0: Governance And Scaffold
 
 Goal: establish the repository rules, documentation skeleton, artifact policy,
