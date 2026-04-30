@@ -634,6 +634,119 @@ def popularity_confidence_slope(rows: Iterable[dict[str, Any]]) -> dict[str, Any
     }
 
 
+def observation_source_profile(
+    rows: Iterable[dict[str, Any]],
+    *,
+    manifest: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Classify an analyzed run without upgrading it to a result claim."""
+
+    records = list(rows)
+    manifest = manifest or {}
+    first = records[0] if records else {}
+    provider = manifest.get("provider") or first.get("provider")
+    baseline = manifest.get("baseline") or first.get("baseline")
+    model = manifest.get("model") or first.get("model") or baseline
+    dry_run = manifest.get("dry_run", first.get("dry_run"))
+    api_called = manifest.get("api_called", first.get("api_called"))
+    run_stage = manifest.get("run_stage") or manifest.get("stage")
+    server_executed = bool(
+        manifest.get("server_executed")
+        or manifest.get("model_inference_run")
+        or manifest.get("server_run")
+    )
+    model_training = bool(
+        manifest.get("model_training")
+        or manifest.get("model_training_run")
+        or manifest.get("training_run")
+    )
+
+    if str(provider) == "baseline" or baseline:
+        source_kind = "baseline_observation"
+        confidence_semantics = "non_calibrated_baseline_proxy"
+        claim_scope = "baseline_sanity_or_protocol_artifact"
+        confidence_is_calibrated = False
+    elif str(provider) == "mock":
+        source_kind = "mock_observation"
+        confidence_semantics = "mock_sanity_confidence"
+        claim_scope = "schema_sanity"
+        confidence_is_calibrated = False
+    elif dry_run is True:
+        source_kind = "api_dry_run"
+        confidence_semantics = "dry_run_placeholder_confidence"
+        claim_scope = "schema_sanity"
+        confidence_is_calibrated = False
+    elif server_executed:
+        source_kind = "server_observation"
+        confidence_semantics = "model_reported_confidence"
+        claim_scope = str(run_stage or "server_artifact")
+        confidence_is_calibrated = False
+    elif api_called is True:
+        source_kind = "api_observation"
+        confidence_semantics = "model_reported_confidence"
+        claim_scope = str(run_stage or "pilot_or_full_artifact")
+        confidence_is_calibrated = False
+    else:
+        source_kind = "observation_artifact"
+        confidence_semantics = "unknown_or_unlabeled_confidence"
+        claim_scope = "unlabeled_artifact"
+        confidence_is_calibrated = False
+
+    return {
+        "source_kind": source_kind,
+        "claim_scope": claim_scope,
+        "provider": provider,
+        "model": model,
+        "baseline": baseline,
+        "run_stage": run_stage,
+        "dry_run": dry_run,
+        "api_called": api_called,
+        "server_executed": server_executed,
+        "model_training": model_training,
+        "confidence_semantics": confidence_semantics,
+        "confidence_is_calibrated": confidence_is_calibrated,
+        "title_grounding_required": True,
+        "is_experiment_result": False,
+        "is_paper_result": False,
+    }
+
+
+def observation_claim_guardrails(
+    *,
+    source_profile: dict[str, Any],
+    candidate_summary: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Record conservative claim boundaries for an analysis artifact."""
+
+    candidate_summary = candidate_summary or {}
+    source_kind = str(source_profile.get("source_kind") or "")
+    target_accuracy_allowed = bool(
+        candidate_summary.get(
+            "target_correctness_interpretable_as_recommendation_accuracy",
+            True,
+        )
+    )
+    if source_kind in {"mock_observation", "api_dry_run"}:
+        target_accuracy_allowed = False
+    return {
+        "is_experiment_result": False,
+        "is_paper_result": False,
+        "grounding_required_before_correctness": True,
+        "confidence_is_calibrated": bool(source_profile.get("confidence_is_calibrated")),
+        "confidence_requires_calibration": True,
+        "baseline_confidence_is_proxy": source_kind == "baseline_observation",
+        "target_correctness_interpretable_as_recommendation_accuracy": target_accuracy_allowed,
+        "requires_source_manifest_for_claims": True,
+        "requires_grounded_predictions_for_claims": True,
+        "forbidden_claims": [
+            "method_improves_performance",
+            "full_result_without_manifest",
+            "server_run_without_logs",
+            "calibrated_confidence_without_calibrator",
+        ],
+    }
+
+
 def risk_case_slices(
     rows: Iterable[dict[str, Any]],
     *,
@@ -751,14 +864,27 @@ def summarize_observation_records(
     provider_failures = [
         row for row in failures if str(row.get("failure_stage")) == "provider"
     ]
+    source_profile = observation_source_profile(records, manifest=manifest)
+    candidate_summary = candidate_diagnostic_summary(
+        records,
+        input_rows=input_rows,
+        high_confidence_tau=high_confidence_tau,
+    )
+    claim_guardrails = observation_claim_guardrails(
+        source_profile=source_profile,
+        candidate_summary=candidate_summary,
+    )
     summary = {
         "created_at_utc": utc_now_iso(),
-        "provider": manifest.get("provider") or (records[0].get("provider") if records else None),
-        "model": manifest.get("model") or (records[0].get("model") if records else None),
-        "dry_run": manifest.get("dry_run", records[0].get("dry_run") if records else None),
-        "api_called": manifest.get("api_called"),
+        "provider": source_profile.get("provider"),
+        "model": source_profile.get("model"),
+        "baseline": source_profile.get("baseline"),
+        "dry_run": source_profile.get("dry_run"),
+        "api_called": source_profile.get("api_called"),
         "input_jsonl": manifest.get("input_jsonl"),
         "source_output_dir": manifest.get("output_dir"),
+        "source_profile": source_profile,
+        "claim_guardrails": claim_guardrails,
         "count": len(records),
         "failed_count": len(failures),
         "parse_failure_count": len(parse_failures),
@@ -788,11 +914,7 @@ def summarize_observation_records(
             high_confidence_tau=high_confidence_tau,
             n_bins=n_bins,
         ),
-        "candidate_diagnostic_summary": candidate_diagnostic_summary(
-            records,
-            input_rows=input_rows,
-            high_confidence_tau=high_confidence_tau,
-        ),
+        "candidate_diagnostic_summary": candidate_summary,
         "quadrant_counts": {
             "correct_confident": sum(
                 label == 1 and prob >= high_confidence_tau
@@ -877,6 +999,8 @@ def observation_analysis_markdown(summary: dict[str, Any]) -> str:
     univariate = slope.get("univariate", {})
     controlled = slope.get("correctness_residualized", {})
     candidate = summary.get("candidate_diagnostic_summary", {})
+    source_profile = summary.get("source_profile", {})
+    guardrails = summary.get("claim_guardrails", {})
     lines = [
         "# Observation Analysis Report",
         "",
@@ -886,9 +1010,14 @@ def observation_analysis_markdown(summary: dict[str, Any]) -> str:
         "",
         f"- Provider: {summary.get('provider')}",
         f"- Model: {summary.get('model')}",
+        f"- Baseline: {summary.get('baseline')}",
+        f"- Source kind: {source_profile.get('source_kind')}",
+        f"- Confidence semantics: {source_profile.get('confidence_semantics')}",
         f"- Dry-run: {summary.get('dry_run')}",
         f"- API called: {summary.get('api_called')}",
         f"- Source output dir: {summary.get('source_output_dir')}",
+        f"- Is paper result: {guardrails.get('is_paper_result')}",
+        f"- Confidence calibrated: {guardrails.get('confidence_is_calibrated')}",
         "",
         "## Summary",
         "",
@@ -947,9 +1076,9 @@ def observation_analysis_markdown(summary: dict[str, Any]) -> str:
             f"- Parse strategy counts: {summary.get('parse_summary', {}).get('parse_strategy_counts')}",
             f"- Failure stage counts: {summary.get('parse_summary', {}).get('failure_stage_counts')}",
             "",
-            "## Reminder",
-            "",
-            "Do not treat mock, dry-run, or synthetic outputs as real model behavior or paper results.",
+        "## Reminder",
+        "",
+            "Do not treat mock, dry-run, synthetic, or baseline-proxy outputs as calibrated confidence or paper results.",
         ]
     )
     return "\n".join(lines) + "\n"
@@ -1083,6 +1212,16 @@ def analyze_observation_run(
         "source_input_jsonl": str(input_path) if input_path else None,
         "provider": summary.get("provider"),
         "model": summary.get("model"),
+        "baseline": summary.get("baseline"),
+        "source_kind": summary.get("source_profile", {}).get("source_kind"),
+        "claim_scope": summary.get("source_profile", {}).get("claim_scope"),
+        "confidence_semantics": summary.get("source_profile", {}).get(
+            "confidence_semantics"
+        ),
+        "confidence_is_calibrated": summary.get("source_profile", {}).get(
+            "confidence_is_calibrated"
+        ),
+        "claim_guardrails": summary.get("claim_guardrails"),
         "dry_run": summary.get("dry_run"),
         "api_called": summary.get("api_called"),
         "count": summary.get("count"),

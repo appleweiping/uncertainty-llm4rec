@@ -126,6 +126,23 @@ Use `--allow-missing-inputs` only for an explicitly documented diagnostic. Use
 selected input slice. Extra ranking rows are otherwise treated as a warning so
 a full ranking artifact can still be validated on a smaller observation slice.
 
+## Analysis And Registry
+
+After a baseline run writes grounded predictions, register it through the same
+observation analysis layer:
+
+```powershell
+python scripts/analyze_observation.py --run-dir outputs/observations/baselines/amazon_reviews_2023_beauty/sample_5k/test_forced_json_cooccurrence --source-label baseline-cooccurrence-sample5k
+```
+
+The analysis artifacts include the ordinary reliability, bucket, repeat,
+candidate, and risk-case outputs, plus source-profile metadata. Baseline runs
+are tagged as `source_kind=baseline_observation` and
+`confidence_semantics=non_calibrated_baseline_proxy`. This tag is required:
+popularity, co-occurrence, and ranking scores are useful reviewer-proofing
+controls, but they are not calibrated LLM confidence and must not be reported as
+method evidence without a later full protocol run.
+
 ## Next Extensions
 
 Later baseline phases should plug trained ranking or generative baseline

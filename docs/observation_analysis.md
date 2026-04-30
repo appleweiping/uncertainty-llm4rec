@@ -80,6 +80,23 @@ outputs/run_registry/observation_runs.jsonl
 The registry is an ignored local index. It points to analysis artifacts and
 source run paths; it is not a paper result table.
 
+Each analysis summary, analysis manifest, and registry record includes source
+semantics:
+
+- `source_kind`: `mock_observation`, `api_dry_run`, `api_observation`,
+  `server_observation`, `baseline_observation`, or `observation_artifact`;
+- `claim_scope`: a conservative scope label such as `schema_sanity`,
+  `pilot_or_full_artifact`, or `baseline_sanity_or_protocol_artifact`;
+- `confidence_semantics`: whether the confidence is model-reported,
+  dry-run/mock placeholder, or a non-calibrated baseline proxy;
+- `claim_guardrails`: machine-readable reminders that the analysis is not a
+  paper result, generated titles must be grounded before correctness, and
+  uncalibrated confidence must not be described as calibrated confidence.
+
+For baseline observation runs, the registry explicitly writes
+`source_kind=baseline_observation` and
+`confidence_semantics=non_calibrated_baseline_proxy`.
+
 ## Compare Prompt/Grounding Gates
 
 When multiple runs use the same input slice, compare their completed analysis

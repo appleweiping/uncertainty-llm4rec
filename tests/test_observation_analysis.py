@@ -12,6 +12,8 @@ from storyflow.analysis import (
     append_registry_record,
     candidate_diagnostic_rows,
     candidate_diagnostic_summary,
+    observation_claim_guardrails,
+    observation_source_profile,
     popularity_confidence_slope,
     reliability_bins,
     review_observation_cases,
@@ -264,6 +266,39 @@ def test_candidate_diagnostics_join_input_candidate_context() -> None:
     )
 
 
+def test_source_profile_marks_baseline_confidence_as_proxy() -> None:
+    rows = [
+        {
+            **_grounded_rows()[0],
+            "provider": "baseline",
+            "baseline": "popularity",
+            "model": "popularity",
+            "api_called": False,
+        }
+    ]
+
+    profile = observation_source_profile(
+        rows,
+        manifest={
+            "provider": "baseline",
+            "baseline": "popularity",
+            "api_called": False,
+            "model_training": False,
+        },
+    )
+    guardrails = observation_claim_guardrails(
+        source_profile=profile,
+        candidate_summary={"target_correctness_interpretable_as_recommendation_accuracy": True},
+    )
+
+    assert profile["source_kind"] == "baseline_observation"
+    assert profile["baseline"] == "popularity"
+    assert profile["confidence_semantics"] == "non_calibrated_baseline_proxy"
+    assert profile["confidence_is_calibrated"] is False
+    assert guardrails["baseline_confidence_is_proxy"] is True
+    assert guardrails["confidence_is_calibrated"] is False
+
+
 def test_analyze_observation_run_writes_outputs_and_registry() -> None:
     workspace = _workspace("analysis")
     run_dir = workspace / "run"
@@ -317,12 +352,15 @@ def test_analyze_observation_run_writes_outputs_and_registry() -> None:
     risk_rows = read_jsonl(analysis_manifest["risk_cases"])
     registry_rows = read_jsonl(workspace / "registry.jsonl")
     assert summary["provider"] == "mock"
+    assert summary["source_profile"]["source_kind"] == "mock_observation"
     assert summary["api_called"] is False
     assert repeat_summary["repeat_target"]["count"] == 2
     assert candidate_summary["generated_in_candidate_set_count"] == 2
     assert len(candidate_cases) == 4
     assert any(row["slice"] == "wrong_high_confidence" for row in risk_rows)
     assert registry_rows[0]["run_id"] == registry_record["run_id"]
+    assert registry_rows[0]["source_kind"] == "mock_observation"
+    assert registry_rows[0]["confidence_is_calibrated"] is False
 
 
 def test_analyze_observation_cli_run_dir() -> None:

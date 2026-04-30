@@ -594,6 +594,11 @@ an exploratory popularity-confidence slope. It writes `repeat_summary.json` and
 `candidate_diagnostic_summary.json`, so Amazon
 Beauty runs can compare all / no-repeat / repeat-only behavior without mixing
 repeat purchase or duplicate-review diagnostics into ordinary next-item claims.
+Analysis manifests and the ignored run registry now also include a
+`source_kind`, `claim_scope`, `confidence_semantics`, and claim guardrails. This
+keeps mock/dry-run/API/server/baseline artifacts in one registry while marking
+baseline confidence as a non-calibrated proxy unless a later calibrator validates
+it.
 When the source run is mock or dry-run, these are only pipeline sanity
 artifacts and must not be reported as real model behavior or paper evidence.
 For retrieval-context or catalog-constrained diagnostic prompts, the candidate
@@ -763,6 +768,17 @@ data, or create a paper result.
 These baselines do not call APIs, do not read keys, and do not train models.
 They are sanity/reviewer-proofing artifacts until a full baseline protocol run
 is explicitly executed and documented.
+
+Analyze and register a baseline observation run through the same analysis layer:
+
+```powershell
+python scripts/analyze_observation.py --run-dir outputs/observations/baselines/amazon_reviews_2023_beauty/sample_5k/test_forced_json_cooccurrence --source-label baseline-cooccurrence-sample5k
+```
+
+The analysis summary and registry record mark `source_kind=baseline_observation`
+and `confidence_semantics=non_calibrated_baseline_proxy`; this is intentional
+and prevents rank/popularity/co-occurrence scores from being mislabeled as
+calibrated LLM confidence.
 
 ## CURE/TRUCE Framework Scaffold
 

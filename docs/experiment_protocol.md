@@ -216,6 +216,13 @@ available. These gates do not train or run the upstream ranker; they only
 record whether the local artifact is safe to enter the title-grounding
 observation path.
 
+Once a baseline observation run is analyzed, its analysis summary and local run
+registry must preserve `source_kind=baseline_observation` and
+`confidence_semantics=non_calibrated_baseline_proxy`. This lets baselines share
+the same correctness/popularity/grounding/head-tail analysis schema while
+preventing rank/popularity/co-occurrence confidence proxies from being
+described as calibrated LLM confidence.
+
 ## Framework Stage
 
 The framework stage targets Qwen3-8B + LoRA or a comparable small-model

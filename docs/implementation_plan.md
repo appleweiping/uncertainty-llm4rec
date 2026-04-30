@@ -238,6 +238,11 @@ Planned deliverables:
   train/evaluation split separation, command/git/seed provenance, declared
   artifact paths, and grounding/leakage guard flags before a ranking JSONL is
   treated as a source artifact.
+- Current analysis registry gate: `scripts/analyze_observation.py` records
+  `source_kind`, `claim_scope`, `confidence_semantics`, and claim guardrails so
+  baseline confidence proxies, mock/dry-run outputs, API outputs, and future
+  server outputs can share one analysis schema without being conflated as paper
+  evidence.
 - Learned exposure-aware scoring and reranking after approved observation and
   utility targets exist.
 - RecBrier-style confidence objective where feasible.

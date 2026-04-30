@@ -341,3 +341,10 @@ The validation manifest is an ignored reproducibility gate. It checks coverage,
 schema, score metadata, catalog-id compatibility, history-item overlap, and
 declared split/dataset provenance without executing the ranker or producing a
 method result.
+
+After a baseline run, analyze it with `scripts/analyze_observation.py` just like
+API or mock runs. The analysis manifest and ignored run registry preserve
+`source_kind=baseline_observation` and
+`confidence_semantics=non_calibrated_baseline_proxy`, so baseline confidence
+proxies remain comparable in schema but separate in claims from calibrated or
+model-reported confidence.

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts.analyze_observation import main as analyze_main
 from scripts.run_baseline_observation import main as baseline_main
 from scripts.validate_baseline_artifact import main as validate_baseline_main
 from storyflow.baselines import (
@@ -294,6 +295,48 @@ def test_run_baseline_observation_writes_schema_and_resumes() -> None:
     assert (output_dir / "raw_responses.jsonl").exists()
     assert (output_dir / "parsed_predictions.jsonl").exists()
     assert (output_dir / "report.md").exists()
+
+
+def test_baseline_observation_analysis_marks_proxy_confidence() -> None:
+    workspace = _workspace_tmp("baseline_analysis")
+    processed_dir = workspace / "processed"
+    _write_processed_fixture(processed_dir)
+    input_jsonl = _input_jsonl(workspace, processed_dir)
+    output_dir = workspace / "baseline_run"
+    analysis_dir = workspace / "analysis"
+    registry_jsonl = workspace / "registry.jsonl"
+    run_baseline_observation(
+        input_jsonl=input_jsonl,
+        output_dir=output_dir,
+        baseline="cooccurrence",
+        max_examples=2,
+    )
+
+    code = analyze_main(
+        [
+            "--run-dir",
+            str(output_dir),
+            "--output-dir",
+            str(analysis_dir),
+            "--registry-jsonl",
+            str(registry_jsonl),
+            "--source-label",
+            "baseline-cooccurrence-fixture",
+        ]
+    )
+    summary = json.loads((analysis_dir / "analysis_summary.json").read_text(encoding="utf-8"))
+    manifest = json.loads((analysis_dir / "analysis_manifest.json").read_text(encoding="utf-8"))
+    registry_rows = read_jsonl(registry_jsonl)
+
+    assert code == 0
+    assert summary["provider"] == "baseline"
+    assert summary["baseline"] == "cooccurrence"
+    assert summary["source_profile"]["source_kind"] == "baseline_observation"
+    assert summary["claim_guardrails"]["baseline_confidence_is_proxy"] is True
+    assert summary["claim_guardrails"]["confidence_is_calibrated"] is False
+    assert manifest["source_kind"] == "baseline_observation"
+    assert registry_rows[0]["source_kind"] == "baseline_observation"
+    assert registry_rows[0]["confidence_semantics"] == "non_calibrated_baseline_proxy"
 
 
 def test_run_ranking_jsonl_observation_writes_adapter_metadata() -> None:
