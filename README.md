@@ -266,6 +266,9 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `docs/expansion_approval_gates.md`: approval checklist helper for real API,
   Qwen3/server, Amazon full-prepare, and trained-baseline expansions, plus a
   non-executing run-packet helper for one selected expansion track.
+- `docs/local_deepseek_experiments.md`: local DeepSeek experiment-launch plan
+  for processed full-data gates while Qwen3/server observation and LoRA
+  training remain deferred.
 - `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
   grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
@@ -899,6 +902,35 @@ outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_gate30_forc
 outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_gate30_catalog_constrained_json_c20.jsonl
 outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_gate30_retrieval_context_json_c20.jsonl
 outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_observation_gate_manifest.json
+```
+
+## Local DeepSeek Experiment Launch
+
+When processed full-data artifacts and `DEEPSEEK_API_KEY` are available, build
+a local DeepSeek experiment plan before spending API budget:
+
+```powershell
+python scripts/build_local_deepseek_experiment_plan.py --budget-label USER_APPROVED_LOCAL_DEEPSEEK_EXPERIMENT
+```
+
+This writes ignored plan-only artifacts under:
+
+```text
+outputs/experiment_plans/local_deepseek_fulldata_gate/
+```
+
+The generated plan covers Beauty, Health, and Video Games full-data gates by
+default, with forced-JSON, retrieval-context, and catalog-constrained prompt
+variants. It lists validation, audit, input-building, API readiness, dry-run,
+explicit `--execute-api`, analysis, case-review, and CURE/TRUCE diagnostic
+commands. The plan itself records `api_called=false`, `server_executed=false`,
+`model_training=false`, and `is_experiment_result=false`; Qwen3/server
+observation and LoRA training remain deferred.
+
+Adjust the local gate size and API controls without calling an API:
+
+```powershell
+python scripts/build_local_deepseek_experiment_plan.py --dataset amazon_reviews_2023_beauty --dataset amazon_reviews_2023_health --gate-size 30 --run-stage pilot --rate-limit 30 --max-concurrency 3 --budget-label USER_APPROVED_LOCAL_DEEPSEEK_PILOT
 ```
 
 ## Baseline Observation
