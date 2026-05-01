@@ -1,0 +1,6 @@
+name: sequential_last_item
+type: sequential
+seed: 13
+params:
+  max_history_length: 5
+notes: "Lightweight deterministic sequential smoke baseline; not a strong SASRec result."

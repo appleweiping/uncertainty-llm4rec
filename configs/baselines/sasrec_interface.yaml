@@ -1,0 +1,6 @@
+name: sasrec_interface
+type: sequential
+seed: 13
+params:
+  max_history_length: 5
+notes: "SASRec-compatible interface scaffold backed by a Markov smoke fallback; true SASRec is not implemented in Phase 4."

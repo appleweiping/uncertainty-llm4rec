@@ -1,0 +1,6 @@
+seed: 13
+eval_only: false
+save_checkpoint: true
+checkpoint_dir: null
+device: cpu
+notes: "Default CPU-safe training scaffold config."

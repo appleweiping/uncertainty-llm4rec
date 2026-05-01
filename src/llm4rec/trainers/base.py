@@ -12,6 +12,7 @@ class TrainResult:
     method: str
     artifact_dir: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    checkpoint_dir: str | None = None
 
 
 class BaseTrainer(Protocol):
@@ -20,6 +21,12 @@ class BaseTrainer(Protocol):
 
     def evaluate(self) -> dict[str, Any]:
         """Optional trainer-local evaluation hook."""
+
+    def predict(self, examples: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Return prediction-schema records for examples."""
+
+    def fit_predict(self, examples: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Train, then return prediction-schema records."""
 
     def save_checkpoint(self, path: str | Path) -> None:
         """Save trainer checkpoint if supported."""

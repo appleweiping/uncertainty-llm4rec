@@ -38,6 +38,17 @@ class TraditionalRankerTrainer:
     def evaluate(self) -> dict[str, Any]:
         return {"method": self.ranker.method_name, "trainer_local_eval": False}
 
+    def predict(self, examples: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        records = []
+        for example in examples:
+            candidates = [str(item_id) for item_id in example.get("candidates", [])]
+            records.append(self.ranker.rank(example, candidates).to_prediction_record())
+        return records
+
+    def fit_predict(self, examples: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        self.train()
+        return self.predict(examples)
+
     def save_checkpoint(self, path: str | Path) -> None:
         raise NotImplementedError("traditional smoke trainer does not save checkpoints")
 

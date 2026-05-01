@@ -1,0 +1,6 @@
+name: sequential_markov
+type: sequential
+seed: 13
+params:
+  max_history_length: 5
+notes: "First-order train-split Markov transition smoke baseline."

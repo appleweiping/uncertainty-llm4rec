@@ -1,0 +1,29 @@
+seed: 13
+run_name: smoke_sequential
+output_dir: outputs/runs
+domain: tiny
+dataset:
+  name: tiny
+  config_path: configs/datasets/tiny.yaml
+  processed_dir: data/processed/tiny/phase1
+split: test
+candidate:
+  protocol: full
+  k: null
+  seed: 13
+method:
+  name: sequential_markov
+  type: sequential
+  seed: 13
+  params:
+    max_history_length: 5
+training:
+  config_path: configs/training/sequential_tiny.yaml
+evaluation:
+  top_k: [1, 5, 10]
+top_k: [1, 5, 10]
+logging:
+  level: INFO
+output:
+  run_name: smoke_sequential
+  output_dir: outputs/runs

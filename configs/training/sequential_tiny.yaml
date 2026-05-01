@@ -1,0 +1,7 @@
+seed: 13
+eval_only: false
+save_checkpoint: true
+checkpoint_dir: null
+device: cpu
+max_history_length: 5
+notes: "Tiny CPU sequential training config for smoke tests."

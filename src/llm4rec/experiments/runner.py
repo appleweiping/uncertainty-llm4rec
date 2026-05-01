@@ -23,7 +23,13 @@ from llm4rec.rankers.llm_reranker import LLMReranker
 from llm4rec.rankers.mf import MatrixFactorizationRanker
 from llm4rec.rankers.popularity import PopularityRanker
 from llm4rec.rankers.random import RandomRanker
+from llm4rec.rankers.sequential import MarkovSequentialRanker, SasrecInterfaceRanker, SequentialLastItemRanker
+from llm4rec.trainers.lora import LoraTrainer
+from llm4rec.trainers.sequential import SequentialTrainer
 from llm4rec.trainers.traditional import TraditionalRankerTrainer
+
+
+SEQUENTIAL_METHODS = {"sequential_last_item", "sequential_markov", "sasrec_interface", "sequential_interface"}
 
 
 def run_preprocess_from_config(config_path: str | Path) -> dict[str, Any]:
@@ -51,7 +57,7 @@ def run_experiment_config(config: dict[str, Any], *, preprocess: bool = False) -
         logger.log(f"preprocessed dataset to {preprocess_manifest['processed_dir']}")
     save_resolved_config(config, run_dir / "resolved_config.yaml")
     write_environment(run_dir)
-    predictions = _build_predictions(config)
+    predictions = _build_predictions(config, run_dir=run_dir)
     predictions_path = run_dir / "predictions.jsonl"
     write_jsonl(predictions_path, predictions)
     logger.log(f"wrote predictions count={len(predictions)}")
@@ -96,11 +102,13 @@ def run_all(config_path: str | Path) -> dict[str, Any]:
     }
 
 
-def _build_predictions(config: dict[str, Any]) -> list[dict[str, Any]]:
+def _build_predictions(config: dict[str, Any], *, run_dir: Path) -> list[dict[str, Any]]:
     method = _method_name(config)
     if method == "skeleton":
         return _build_skeleton_predictions(config)
-    return _build_ranker_predictions(config)
+    if method == "lora_dry_run":
+        return _build_lora_dry_run(config, run_dir=run_dir)
+    return _build_ranker_predictions(config, run_dir=run_dir)
 
 
 def _build_skeleton_predictions(config: dict[str, Any]) -> list[dict[str, Any]]:
@@ -142,7 +150,7 @@ def _build_skeleton_predictions(config: dict[str, Any]) -> list[dict[str, Any]]:
     return predictions
 
 
-def _build_ranker_predictions(config: dict[str, Any]) -> list[dict[str, Any]]:
+def _build_ranker_predictions(config: dict[str, Any], *, run_dir: Path) -> list[dict[str, Any]]:
     processed_dir = Path(_required_path(config, "dataset", "processed_dir"))
     split = str(config.get("split") or "test")
     examples = read_jsonl(processed_dir / "examples.jsonl")
@@ -153,6 +161,21 @@ def _build_ranker_predictions(config: dict[str, Any]) -> list[dict[str, Any]]:
     if not eval_examples:
         raise ValueError(f"no examples found for split={split} in {processed_dir}")
     ranker = _build_ranker(config)
+    if _method_name(config) in SEQUENTIAL_METHODS:
+        training = _training_config(config)
+        checkpoint_dir = Path(str(training.get("checkpoint_dir") or (run_dir / "checkpoints")))
+        trainer = SequentialTrainer(
+            ranker,
+            train_examples=train_examples,
+            item_catalog=item_catalog,
+            interactions=interactions,
+            checkpoint_dir=checkpoint_dir,
+            config=config,
+            seed=int(config.get("seed") or 0),
+            eval_only=bool(training.get("eval_only", False)),
+        )
+        trainer.train()
+        return trainer.predict(eval_examples)
     trainer = TraditionalRankerTrainer(
         ranker,
         train_examples=train_examples,
@@ -174,6 +197,15 @@ def _build_ranker_predictions(config: dict[str, Any]) -> list[dict[str, Any]]:
         record["metadata"].setdefault("phase", "phase2_minimal_baseline")
         predictions.append(record)
     return predictions
+
+
+def _build_lora_dry_run(config: dict[str, Any], *, run_dir: Path) -> list[dict[str, Any]]:
+    training = _training_config(config)
+    output_dir = str(training.get("output_dir") or (run_dir / "artifacts" / "lora_dry_run"))
+    trainer = LoraTrainer({**training, "output_dir": output_dir}, dry_run=bool(training.get("dry_run", True)))
+    result = trainer.train()
+    write_json(run_dir / "artifacts" / "lora_dry_run_manifest.json", result.metadata)
+    return []
 
 
 def _build_ranker(config: dict[str, Any]) -> BaseRanker:
@@ -199,6 +231,12 @@ def _build_ranker(config: dict[str, Any]) -> BaseRanker:
             learning_rate=float(params.get("learning_rate") or 0.05),
             regularization=float(params.get("regularization") or 0.001),
         )
+    if method == "sequential_last_item":
+        return SequentialLastItemRanker(max_history_length=int(params.get("max_history_length") or 50))
+    if method in {"sequential_markov", "sequential_interface"}:
+        return MarkovSequentialRanker(max_history_length=int(params.get("max_history_length") or 50))
+    if method == "sasrec_interface":
+        return SasrecInterfaceRanker(max_history_length=int(params.get("max_history_length") or 50))
     if method == "llm_generative":
         return LLMGenerativeRanker(
             provider=_build_llm_provider(config),
@@ -265,7 +303,25 @@ def _resolve_runtime_config(config: dict[str, Any]) -> dict[str, Any]:
         merged.update({key: value for key, value in llm.items() if key != "config_path"})
         merged["config_path"] = source_path
         resolved["llm"] = merged
+    training = resolved.get("training")
+    if isinstance(training, dict) and training.get("config_path"):
+        source_path = str(training["config_path"])
+        merged = load_config(source_path)
+        merged.update({key: value for key, value in training.items() if key != "config_path"})
+        merged["config_path"] = source_path
+        resolved["training"] = merged
     return resolved
+
+
+def _training_config(config: dict[str, Any]) -> dict[str, Any]:
+    training = config.get("training")
+    if not isinstance(training, dict):
+        return {}
+    if training.get("config_path"):
+        loaded = load_config(str(training["config_path"]))
+        loaded.update({key: value for key, value in training.items() if key != "config_path"})
+        return loaded
+    return training
 
 
 def _required_llm_text(llm_config: dict[str, Any], key: str) -> str:
@@ -307,7 +363,7 @@ def _config_for_baseline(config: dict[str, Any], baseline: str) -> dict[str, Any
     child.pop("baselines", None)
     child["method"] = {
         "name": baseline,
-        "type": "llm" if baseline.startswith("llm_") else "ranker",
+        "type": _default_method_type_for(baseline),
         "seed": int(config.get("seed") or 0),
         "params": _default_params_for(baseline),
     }
@@ -325,6 +381,8 @@ def _default_params_for(method: str) -> dict[str, Any]:
         return {"text_policy": "title", "k1": 1.5, "b": 0.75}
     if method == "mf":
         return {"factors": 4, "epochs": 20, "learning_rate": 0.05, "regularization": 0.001}
+    if method in {"sequential_last_item", "sequential_markov", "sasrec_interface", "sequential_interface"}:
+        return {"max_history_length": 5}
     if method == "llm_generative":
         return {"prediction_method": "llm_generative_mock", "text_policy": "title"}
     if method == "llm_rerank":
@@ -334,7 +392,25 @@ def _default_params_for(method: str) -> dict[str, Any]:
     return {}
 
 
+def _default_method_type_for(method: str) -> str:
+    if method.startswith("llm_"):
+        return "llm"
+    if method in SEQUENTIAL_METHODS:
+        return "sequential"
+    if method == "lora_dry_run":
+        return "training"
+    return "ranker"
+
+
 def _default_run_name_for(method: str) -> str:
+    if method == "sequential_last_item":
+        return "smoke_sequential_last_item"
+    if method == "sequential_markov":
+        return "smoke_sequential_markov"
+    if method == "sasrec_interface":
+        return "smoke_sasrec_interface"
+    if method == "lora_dry_run":
+        return "smoke_lora_dry_run"
     if method == "llm_generative":
         return "smoke_llm_generative"
     if method == "llm_rerank":

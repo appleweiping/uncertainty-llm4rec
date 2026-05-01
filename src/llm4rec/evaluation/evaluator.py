@@ -65,6 +65,11 @@ def _note_for_methods(predictions: list[dict[str, Any]]) -> str:
             "Phase 3 mock LLM baseline and uncertainty-observation smoke metrics only; "
             "not a paper result or OursMethod claim."
         )
+    if any(method.startswith("sequential_") or method in {"sasrec_interface"} for method in methods):
+        return (
+            "Phase 4 lightweight sequential baseline smoke metrics only; "
+            "not a strong SASRec result, paper result, or OursMethod claim."
+        )
     return (
         "Phase 2 minimal baseline smoke metrics only; use for infrastructure "
         "validation, not as paper-level experimental evidence."
