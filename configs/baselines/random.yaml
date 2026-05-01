@@ -1,0 +1,13 @@
+method:
+  name: random
+  type: ranker
+  seed: 13
+  params:
+    deterministic: true
+candidate:
+  protocol: full
+  k: null
+  seed: 13
+evaluation:
+  top_k: [1, 5, 10]
+  metrics: [recall, ndcg, hit_rate, mrr, coverage, validity, hallucination]
