@@ -1,0 +1,38 @@
+template: true
+dry_run: true
+requires_confirm: true
+seed: 13
+seeds: [13, 21, 34]
+run_name: real_ablation_TBD
+output_dir: outputs/real_runs/ablation
+domain: TBD
+dataset:
+  name: TBD
+  config_path: TBD
+  processed_dir: TBD
+split: test
+candidate:
+  protocol: shared_sampled_TBD
+  k: 100
+  seed: 13
+baselines: [ours_uncertainty_guided, ours_fallback_only, ours_ablation_no_uncertainty, ours_ablation_no_grounding, ours_ablation_no_candidate_normalized_confidence, ours_ablation_no_popularity_adjustment, ours_ablation_no_echo_guard]
+llm:
+  config_path: configs/llm/mock.yaml
+  response_mode: generative_correct
+  notes: replace_with_confirmed_api_or_hf_provider_for_real_run
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [1, 5, 10, 20]
+top_k: [1, 5, 10, 20]
+metrics: [ranking, validity, confidence, calibration, coverage, diversity, novelty, long_tail, efficiency]
+safety:
+  allow_api_calls: false
+  allow_download: false
+  allow_training: false
+  acknowledged_expensive_run: false
+  leakage_safeguards: true
+logging:
+  level: INFO
+output:
+  run_name: real_ablation_TBD
+  output_dir: outputs/real_runs/ablation

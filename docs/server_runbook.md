@@ -1,378 +1,122 @@
 # Server Runbook
 
-This is a server execution framework for future Storyflow / TRUCE-Rec work. It
-does not record any completed server run.
+This runbook describes safe execution paths for smoke runs, API LLM runs, local
+HF inference, and LoRA/QLoRA training. It does not authorize expensive jobs by
+itself.
 
-## Status
+## Local smoke run
 
-No server experiment, Qwen3-8B inference, Qwen3-8B + LoRA training, or
-large-scale baseline has been executed by Codex in this repository. Amazon
-Beauty full preprocessing has been executed locally as a data-readiness
-artifact. User-approved DeepSeek local API full-slice diagnostics have been
-executed on Amazon Beauty repeat-free inputs; these are local API artifacts
-under ignored `outputs/`, not server runs and not paper conclusions.
-On 2026-05-01, the user paused the local Video_Games all-test DeepSeek run and
-deferred that large-domain execution to server or a later explicitly started
-experiment phase.
-
-## Server Responsibilities
-
-Server hardware is expected for:
-
-- Qwen3-8B full inference when local execution is too heavy;
-- Qwen3-8B + LoRA training;
-- large Amazon Reviews 2023 category preprocessing;
-- large-scale SASRec, BERT4Rec, GRU4Rec, LightGCN, and generative baseline
-  runs where feasible;
-- long-running observation, simulation, and triage experiments.
-
-Local execution remains responsible for repository editing, small tests,
-documentation, small real-data sanity checks, and report generation.
-
-## Expected Server Directory Layout
-
-Future server scripts and configs should use:
-
-```text
-configs/server/
-scripts/server/
-outputs/
-runs/
-data/raw/
-data/cache/
-```
-
-Raw data, caches, outputs, and runs must not be committed unless a future task
-explicitly adds sanitized lightweight fixtures.
-
-## Environment Requirements
-
-Future server setup should record:
-
-- git remote and commit hash;
-- Python version and package lock or exact install commands;
-- CUDA, driver, GPU type, and GPU memory;
-- model source and revision;
-- dataset source, local path, checksum where available, and license/access
-  notes;
-- seed values and deterministic settings where feasible.
-
-API keys and tokens must be supplied through environment variables or server
-secret management. They must not be written into source files, configs, logs, or
-commits.
-
-## Planned Server Workflow
-
-Future runbooks should expand these placeholders into exact commands after the
-scripts exist:
-
-1. Clone or update the repository on the server.
-2. Verify the repository is on `main` and at the intended commit.
-3. Create or activate the Python environment.
-4. Install dependencies from the project dependency file.
-5. Place or download datasets according to the dataset manifest.
-6. Run preprocessing with manifest output.
-7. Run Qwen3-8B inference or Qwen3-8B + LoRA training with config snapshots.
-8. Write logs, metrics, generated outputs, and run manifests under `runs/` or
-   `outputs/`.
-9. Copy only sanitized summaries, configs, logs, and metrics needed for local
-   analysis.
-
-Before any real server, full-data, API, or trained-baseline expansion, generate
-the local approval checklist:
+Safe local commands:
 
 ```powershell
-python scripts/build_expansion_approval_checklist.py
+python -m pytest
+python scripts/run_all.py --config configs/experiments/smoke_phase6_all.yaml
+python scripts/run_all.py --config configs/experiments/smoke_ours_method.yaml
 ```
 
-The command writes ignored artifacts under
-`outputs/approval_gates/next_expansion/`. It does not execute the server, call
-an API, train a model, download data, or authorize a run by itself.
+These use fixture data and MockLLM. They are not paper evidence.
 
-After selecting one expansion track, generate a non-executing run packet:
+## API LLM run
+
+Required before execution:
+
+- explicit user confirmation of provider, model, budget, rate limit, and
+  concurrency;
+- provider config with `requires_confirm: true`;
+- API key in an environment variable, never in source files;
+- dry-run validation with `scripts/validate_experiment_ready.py`;
+- no target leakage checklist completed.
+
+Provider config should record:
+
+- provider name and model;
+- base URL if OpenAI-compatible;
+- API key environment variable name;
+- retry and timeout policy;
+- cache location and raw-output location;
+- rate-limit and cost-tracking settings.
+
+Safe preflight:
 
 ```powershell
-python scripts/build_expansion_run_packet.py --track qwen3_server --run-label qwen3_beauty_plan_packet --input-jsonl <input-jsonl> --target-output-dir <server-output-dir>
+python scripts/validate_experiment_ready.py --config configs/experiments/real_llm_api_template.yaml
 ```
 
-The packet writes ignored artifacts under `outputs/run_packets/` by default. It
-lists missing confirmations, safe preflight commands, approval-required command
-shape, expected artifacts, and forbidden claims. It still does not execute a
-server command, call an API, process full data, train a model, or authorize
-execution by itself.
+Do not run real API calls from templates until the user replaces TBD fields and
+confirms the job.
 
-## Qwen3-8B Observation Scaffold
+## HF local model run
 
-The repository includes a server observation contract for Qwen3-8B:
+Required fields:
 
-- config: `configs/server/qwen3_8b_observation.yaml`;
-- script: `scripts/server/run_qwen3_observation.py`;
-- package helper: `storyflow.server`;
-- default mode: plan-only, with no model loading and no inference;
-- guarded execution mode: `--execute-server`, intended only for approved server
-  hardware.
+- local `model_name_or_path`;
+- `allow_download: false` unless the user explicitly permits download;
+- device selection;
+- batch size;
+- max tokens and decoding settings;
+- logprob availability flag when relevant.
 
-Plan-only command from the repository root:
+Warnings:
 
-```powershell
-python scripts/server/run_qwen3_observation.py --config configs/server/qwen3_8b_observation.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl --output-dir outputs/server_observations/qwen3_8b/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_plan --max-examples 20 --run-label qwen3_beauty_plan
-```
+- loading a local model may require substantial CPU/GPU memory;
+- API-style token costs may not apply, but latency and memory should be logged;
+- no model should be downloaded automatically in Phase 7 templates.
 
-The plan writes ignored artifacts:
+## LoRA/QLoRA dry-run
 
-- `request_records.jsonl`;
-- `expected_output_contract.json`;
-- `server_command_plan.md`;
-- `manifest.json`.
+Dry-run validation should check:
 
-The plan manifest must contain:
+- config loads;
+- dataset paths are present or marked TBD;
+- output directory is writable;
+- checkpoint/output path is defined;
+- `dry_run: true` or `requires_confirm: true`;
+- no real training flag is enabled.
 
-- `api_called=false`;
-- `server_executed=false`;
-- `model_inference_run=false`;
+Expected manifest:
+
+- config snapshot;
+- planned command;
+- expected artifacts;
 - `model_training=false`;
-- `output_schema_matches_api_observation=true`;
-- `grounding_required_before_correctness=true`;
 - `is_experiment_result=false`.
 
-Approved server execution command shape:
+## Real LoRA/QLoRA server run
 
-```powershell
-python scripts/server/run_qwen3_observation.py --config configs/server/qwen3_8b_observation.yaml --input-jsonl outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl --output-dir outputs/server_observations/qwen3_8b/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json_server --execute-server --run-stage full --run-label qwen3_beauty_full_server
-```
+Real training requires explicit user approval and server details:
 
-This command requires a server Python environment with `torch`, `transformers`,
-the configured Qwen3 model source/cache path, sufficient GPU memory, the input
-JSONL, and the matching processed catalog CSV. It writes API-compatible layers:
+- GPU model and memory;
+- CUDA/driver/Python environment;
+- model path or approved download policy;
+- dataset path and checksum where possible;
+- output checkpoint directory;
+- resume/eval-only policy;
+- seed list;
+- logging and monitoring plan.
 
-- `request_records.jsonl`;
-- `raw_responses.jsonl`;
-- `parsed_predictions.jsonl`;
-- `failed_cases.jsonl`;
-- `grounded_predictions.jsonl`;
-- `metrics.json`;
-- `report.md`;
-- `manifest.json`.
+Required outputs:
 
-Codex must not claim this server command has run unless the user provides the
-server manifest and logs. Qwen3 outputs must still be grounded to the catalog
-before correctness, confidence, popularity, or head/mid/tail metrics are
-reported.
-
-## Qwen3-8B LoRA / SFT Training Scaffold
-
-The repository now includes a server-only Qwen3-8B LoRA SFT training contract:
-
-- config: `configs/server/qwen3_8b_lora_sft.yaml`;
-- script: `scripts/server/run_qwen3_lora_sft.py`;
-- package helper: `storyflow.training`;
-- default mode: plan-only, with no model loading and no training;
-- local execution guard: `--execute-server` is refused by local Codex.
-
-Plan-only command from the repository root:
-
-```powershell
-python scripts/server/run_qwen3_lora_sft.py --config configs/server/qwen3_8b_lora_sft.yaml --output-dir outputs/server_training/qwen3_8b_lora_sft/plan
-```
-
-The plan writes ignored artifacts:
-
-- `train_manifest.json`;
-- `train_command_plan.md`;
-- `config_snapshot.json`;
-- `expected_training_artifacts.json`;
-- optional `sft_preview_rows.jsonl` when the configured input JSONL exists.
-
-The plan manifest must contain:
-
-- `api_called=false`;
-- `server_executed=false`;
-- `model_training=false`;
-- `is_experiment_result=false`;
-- `claim_scope=plan_only_not_training_not_paper_evidence`.
-
-The initial SFT response policy is
-`target_title_json_confidence_1`: train the model to emit a JSON object for the
-held-out target title as a baseline generative recommender. This is not the
-final TRUCE/CURE objective and must not be described as uncertainty-aware
-learning. Later method training should add confidence/calibration/risk-aware
-objectives only after the baseline SFT path and evaluation contract are
-verified.
-
-Approved server training command shape:
-
-```powershell
-python scripts/server/run_qwen3_lora_sft.py --config configs/server/qwen3_8b_lora_sft.yaml --output-dir outputs/server_training/qwen3_8b_lora_sft/amazon_reviews_2023_beauty/full --execute-server
-```
-
-In the current local Codex environment this command intentionally raises a
-server-only guard instead of training. Real execution requires an approved
-server environment with `torch`, `transformers`, `datasets`, `peft`, and a
-trainer implementation or launcher recorded in the server logs. The returned
-artifacts must include adapter path, trainer state, logs, metrics, config
-snapshot, git commit hash, and data manifest before any result is discussed.
-
-## Project Setup Readiness Report
-
-Before starting the next real experiment phase, generate the project readiness
-report:
-
-```powershell
-python scripts/build_project_readiness_report.py
-```
-
-This writes ignored artifacts under `outputs/project_readiness/current/` and
-checks whether governance, data, API observation, Qwen server observation,
-Qwen LoRA training scaffold, baselines, confidence framework, simulation/triage,
-and run-packet gates are present. The manifest also records:
-
-- `module_readiness`: ready, blocked, and approval-required module states;
-- `safe_preflight_commands`: local commands that do not call APIs, execute a
-  server, train models, download raw data, or create paper evidence;
-- `approval_required_operations`: command shapes that remain forbidden until
-  the user explicitly starts that experiment path.
-
-The readiness command itself does not call APIs, execute a server, train
-models, download data, or create paper evidence.
-
-## Amazon Reviews 2023 Beauty Full Run Gate
-
-Amazon Beauty full download and preprocessing should run on a server or a local
-machine with large enough disk/network capacity. A local full preprocessing job
-has been run on 2026-04-29 from already placed raw JSONL files; this is not a
-server run and not an experiment result.
-
-Required inputs:
-
-- repository checkout on `main`;
-- `configs/datasets/amazon_reviews_2023_beauty.yaml`;
-- access to `McAuley-Lab/Amazon-Reviews-2023` according to its dataset card and
-  usage terms;
-- raw review JSONL at
-  `data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl`;
-- raw metadata JSONL at
-  `data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl`;
-- enough storage for raw/cache/processed outputs.
-
-Lightweight readiness check:
-
-```powershell
-python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run --sample-records 3
-```
-
-Optional online availability check:
-
-```powershell
-python scripts/inspect_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --check-online
-```
-
-Prepare dry-run/readiness:
-
-```powershell
-python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --dry-run
-```
-
-Full prepare command shape after raw JSONL placement and explicit full-run
-approval:
-
-```powershell
-python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --reviews-jsonl data/raw/amazon_reviews_2023_beauty/All_Beauty.jsonl --metadata-jsonl data/raw/amazon_reviews_2023_beauty/meta_All_Beauty.jsonl --output-suffix full --allow-full
-```
-
-Local sample prepare before full run:
-
-```powershell
-python scripts/prepare_amazon_reviews_2023.py --dataset amazon_reviews_2023_beauty --sample-mode --max-records 5000 --output-suffix sample_5k --min-user-interactions 1 --user-k-core 1 --item-k-core 1 --min-history 1 --max-history 20
-```
-
-Sample prepare is only a pipeline readiness check. It is not a full server run
-and must not be reported as experimental evidence. The prepare script blocks
-accidental full preprocessing unless `--allow-full` is passed.
-
-Expected processed outputs:
-
-- `item_catalog.csv`
-- `interactions.csv`
-- `item_popularity.csv`
-- `user_sequences.jsonl`
-- `observation_examples.jsonl`
-- `preprocess_manifest.json`
-
-Every server full run must preserve:
-
-- exact command line;
-- git commit hash;
-- dataset config snapshot;
-- raw file paths and checksums where possible;
-- stdout/stderr logs;
-- processed output manifest;
-- failure/resume notes.
-
-Only sanitized manifests, logs, and metrics should be copied back for local
-analysis. Raw data and full processed data remain uncommitted.
-
-## Amazon Cross-Category Readiness Matrix
-
-Before adding another Amazon full run, inspect configured category readiness
-without downloading data:
-
-```powershell
-python scripts/inspect_amazon_category_matrix.py --sample-records 3
-```
-
-This writes ignored JSON/CSV/Markdown artifacts under
-`outputs/amazon_reviews_2023/category_matrix/`. It records whether raw review
-and metadata JSONL files exist for Beauty, Digital_Music, Handmade_Products,
-Health_and_Personal_Care, Video_Games, Sports_and_Outdoors, and Books. It also
-records guarded sample/full command templates and marks `api_called=false`,
-`server_executed=false`, `full_download_attempted=false`, and
-`is_experiment_result=false`.
-
-Video_Games and Books are the preferred title-rich robustness candidates after
-Beauty. Their full preparation remains server/manual-raw gated and must not be
-claimed until raw files, commands, logs, manifests, and validation artifacts are
-available.
-
-## Baseline Ranking Run Manifest Contract
-
-Large SASRec, BERT4Rec, GRU4Rec, LightGCN, and similar baseline runs must write
-a source run manifest before their ranking JSONL is adapted through
-`ranking_jsonl`. A safe template is committed at
-`configs/server/baseline_ranking_run_manifest.example.json`.
-
-Required validation command after copying the manifest and declared safe logs
-or ranking paths back to the local repository:
-
-```powershell
-python scripts/validate_baseline_run_manifest.py --manifest-json runs/baselines/sasrec/amazon_reviews_2023_beauty/full/run_manifest.json --strict
-```
-
-The validator records an ignored manifest under
-`outputs/baseline_run_manifest_validation/...`. It checks required provenance,
-train/evaluation split separation, command/git/seed metadata, path existence
-and hashes when available, and the leakage guards
-`grounding_required_before_correctness=true` and
-`uses_heldout_targets_for_training=false`. It does not execute the baseline,
-call APIs, train models, download data, or create a paper result. The ranking
-JSONL must still pass `scripts/validate_baseline_artifact.py` before grounded
-title-level observation.
-
-## Required Run Artifacts
-
-Every future server run should produce:
-
-- command line;
-- git commit hash;
-- config snapshot;
-- dataset manifest;
+- checkpoints or adapters;
+- trainer state;
+- logs;
+- metrics;
+- resolved config;
 - environment summary;
-- seed values;
-- stdout/stderr log path;
-- output JSONL or metric path;
-- failure/resume status;
-- notes on whether the run is synthetic, pilot, or full.
+- git commit hash;
+- evaluation predictions and metrics.
 
-## Claim Policy
+Risks:
 
-Do not state that a server run succeeded unless its log or artifact is present
-and inspected. Do not convert planned commands into experimental results.
+- out-of-memory failures;
+- partial checkpoints;
+- train/eval leakage;
+- model or data license constraints;
+- cost and queue-time overruns.
+
+No real LoRA/QLoRA command should be executed by default from Phase 7 templates.
+
+## Claim policy
+
+Do not claim any API, HF, or server result unless the run directory contains
+the required logs, raw outputs where applicable, metrics, config snapshot, and
+commit hash. Smoke/mock outputs are infrastructure checks only.

@@ -1,0 +1,52 @@
+template: true
+dry_run: true
+requires_confirm: true
+seed: 13
+run_name: real_llm_api_TBD
+output_dir: outputs/real_runs/llm_api
+domain: TBD
+dataset:
+  name: TBD
+  config_path: TBD
+  processed_dir: TBD
+split: test
+candidate:
+  protocol: shared_sampled_TBD
+  k: 100
+  seed: 13
+method:
+  name: llm_confidence_observation
+  type: llm
+  seed: 13
+  params:
+    prediction_method: llm_confidence_observation_api_TBD
+    text_policy: title
+llm:
+  provider: openai_compatible
+  type: openai_compatible
+  model: TBD
+  base_url: TBD
+  api_key_env: TBD
+  timeout_seconds: 60
+  max_retries: 2
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 256
+  requires_confirm: true
+  allow_api_calls: false
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [1, 5, 10, 20]
+top_k: [1, 5, 10, 20]
+metrics: [ranking, validity, confidence, calibration, coverage, diversity, novelty, long_tail, efficiency]
+safety:
+  allow_api_calls: false
+  allow_download: false
+  allow_training: false
+  acknowledged_expensive_run: false
+  leakage_safeguards: true
+logging:
+  level: INFO
+output:
+  run_name: real_llm_api_TBD
+  output_dir: outputs/real_runs/llm_api

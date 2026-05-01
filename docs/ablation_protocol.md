@@ -1,162 +1,127 @@
-# Phase 6 Ablation Protocol
+# Ablation Protocol
 
-This protocol defines smoke-ready variants for Calibrated
-Uncertainty-Guided Generative Recommendation. All variants must output the
-shared prediction schema and be evaluated by the shared evaluator.
+This protocol defines Phase 6/7 ablations for Calibrated
+Uncertainty-Guided Generative Recommendation. It is a plan for comparable real
+experiments and smoke validation, not a result table.
 
-## Shared evaluation setup
+## Shared requirements
 
-- Dataset config: `configs/datasets/tiny.yaml` for Phase 6 smoke tests.
-- Split: `test`.
-- Candidate protocol: full tiny candidate set from preprocessing.
-- LLM provider: MockLLM only.
-- Seed: `13`.
-- Evaluator: `llm4rec.evaluation.evaluator.evaluate_predictions`.
-- Metrics: ranking, validity/hallucination, confidence, calibration, coverage,
-  diversity, novelty, long-tail, latency/token efficiency.
+- All variants emit the unified prediction JSONL schema.
+- All variants use the same shared evaluator.
+- Comparable variants use the same split and candidate protocol.
+- Train-only statistics are used for popularity and novelty.
+- Target title, target item ID, future interactions, and correctness labels are
+  forbidden as prompt or policy inputs.
+- MockLLM outputs are smoke evidence only.
 
-## Variants
+## Ours variants
 
 ### Ours full
 
 - Config path: `configs/methods/ours_uncertainty_guided.yaml`.
-- Allowed inputs: history, non-target visible candidates, catalog, train
-  popularity, MockLLM output, grounding result, candidate-normalized confidence,
-  fallback ranker scores over the same candidate set.
+- Experiment template: `configs/experiments/real_ours_method_template.yaml`.
+- Allowed inputs: history, non-target candidates, catalog, train popularity,
+  generated title, confidence, grounding score, candidate-normalized
+  confidence, history similarity, same-candidate fallback scores.
 - Disabled components: none.
-- Expected output schema: unified prediction JSONL with `ours_method=true` and
+- Output schema: unified prediction schema with `ours_method=true` and
   `ablation_variant=full`.
-- Evaluation metrics: all shared metrics.
-- Leakage risks: target title or ID appearing in prompt; test popularity used by
-  policy; fallback using a different candidate set.
-
-### Ours w/o uncertainty
-
-- Config path: `configs/methods/ours_ablation_no_uncertainty.yaml`.
-- Allowed inputs: history, non-target visible candidates, catalog, MockLLM
-  generated title, grounding result, fallback ranker if grounding fails.
-- Disabled components: uncertainty policy thresholds and confidence-based
-  fallback.
-- Expected output schema: unified prediction JSONL with
-  `disabled_components=["uncertainty_policy"]`.
-- Evaluation metrics: all shared metrics plus decision metadata counts.
-- Leakage risks: accidentally retaining confidence threshold decisions.
-
-### Ours w/o grounding
-
-- Config path: `configs/methods/ours_ablation_no_grounding.yaml`.
-- Allowed inputs: history, non-target visible candidates, MockLLM generated
-  title/confidence, fallback ranker.
-- Disabled components: grounding check as a required accept criterion.
-- Expected output schema: unified prediction JSONL with
-  `disabled_components=["grounding_check"]`.
-- Evaluation metrics: all shared metrics, especially validity and hallucination.
-- Leakage risks: using target labels to map an ungrounded title.
-
-### Ours w/o candidate-normalized confidence
-
-- Config path: `configs/methods/ours_uncertainty_guided.yaml` with
-  `method.params.ablation.variant=no_candidate_normalized_confidence`, or the
-  grouped ablation experiment config.
-- Allowed inputs: history, non-target visible candidates, catalog, MockLLM
-  generation, grounding, popularity, history similarity.
-- Disabled components: candidate-normalized confidence prompt and threshold.
-- Expected output schema: unified prediction JSONL with
-  `disabled_components=["candidate_normalized_confidence"]`.
-- Evaluation metrics: all shared metrics plus confidence/calibration.
-- Leakage risks: still computing normalized confidence under another metadata
-  name.
-
-### Ours w/o popularity adjustment
-
-- Config path: `configs/methods/ours_ablation_no_popularity_adjustment.yaml`.
-- Allowed inputs: history, non-target visible candidates, catalog, MockLLM
-  generation, grounding, candidate-normalized confidence, history similarity.
-- Disabled components: popularity overconfidence adjustment in policy.
-- Expected output schema: unified prediction JSONL with
-  `disabled_components=["popularity_adjustment"]`.
-- Evaluation metrics: all shared metrics plus popularity-stratified metrics.
-- Leakage risks: using popularity risk flag to affect decisions despite the
-  ablation.
-
-### Ours w/o history-similarity / echo-risk guard
-
-- Config path: `configs/methods/ours_ablation_no_echo_guard.yaml`.
-- Allowed inputs: history, non-target visible candidates, catalog, MockLLM
-  generation, grounding, candidate-normalized confidence, popularity.
-- Disabled components: echo-risk guard decision rule.
-- Expected output schema: unified prediction JSONL with
-  `disabled_components=["echo_risk_guard"]`.
-- Evaluation metrics: all shared metrics plus diversity, novelty, and history
-  similarity metadata summaries.
-- Leakage risks: retaining hidden fallback on high history similarity.
+- Metrics: ranking, validity, hallucination, confidence, calibration, coverage,
+  diversity, novelty, long-tail, latency/cost.
+- Leakage risks: target in prompt, test popularity, fallback candidate mismatch.
 
 ### Ours fallback-only
 
 - Config path: `configs/methods/ours_fallback_only.yaml`.
-- Allowed inputs: history, candidate set, train data used by fallback ranker.
-- Disabled components: generation acceptance, uncertainty policy acceptance,
-  grounding acceptance, candidate-normalized confidence, popularity adjustment,
-  echo-risk guard.
-- Expected output schema: unified prediction JSONL with
-  `ablation_variant=fallback_only` and fallback metadata.
-- Evaluation metrics: all shared metrics.
-- Leakage risks: fallback must use the same candidate set and train-only data.
+- Experiment template: `configs/experiments/real_ablation_template.yaml`.
+- Allowed inputs: history, train data for fallback, same candidate set.
+- Disabled components: generation acceptance, uncertainty policy, grounding
+  acceptance, candidate-normalized confidence, popularity adjustment, echo-risk
+  guard.
+- Output schema: unified prediction schema with `ablation_variant=fallback_only`.
+- Metrics: all shared metrics.
+- Leakage risks: fallback using non-comparable candidates or non-train evidence.
+
+### Ours w/o uncertainty
+
+- Config path: `configs/methods/ours_ablation_no_uncertainty.yaml`.
+- Disabled components: uncertainty policy.
+- Expected output: `disabled_components=["uncertainty_policy"]`.
+- Leakage risks: hidden confidence threshold still affecting decisions.
+
+### Ours w/o grounding
+
+- Config path: `configs/methods/ours_ablation_no_grounding.yaml`.
+- Disabled components: grounding check as accept criterion.
+- Expected output: `disabled_components=["grounding_check"]`.
+- Leakage risks: mapping ungrounded generations using target labels.
+
+### Ours w/o candidate-normalized confidence
+
+- Config path:
+  `configs/methods/ours_ablation_no_candidate_normalized_confidence.yaml`.
+- Disabled components: candidate-normalized confidence prompt and threshold.
+- Expected output: `disabled_components=["candidate_normalized_confidence"]`.
+- Leakage risks: computing normalized confidence under another metadata key.
+
+### Ours w/o popularity adjustment
+
+- Config path: `configs/methods/ours_ablation_no_popularity_adjustment.yaml`.
+- Disabled components: popularity overconfidence adjustment.
+- Expected output: `disabled_components=["popularity_adjustment"]`.
+- Leakage risks: popularity flag still changing policy decisions.
+
+### Ours w/o echo guard
+
+- Config path: `configs/methods/ours_ablation_no_echo_guard.yaml`.
+- Disabled components: history-similarity / echo-risk guard.
+- Expected output: `disabled_components=["echo_risk_guard"]`.
+- Leakage risks: hidden fallback on high history similarity.
+
+## Baseline comparators
 
 ### LLM generative baseline
 
-- Config path: `configs/experiments/smoke_llm_generative.yaml`.
-- Allowed inputs: Phase 3 generative prompt inputs and MockLLM output.
-- Disabled components: Ours policy, fallback, popularity adjustment, echo guard.
-- Expected output schema: unified prediction JSONL with
-  `not_ours_method=true`.
-- Evaluation metrics: all shared metrics.
-- Leakage risks: target leakage in generation prompt.
+- Config path: `configs/experiments/smoke_llm_generative.yaml` for smoke;
+  real template: `configs/experiments/real_llm_api_template.yaml`.
+- Disabled components: Ours uncertainty policy, fallback routing, popularity
+  adjustment, echo-risk guard.
+- Leakage risks: target in prompt.
 
 ### LLM rerank baseline
 
 - Config path: `configs/experiments/smoke_llm_rerank.yaml`.
-- Allowed inputs: history and visible candidates.
-- Disabled components: title generation, Ours policy, fallback routing.
-- Expected output schema: unified prediction JSONL with
-  `not_ours_method=true`.
-- Evaluation metrics: all shared metrics.
-- Leakage risks: target candidate removal rules must match documented protocol.
+- Disabled components: free-form title generation and Ours policy.
+- Leakage risks: reranker seeing target title under an incompatible protocol.
 
 ### BM25
 
 - Config path: `configs/experiments/smoke_bm25.yaml`.
-- Allowed inputs: history item text, catalog text, candidate set.
-- Disabled components: LLM generation, Ours policy, external APIs.
-- Expected output schema: unified prediction JSONL.
-- Evaluation metrics: all shared metrics.
-- Leakage risks: target title cannot be used as query except if already present
-  in history.
+- Disabled components: LLM calls and Ours policy.
+- Leakage risks: query text includes target title not present in history.
 
 ### Popularity
 
 - Config path: `configs/experiments/smoke_popularity.yaml`.
-- Allowed inputs: train examples and candidate set.
-- Disabled components: LLM generation, grounding, text scoring.
-- Expected output schema: unified prediction JSONL.
-- Evaluation metrics: all shared metrics.
-- Leakage risks: popularity must come from train split only.
+- Disabled components: LLM calls, grounding policy, text scoring.
+- Leakage risks: popularity computed from validation/test.
 
 ### MF
 
 - Config path: `configs/experiments/smoke_mf.yaml`.
-- Allowed inputs: train interactions/examples and candidate set.
-- Disabled components: LLM generation, text retrieval, Ours policy.
-- Expected output schema: unified prediction JSONL.
-- Evaluation metrics: all shared metrics.
-- Leakage risks: train-only fitting and same split.
+- Disabled components: text, LLM, Ours policy.
+- Leakage risks: fitting on held-out interactions.
 
 ### Sequential Markov / sequential baseline
 
 - Config path: `configs/experiments/smoke_sequential.yaml` or
   `configs/experiments/smoke_phase4_all.yaml`.
-- Allowed inputs: train sequences, user history, candidate set.
-- Disabled components: LLM generation, grounding, Ours policy.
-- Expected output schema: unified prediction JSONL.
-- Evaluation metrics: all shared metrics.
-- Leakage risks: transition counts must be trained from train examples only.
+- Disabled components: LLM and Ours policy.
+- Leakage risks: transitions fit from held-out future examples.
+
+## Ablation tables
+
+Real ablation tables must be filled only from completed `metrics.json` files.
+Columns should include method, disabled component, candidate protocol, seeds,
+ranking metrics, validity metrics, calibration metrics, long-tail metrics,
+latency/cost, and artifact paths. TBD: fill from real metrics files.

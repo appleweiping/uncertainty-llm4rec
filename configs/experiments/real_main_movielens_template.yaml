@@ -1,0 +1,35 @@
+template: true
+dry_run: true
+requires_confirm: true
+seed: 13
+seeds: [13, 21, 34]
+run_name: real_main_movielens_TBD
+output_dir: outputs/real_runs/movielens
+domain: movies
+dataset:
+  name: movielens_TBD
+  config_path: configs/datasets/movielens_1m.yaml
+  processed_dir: TBD
+  raw_interactions_path: TBD
+split: test
+candidate:
+  protocol: full_or_shared_sampled_TBD
+  k: null
+  seed: 13
+baselines: [random, popularity, bm25, mf, sequential_markov]
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [1, 5, 10, 20]
+top_k: [1, 5, 10, 20]
+metrics: [ranking, validity, confidence, calibration, coverage, diversity, novelty, long_tail, efficiency]
+safety:
+  allow_api_calls: false
+  allow_download: false
+  allow_training: false
+  acknowledged_expensive_run: false
+  leakage_safeguards: true
+logging:
+  level: INFO
+output:
+  run_name: real_main_movielens_TBD
+  output_dir: outputs/real_runs/movielens
