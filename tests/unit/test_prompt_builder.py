@@ -38,6 +38,39 @@ def test_generative_prompt_excludes_target_title() -> None:
     assert prompt.prompt_hash
 
 
+def test_prompt_builders_apply_target_exclusion_by_default() -> None:
+    repeated_target = {
+        **EXAMPLE,
+        "history": ["i1", "i3"],
+    }
+    generative = build_generative_title_prompt(
+        example=repeated_target,
+        item_catalog=CATALOG,
+        candidate_items=["i2", "i3"],
+    )
+    rerank = build_rerank_prompt(
+        example=repeated_target,
+        item_catalog=CATALOG,
+        candidate_items=["i2", "i3"],
+    )
+    verify = build_yes_no_verification_prompt(
+        example=repeated_target,
+        item_catalog=CATALOG,
+        generated_title="Beta Movie",
+    )
+    normalized = build_candidate_normalized_prompt(
+        example=repeated_target,
+        item_catalog=CATALOG,
+        generated_title="Beta Movie",
+        candidate_items=["i2", "i3"],
+    )
+    for prompt in [generative, rerank, verify, normalized]:
+        assert "Gamma Movie" not in prompt.prompt
+        assert "i3" not in prompt.prompt
+        assert prompt.metadata["target_excluded_from_prompt"] is True
+        assert prompt.metadata["history_excluded_item_ids"] == ["i3"]
+
+
 def test_all_phase3_prompt_types_have_template_ids() -> None:
     rerank = build_rerank_prompt(
         example=EXAMPLE,

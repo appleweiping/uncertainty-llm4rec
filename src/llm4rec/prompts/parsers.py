@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import dataclass, field
 from typing import Any
@@ -34,8 +35,11 @@ def parse_generation_response(text: str, *, allow_confidence_clamp: bool = False
     result = parse_llm_json(text, allow_confidence_clamp=allow_confidence_clamp)
     if not result.parse_success:
         return result
-    if not isinstance(result.data.get("recommendation"), str):
+    recommendation = result.data.get("recommendation")
+    if not isinstance(recommendation, str):
         return _failed(result, "recommendation must be a string")
+    if not recommendation.strip():
+        return _failed(result, "recommendation must be non-empty")
     if "confidence" not in result.data:
         return _failed(result, "confidence is required")
     return result
@@ -48,6 +52,8 @@ def parse_rerank_response(text: str, *, allow_confidence_clamp: bool = False) ->
     ranked = result.data.get("ranked_items")
     if not isinstance(ranked, list):
         return _failed(result, "ranked_items must be a list")
+    if not ranked:
+        return _failed(result, "ranked_items must be non-empty")
     for index, row in enumerate(ranked):
         if not isinstance(row, dict) or not isinstance(row.get("title"), str):
             return _failed(result, f"ranked_items[{index}].title must be a string")
@@ -73,6 +79,8 @@ def parse_candidate_normalized_response(text: str, *, allow_confidence_clamp: bo
     options = result.data.get("options")
     if not isinstance(options, list):
         return _failed(result, "options must be a list")
+    if not options:
+        return _failed(result, "options must be non-empty")
     for index, row in enumerate(options):
         if not isinstance(row, dict) or not isinstance(row.get("title"), str):
             return _failed(result, f"options[{index}].title must be a string")
@@ -114,11 +122,14 @@ def _validate_confidences(value: Any, *, allow_clamp: bool) -> Any:
     if isinstance(value, dict):
         for key, child in list(value.items()):
             if key == "confidence":
-                if not isinstance(child, (int, float)):
+                if isinstance(child, bool) or not isinstance(child, (int, float)):
                     raise ValueError("confidence must be numeric")
-                if not 0.0 <= float(child) <= 1.0:
+                confidence = float(child)
+                if not math.isfinite(confidence):
+                    raise ValueError("confidence must be finite")
+                if not 0.0 <= confidence <= 1.0:
                     if allow_clamp:
-                        value[key] = min(1.0, max(0.0, float(child)))
+                        value[key] = min(1.0, max(0.0, confidence))
                     else:
                         raise ValueError("confidence must be in [0, 1]")
             else:

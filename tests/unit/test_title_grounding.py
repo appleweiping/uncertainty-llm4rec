@@ -24,5 +24,18 @@ def test_title_grounding_fuzzy_and_failed() -> None:
     assert fuzzy.grounding_method == "token_overlap"
     failed = ground_title("Unknown Title", CATALOG)
     assert not failed.grounding_success
+    empty = ground_title("", CATALOG)
+    assert not empty.grounding_success
+    assert empty.generated_title == ""
     assert normalize_title("Alpha: Movie!") == "alpha movie"
     assert token_overlap("Alpha Movie", "Alpha") == 0.5
+
+
+def test_title_grounding_ambiguous_match_uses_deterministic_item_id_tiebreak() -> None:
+    ambiguous_catalog = [
+        {"item_id": "i2", "title": "Same Movie"},
+        {"item_id": "i1", "title": "Same Movie"},
+    ]
+    result = ground_title("same movie", ambiguous_catalog)
+    assert result.grounding_success
+    assert result.grounded_item_id == "i1"

@@ -27,12 +27,13 @@ def build_generative_title_prompt(
     text_policy: str = "title",
     exclude_item_ids: set[str] | None = None,
 ) -> PromptBuildResult:
+    excluded = _target_exclusions(example, exclude_item_ids)
     context = _prompt_context(
         example=example,
         item_catalog=item_catalog,
         candidate_items=candidate_items,
         text_policy=text_policy,
-        exclude_item_ids=exclude_item_ids,
+        exclude_item_ids=excluded,
     )
     prompt = GENERATIVE_TITLE_TEMPLATE.format(
         history_titles=_json_list(context["history_titles"]),
@@ -53,12 +54,13 @@ def build_rerank_prompt(
     text_policy: str = "title",
     exclude_item_ids: set[str] | None = None,
 ) -> PromptBuildResult:
+    excluded = _target_exclusions(example, exclude_item_ids)
     context = _prompt_context(
         example=example,
         item_catalog=item_catalog,
         candidate_items=candidate_items,
         text_policy=text_policy,
-        exclude_item_ids=exclude_item_ids,
+        exclude_item_ids=excluded,
     )
     prompt = RERANK_TEMPLATE.format(
         history_titles=_json_list(context["history_titles"]),
@@ -79,12 +81,13 @@ def build_yes_no_verification_prompt(
     grounded_title: str | None = None,
     text_policy: str = "title",
 ) -> PromptBuildResult:
+    excluded = _target_exclusions(example, None)
     context = _prompt_context(
         example=example,
         item_catalog=item_catalog,
         candidate_items=[],
         text_policy=text_policy,
-        exclude_item_ids={str(example.get("target", ""))},
+        exclude_item_ids=excluded,
     )
     prompt = YES_NO_VERIFY_TEMPLATE.format(
         history_titles=_json_list(context["history_titles"]),
@@ -112,12 +115,13 @@ def build_candidate_normalized_prompt(
     text_policy: str = "title",
     exclude_item_ids: set[str] | None = None,
 ) -> PromptBuildResult:
+    excluded = _target_exclusions(example, exclude_item_ids)
     context = _prompt_context(
         example=example,
         item_catalog=item_catalog,
         candidate_items=candidate_items,
         text_policy=text_policy,
-        exclude_item_ids=exclude_item_ids,
+        exclude_item_ids=excluded,
     )
     prompt = CANDIDATE_NORMALIZED_TEMPLATE.format(
         history_titles=_json_list(context["history_titles"]),
@@ -145,7 +149,10 @@ def _prompt_context(
 ) -> dict[str, Any]:
     lookup = {str(row["item_id"]): row for row in item_catalog}
     excluded = {str(item_id) for item_id in (exclude_item_ids or set()) if str(item_id)}
-    history_ids = [str(item_id) for item_id in example.get("history", [])]
+    raw_history_ids = [str(item_id) for item_id in example.get("history", [])]
+    prompt_history_ids = [
+        item_id for item_id in raw_history_ids if item_id not in excluded and item_id in lookup
+    ]
     prompt_candidate_ids = [
         str(item_id)
         for item_id in candidate_items
@@ -154,14 +161,23 @@ def _prompt_context(
     return {
         "example_id": example.get("example_id"),
         "user_id": str(example.get("user_id") or ""),
-        "history_item_ids": history_ids,
-        "history_titles": [_safe_item_text(lookup[item_id], text_policy) for item_id in history_ids if item_id in lookup],
+        "history_item_ids": prompt_history_ids,
+        "history_titles": [_safe_item_text(lookup[item_id], text_policy) for item_id in prompt_history_ids],
+        "history_excluded_item_ids": [item_id for item_id in raw_history_ids if item_id in excluded],
         "prompt_candidate_item_ids": prompt_candidate_ids,
         "candidate_titles": [_safe_item_text(lookup[item_id], text_policy) for item_id in prompt_candidate_ids],
         "excluded_item_ids": sorted(excluded),
         "target_excluded_from_prompt": str(example.get("target")) in excluded,
         "text_policy": text_policy,
     }
+
+
+def _target_exclusions(example: dict[str, Any], exclude_item_ids: set[str] | None) -> set[str]:
+    excluded = {str(item_id) for item_id in (exclude_item_ids or set()) if str(item_id)}
+    target = str(example.get("target") or "")
+    if target:
+        excluded.add(target)
+    return excluded
 
 
 def _safe_item_text(row: dict[str, Any], policy: str) -> str:

@@ -37,18 +37,19 @@ def ground_title(
     raw = str(generated_title or "").strip()
     if not raw:
         return _failed(raw, "empty")
-    for row in item_catalog:
+    catalog = _sorted_catalog(item_catalog)
+    for row in catalog:
         title = str(row.get("title") or "")
         if raw.casefold() == title.casefold():
             return _success(raw, row, 1.0, "exact_case_insensitive")
     normalized = normalize_title(raw)
-    for row in item_catalog:
+    for row in catalog:
         title = str(row.get("title") or "")
         if normalized and normalized == normalize_title(title):
             return _success(raw, row, 0.98, "normalized")
     best_row: dict[str, Any] | None = None
     best_score = 0.0
-    for row in item_catalog:
+    for row in catalog:
         score = token_overlap(raw, str(row.get("title") or ""))
         if score > best_score:
             best_score = score
@@ -70,6 +71,13 @@ def token_overlap(left: str, right: str) -> float:
     if not left_tokens or not right_tokens:
         return 0.0
     return len(left_tokens & right_tokens) / len(left_tokens | right_tokens)
+
+
+def _sorted_catalog(item_catalog: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(
+        item_catalog,
+        key=lambda row: (str(row.get("item_id") or ""), normalize_title(str(row.get("title") or ""))),
+    )
 
 
 def _success(raw: str, row: dict[str, Any], score: float, method: str) -> TitleGroundingResult:

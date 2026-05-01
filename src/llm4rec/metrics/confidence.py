@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import math
 from statistics import mean
 from typing import Any
+
+CORRECTNESS_TARGET = "metadata.is_grounded_hit if present; otherwise top1_exact_match"
 
 
 def confidence_metrics(predictions: list[dict[str, Any]]) -> dict[str, Any]:
     rows, missing = _confidence_rows(predictions)
     if not rows:
         return {
+            "correctness_target": CORRECTNESS_TARGET,
             "confidence_count": 0,
             "count_missing_confidence": missing,
             "mean_confidence": None,
@@ -24,6 +28,7 @@ def confidence_metrics(predictions: list[dict[str, Any]]) -> dict[str, Any]:
     correct_mean = mean(correct) if correct else None
     incorrect_mean = mean(incorrect) if incorrect else None
     return {
+        "correctness_target": CORRECTNESS_TARGET,
         "confidence_count": len(rows),
         "count_missing_confidence": missing,
         "mean_confidence": mean(row["confidence"] for row in rows),
@@ -67,12 +72,21 @@ def _confidence_rows(predictions: list[dict[str, Any]]) -> tuple[list[dict[str, 
     missing = 0
     for record in predictions:
         metadata = record.get("metadata") or {}
-        confidence = metadata.get("confidence")
-        if not isinstance(confidence, (int, float)):
+        if "confidence" not in metadata or metadata.get("confidence") is None:
             missing += 1
             continue
+        confidence = validate_confidence_value(metadata.get("confidence"))
         rows.append({"confidence": float(confidence), "correct": _is_correct(record)})
     return rows, missing
+
+
+def validate_confidence_value(value: Any) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("confidence must be a numeric value in [0, 1]")
+    confidence = float(value)
+    if not math.isfinite(confidence) or not 0.0 <= confidence <= 1.0:
+        raise ValueError("confidence must be a numeric value in [0, 1]")
+    return confidence
 
 
 def _is_correct(record: dict[str, Any]) -> bool:

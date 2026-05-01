@@ -16,3 +16,13 @@ def test_mock_llm_rerank_pipeline() -> None:
     assert predictions[0]["metadata"]["parse_success"] is True
     assert predictions[0]["metadata"]["target_excluded_from_prompt"] is True
     assert predictions[0]["metadata"]["excluded_item_ids"]
+    for key in [
+        "prompt_template_id",
+        "prompt_hash",
+        "grounding_success",
+        "grounded_item_id",
+        "latency_seconds",
+        "token_usage",
+        "cache_hit",
+    ]:
+        assert key in predictions[0]["metadata"]

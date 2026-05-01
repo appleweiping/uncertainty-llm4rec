@@ -15,3 +15,6 @@ def test_mock_llm_confidence_pipeline() -> None:
     assert predictions[0]["metadata"]["verification_parse_success"] is True
     assert predictions[0]["metadata"]["candidate_normalized_parse_success"] is True
     assert predictions[0]["metadata"]["candidate_normalized_options"]
+    assert predictions[0]["metadata"]["verification_prompt_template_id"]
+    assert predictions[0]["metadata"]["candidate_normalized_prompt_template_id"]
+    assert predictions[0]["raw_output"]

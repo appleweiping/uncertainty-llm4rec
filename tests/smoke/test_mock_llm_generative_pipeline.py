@@ -18,4 +18,16 @@ def test_mock_llm_generative_pipeline() -> None:
     assert predictions[0]["metadata"]["parse_success"] is True
     assert "confidence" in predictions[0]["metadata"]
     assert predictions[0]["metadata"]["target_excluded_from_prompt"] is True
+    for key in [
+        "prompt_template_id",
+        "prompt_hash",
+        "grounding_success",
+        "grounded_item_id",
+        "latency_seconds",
+        "token_usage",
+        "cache_hit",
+    ]:
+        assert key in predictions[0]["metadata"]
     assert metrics["aggregate"]["confidence"]["confidence_count"] > 0
+    assert metrics["is_experiment_result"] is False
+    assert "not a paper result" in metrics["note"]

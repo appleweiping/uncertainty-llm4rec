@@ -52,8 +52,12 @@ class LLMReranker(CheckpointNotImplementedMixin):
         ranked_titles = parsed.data.get("ranked_items", []) if parsed.parse_success else []
         ordered: list[str] = []
         scores: list[float] = []
-        for row in ranked_titles:
+        grounding_events: list[dict[str, Any]] = []
+        for index, row in enumerate(ranked_titles):
             grounding = ground_title(str(row.get("title") or ""), self.item_catalog)
+            grounding_event = grounding.to_dict()
+            grounding_event["rank_index"] = index
+            grounding_events.append(grounding_event)
             grounded_id = grounding.grounded_item_id
             if grounding.grounding_success and grounded_id in prompt_candidate_ids and grounded_id not in ordered:
                 ordered.append(str(grounded_id))
@@ -63,6 +67,7 @@ class LLMReranker(CheckpointNotImplementedMixin):
             if item_id not in ordered:
                 ordered.append(item_id)
                 scores.append(0.0)
+        top_grounding = _candidate_grounding(ordered[0] if ordered else None, self.item_catalog)
         metadata = {
             "example_id": example.get("example_id"),
             "split": example.get("split"),
@@ -77,6 +82,11 @@ class LLMReranker(CheckpointNotImplementedMixin):
             "prompt_hash": prompt.prompt_hash,
             "confidence": scores[0] if scores else None,
             "is_grounded_hit": bool(ordered and ordered[0] == target_id),
+            "is_catalog_valid": bool(top_grounding["grounding_success"]),
+            "is_hallucinated": not bool(top_grounding["grounding_success"]),
+            "candidate_adherent": bool(ordered and ordered[0] in prompt_candidate_ids),
+            "raw_ranked_grounding": grounding_events,
+            **top_grounding,
             **_response_metadata(response),
         }
         return RankingResult(
@@ -90,3 +100,34 @@ class LLMReranker(CheckpointNotImplementedMixin):
             raw_output=response.text,
             metadata=metadata,
         )
+
+
+def _candidate_grounding(item_id: str | None, item_catalog: list[dict[str, Any]]) -> dict[str, Any]:
+    if not item_id:
+        return {
+            "generated_title": "",
+            "grounded_item_id": None,
+            "grounded_title": None,
+            "grounding_score": 0.0,
+            "grounding_method": "empty",
+            "grounding_success": False,
+        }
+    lookup = {str(row.get("item_id")): row for row in item_catalog}
+    row = lookup.get(str(item_id))
+    if row is None:
+        return {
+            "generated_title": str(item_id),
+            "grounded_item_id": None,
+            "grounded_title": None,
+            "grounding_score": 0.0,
+            "grounding_method": "missing_catalog_item",
+            "grounding_success": False,
+        }
+    return {
+        "generated_title": str(row.get("title") or ""),
+        "grounded_item_id": str(item_id),
+        "grounded_title": str(row.get("title") or ""),
+        "grounding_score": 1.0,
+        "grounding_method": "candidate_item_id",
+        "grounding_success": True,
+    }

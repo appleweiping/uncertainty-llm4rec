@@ -31,11 +31,11 @@ class OpenAICompatibleProvider:
         timeout_seconds: float = 60.0,
         max_retries: int = 2,
     ) -> None:
-        if not model_name:
-            raise ValueError("model_name is required")
-        self.model_name = model_name
-        self.api_key_env = api_key_env
-        self.base_url = base_url.rstrip("/")
+        self.model_name = _required_text(model_name, "model_name")
+        self.api_key_env = _required_text(api_key_env, "api_key_env")
+        self.base_url = _required_text(base_url, "base_url").rstrip("/")
+        if not self.base_url.startswith(("http://", "https://")):
+            raise ValueError("base_url must start with http:// or https://")
         self.timeout_seconds = float(timeout_seconds)
         self.max_retries = int(max_retries)
 
@@ -92,3 +92,10 @@ def _sanitize_raw(raw: dict[str, Any]) -> dict[str, Any]:
         "usage": raw.get("usage"),
         "choices": raw.get("choices"),
     }
+
+
+def _required_text(value: str, field_name: str) -> str:
+    text = str(value or "").strip()
+    if not text or text.casefold() in {"none", "null"}:
+        raise ValueError(f"{field_name} is required")
+    return text

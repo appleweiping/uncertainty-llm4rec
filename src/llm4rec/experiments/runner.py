@@ -12,7 +12,7 @@ from llm4rec.evaluation.evaluator import evaluate_predictions
 from llm4rec.experiments.config import load_config, save_resolved_config
 from llm4rec.experiments.logging import RunLogger
 from llm4rec.experiments.seeding import set_seed
-from llm4rec.io.artifacts import create_run_dir, read_jsonl, write_environment, write_jsonl
+from llm4rec.io.artifacts import create_run_dir, read_jsonl, write_environment, write_json, write_jsonl
 from llm4rec.llm.hf_provider import HFLocalProvider
 from llm4rec.llm.mock_provider import MockLLMProvider
 from llm4rec.llm.openai_provider import OpenAICompatibleProvider
@@ -37,6 +37,7 @@ def run_experiment(config_path: str | Path, *, preprocess: bool = False) -> dict
 
 
 def run_experiment_config(config: dict[str, Any], *, preprocess: bool = False) -> dict[str, Any]:
+    config = _resolve_runtime_config(config)
     seed = set_seed(int(config.get("seed") or 0))
     method_name = _method_name(config)
     run_name = _run_name(config, method_name)
@@ -60,6 +61,9 @@ def run_experiment_config(config: dict[str, Any], *, preprocess: bool = False) -
         top_k=[int(k) for k in config.get("top_k", [1, 5, 10])],
     )
     logger.log("wrote metrics.json and metrics.csv")
+    cost_latency = dict(metrics.get("aggregate", {}).get("efficiency", {}))
+    write_json(run_dir / "cost_latency.json", cost_latency)
+    logger.log("wrote cost_latency.json")
     logger.log("finish")
     return {
         "run_id": run_id,
@@ -226,15 +230,15 @@ def _build_llm_provider(config: dict[str, Any]) -> Any:
         )
     if provider_type == "openai_compatible":
         return OpenAICompatibleProvider(
-            model_name=str(llm_config.get("model") or ""),
-            api_key_env=str(llm_config.get("api_key_env") or ""),
-            base_url=str(llm_config.get("base_url") or ""),
+            model_name=_required_llm_text(llm_config, "model"),
+            api_key_env=_required_llm_text(llm_config, "api_key_env"),
+            base_url=_required_llm_text(llm_config, "base_url"),
             timeout_seconds=float(llm_config.get("timeout_seconds") or 60.0),
             max_retries=int(llm_config.get("max_retries") or 2),
         )
     if provider_type == "hf_local":
         return HFLocalProvider(
-            model_name_or_path=str(llm_config.get("model_name_or_path") or ""),
+            model_name_or_path=_required_llm_text(llm_config, "model_name_or_path"),
             device=str(llm_config.get("device") or "auto"),
         )
     raise ValueError(f"unknown llm provider type: {provider_type}")
@@ -250,6 +254,26 @@ def _llm_config(config: dict[str, Any]) -> dict[str, Any]:
         merged.update({key: value for key, value in llm.items() if key != "config_path"})
         return merged
     return llm
+
+
+def _resolve_runtime_config(config: dict[str, Any]) -> dict[str, Any]:
+    resolved = json.loads(json.dumps(config))
+    llm = resolved.get("llm")
+    if isinstance(llm, dict) and llm.get("config_path"):
+        source_path = str(llm["config_path"])
+        merged = load_config(source_path)
+        merged.update({key: value for key, value in llm.items() if key != "config_path"})
+        merged["config_path"] = source_path
+        resolved["llm"] = merged
+    return resolved
+
+
+def _required_llm_text(llm_config: dict[str, Any], key: str) -> str:
+    value = llm_config.get(key)
+    text = str(value or "").strip()
+    if not text or text.casefold() in {"none", "null"}:
+        raise ValueError(f"config.llm.{key} is required for provider={llm_config.get('provider')}")
+    return text
 
 
 def _method_config(config: dict[str, Any]) -> dict[str, Any]:

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from llm4rec.metrics.confidence import _confidence_rows
+from llm4rec.metrics.confidence import CORRECTNESS_TARGET, _confidence_rows, validate_confidence_value
 
 
 def calibration_metrics(predictions: list[dict[str, Any]], *, bins: int = 10) -> dict[str, Any]:
     rows, missing = _confidence_rows(predictions)
     return {
+        "correctness_target": CORRECTNESS_TARGET,
         "ece": expected_calibration_error(rows, bins=bins),
         "brier_score": brier_score(rows),
         "confidence_bucket_stats": confidence_bucket_stats(rows, bins=bins),
@@ -33,7 +34,7 @@ def expected_calibration_error(rows: list[dict[str, Any]], *, bins: int = 10) ->
 def brier_score(rows: list[dict[str, Any]]) -> float:
     if not rows:
         return 0.0
-    return sum((row["confidence"] - float(row["correct"])) ** 2 for row in rows) / len(rows)
+    return sum((validate_confidence_value(row["confidence"]) - float(row["correct"])) ** 2 for row in rows) / len(rows)
 
 
 def confidence_bucket_stats(rows: list[dict[str, Any]], *, bins: int = 10) -> list[dict[str, Any]]:
@@ -51,7 +52,7 @@ def confidence_bucket_stats(rows: list[dict[str, Any]], *, bins: int = 10) -> li
         for index in range(bins)
     ]
     for row in rows:
-        confidence = min(1.0, max(0.0, float(row["confidence"])))
+        confidence = validate_confidence_value(row["confidence"])
         index = min(bins - 1, int(confidence * bins))
         bucket = buckets[index]
         bucket["count"] += 1
