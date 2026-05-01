@@ -1,0 +1,35 @@
+name: ours_ablation_no_grounding
+type: ours_method
+seed: 13
+params:
+  prediction_method: ours_ablation_no_grounding
+  text_policy: title
+  fallback_method: bm25
+  min_grounding_token_overlap: 0.5
+  thresholds:
+    min_accept_confidence: 0.7
+    min_grounding_score: 0.8
+    min_candidate_normalized_confidence: 0.5
+    high_confidence: 0.85
+    echo_similarity_threshold: 0.8
+  policy:
+    allow_abstain: true
+    fallback_on_low_confidence: true
+    fallback_on_grounding_failure: true
+    penalize_head_item_overconfidence: true
+    echo_risk_guard: true
+  components:
+    uncertainty_policy: true
+    grounding_check: false
+    candidate_normalized_confidence: true
+    popularity_adjustment: true
+    echo_risk_guard: true
+    fallback: true
+    fallback_only: false
+  ablation:
+    variant: no_grounding
+    disabled_components: [grounding_check]
+  fallback_params:
+    text_policy: title
+    k1: 1.5
+    b: 0.75

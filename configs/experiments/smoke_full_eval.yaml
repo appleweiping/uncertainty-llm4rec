@@ -1,0 +1,26 @@
+seed: 13
+run_name: smoke_full_eval
+output_dir: outputs/runs
+domain: tiny
+dataset:
+  name: tiny
+  config_path: configs/datasets/tiny.yaml
+  processed_dir: data/processed/tiny/phase1
+split: test
+candidate:
+  protocol: full
+  k: null
+  seed: 13
+method:
+  name: popularity
+  type: ranker
+  seed: 13
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [1, 5, 10]
+top_k: [1, 5, 10]
+logging:
+  level: INFO
+output:
+  run_name: smoke_full_eval
+  output_dir: outputs/runs

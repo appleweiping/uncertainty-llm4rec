@@ -1,0 +1,10 @@
+tables:
+  aggregate_metrics: true
+  markdown: true
+  latex: true
+  reliability_diagram: true
+  risk_coverage: true
+  confidence_by_popularity_bucket: true
+  output_dir: outputs/tables
+significance:
+  enabled: false

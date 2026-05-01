@@ -1,0 +1,29 @@
+seed: 13
+run_name: smoke_export_tables
+output_dir: outputs/runs
+domain: tiny
+dataset:
+  name: tiny
+  config_path: configs/datasets/tiny.yaml
+  processed_dir: data/processed/tiny/phase1
+split: test
+candidate:
+  protocol: full
+  k: null
+  seed: 13
+baselines: [llm_generative]
+llm:
+  config_path: configs/llm/mock.yaml
+  response_mode: generative_correct
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [1, 5, 10]
+top_k: [1, 5, 10]
+tables:
+  enabled: true
+  output_dir: outputs/tables
+logging:
+  level: INFO
+output:
+  run_name: smoke_export_tables
+  output_dir: outputs/runs

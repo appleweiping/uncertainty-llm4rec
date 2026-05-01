@@ -1,0 +1,28 @@
+seed: 13
+run_name: smoke_phase6_all
+output_dir: outputs/runs
+domain: tiny
+dataset:
+  name: tiny
+  config_path: configs/datasets/tiny.yaml
+  processed_dir: data/processed/tiny/phase1
+split: test
+candidate:
+  protocol: full
+  k: null
+  seed: 13
+baselines: [ours_uncertainty_guided, ours_ablation_no_uncertainty, ours_ablation_no_grounding, ours_ablation_no_candidate_normalized_confidence, ours_ablation_no_popularity_adjustment, ours_ablation_no_echo_guard, ours_fallback_only, llm_generative, llm_rerank, bm25, popularity, mf, sequential_markov]
+training:
+  config_path: configs/training/sequential_tiny.yaml
+llm:
+  config_path: configs/llm/mock.yaml
+  response_mode: generative_correct
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [1, 5, 10]
+top_k: [1, 5, 10]
+logging:
+  level: INFO
+output:
+  run_name: smoke_phase6_all
+  output_dir: outputs/runs

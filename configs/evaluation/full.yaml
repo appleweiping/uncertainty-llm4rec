@@ -1,0 +1,17 @@
+metrics:
+  ranking:
+    top_k: [1, 5, 10]
+  beyond_accuracy:
+    coverage: true
+    diversity: true
+    novelty: true
+    long_tail: true
+  confidence:
+    calibration: true
+    risk_coverage: true
+  slices:
+    domain: true
+    user_history_bucket: true
+    item_popularity_bucket: true
+  significance:
+    enabled: false

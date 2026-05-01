@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Any
 
 from llm4rec.data.preprocess import preprocess_dataset
+from llm4rec.evaluation.aggregation import aggregate_run_metrics
 from llm4rec.evaluation.evaluator import evaluate_predictions
+from llm4rec.evaluation.table_export import export_phase5_tables
 from llm4rec.experiments.config import load_config, save_resolved_config
 from llm4rec.experiments.logging import RunLogger
 from llm4rec.experiments.seeding import set_seed
@@ -16,6 +18,7 @@ from llm4rec.io.artifacts import create_run_dir, read_jsonl, write_environment, 
 from llm4rec.llm.hf_provider import HFLocalProvider
 from llm4rec.llm.mock_provider import MockLLMProvider
 from llm4rec.llm.openai_provider import OpenAICompatibleProvider
+from llm4rec.methods.ours_method import OursMethodRanker
 from llm4rec.rankers.base import BaseRanker
 from llm4rec.rankers.bm25 import BM25Ranker
 from llm4rec.rankers.llm_generative import LLMConfidenceObservationRanker, LLMGenerativeRanker
@@ -61,10 +64,15 @@ def run_experiment_config(config: dict[str, Any], *, preprocess: bool = False) -
     predictions_path = run_dir / "predictions.jsonl"
     write_jsonl(predictions_path, predictions)
     logger.log(f"wrote predictions count={len(predictions)}")
+    eval_context = _evaluation_context_for_config(config)
     metrics = evaluate_predictions(
         predictions_jsonl=predictions_path,
         output_dir=run_dir,
         top_k=[int(k) for k in config.get("top_k", [1, 5, 10])],
+        item_catalog=eval_context["item_catalog"],
+        train_examples=eval_context["train_examples"],
+        all_examples=eval_context["all_examples"],
+        evaluation_config=config,
     )
     logger.log("wrote metrics.json and metrics.csv")
     cost_latency = dict(metrics.get("aggregate", {}).get("efficiency", {}))
@@ -89,16 +97,21 @@ def run_all(config_path: str | Path) -> dict[str, Any]:
     dataset_config = load_config(_required_path(config, "dataset", "config_path"))
     preprocess_manifest = preprocess_dataset(dataset_config)
     runs = []
-    for baseline in baselines:
-        child_config = _config_for_baseline(config, baseline)
-        result = run_experiment_config(child_config, preprocess=False)
-        result["preprocess_manifest"] = preprocess_manifest
-        runs.append(result)
+    seeds = _seeds_for_config(config)
+    for seed in seeds:
+        for baseline in baselines:
+            child_config = _config_for_baseline(config, baseline, seed=seed)
+            result = run_experiment_config(child_config, preprocess=False)
+            result["preprocess_manifest"] = preprocess_manifest
+            runs.append(result)
+    postprocess = _postprocess_run_all(config, runs)
     return {
         "run_count": len(runs),
         "baseline_methods": baselines,
+        "seeds": seeds,
         "preprocess_manifest": preprocess_manifest,
         "runs": runs,
+        "postprocess": postprocess,
     }
 
 
@@ -237,7 +250,7 @@ def _build_ranker(config: dict[str, Any]) -> BaseRanker:
         return MarkovSequentialRanker(max_history_length=int(params.get("max_history_length") or 50))
     if method == "sasrec_interface":
         return SasrecInterfaceRanker(max_history_length=int(params.get("max_history_length") or 50))
-    if method == "llm_generative":
+    if method in {"llm_generative", "llm_generative_mock"}:
         return LLMGenerativeRanker(
             provider=_build_llm_provider(config),
             method_name=str(params.get("prediction_method") or "llm_generative_mock"),
@@ -254,6 +267,12 @@ def _build_ranker(config: dict[str, Any]) -> BaseRanker:
             provider=_build_llm_provider(config),
             method_name=str(params.get("prediction_method") or "llm_confidence_observation_mock"),
             text_policy=str(params.get("text_policy") or "title"),
+        )
+    if _is_ours_method(method, method_config):
+        return OursMethodRanker(
+            provider=_build_llm_provider(config),
+            method_config=method_config,
+            seed=seed,
         )
     raise ValueError(f"unknown experiment method: {method}")
 
@@ -296,6 +315,13 @@ def _llm_config(config: dict[str, Any]) -> dict[str, Any]:
 
 def _resolve_runtime_config(config: dict[str, Any]) -> dict[str, Any]:
     resolved = json.loads(json.dumps(config))
+    method = resolved.get("method")
+    if isinstance(method, dict) and method.get("config_path"):
+        source_path = str(method["config_path"])
+        merged = load_config(source_path)
+        merged.update({key: value for key, value in method.items() if key != "config_path"})
+        merged["config_path"] = source_path
+        resolved["method"] = merged
     llm = resolved.get("llm")
     if isinstance(llm, dict) and llm.get("config_path"):
         source_path = str(llm["config_path"])
@@ -334,6 +360,11 @@ def _required_llm_text(llm_config: dict[str, Any], key: str) -> str:
 
 def _method_config(config: dict[str, Any]) -> dict[str, Any]:
     method = config.get("method")
+    if isinstance(method, dict) and method.get("config_path"):
+        loaded = load_config(str(method["config_path"]))
+        loaded.update({key: value for key, value in method.items() if key != "config_path"})
+        loaded["config_path"] = str(method["config_path"])
+        return loaded
     return method if isinstance(method, dict) else {"name": method}
 
 
@@ -358,17 +389,24 @@ def _output_dir(config: dict[str, Any]) -> str:
     return str(output.get("output_dir") or config.get("output_dir") or "outputs/runs")
 
 
-def _config_for_baseline(config: dict[str, Any], baseline: str) -> dict[str, Any]:
+def _config_for_baseline(config: dict[str, Any], baseline: str, *, seed: int | None = None) -> dict[str, Any]:
     child = json.loads(json.dumps(config))
     child.pop("baselines", None)
-    child["method"] = {
-        "name": baseline,
-        "type": _default_method_type_for(baseline),
-        "seed": int(config.get("seed") or 0),
-        "params": _default_params_for(baseline),
-    }
+    child.pop("seeds", None)
+    resolved_seed = int(seed if seed is not None else config.get("seed") or 0)
+    child["seed"] = resolved_seed
+    method_config = _named_method_config(baseline)
+    if method_config is None:
+        method_config = {
+            "name": baseline,
+            "type": _default_method_type_for(baseline),
+            "seed": resolved_seed,
+            "params": _default_params_for(baseline),
+        }
+    method_config["seed"] = resolved_seed
+    child["method"] = method_config
     output = child.get("output") if isinstance(child.get("output"), dict) else {}
-    output["run_name"] = _default_run_name_for(baseline)
+    output["run_name"] = _run_name_for_child(config, baseline)
     output["output_dir"] = str(output.get("output_dir") or child.get("output_dir") or "outputs/runs")
     child["output"] = output
     child["run_name"] = output["run_name"]
@@ -383,7 +421,7 @@ def _default_params_for(method: str) -> dict[str, Any]:
         return {"factors": 4, "epochs": 20, "learning_rate": 0.05, "regularization": 0.001}
     if method in {"sequential_last_item", "sequential_markov", "sasrec_interface", "sequential_interface"}:
         return {"max_history_length": 5}
-    if method == "llm_generative":
+    if method in {"llm_generative", "llm_generative_mock"}:
         return {"prediction_method": "llm_generative_mock", "text_policy": "title"}
     if method == "llm_rerank":
         return {"prediction_method": "llm_rerank_mock", "text_policy": "title"}
@@ -393,6 +431,8 @@ def _default_params_for(method: str) -> dict[str, Any]:
 
 
 def _default_method_type_for(method: str) -> str:
+    if method.startswith("ours_"):
+        return "ours_method"
     if method.startswith("llm_"):
         return "llm"
     if method in SEQUENTIAL_METHODS:
@@ -411,13 +451,62 @@ def _default_run_name_for(method: str) -> str:
         return "smoke_sasrec_interface"
     if method == "lora_dry_run":
         return "smoke_lora_dry_run"
-    if method == "llm_generative":
+    if method in {"llm_generative", "llm_generative_mock"}:
         return "smoke_llm_generative"
     if method == "llm_rerank":
         return "smoke_llm_rerank"
     if method == "llm_confidence_observation":
         return "smoke_llm_confidence"
     return f"smoke_all_{method}"
+
+
+def _is_ours_method(method: str, method_config: dict[str, Any]) -> bool:
+    return (
+        str(method_config.get("type") or "") == "ours_method"
+        or method == "ours_uncertainty_guided"
+        or method.startswith("ours_ablation_")
+        or method == "ours_fallback_only"
+    )
+
+
+def _named_method_config(name: str) -> dict[str, Any] | None:
+    path = Path("configs") / "methods" / f"{name}.yaml"
+    if not path.exists():
+        return None
+    return load_config(path)
+
+
+def _run_name_for_child(config: dict[str, Any], method: str) -> str:
+    parent_name = str(
+        ((config.get("output") or {}) if isinstance(config.get("output"), dict) else {}).get("run_name")
+        or config.get("run_name")
+        or ""
+    )
+    suffix = _child_run_suffix(method)
+    if parent_name == "smoke_ours_ablation":
+        return f"smoke_ours_ablation_{suffix}"
+    if parent_name == "smoke_phase6_all":
+        return f"smoke_phase6_{suffix}"
+    return _default_run_name_for(method)
+
+
+def _child_run_suffix(method: str) -> str:
+    mapping = {
+        "ours_uncertainty_guided": "ours_full",
+        "ours_ablation_no_uncertainty": "ours_no_uncertainty",
+        "ours_ablation_no_grounding": "ours_no_grounding",
+        "ours_ablation_no_candidate_normalized_confidence": "ours_no_candidate_normalized_confidence",
+        "ours_ablation_no_popularity_adjustment": "ours_no_popularity_adjustment",
+        "ours_ablation_no_echo_guard": "ours_no_echo_guard",
+        "ours_fallback_only": "ours_fallback_only",
+        "llm_generative": "llm_generative",
+        "llm_rerank": "llm_rerank",
+        "bm25": "bm25",
+        "popularity": "popularity",
+        "mf": "mf",
+        "sequential_markov": "sequential_markov",
+    }
+    return mapping.get(method, method)
 
 
 def _read_csv(path: Path) -> list[dict[str, Any]]:
@@ -440,6 +529,38 @@ def _decode_csv_row(row: dict[str, str]) -> dict[str, Any]:
                 pass
         decoded[key] = value
     return decoded
+
+
+def _evaluation_context_for_config(config: dict[str, Any]) -> dict[str, Any]:
+    processed_dir = Path(_required_path(config, "dataset", "processed_dir"))
+    examples = read_jsonl(processed_dir / "examples.jsonl")
+    return {
+        "item_catalog": _read_csv(processed_dir / "items.csv"),
+        "all_examples": examples,
+        "train_examples": [row for row in examples if str(row.get("split")) == "train"],
+    }
+
+
+def _seeds_for_config(config: dict[str, Any]) -> list[int]:
+    seeds = config.get("seeds")
+    if isinstance(seeds, list) and seeds:
+        return [int(seed) for seed in seeds]
+    return [int(config.get("seed") or 0)]
+
+
+def _postprocess_run_all(config: dict[str, Any], runs: list[dict[str, Any]]) -> dict[str, Any]:
+    del runs
+    output = config.get("output") if isinstance(config.get("output"), dict) else {}
+    runs_dir = Path(str(output.get("output_dir") or config.get("output_dir") or "outputs/runs"))
+    tables_config = config.get("tables") if isinstance(config.get("tables"), dict) else {}
+    aggregate_config = config.get("aggregate") if isinstance(config.get("aggregate"), dict) else {}
+    table_output_dir = Path(str(tables_config.get("output_dir") or aggregate_config.get("output_dir") or "outputs/tables"))
+    postprocess: dict[str, Any] = {}
+    if bool(aggregate_config.get("enabled", False)):
+        postprocess["aggregation"] = aggregate_run_metrics(runs_dir, output_dir=table_output_dir)
+    if bool(tables_config.get("enabled", False)):
+        postprocess["tables"] = export_phase5_tables(runs_dir, output_dir=table_output_dir)
+    return postprocess
 
 
 def _required_path(config: dict[str, Any], section: str, key: str) -> str:
