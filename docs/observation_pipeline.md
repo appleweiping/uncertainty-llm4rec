@@ -143,6 +143,15 @@ not a recommendation-accuracy setting and must not be used as paper evidence.
 It is a gate for prompt/candidate/grounding behavior before additional API
 spend.
 
+Current executed DeepSeek gate status: on 2026-05-01, after explicit user
+approval, Health_and_Personal_Care `gate60` and Video_Games `gate30` were run
+through free-form, retrieval-context, and catalog-constrained API variants with
+cache/resume, real 5-example smoke checks, full-stage manifests, analysis, case
+review, and prompt-shape comparisons. These runs confirm the gate workflow can
+close locally for prepared slices, but the target-excluding retrieval/catalog
+variants remain prompt/grounding diagnostics rather than recommendation
+accuracy or paper evidence.
+
 ## Run Mock Observation
 
 ```powershell

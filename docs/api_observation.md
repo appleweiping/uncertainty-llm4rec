@@ -497,3 +497,57 @@ Interpretation guardrails:
   copying behavior and must not be generalized as recommendation accuracy.
 - Confidence values are model-reported confidence, not calibrated
   exposure-counterfactual confidence.
+
+## Current Health and Video_Games Prompt-Gate Status
+
+On 2026-05-01, after the user explicitly approved DeepSeek API execution and
+local runnable full-data gates, Health_and_Personal_Care and Video_Games were
+run through matched prompt-shape gates. The execution settings were:
+
+- provider: DeepSeek;
+- model: `deepseek-v4-flash`;
+- rate limit: 60 requests/minute;
+- max concurrency: 5;
+- cache/resume: enabled;
+- run stage: `full`;
+- budget label: `USER_APPROVED_LOCAL_FULLDATA_DEEPSEEK_20260501`.
+
+Each input first passed `scripts/check_api_pilot_readiness.py`, then a
+5-example dry-run, a 5-example real API smoke, and finally the full local gate
+slice. All six full-stage runs completed with zero failed cases.
+
+| Domain/gate | Count | Failed | GroundHit | Target correctness | ECE | WBC_tau | Generated in candidates |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Health free-form gate60 | 60 | 0 | 0.117 | 0.000 | 0.762 | 0.967 | n/a |
+| Health retrieval-context gate60 | 60 | 0 | 0.883 | 0.000 | 0.850 | 1.000 | 0.800 |
+| Health catalog-constrained gate60 | 60 | 0 | 0.533 | 0.000 | 0.519 | 0.617 | 0.533 |
+| Video_Games free-form gate30 | 30 | 0 | 0.300 | 0.000 | 0.745 | 0.900 | n/a |
+| Video_Games retrieval-context gate30 | 30 | 0 | 0.900 | 0.000 | 0.794 | 0.933 | 0.800 |
+| Video_Games catalog-constrained gate30 | 30 | 0 | 0.767 | 0.000 | 0.620 | 0.733 | 0.700 |
+
+Ignored artifact roots:
+
+```text
+outputs/api_observations/deepseek/amazon_reviews_2023_health/full/test_gate60_no_repeat_*_api_full60_20260501/
+outputs/api_observations/deepseek/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_*_api_full30_20260501/
+outputs/analysis/api_observations/deepseek/amazon_reviews_2023_health/full/test_gate60_no_repeat_*_api_full60_20260501/
+outputs/analysis/api_observations/deepseek/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_*_api_full30_20260501/
+outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_health/full/test_gate60_no_repeat_*_api_full60_20260501/
+outputs/case_reviews/api_observations/deepseek/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_*_api_full30_20260501/
+outputs/analysis_comparisons/deepseek/amazon_reviews_2023_health/full/gate60_prompt_shapes_20260501/
+outputs/analysis_comparisons/deepseek/amazon_reviews_2023_video_games/full/gate30_prompt_shapes_20260501/
+```
+
+Interpretation guardrails:
+
+- These are real DeepSeek API artifacts with manifests, not raw-response
+  commits, not calibrated confidence, not trained TRUCE/CURE results, and not
+  paper conclusions.
+- Retrieval-context and catalog-constrained inputs exclude the held-out target,
+  so target-hit correctness is not recommendation accuracy. Use these gates to
+  diagnose grounding, candidate following, confidence behavior, and
+  wrong-high-confidence risk before broader free-form or server-scale runs.
+- The local Video_Games all-test input has 56,074 records and was not started
+  in this local turn as a long-running paid API job. The closed artifact is the
+  approved gate30 slice with dry-run, smoke, full run, analysis, case review,
+  and comparison.

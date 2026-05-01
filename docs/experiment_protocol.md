@@ -394,6 +394,13 @@ Digital_Music, Handmade_Products, and Health_and_Personal_Care. Beauty remains
 the first full-data gate; the additional categories are robustness candidates
 after Beauty sample/full preparation is reproducible.
 
+As of 2026-05-01, local Video_Games processed artifacts and observation-input
+gates also exist for prepared slices. A DeepSeek gate30 API diagnostic was run
+for Video_Games, and a matching gate60 diagnostic was run for
+Health_and_Personal_Care. These target-excluding retrieval/catalog gates are
+prompt/grounding/confidence diagnostics only; they must not be reported as
+recommendation accuracy, calibrated confidence, or trained-method evidence.
+
 Amazon Beauty local sample preparation must be labeled as readiness only. The
 sample command uses `--sample-mode --max-records N`, writes
 `is_sample_result=true` and `is_experiment_result=false` to the preprocess

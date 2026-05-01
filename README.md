@@ -174,9 +174,42 @@ overconfidence/ungrounded cases before any paper-facing claim. They are real
 API artifacts with manifests, but they are not calibrated model results, not
 server results, and not evidence of a trained TRUCE/CURE method.
 
-No model, toy model, full experiment, or server run has been executed. The mock
-observation pipeline is only a no-API sanity path and must not be reported as
-model behavior. Synthetic fixture under
+On 2026-05-01, after the user explicitly approved DeepSeek API execution and
+local runnable full-data gates, the Health_and_Personal_Care and Video_Games
+prompt-shape gates were run with `deepseek-v4-flash`, cache/resume,
+60 requests/minute, max concurrency 5, and budget label
+`USER_APPROVED_LOCAL_FULLDATA_DEEPSEEK_20260501`. The gate order was
+readiness check, 5-example dry-run, 5-example real smoke, then full-stage
+cache/resume. All six real API runs completed with zero failed cases and
+analysis/case-review/comparison artifacts under ignored `outputs/` paths:
+
+- Health gate60 free-form: 60/60 records, GroundHit `0.117`, target
+  correctness `0.000`, ECE `0.762`, WBC_tau `0.967`.
+- Health gate60 retrieval-context: 60/60 records, GroundHit `0.883`, target
+  correctness `0.000`, ECE `0.850`, WBC_tau `1.000`,
+  generated-in-candidate rate `0.800`.
+- Health gate60 catalog-constrained: 60/60 records, GroundHit `0.533`, target
+  correctness `0.000`, ECE `0.519`, WBC_tau `0.617`,
+  generated-in-candidate rate `0.533`.
+- Video_Games gate30 free-form: 30/30 records, GroundHit `0.300`, target
+  correctness `0.000`, ECE `0.745`, WBC_tau `0.900`.
+- Video_Games gate30 retrieval-context: 30/30 records, GroundHit `0.900`,
+  target correctness `0.000`, ECE `0.794`, WBC_tau `0.933`,
+  generated-in-candidate rate `0.800`.
+- Video_Games gate30 catalog-constrained: 30/30 records, GroundHit `0.767`,
+  target correctness `0.000`, ECE `0.620`, WBC_tau `0.733`,
+  generated-in-candidate rate `0.700`.
+
+Because the retrieval/catalog gates exclude held-out targets, their target
+correctness is not recommendation accuracy. These are real API observation and
+prompt/grounding diagnostics, not paper conclusions. The full Video_Games
+all-test file has 56,074 local inputs and was not started as a long-running
+paid API job in this local turn; only the approved local gate30 slice was
+closed end to end.
+
+No model training, Qwen/server inference, or paper-level full experimental
+suite has been executed. The mock observation pipeline is only a no-API sanity
+path and must not be reported as model behavior. Synthetic fixture under
 `tests/fixtures/` is only for unit tests and pipeline sanity checks; it is not
 an experimental result. Any future result must come from tracked code,
 reproducible configs, logs, and output manifests.
@@ -698,6 +731,14 @@ Current status markers:
   `140/185`, target leakage `0/185`, selected candidate buckets head=29,
   mid=40, tail=71, and `40/185` ungrounded low-confidence cases. This is a
   prompt/candidate QA artifact, not recommendation accuracy.
+- DeepSeek Health/Video_Games local gate diagnostics: executed on
+  2026-05-01 after explicit user approval. Health gate60 and Video_Games
+  gate30 each ran free-form, retrieval-context, and catalog-constrained
+  variants with zero failed cases, followed by analysis, case review, and
+  prompt-shape comparison artifacts under ignored `outputs/`. These real API
+  artifacts diagnose grounding and overconfidence under target-excluding
+  candidate gates; they are not calibrated confidence, recommendation
+  accuracy, server results, or paper evidence.
 
 ## Phase 2C Observation Analysis
 
