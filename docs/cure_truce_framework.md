@@ -90,6 +90,40 @@ Implemented functions:
 These functions use no API, no model loading, no training, and no data
 download.
 
+## Current Artifact Sanity
+
+On 2026-05-01, the scaffold was exercised on the six existing DeepSeek
+Health_and_Personal_Care and Video_Games prompt-gate artifacts:
+
+- Health gate60: free-form, retrieval-context, catalog-constrained;
+- Video_Games gate30: free-form, retrieval-context, catalog-constrained.
+
+For each gate, the pipeline wrote ignored local artifacts under:
+
+```text
+outputs/confidence_features/api_observations/deepseek/...
+outputs/confidence_calibration/api_observations/deepseek/...
+outputs/confidence_residuals/api_observations/deepseek/...
+outputs/confidence_reranking/api_observations/deepseek/...
+outputs/confidence_triage/api_observations/deepseek/...
+outputs/echo_simulation/api_observations/deepseek/...
+```
+
+The feature counts match the source gate sizes: 60 rows for each Health gate
+and 30 rows for each Video_Games gate. Grounded feature counts were Health
+free-form 7, Health retrieval-context 53, Health catalog-constrained 32,
+Video_Games free-form 9, Video_Games retrieval-context 27, and Video_Games
+catalog-constrained 23.
+
+These gates contain only `test` split rows. Calibration and popularity
+residualization therefore used `--fit-splits test --eval-splits test
+--allow-same-split-eval` only to verify the JSONL contracts. The manifests mark
+the fit/eval overlap and `api_called=false`, `model_training=false`,
+`server_executed=false`, and `is_experiment_result=false`. This is a leakage
+diagnostic for plumbing, not a learned calibrator, not a popularity
+deconfounding result, not a trained CURE/TRUCE reranker, and not paper
+evidence.
+
 ## Feature Builder
 
 Build feature records from a completed grounded observation output:

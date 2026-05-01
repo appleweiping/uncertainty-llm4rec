@@ -152,6 +152,16 @@ close locally for prepared slices, but the target-excluding retrieval/catalog
 variants remain prompt/grounding diagnostics rather than recommendation
 accuracy or paper evidence.
 
+The same six gate outputs have been converted into CURE/TRUCE framework
+artifacts without additional API calls. The API-free follow-up writes ignored
+feature, calibration, residualization, reranking, triage, and synthetic echo
+simulation artifacts under `outputs/confidence_*` and `outputs/echo_simulation`.
+Because the gate slices contain only `test` rows, any calibration or popularity
+residualization command must use `--allow-same-split-eval` only as a diagnostic
+contract check. Those manifests are useful for verifying grounding-to-feature
+plumbing and exposure-risk schemas, but they are not calibrated confidence
+evidence, not real exposure feedback, and not paper results.
+
 ## Run Mock Observation
 
 ```powershell

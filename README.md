@@ -207,6 +207,16 @@ all-test file has 56,074 local inputs and was not started as a long-running
 paid API job in this local turn; only the approved local gate30 slice was
 closed end to end.
 
+The same six 2026-05-01 DeepSeek Health/Video_Games gate artifacts have also
+been passed through the API-free CURE/TRUCE scaffold: feature extraction,
+same-split diagnostic calibration, same-split diagnostic popularity
+residualization, deterministic reranking, diagnostic triage, and synthetic echo
+simulation. These outputs live only under ignored `outputs/confidence_*` and
+`outputs/echo_simulation/` paths. Because these gate rows contain only the
+`test` split, calibration and residualization were run with
+`--allow-same-split-eval`; they are leakage-marked contract diagnostics, not
+learned calibrators, not a trained TRUCE/CURE method, and not paper evidence.
+
 No model training, Qwen/server inference, or paper-level full experimental
 suite has been executed. The mock observation pipeline is only a no-API sanity
 path and must not be reported as model behavior. Synthetic fixture under
@@ -966,6 +976,22 @@ gain, grounding/overclaim risk, and echo risk, then emits a heuristic action:
 This scaffold does not call APIs, train a model, run Qwen3, or prove the
 framework. It is a tested contract for later calibrators, rerankers, server
 training, and triage modules.
+
+For the 2026-05-01 DeepSeek Health/Video_Games gate artifacts, this scaffold
+has been exercised end to end without new API calls:
+
+```powershell
+python scripts/build_confidence_features.py --grounded-jsonl outputs/api_observations/deepseek/amazon_reviews_2023_health/full/test_gate60_no_repeat_retrieval_context_json_c20_api_full60_20260501/grounded_predictions.jsonl --input-jsonl outputs/observation_inputs/amazon_reviews_2023_health/full/test_gate60_no_repeat_retrieval_context_json_c20.jsonl --catalog-csv data/processed/amazon_reviews_2023_health/full/item_catalog.csv
+python scripts/calibrate_confidence_features.py --features-jsonl outputs/confidence_features/api_observations/deepseek/amazon_reviews_2023_health/full/test_gate60_no_repeat_retrieval_context_json_c20_api_full60_20260501/features.jsonl --fit-splits test --eval-splits test --allow-same-split-eval --n-bins 5
+python scripts/residualize_confidence_features.py --features-jsonl outputs/confidence_calibration/api_observations/deepseek/amazon_reviews_2023_health/full/test_gate60_no_repeat_retrieval_context_json_c20_api_full60_20260501/calibrated_features.jsonl --output-dir outputs/confidence_residuals/api_observations/deepseek/amazon_reviews_2023_health/full/test_gate60_no_repeat_retrieval_context_json_c20_api_full60_20260501 --fit-splits test --eval-splits test --allow-same-split-eval
+python scripts/rerank_confidence_features.py --features-jsonl outputs/confidence_residuals/api_observations/deepseek/amazon_reviews_2023_health/full/test_gate60_no_repeat_retrieval_context_json_c20_api_full60_20260501/popularity_residualized_features.jsonl --confidence-source calibrated_residualized --group-key input_id --top-k 1
+```
+
+The commands above show one representative run; the same sequence was applied
+to all six Health/Video_Games prompt-shape gate artifacts. Because these rows
+only have a `test` split, `--allow-same-split-eval` is allowed here only as a
+manifested diagnostic. The outputs are ignored local artifacts, not method
+results.
 
 Build CURE/TRUCE feature records from an existing grounded observation output:
 
