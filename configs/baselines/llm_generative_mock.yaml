@@ -1,0 +1,10 @@
+method:
+  name: llm_generative
+  type: llm
+  seed: 13
+  params:
+    prediction_method: llm_generative_mock
+    text_policy: title
+llm:
+  config_path: configs/llm/mock.yaml
+  response_mode: generative_correct

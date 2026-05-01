@@ -45,6 +45,9 @@ def validate_prediction(record: dict[str, Any], *, row_number: int | None = None
         raise ValueError(f"{where}domain must be a non-empty string")
     if not isinstance(record["metadata"], dict):
         raise ValueError(f"{where}metadata must be an object")
+    raw_output = record.get("raw_output")
+    if raw_output is not None and not isinstance(raw_output, str):
+        raise ValueError(f"{where}raw_output must be a string or null")
     normalized = dict(record)
     normalized["scores"] = scores
     return normalized

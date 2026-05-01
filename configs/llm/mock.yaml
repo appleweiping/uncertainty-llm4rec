@@ -1,0 +1,9 @@
+provider: mock
+type: mock
+model: mock-llm
+response_mode: generative_correct
+seed: 13
+temperature: 0.0
+top_p: 1.0
+max_tokens: 256
+notes: "Mock provider only for tests and smoke runs; not an experiment result."

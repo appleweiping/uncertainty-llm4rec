@@ -1,0 +1,30 @@
+from __future__ import annotations
+
+from llm4rec.prompts.parsers import (
+    parse_candidate_normalized_response,
+    parse_generation_response,
+    parse_llm_json,
+    parse_rerank_response,
+    parse_yes_no_response,
+)
+
+
+def test_parser_accepts_plain_fenced_and_surrounded_json() -> None:
+    assert parse_llm_json('{"confidence": 0.5}').parse_success
+    assert parse_llm_json('```json\n{"confidence": 0.5}\n```').parse_success
+    assert parse_llm_json('prefix {"confidence": 0.5} suffix').parse_success
+
+
+def test_parser_rejects_malformed_and_out_of_range_confidence() -> None:
+    assert not parse_llm_json("not json").parse_success
+    assert not parse_llm_json('{"confidence": 1.2}').parse_success
+    assert not parse_llm_json('{"confidence": "0.5"}').parse_success
+
+
+def test_typed_parsers_validate_expected_shapes() -> None:
+    assert parse_generation_response('{"recommendation": "Alpha Movie", "confidence": 0.7}').parse_success
+    assert parse_rerank_response('{"ranked_items": [{"title": "Alpha Movie", "confidence": 0.7}]}').parse_success
+    assert parse_yes_no_response('{"answer": "yes", "confidence": 0.7}').parse_success
+    assert parse_candidate_normalized_response(
+        '{"options": [{"title": "Alpha Movie", "confidence": 0.7}], "normalized": true}'
+    ).parse_success

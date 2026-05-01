@@ -13,8 +13,13 @@ from llm4rec.experiments.config import load_config, save_resolved_config
 from llm4rec.experiments.logging import RunLogger
 from llm4rec.experiments.seeding import set_seed
 from llm4rec.io.artifacts import create_run_dir, read_jsonl, write_environment, write_jsonl
+from llm4rec.llm.hf_provider import HFLocalProvider
+from llm4rec.llm.mock_provider import MockLLMProvider
+from llm4rec.llm.openai_provider import OpenAICompatibleProvider
 from llm4rec.rankers.base import BaseRanker
 from llm4rec.rankers.bm25 import BM25Ranker
+from llm4rec.rankers.llm_generative import LLMConfidenceObservationRanker, LLMGenerativeRanker
+from llm4rec.rankers.llm_reranker import LLMReranker
 from llm4rec.rankers.mf import MatrixFactorizationRanker
 from llm4rec.rankers.popularity import PopularityRanker
 from llm4rec.rankers.random import RandomRanker
@@ -159,10 +164,10 @@ def _build_ranker_predictions(config: dict[str, Any]) -> list[dict[str, Any]]:
         record["metadata"].update(
             {
                 "trainer": trainer_result.metadata,
-                "phase": "phase2_minimal_baseline",
                 "not_ours_method": True,
             }
         )
+        record["metadata"].setdefault("phase", "phase2_minimal_baseline")
         predictions.append(record)
     return predictions
 
@@ -190,7 +195,61 @@ def _build_ranker(config: dict[str, Any]) -> BaseRanker:
             learning_rate=float(params.get("learning_rate") or 0.05),
             regularization=float(params.get("regularization") or 0.001),
         )
-    raise ValueError(f"unknown Phase 2 method: {method}")
+    if method == "llm_generative":
+        return LLMGenerativeRanker(
+            provider=_build_llm_provider(config),
+            method_name=str(params.get("prediction_method") or "llm_generative_mock"),
+            text_policy=str(params.get("text_policy") or "title"),
+        )
+    if method == "llm_rerank":
+        return LLMReranker(
+            provider=_build_llm_provider(config),
+            method_name=str(params.get("prediction_method") or "llm_rerank_mock"),
+            text_policy=str(params.get("text_policy") or "title"),
+        )
+    if method == "llm_confidence_observation":
+        return LLMConfidenceObservationRanker(
+            provider=_build_llm_provider(config),
+            method_name=str(params.get("prediction_method") or "llm_confidence_observation_mock"),
+            text_policy=str(params.get("text_policy") or "title"),
+        )
+    raise ValueError(f"unknown experiment method: {method}")
+
+
+def _build_llm_provider(config: dict[str, Any]) -> Any:
+    llm_config = _llm_config(config)
+    provider_type = str(llm_config.get("provider") or llm_config.get("type") or "")
+    if provider_type == "mock":
+        return MockLLMProvider(
+            response_mode=str(llm_config.get("response_mode") or "generative_correct"),
+            seed=int(llm_config.get("seed") or config.get("seed") or 0),
+        )
+    if provider_type == "openai_compatible":
+        return OpenAICompatibleProvider(
+            model_name=str(llm_config.get("model") or ""),
+            api_key_env=str(llm_config.get("api_key_env") or ""),
+            base_url=str(llm_config.get("base_url") or ""),
+            timeout_seconds=float(llm_config.get("timeout_seconds") or 60.0),
+            max_retries=int(llm_config.get("max_retries") or 2),
+        )
+    if provider_type == "hf_local":
+        return HFLocalProvider(
+            model_name_or_path=str(llm_config.get("model_name_or_path") or ""),
+            device=str(llm_config.get("device") or "auto"),
+        )
+    raise ValueError(f"unknown llm provider type: {provider_type}")
+
+
+def _llm_config(config: dict[str, Any]) -> dict[str, Any]:
+    llm = config.get("llm")
+    if not isinstance(llm, dict):
+        raise ValueError("config.llm is required for LLM methods")
+    if llm.get("config_path"):
+        loaded = load_config(str(llm["config_path"]))
+        merged = dict(loaded)
+        merged.update({key: value for key, value in llm.items() if key != "config_path"})
+        return merged
+    return llm
 
 
 def _method_config(config: dict[str, Any]) -> dict[str, Any]:
@@ -224,12 +283,12 @@ def _config_for_baseline(config: dict[str, Any], baseline: str) -> dict[str, Any
     child.pop("baselines", None)
     child["method"] = {
         "name": baseline,
-        "type": "ranker",
+        "type": "llm" if baseline.startswith("llm_") else "ranker",
         "seed": int(config.get("seed") or 0),
         "params": _default_params_for(baseline),
     }
     output = child.get("output") if isinstance(child.get("output"), dict) else {}
-    output["run_name"] = f"smoke_all_{baseline}"
+    output["run_name"] = _default_run_name_for(baseline)
     output["output_dir"] = str(output.get("output_dir") or child.get("output_dir") or "outputs/runs")
     child["output"] = output
     child["run_name"] = output["run_name"]
@@ -242,7 +301,23 @@ def _default_params_for(method: str) -> dict[str, Any]:
         return {"text_policy": "title", "k1": 1.5, "b": 0.75}
     if method == "mf":
         return {"factors": 4, "epochs": 20, "learning_rate": 0.05, "regularization": 0.001}
+    if method == "llm_generative":
+        return {"prediction_method": "llm_generative_mock", "text_policy": "title"}
+    if method == "llm_rerank":
+        return {"prediction_method": "llm_rerank_mock", "text_policy": "title"}
+    if method == "llm_confidence_observation":
+        return {"prediction_method": "llm_confidence_observation_mock", "text_policy": "title"}
     return {}
+
+
+def _default_run_name_for(method: str) -> str:
+    if method == "llm_generative":
+        return "smoke_llm_generative"
+    if method == "llm_rerank":
+        return "smoke_llm_rerank"
+    if method == "llm_confidence_observation":
+        return "smoke_llm_confidence"
+    return f"smoke_all_{method}"
 
 
 def _read_csv(path: Path) -> list[dict[str, Any]]:

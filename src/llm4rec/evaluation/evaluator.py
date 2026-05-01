@@ -1,4 +1,4 @@
-"""Shared evaluator for Phase 1 prediction artifacts."""
+"""Shared evaluator for reproducible prediction artifacts."""
 
 from __future__ import annotations
 
@@ -8,6 +8,9 @@ from typing import Any
 from llm4rec.evaluation.export import export_metrics
 from llm4rec.evaluation.prediction_schema import validate_prediction
 from llm4rec.io.artifacts import read_jsonl
+from llm4rec.metrics.calibration import calibration_metrics
+from llm4rec.metrics.confidence import confidence_metrics
+from llm4rec.metrics.efficiency import efficiency_metrics
 from llm4rec.metrics.ranking import ranking_metrics
 from llm4rec.metrics.validity import validity_metrics
 
@@ -44,13 +47,24 @@ def evaluate_predictions(
 def _compute(predictions: list[dict[str, Any]], *, top_k: list[int]) -> dict[str, Any]:
     ranking = ranking_metrics(predictions, top_k=top_k)
     validity = validity_metrics(predictions)
-    return {**ranking, **validity}
+    return {
+        **ranking,
+        **validity,
+        "confidence": confidence_metrics(predictions),
+        "calibration": calibration_metrics(predictions),
+        "efficiency": efficiency_metrics(predictions),
+    }
 
 
 def _note_for_methods(predictions: list[dict[str, Any]]) -> str:
     methods = {str(row.get("method") or "") for row in predictions}
     if methods == {"skeleton"}:
         return "Phase 1 skeleton smoke metrics only; not a formal baseline or paper result."
+    if any(method.startswith("llm_") for method in methods):
+        return (
+            "Phase 3 mock LLM baseline and uncertainty-observation smoke metrics only; "
+            "not a paper result or OursMethod claim."
+        )
     return (
         "Phase 2 minimal baseline smoke metrics only; use for infrastructure "
         "validation, not as paper-level experimental evidence."

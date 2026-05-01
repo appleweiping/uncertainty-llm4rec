@@ -1,0 +1,8 @@
+provider: hf_local
+type: hf_local
+model_name_or_path: null
+device: auto
+temperature: 0.0
+top_p: 1.0
+max_tokens: 256
+notes: "Interface scaffold only. Smoke tests must not download models."
