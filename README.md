@@ -957,6 +957,32 @@ and `confidence_semantics=non_calibrated_baseline_proxy`; this is intentional
 and prevents rank/popularity/co-occurrence scores from being mislabeled as
 calibrated LLM confidence.
 
+On 2026-05-01, the local no-API baseline sanity path was exercised on the
+Amazon Reviews 2023 Video_Games full no-repeat gate30 slice:
+
+```powershell
+python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json.jsonl --baseline popularity --output-dir outputs/observations/baselines/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json_popularity_20260501 --max-examples 30 --no-resume
+python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json.jsonl --baseline cooccurrence --output-dir outputs/observations/baselines/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json_cooccurrence_20260501 --max-examples 30 --no-resume
+python scripts/analyze_observation.py --run-dir outputs/observations/baselines/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json_popularity_20260501 --input-jsonl outputs/observation_inputs/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json.jsonl --source-label baseline-popularity-video-games-gate30-20260501
+python scripts/analyze_observation.py --run-dir outputs/observations/baselines/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json_cooccurrence_20260501 --input-jsonl outputs/observation_inputs/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json.jsonl --source-label baseline-cooccurrence-video-games-gate30-20260501
+```
+
+Ignored analysis artifacts were written under
+`outputs/analysis/observations/baselines/amazon_reviews_2023_video_games/full/`
+and local registry rows were appended under `outputs/run_registry/`. The
+popularity baseline produced 30/30 grounded rows, GroundHit `1.000`,
+correctness `0.000`, mean proxy confidence `0.950`, ECE `0.950`, and
+WBC_tau `1.000`. The co-occurrence baseline produced 29/30 exact-grounded rows
+plus one ambiguous grounding case, GroundHit `0.967`, correctness `0.000`,
+mean proxy confidence `0.761`, ECE `0.761`, and WBC_tau `0.700`.
+
+These are title-grounded baseline sanity artifacts only. They are useful for
+checking the baseline path and the proxy-confidence guardrails on a title-rich
+Amazon slice; they are not trained baseline results, not API/model behavior,
+and not paper evidence. The gate30 runs also showed several-minute local
+runtime for lightweight baselines, so larger baseline sweeps should get a
+small runtime/profiling pass before scale-up.
+
 ## CURE/TRUCE Framework Scaffold
 
 The first framework code is a local, deterministic scaffold for

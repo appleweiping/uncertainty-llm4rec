@@ -143,6 +143,44 @@ popularity, co-occurrence, and ranking scores are useful reviewer-proofing
 controls, but they are not calibrated LLM confidence and must not be reported as
 method evidence without a later full protocol run.
 
+## Current Video_Games Gate30 Sanity
+
+On 2026-05-01, the no-API baseline path was run on the existing ignored Amazon
+Reviews 2023 Video_Games full no-repeat gate30 input:
+
+```powershell
+python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json.jsonl --baseline popularity --output-dir outputs/observations/baselines/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json_popularity_20260501 --max-examples 30 --no-resume
+python scripts/run_baseline_observation.py --input-jsonl outputs/observation_inputs/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json.jsonl --baseline cooccurrence --output-dir outputs/observations/baselines/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json_cooccurrence_20260501 --max-examples 30 --no-resume
+python scripts/analyze_observation.py --run-dir outputs/observations/baselines/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json_popularity_20260501 --input-jsonl outputs/observation_inputs/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json.jsonl --source-label baseline-popularity-video-games-gate30-20260501
+python scripts/analyze_observation.py --run-dir outputs/observations/baselines/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json_cooccurrence_20260501 --input-jsonl outputs/observation_inputs/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json.jsonl --source-label baseline-cooccurrence-video-games-gate30-20260501
+```
+
+The outputs remain ignored local artifacts. The run validates that the
+lightweight baseline path can produce title-level grounded predictions and
+analysis-registry records on a title-rich Amazon category:
+
+- `popularity`: 30 rows, GroundHit `1.000`, correctness `0.000`, mean
+  proxy confidence `0.950`, ECE `0.950`, WBC_tau `1.000`.
+- `cooccurrence`: 30 rows, GroundHit `0.967`, correctness `0.000`, mean
+  proxy confidence `0.761`, ECE `0.761`, WBC_tau `0.700`, with one ambiguous
+  grounding case.
+
+This is a sanity/readiness diagnostic, not a trained baseline run and not
+paper evidence. It also surfaced a runtime-readiness issue: even 30 local rows
+took several minutes in the current baseline path, so larger baseline sweeps
+should be profiled before scale-up.
+
+The same turn also generated a non-executing trained-baseline run packet:
+
+```powershell
+python scripts/build_expansion_run_packet.py --track baseline_artifact --run-label sasrec_video_games_gate30_readiness_20260501 --baseline-family sasrec --model-family SASRec --dataset amazon_reviews_2023_video_games --processed-suffix full --split test --input-jsonl outputs/observation_inputs/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json.jsonl --target-output-dir outputs/observations/baselines/amazon_reviews_2023_video_games/full/test_gate30_no_repeat_forced_json_sasrec_future
+```
+
+The packet records that real SASRec-style adaptation is still blocked on
+training/server provenance, train/evaluation split declaration, ranking JSONL
+path, run-manifest path, leakage guard flags, and artifact-return policy. It
+does not authorize or execute any trained baseline.
+
 ## Next Extensions
 
 Later baseline phases should plug trained ranking or generative baseline
