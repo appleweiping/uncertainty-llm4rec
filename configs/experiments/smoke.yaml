@@ -1,0 +1,19 @@
+seed: 13
+run_name: smoke_skeleton
+output_dir: outputs/runs
+domain: tiny
+dataset:
+  name: tiny
+  config_path: configs/datasets/tiny.yaml
+  processed_dir: data/processed/tiny/phase1
+split: test
+candidate:
+  protocol: full
+method: skeleton
+metrics:
+  ranking: true
+  validity: true
+  coverage: true
+top_k: [1, 5, 10]
+logging:
+  level: INFO

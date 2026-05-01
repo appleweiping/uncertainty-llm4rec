@@ -1,0 +1,14 @@
+name: tiny
+type: tiny_csv
+domain: tiny
+seed: 13
+interactions_path: tests/fixtures/tiny_interactions.csv
+items_path: tests/fixtures/tiny_items.csv
+processed_dir: data/processed/tiny/phase1
+split:
+  strategy: leave_one_out
+  min_history: 1
+candidate:
+  protocol: full
+  include_history: false
+  sample_size: null

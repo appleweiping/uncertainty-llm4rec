@@ -1,0 +1,6 @@
+name: default
+top_k: [1, 5, 10]
+metrics:
+  ranking: true
+  validity: true
+  coverage: true
