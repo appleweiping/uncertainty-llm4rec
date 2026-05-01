@@ -287,8 +287,10 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
   for processed full-data gates while Qwen3/server observation and LoRA
   training remain deferred.
 - `scripts/build_project_readiness_report.py`: setup-readiness reporter for
-  deciding when to enter a later user-started experiment phase without running
-  APIs, servers, training, downloads, or baselines.
+  deciding when to enter a later user-started experiment phase. It now records
+  module readiness states, safe preflight commands, approval-required command
+  shapes, and remaining paper-claim blockers without running APIs, servers,
+  training, downloads, or baselines.
 - `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
   grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
@@ -395,7 +397,9 @@ Expansion gate scripts:
   and forbidden claims. It does not authorize or execute the run.
 - `scripts/build_project_readiness_report.py`: writes an ignored setup
   readiness manifest/report and marks whether the repository is ready for a
-  later explicit experiment-start decision.
+  later explicit experiment-start decision. The manifest separates ready
+  modules, blocked modules, approval-required modules, safe preflight commands,
+  and operations that remain forbidden without explicit approval.
 
 The remaining subpackages are intentionally lightweight placeholders for later
 method variants and paper-artifact phases.
@@ -887,7 +891,11 @@ python scripts/build_project_readiness_report.py
 This writes ignored artifacts under `outputs/project_readiness/current/` and
 checks governance, data pipelines, API observation, Qwen server observation,
 Qwen LoRA training scaffold, baseline contracts, confidence framework,
-simulation/triage, and approval/run-packet gates. It does not call APIs,
+simulation/triage, and approval/run-packet gates. It also emits
+`module_readiness`, `safe_preflight_commands`, and
+`approval_required_operations` so scaffold readiness is not confused with
+permission to run paid APIs, server inference, training, raw downloads, or
+paper-result generation. It does not call APIs,
 execute a server, train a model, download data, or produce paper evidence.
 
 Review concrete pilot cases and failure taxonomy:

@@ -112,6 +112,13 @@ shape, expected artifacts, and forbidden claims. It is still not authorization
 to call an API, execute a server command, process full data, train a model, or
 adapt a trained baseline artifact.
 
+`scripts/build_project_readiness_report.py` is the current experiment-ready
+scaffold gate. It writes ignored JSON/Markdown artifacts that distinguish
+module readiness states, blocked paper/result components, safe preflight
+commands, and operations that still require explicit approval. It is a
+go/no-go engineering report only: it does not call APIs, execute a server,
+train models, download data, adapt trained baselines, or create paper evidence.
+
 ## Phase 0: Governance And Scaffold
 
 Goal: establish the repository rules, documentation skeleton, artifact policy,

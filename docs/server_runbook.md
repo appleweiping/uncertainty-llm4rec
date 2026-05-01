@@ -224,8 +224,16 @@ python scripts/build_project_readiness_report.py
 This writes ignored artifacts under `outputs/project_readiness/current/` and
 checks whether governance, data, API observation, Qwen server observation,
 Qwen LoRA training scaffold, baselines, confidence framework, simulation/triage,
-and run-packet gates are present. It does not call APIs, execute a server,
-train models, download data, or create paper evidence.
+and run-packet gates are present. The manifest also records:
+
+- `module_readiness`: ready, blocked, and approval-required module states;
+- `safe_preflight_commands`: local commands that do not call APIs, execute a
+  server, train models, download raw data, or create paper evidence;
+- `approval_required_operations`: command shapes that remain forbidden until
+  the user explicitly starts that experiment path.
+
+The readiness command itself does not call APIs, execute a server, train
+models, download data, or create paper evidence.
 
 ## Amazon Reviews 2023 Beauty Full Run Gate
 
