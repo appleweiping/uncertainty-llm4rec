@@ -52,3 +52,12 @@ def test_title_grounder_reuses_catalog() -> None:
     grounder = TitleGrounder(synthetic_catalog())
 
     assert grounder.ground("Arrival", prediction_id="p1").item_id == "item-mid"
+
+
+def test_title_grounder_fuzzy_match_uses_reusable_index() -> None:
+    grounder = TitleGrounder(synthetic_catalog(), fuzzy_threshold=0.80)
+
+    result = grounder.ground("The Matrx", prediction_id="p1")
+
+    assert result.item_id == "item-head"
+    assert result.status == GroundingStatus.FUZZY

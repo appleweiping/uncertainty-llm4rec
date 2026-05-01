@@ -11,6 +11,9 @@ Beauty full preprocessing has been executed locally as a data-readiness
 artifact. User-approved DeepSeek local API full-slice diagnostics have been
 executed on Amazon Beauty repeat-free inputs; these are local API artifacts
 under ignored `outputs/`, not server runs and not paper conclusions.
+On 2026-05-01, the user paused the local Video_Games all-test DeepSeek run and
+deferred that large-domain execution to server or a later explicitly started
+experiment phase.
 
 ## Server Responsibilities
 
@@ -155,6 +158,74 @@ Codex must not claim this server command has run unless the user provides the
 server manifest and logs. Qwen3 outputs must still be grounded to the catalog
 before correctness, confidence, popularity, or head/mid/tail metrics are
 reported.
+
+## Qwen3-8B LoRA / SFT Training Scaffold
+
+The repository now includes a server-only Qwen3-8B LoRA SFT training contract:
+
+- config: `configs/server/qwen3_8b_lora_sft.yaml`;
+- script: `scripts/server/run_qwen3_lora_sft.py`;
+- package helper: `storyflow.training`;
+- default mode: plan-only, with no model loading and no training;
+- local execution guard: `--execute-server` is refused by local Codex.
+
+Plan-only command from the repository root:
+
+```powershell
+python scripts/server/run_qwen3_lora_sft.py --config configs/server/qwen3_8b_lora_sft.yaml --output-dir outputs/server_training/qwen3_8b_lora_sft/plan
+```
+
+The plan writes ignored artifacts:
+
+- `train_manifest.json`;
+- `train_command_plan.md`;
+- `config_snapshot.json`;
+- `expected_training_artifacts.json`;
+- optional `sft_preview_rows.jsonl` when the configured input JSONL exists.
+
+The plan manifest must contain:
+
+- `api_called=false`;
+- `server_executed=false`;
+- `model_training=false`;
+- `is_experiment_result=false`;
+- `claim_scope=plan_only_not_training_not_paper_evidence`.
+
+The initial SFT response policy is
+`target_title_json_confidence_1`: train the model to emit a JSON object for the
+held-out target title as a baseline generative recommender. This is not the
+final TRUCE/CURE objective and must not be described as uncertainty-aware
+learning. Later method training should add confidence/calibration/risk-aware
+objectives only after the baseline SFT path and evaluation contract are
+verified.
+
+Approved server training command shape:
+
+```powershell
+python scripts/server/run_qwen3_lora_sft.py --config configs/server/qwen3_8b_lora_sft.yaml --output-dir outputs/server_training/qwen3_8b_lora_sft/amazon_reviews_2023_beauty/full --execute-server
+```
+
+In the current local Codex environment this command intentionally raises a
+server-only guard instead of training. Real execution requires an approved
+server environment with `torch`, `transformers`, `datasets`, `peft`, and a
+trainer implementation or launcher recorded in the server logs. The returned
+artifacts must include adapter path, trainer state, logs, metrics, config
+snapshot, git commit hash, and data manifest before any result is discussed.
+
+## Project Setup Readiness Report
+
+Before starting the next real experiment phase, generate the project readiness
+report:
+
+```powershell
+python scripts/build_project_readiness_report.py
+```
+
+This writes ignored artifacts under `outputs/project_readiness/current/` and
+checks whether governance, data, API observation, Qwen server observation,
+Qwen LoRA training scaffold, baselines, confidence framework, simulation/triage,
+and run-packet gates are present. It does not call APIs, execute a server,
+train models, download data, or create paper evidence.
 
 ## Amazon Reviews 2023 Beauty Full Run Gate
 

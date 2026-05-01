@@ -149,8 +149,8 @@ On 2026-04-30, after the user approved DeepSeek provider/model and an
 unlimited fast-but-controlled budget, the local processed Amazon domains were
 run through the free-form forced-JSON observation path with cache/resume,
 60 requests/minute, and max concurrency 5. This covers the currently local
-processed domains only, not missing raw-data categories such as Video_Games,
-Sports, or Books. The full-stage API observation artifacts are under ignored
+processed domains at that time only, not missing raw-data categories such as
+Sports or Books. The full-stage API observation artifacts are under ignored
 `outputs/` paths and are not committed:
 
 - Beauty full test: 225/225 records, failed cases 0, GroundHit `0.316`,
@@ -224,6 +224,23 @@ path and must not be reported as model behavior. Synthetic fixture under
 an experimental result. Any future result must come from tracked code,
 reproducible configs, logs, and output manifests.
 
+On 2026-05-01, the user set the standing local DeepSeek full-domain execution
+default: provider/model DeepSeek `deepseek-v4-flash`, unlimited budget, and a
+fast execution policy that must preserve experimental quality through
+temperature `0.0`, DeepSeek JSON output mode, bounded completion length,
+cache/resume, fixed prompts, parsing, grounding, manifests, and downstream
+analysis. This standing approval applies to the local full-domain DeepSeek path
+over already processed Amazon domains; it does not authorize other paid
+providers, Qwen3/server inference, LoRA training, trained baseline jobs, new
+raw-data downloads, or paper-result claims.
+Later on 2026-05-01, the user paused the local Video_Games all-test DeepSeek
+run and deferred that large-domain execution to server or a later explicitly
+started experiment phase. Project work should now focus on setup readiness
+rather than running more experiments. The codebase now includes a project
+readiness reporter plus a Qwen3-8B LoRA/SFT server-training plan contract; both
+are plan-only scaffolds and do not train, infer, call APIs, or create paper
+evidence.
+
 ## Scientific Scope
 
 The core task is title-level generative recommendation:
@@ -269,6 +286,9 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
 - `docs/local_deepseek_experiments.md`: local DeepSeek experiment-launch plan
   for processed full-data gates while Qwen3/server observation and LoRA
   training remain deferred.
+- `scripts/build_project_readiness_report.py`: setup-readiness reporter for
+  deciding when to enter a later user-started experiment phase without running
+  APIs, servers, training, downloads, or baselines.
 - `docs/grounding_diagnostics.md`: catalog duplicate-title and low-margin
   grounding diagnostics before API scale-up.
 - `docs/amazon_reviews_2023.md`: Amazon Beauty readiness and full-run entry.
@@ -281,6 +301,8 @@ prompting demo, and not a place for fabricated tables, metrics, or claims.
   no server run has been performed by Codex.
 - `configs/server/qwen3_8b_observation.yaml`: Qwen3 server observation
   contract. It is a plan/config scaffold only, not a completed inference run.
+- `configs/server/qwen3_8b_lora_sft.yaml`: Qwen3 LoRA/SFT server-training
+  contract. It is a plan/config scaffold only, not a completed training run.
 - `references/README.md`: policy for local reference material such as
   `recprefer.zip`.
 
@@ -357,6 +379,9 @@ Implemented foundation modules:
   using naive high-uncertainty pruning as a final policy.
 - `storyflow.server`: Qwen3-8B server observation plan/execution contract that
   mirrors API observation output layers while defaulting to plan-only mode.
+- `storyflow.training`: Qwen3-8B LoRA/SFT server-training plan contract that
+  writes manifests, config snapshots, expected artifacts, and command plans
+  without starting local training.
 - `tests/fixtures/`: synthetic records used only for tests.
 
 Expansion gate scripts:
@@ -368,9 +393,12 @@ Expansion gate scripts:
   packet for one selected expansion track, including missing confirmations,
   safe preflight commands, approval-required command shape, expected artifacts,
   and forbidden claims. It does not authorize or execute the run.
+- `scripts/build_project_readiness_report.py`: writes an ignored setup
+  readiness manifest/report and marks whether the repository is ready for a
+  later explicit experiment-start decision.
 
 The remaining subpackages are intentionally lightweight placeholders for later
-phases.
+method variants and paper-artifact phases.
 
 ## Milestones
 
@@ -826,6 +854,42 @@ the same observation layers as the API runner: raw responses, parsed
 predictions, failed cases, grounded predictions, metrics, report, and manifest.
 Codex has not run this command locally or on a server.
 
+## Qwen3-8B LoRA SFT Scaffold
+
+Qwen3-8B LoRA/SFT training is also server-oriented. The committed scaffold
+prepares a training contract without loading a model or starting training:
+
+```powershell
+python scripts/server/run_qwen3_lora_sft.py --config configs/server/qwen3_8b_lora_sft.yaml --output-dir outputs/server_training/qwen3_8b_lora_sft/plan
+```
+
+The default command writes `train_manifest.json`, `train_command_plan.md`,
+`config_snapshot.json`, `expected_training_artifacts.json`, and, when the
+configured training JSONL exists, `sft_preview_rows.jsonl`. It records
+`api_called=false`, `server_executed=false`, `model_training=false`, and
+`is_experiment_result=false`.
+
+The initial response policy is `target_title_json_confidence_1`, which is a
+baseline SFT contract for title-level JSON generation. It is not the final
+TRUCE/CURE uncertainty objective. Real LoRA training must be started later by
+the user on approved server hardware and must return adapter paths, logs,
+metrics, config snapshot, git commit hash, and data manifests before any result
+is discussed.
+
+## Project Readiness
+
+Before starting the next experiment phase, generate a setup readiness report:
+
+```powershell
+python scripts/build_project_readiness_report.py
+```
+
+This writes ignored artifacts under `outputs/project_readiness/current/` and
+checks governance, data pipelines, API observation, Qwen server observation,
+Qwen LoRA training scaffold, baseline contracts, confidence framework,
+simulation/triage, and approval/run-packet gates. It does not call APIs,
+execute a server, train a model, download data, or produce paper evidence.
+
 Review concrete pilot cases and failure taxonomy:
 
 ```powershell
@@ -907,10 +971,10 @@ outputs/observation_inputs/amazon_reviews_2023_beauty/sample_5k/test_observation
 ## Local DeepSeek Experiment Launch
 
 When processed full-data artifacts and `DEEPSEEK_API_KEY` are available, build
-a local DeepSeek experiment plan before spending API budget:
+a local DeepSeek experiment plan:
 
 ```powershell
-python scripts/build_local_deepseek_experiment_plan.py --budget-label USER_APPROVED_LOCAL_DEEPSEEK_EXPERIMENT
+python scripts/build_local_deepseek_experiment_plan.py
 ```
 
 This writes ignored plan-only artifacts under:
@@ -919,13 +983,19 @@ This writes ignored plan-only artifacts under:
 outputs/experiment_plans/local_deepseek_fulldata_gate/
 ```
 
-The generated plan covers Beauty, Health, and Video Games full-data gates by
-default, with forced-JSON, retrieval-context, and catalog-constrained prompt
-variants. It lists validation, audit, input-building, API readiness, dry-run,
-explicit `--execute-api`, analysis, case-review, and CURE/TRUCE diagnostic
-commands. The plan itself records `api_called=false`, `server_executed=false`,
-`model_training=false`, and `is_experiment_result=false`; Qwen3/server
-observation and LoRA training remain deferred.
+The generated plan covers local full processed Beauty, Digital_Music,
+Handmade_Products, Health_and_Personal_Care, and Video_Games by default, with
+forced-JSON, retrieval-context, and catalog-constrained prompt variants. The
+default execution controls are DeepSeek `deepseek-v4-flash`, budget label
+`USER_APPROVED_UNLIMITED_FAST_QUALITY_DEEPSEEK_V4_FLASH_20260501`, rate limit
+`300` requests/minute, max concurrency `20`, temperature `0.0`,
+`response_format={"type": "json_object"}`, and max completion length `256`.
+It lists validation, audit, input-building, dry-run, `--execute-api`, analysis,
+case-review, and CURE/TRUCE diagnostic commands. The plan itself records
+`api_called=false`,
+`server_executed=false`, `model_training=false`, and
+`is_experiment_result=false`; Qwen3/server observation and LoRA training remain
+deferred.
 
 Adjust the local gate size and API controls without calling an API:
 

@@ -17,6 +17,9 @@ from storyflow.schemas import (
 _ARTICLE_RE = re.compile(r"^(a|an|the)\s+", flags=re.IGNORECASE)
 _NON_WORD_RE = re.compile(r"[^\w]+", flags=re.UNICODE)
 _SPACE_RE = re.compile(r"\s+")
+_MIN_BLOCK_TOKEN_LENGTH = 2
+_MAX_FUZZY_BLOCK_CANDIDATES = 1500
+_FULL_SCAN_CATALOG_LIMIT = 2000
 
 
 def normalize_title(title: str) -> str:
@@ -50,12 +53,45 @@ def _ratio(left: str, right: str) -> float:
     return SequenceMatcher(None, left, right).ratio()
 
 
+def _block_tokens(normalized_title: str) -> tuple[str, ...]:
+    return tuple(
+        token
+        for token in normalized_title.split()
+        if len(token) >= _MIN_BLOCK_TOKEN_LENGTH
+    )
+
+
+def _trigrams(normalized_title: str) -> tuple[str, ...]:
+    compact = normalized_title.replace(" ", "")
+    if len(compact) < 3:
+        return ()
+    return tuple(compact[index : index + 3] for index in range(len(compact) - 2))
+
+
 def _candidate(
     item: ItemCatalogRecord,
     generated_normalized_title: str,
     rank: int,
 ) -> GroundingCandidate:
     catalog_normalized_title = normalize_title(item.title)
+    score = _ratio(generated_normalized_title, catalog_normalized_title)
+    if generated_normalized_title == catalog_normalized_title:
+        score = 1.0
+    return GroundingCandidate(
+        item_id=item.item_id,
+        title=item.title,
+        normalized_title=catalog_normalized_title,
+        score=score,
+        rank=rank,
+    )
+
+
+def _candidate_from_normalized(
+    item: ItemCatalogRecord,
+    generated_normalized_title: str,
+    catalog_normalized_title: str,
+    rank: int,
+) -> GroundingCandidate:
     score = _ratio(generated_normalized_title, catalog_normalized_title)
     if generated_normalized_title == catalog_normalized_title:
         score = 1.0
@@ -248,6 +284,100 @@ class TitleGrounder:
             raise ValueError("catalog must contain at least one item")
         self.fuzzy_threshold = fuzzy_threshold
         self.ambiguity_margin = ambiguity_margin
+        self._exact_index: dict[str, tuple[ItemCatalogRecord, ...]] = {}
+        self._normalized_index: dict[str, tuple[ItemCatalogRecord, ...]] = {}
+        exact_index: dict[str, list[ItemCatalogRecord]] = {}
+        normalized_index: dict[str, list[ItemCatalogRecord]] = {}
+        normalized_catalog: list[tuple[ItemCatalogRecord, str]] = []
+        token_index: dict[str, set[int]] = {}
+        trigram_index: dict[str, set[int]] = {}
+        for item in self.catalog:
+            normalized_title = normalize_title(item.title)
+            item_index = len(normalized_catalog)
+            normalized_catalog.append((item, normalized_title))
+            exact_index.setdefault(item.title, []).append(item)
+            normalized_index.setdefault(normalized_title, []).append(item)
+            for token in set(_block_tokens(normalized_title)):
+                token_index.setdefault(token, set()).add(item_index)
+            for trigram in set(_trigrams(normalized_title)):
+                trigram_index.setdefault(trigram, set()).add(item_index)
+        self._normalized_catalog = tuple(normalized_catalog)
+        self._token_index = token_index
+        self._trigram_index = trigram_index
+        self._exact_index = {
+            title: tuple(items) for title, items in exact_index.items()
+        }
+        self._normalized_index = {
+            title: tuple(items) for title, items in normalized_index.items()
+        }
+
+    def _indexed_candidates(
+        self,
+        items: tuple[ItemCatalogRecord, ...],
+        generated_normalized_title: str,
+    ) -> tuple[GroundingCandidate, ...]:
+        return tuple(
+            _candidate(
+                item,
+                generated_normalized_title,
+                rank=index + 1,
+            )
+            for index, item in enumerate(sorted(items, key=lambda row: row.item_id))
+        )
+
+    def _rank_candidates(
+        self,
+        generated_normalized_title: str,
+        limit: int = 5,
+    ) -> tuple[GroundingCandidate, ...]:
+        candidate_indices = self._candidate_indices(generated_normalized_title)
+        candidates = [
+            _candidate_from_normalized(
+                item,
+                generated_normalized_title,
+                normalized_title,
+                rank=1,
+            )
+            for index in candidate_indices
+            for item, normalized_title in (self._normalized_catalog[index],)
+        ]
+        candidates.sort(key=lambda candidate: (-candidate.score, candidate.item_id))
+        return tuple(
+            GroundingCandidate(
+                item_id=candidate.item_id,
+                title=candidate.title,
+                normalized_title=candidate.normalized_title,
+                score=candidate.score,
+                rank=index + 1,
+            )
+            for index, candidate in enumerate(candidates[:limit])
+        )
+
+    def _candidate_indices(self, generated_normalized_title: str) -> tuple[int, ...]:
+        if len(self._normalized_catalog) <= _FULL_SCAN_CATALOG_LIMIT:
+            return tuple(range(len(self._normalized_catalog)))
+
+        weights: dict[int, int] = {}
+        for token in set(_block_tokens(generated_normalized_title)):
+            for index in self._token_index.get(token, ()):
+                weights[index] = weights.get(index, 0) + 4
+        for trigram in set(_trigrams(generated_normalized_title)):
+            for index in self._trigram_index.get(trigram, ()):
+                weights[index] = weights.get(index, 0) + 1
+
+        if not weights:
+            return ()
+
+        generated_length = len(generated_normalized_title)
+        ranked = sorted(
+            weights,
+            key=lambda index: (
+                -weights[index],
+                abs(len(self._normalized_catalog[index][1]) - generated_length),
+                self._normalized_catalog[index][0].item_id,
+            ),
+        )
+        return tuple(ranked[:_MAX_FUZZY_BLOCK_CANDIDATES])
 
     def ground(
         self,
@@ -255,10 +385,101 @@ class TitleGrounder:
         *,
         prediction_id: str = "prediction",
     ) -> GroundedPredictionRecord:
-        return ground_title(
-            generated_title,
-            self.catalog,
+        normalized_title = normalize_title(generated_title)
+        if not normalized_title:
+            return _record(
+                prediction_id=prediction_id,
+                generated_title=generated_title,
+                normalized_title=normalized_title,
+                item_id=None,
+                status=GroundingStatus.UNGROUNDED,
+                score=0.0,
+                candidates=(),
+            )
+
+        exact_matches = self._exact_index.get(generated_title, ())
+        if len(exact_matches) == 1:
+            return _record(
+                prediction_id=prediction_id,
+                generated_title=generated_title,
+                normalized_title=normalized_title,
+                item_id=exact_matches[0].item_id,
+                status=GroundingStatus.EXACT,
+                score=1.0,
+                candidates=self._indexed_candidates(exact_matches, normalized_title),
+            )
+        if len(exact_matches) > 1:
+            return _record(
+                prediction_id=prediction_id,
+                generated_title=generated_title,
+                normalized_title=normalized_title,
+                item_id=None,
+                status=GroundingStatus.AMBIGUOUS,
+                score=0.0,
+                candidates=self._indexed_candidates(exact_matches, normalized_title),
+            )
+
+        normalized_matches = self._normalized_index.get(normalized_title, ())
+        if len(normalized_matches) == 1:
+            return _record(
+                prediction_id=prediction_id,
+                generated_title=generated_title,
+                normalized_title=normalized_title,
+                item_id=normalized_matches[0].item_id,
+                status=GroundingStatus.NORMALIZED_EXACT,
+                score=0.98,
+                candidates=self._indexed_candidates(normalized_matches, normalized_title),
+            )
+        if len(normalized_matches) > 1:
+            return _record(
+                prediction_id=prediction_id,
+                generated_title=generated_title,
+                normalized_title=normalized_title,
+                item_id=None,
+                status=GroundingStatus.AMBIGUOUS,
+                score=0.0,
+                candidates=self._indexed_candidates(normalized_matches, normalized_title),
+            )
+
+        candidates = self._rank_candidates(normalized_title)
+        if not candidates:
+            return _record(
+                prediction_id=prediction_id,
+                generated_title=generated_title,
+                normalized_title=normalized_title,
+                item_id=None,
+                status=GroundingStatus.UNGROUNDED,
+                score=0.0,
+                candidates=(),
+            )
+        top = candidates[0]
+        second_score = candidates[1].score if len(candidates) > 1 else None
+        if top.score < self.fuzzy_threshold:
+            return _record(
+                prediction_id=prediction_id,
+                generated_title=generated_title,
+                normalized_title=normalized_title,
+                item_id=None,
+                status=GroundingStatus.UNGROUNDED,
+                score=0.0,
+                candidates=candidates,
+            )
+        if second_score is not None and top.score - second_score <= self.ambiguity_margin:
+            return _record(
+                prediction_id=prediction_id,
+                generated_title=generated_title,
+                normalized_title=normalized_title,
+                item_id=None,
+                status=GroundingStatus.AMBIGUOUS,
+                score=0.0,
+                candidates=candidates,
+            )
+        return _record(
             prediction_id=prediction_id,
-            fuzzy_threshold=self.fuzzy_threshold,
-            ambiguity_margin=self.ambiguity_margin,
+            generated_title=generated_title,
+            normalized_title=normalized_title,
+            item_id=top.item_id,
+            status=GroundingStatus.FUZZY,
+            score=top.score,
+            candidates=candidates,
         )

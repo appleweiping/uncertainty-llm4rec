@@ -31,9 +31,12 @@ from storyflow.providers import load_provider_config  # noqa: E402
 
 DEFAULT_DATASETS = (
     "amazon_reviews_2023_beauty",
+    "amazon_reviews_2023_digital_music",
+    "amazon_reviews_2023_handmade",
     "amazon_reviews_2023_health",
     "amazon_reviews_2023_video_games",
 )
+DEFAULT_BUDGET_LABEL = "USER_APPROVED_UNLIMITED_FAST_QUALITY_DEEPSEEK_V4_FLASH_20260501"
 PROMPT_TEMPLATES = (
     FORCED_JSON_TEMPLATE.name,
     RETRIEVAL_CONTEXT_JSON_TEMPLATE.name,
@@ -349,12 +352,18 @@ def build_local_deepseek_experiment_plan(
     provider = config.provider_name
     model = config.model_name
     api_key_env_present = bool(os.environ.get(config.api_key_env))
+    standing_approval = (
+        config.provider_name == "deepseek"
+        and config.model_name == "deepseek-v4-flash"
+        and budget_label == DEFAULT_BUDGET_LABEL
+    )
     missing_confirmations = []
     if not budget_label:
         missing_confirmations.append("budget_label")
     if not api_key_env_present:
         missing_confirmations.append(f"environment variable {config.api_key_env}")
-    missing_confirmations.append("current-turn explicit approval before running any --execute-api command")
+    if not standing_approval:
+        missing_confirmations.append("current-turn explicit approval before running any --execute-api command")
 
     dataset_plans: list[dict[str, Any]] = []
     for dataset in datasets:
@@ -449,6 +458,13 @@ def build_local_deepseek_experiment_plan(
         "rate_limit_requests_per_minute": rate_limit,
         "max_concurrency": max_concurrency,
         "budget_label": budget_label,
+        "standing_user_approval": standing_approval,
+        "standing_user_approval_note": (
+            "User approved DeepSeek deepseek-v4-flash, unlimited budget, "
+            "and fast execution that preserves experimental quality for local full-domain runs."
+            if standing_approval
+            else None
+        ),
         "missing_execution_confirmations": missing_confirmations,
         "server_deferred": True,
         "server_deferred_tracks": list(SERVER_DEFERRED_TRACKS),
@@ -483,6 +499,7 @@ def _write_markdown(plan: dict[str, Any], path: Path) -> None:
         f"- repeat target policy: {plan['repeat_target_policy']}",
         f"- rate limit: {plan['rate_limit_requests_per_minute']} requests/minute",
         f"- max concurrency: {plan['max_concurrency']}",
+        f"- standing user approval: {plan['standing_user_approval']}",
         f"- API key env present in current process: {plan['api_key_env_present']}",
         f"- server deferred: {plan['server_deferred']}",
         "",
@@ -559,9 +576,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--repeat-target-policy", default="exclude", choices=["all", "exclude", "only"])
     parser.add_argument("--provider-config", default="configs/providers/deepseek.yaml")
     parser.add_argument("--run-stage", choices=["smoke", "pilot", "full"], default="full")
-    parser.add_argument("--rate-limit", type=int, default=60)
-    parser.add_argument("--max-concurrency", type=int, default=5)
-    parser.add_argument("--budget-label")
+    parser.add_argument("--rate-limit", type=int, default=300)
+    parser.add_argument("--max-concurrency", type=int, default=20)
+    parser.add_argument("--budget-label", default=DEFAULT_BUDGET_LABEL)
     parser.add_argument("--run-label-prefix", default="local_deepseek_fulldata_gate")
     parser.add_argument("--no-stratify-by-popularity", action="store_true")
     parser.add_argument("--no-allow-over-20", action="store_true")

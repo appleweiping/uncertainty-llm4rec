@@ -39,6 +39,10 @@ from storyflow.analysis.observation_comparison import (
     observation_comparison_row,
     write_observation_comparison,
 )
+from storyflow.analysis.project_readiness import (
+    build_project_readiness_manifest,
+    write_project_readiness_report,
+)
 from storyflow.analysis.run_registry import append_registry_record, stable_run_id
 
 __all__ = [
@@ -63,6 +67,7 @@ __all__ = [
     "observation_claim_guardrails",
     "observation_source_profile",
     "popularity_confidence_slope",
+    "build_project_readiness_manifest",
     "reliability_bins",
     "reliability_by_popularity_bucket",
     "repeat_target_summary",
@@ -73,4 +78,5 @@ __all__ = [
     "summarize_observation_records",
     "dataset_audit_markdown",
     "write_observation_comparison",
+    "write_project_readiness_report",
 ]

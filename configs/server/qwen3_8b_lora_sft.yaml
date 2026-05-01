@@ -1,0 +1,51 @@
+backend: qwen_lora_sft
+model_name: Qwen/Qwen3-8B
+model_alias: qwen3_8b_lora_sft
+task_family: title_level_generative_recommendation
+stage: sft_baseline
+seed: 20260501
+model:
+  source: Qwen/Qwen3-8B
+  revision: main
+  torch_dtype: bfloat16
+  device_map: auto
+  trust_remote_code: true
+  cache_dir: null
+data:
+  train_input_jsonl: outputs/observation_inputs/amazon_reviews_2023_beauty/full/test_no_repeat_forced_json.jsonl
+  validation_input_jsonl: null
+  response_policy: target_title_json_confidence_1
+  max_examples: null
+  max_history_items: 50
+training:
+  output_dir: outputs/server_training/qwen3_8b_lora_sft/amazon_reviews_2023_beauty/full
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 0.0002
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  logging_steps: 10
+  save_steps: 200
+  eval_steps: 200
+  save_total_limit: 2
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj
+guards:
+  server_execution_required: true
+  no_local_codex_training: true
+  api_called: false
+  model_training: false
+  requires_user_experiment_start_signal: true
+output_contract:
+  plan_manifest: train_manifest.json
+  command_plan: train_command_plan.md
+  config_snapshot: config_snapshot.json
+  expected_artifacts: expected_training_artifacts.json
