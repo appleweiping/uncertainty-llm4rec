@@ -39,6 +39,8 @@ The final system should support:
 
 The implementation must make it possible to start real experiments after the core modules are completed.
 
+Before implementing OursMethod, Codex must read `docs/RESEARCH_IDEA.md`. `AGENTS.md` defines engineering standards, not the core research idea. Codex must not replace OursMethod with a generic LLM reranker, generic RAG recommender, prompt-engineering baseline, or known-paper clone.
+
 ## 2. Expected Repository Structure
 
 Prefer the following structure unless the existing repo already has a better compatible layout:
