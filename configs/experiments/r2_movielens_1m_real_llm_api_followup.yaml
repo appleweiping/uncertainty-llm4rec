@@ -1,0 +1,71 @@
+template: false
+dry_run: true
+requires_confirm: true
+evidence_label: full single-dataset experiment / candidate paper evidence, pending reviewer approval
+seed: 13
+seeds: [13]
+run_name: r2_movielens_1m_real_llm_api_followup
+output_dir: outputs/runs
+domain: movies
+dataset:
+  name: movielens_1m_r2
+  config_path: configs/datasets/movielens_1m_r2.yaml
+  raw_data_path: data/raw/movielens_1m/ml-1m
+  raw_interactions_path: data/raw/movielens_1m/ml-1m/ratings.dat
+  raw_items_path: data/raw/movielens_1m/ml-1m/movies.dat
+  interactions_path: data/processed/movielens_1m/r2_full_single_dataset_source/interactions.csv
+  items_path: data/processed/movielens_1m/r2_full_single_dataset_source/items.csv
+  processed_dir: data/processed/movielens_1m/r2_full_single_dataset
+split: test
+split_strategy:
+  name: leave_one_out
+  timestamp_field: timestamp
+  future_interactions: forbidden
+  history_policy: past_interactions_only
+  repeat_target_policy: allow_repeat_items_in_history_but_exclude_history_from_candidates
+  train_examples_per_user: 1
+candidate:
+  protocol: sampled
+  k: 100
+  seed: 13
+  set_path: data/processed/movielens_1m/r2_full_single_dataset/candidate_sets.jsonl
+  negative_sampling: fixed_seed_without_replacement_from_catalog_excluding_target_and_history
+  target_policy: include_heldout_target_for_main_eval
+  target_excluding_protocol: diagnostic_only_not_accuracy
+  same_set_for_comparable_baselines: true
+data_protocol:
+  interaction_schema: [user_id, item_id, timestamp, rating, domain]
+  item_schema: [item_id, title, description, category, brand, domain, raw_text]
+  user_item_id_mapping: source_item_and_user_ids_preserved_from_movielens_1m
+  timestamp_handling: chronological_per_user_sort_by_timestamp_then_item_id
+  train_popularity_source: train_split_only
+  domain_field: domain
+  candidate_set_saved_path: data/processed/movielens_1m/r2_full_single_dataset/candidate_sets.jsonl
+baselines: [llm_generative, ours_uncertainty_guided]
+llm:
+  provider: openai_compatible
+  type: openai_compatible
+  model: TBD
+  api_key_env: OPENAI_API_KEY
+  base_url: TBD
+  timeout_seconds: 60
+  max_retries: 2
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [1, 5, 10, 20]
+top_k: [1, 5, 10, 20]
+metrics: [ranking, validity, grounding, confidence, calibration, coverage, diversity, novelty, long_tail, efficiency, cold_start]
+safety:
+  allow_api_calls: false
+  allow_download: false
+  allow_training: false
+  acknowledged_expensive_run: false
+  leakage_safeguards: true
+r2:
+  label: full single-dataset experiment / candidate paper evidence, pending reviewer approval
+  notice: Follow-up only. Do not run until user approves real API, provider fields are filled, environment variables exist, and dry_run is set false deliberately.
+logging:
+  level: INFO
+output:
+  run_name: r2_movielens_1m_real_llm_api_followup
+  output_dir: outputs/runs

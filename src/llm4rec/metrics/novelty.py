@@ -28,8 +28,10 @@ def mean_self_information(
     catalog_items: list[str],
     k: int,
 ) -> float:
+    total = sum(train_popularity.values())
+    denominator = total + max(len(set(catalog_items)), 1)
     values = [
-        _self_information(item, train_popularity=train_popularity, catalog_size=len(set(catalog_items)))
+        _self_information_with_denominator(item, train_popularity=train_popularity, denominator=denominator)
         for row in predictions
         for item in dedupe(str(value) for value in row.get("predicted_items", []))[:k]
     ]
@@ -104,5 +106,18 @@ def popularity_ranks(train_popularity: dict[str, int], *, catalog_items: list[st
 def _self_information(item: str, *, train_popularity: dict[str, int], catalog_size: int) -> float:
     total = sum(train_popularity.values())
     denominator = total + max(catalog_size, 1)
+    return _self_information_with_denominator(
+        item,
+        train_popularity=train_popularity,
+        denominator=denominator,
+    )
+
+
+def _self_information_with_denominator(
+    item: str,
+    *,
+    train_popularity: dict[str, int],
+    denominator: int,
+) -> float:
     probability = (train_popularity.get(item, 0) + 1) / denominator
     return -math.log2(probability)

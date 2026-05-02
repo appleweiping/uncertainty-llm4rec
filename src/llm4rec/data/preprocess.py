@@ -73,6 +73,7 @@ class TinyDataModule:
             examples = leave_one_out_split(
                 interactions,
                 min_history=min_history,
+                train_examples_per_user=split_config.get("train_examples_per_user"),
                 domain=str(self.config.get("domain") or "tiny"),
             )
         elif strategy == "temporal":

@@ -28,6 +28,9 @@ class TitleGroundingResult:
         }
 
 
+_CATALOG_CACHE: dict[int, tuple[int, dict[str, Any]]] = {}
+
+
 def ground_title(
     generated_title: str,
     item_catalog: list[dict[str, Any]],
@@ -37,16 +40,15 @@ def ground_title(
     raw = str(generated_title or "").strip()
     if not raw:
         return _failed(raw, "empty")
-    catalog = _sorted_catalog(item_catalog)
-    for row in catalog:
-        title = str(row.get("title") or "")
-        if raw.casefold() == title.casefold():
-            return _success(raw, row, 1.0, "exact_case_insensitive")
+    index = _catalog_index(item_catalog)
+    catalog = index["sorted_catalog"]
+    exact = index["exact_titles"].get(raw.casefold())
+    if exact is not None:
+        return _success(raw, exact, 1.0, "exact_case_insensitive")
     normalized = normalize_title(raw)
-    for row in catalog:
-        title = str(row.get("title") or "")
-        if normalized and normalized == normalize_title(title):
-            return _success(raw, row, 0.98, "normalized")
+    normalized_row = index["normalized_titles"].get(normalized)
+    if normalized and normalized_row is not None:
+        return _success(raw, normalized_row, 0.98, "normalized")
     best_row: dict[str, Any] | None = None
     best_score = 0.0
     for row in catalog:
@@ -78,6 +80,27 @@ def _sorted_catalog(item_catalog: list[dict[str, Any]]) -> list[dict[str, Any]]:
         item_catalog,
         key=lambda row: (str(row.get("item_id") or ""), normalize_title(str(row.get("title") or ""))),
     )
+
+
+def _catalog_index(item_catalog: list[dict[str, Any]]) -> dict[str, Any]:
+    cache_key = id(item_catalog)
+    cached = _CATALOG_CACHE.get(cache_key)
+    if cached is not None and cached[0] == len(item_catalog):
+        return cached[1]
+    catalog = _sorted_catalog(item_catalog)
+    exact_titles: dict[str, dict[str, Any]] = {}
+    normalized_titles: dict[str, dict[str, Any]] = {}
+    for row in catalog:
+        title = str(row.get("title") or "")
+        exact_titles.setdefault(title.casefold(), row)
+        normalized_titles.setdefault(normalize_title(title), row)
+    index = {
+        "sorted_catalog": catalog,
+        "exact_titles": exact_titles,
+        "normalized_titles": normalized_titles,
+    }
+    _CATALOG_CACHE[cache_key] = (len(item_catalog), index)
+    return index
 
 
 def _success(raw: str, row: dict[str, Any], score: float, method: str) -> TitleGroundingResult:

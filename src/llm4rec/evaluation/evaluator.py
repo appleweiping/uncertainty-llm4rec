@@ -106,7 +106,7 @@ def evaluate_predictions(
         "metadata": metadata,
         "schema_version": "llm4rec_prediction_v1",
         "is_experiment_result": False,
-        "note": _note_for_methods(predictions),
+        "note": _note_for_methods(predictions, context["config"]),
     }
     export_metrics(metrics, output_dir=output_dir)
     return metrics
@@ -298,13 +298,22 @@ def _metrics_metadata(
         "methods": methods,
         "dataset": dataset,
         "seed": seed,
+        "evidence_label": str(config.get("evidence_label") or ""),
+        "mock_llm_notice": _mock_notice(config),
         "popularity_source": "train_examples_only",
         "train_popularity_item_count": len(train_popularity),
     }
 
 
-def _note_for_methods(predictions: list[dict[str, Any]]) -> str:
+def _note_for_methods(predictions: list[dict[str, Any]], config: dict[str, Any] | None = None) -> str:
     methods = {str(row.get("method") or "") for row in predictions}
+    config = config or {}
+    evidence_label = str(config.get("evidence_label") or "").strip()
+    mock_notice = _mock_notice(config)
+    if evidence_label:
+        if mock_notice and any(method.startswith("llm_") or method.startswith("ours_") for method in methods):
+            return f"{evidence_label}. {mock_notice}"
+        return evidence_label
     if any(method.startswith("ours_") for method in methods):
         return (
             "Phase 6 OursMethod mock smoke metrics only; not a paper result, "
@@ -326,3 +335,11 @@ def _note_for_methods(predictions: list[dict[str, Any]]) -> str:
         "Phase 2 minimal baseline smoke metrics only; use for infrastructure "
         "validation, not as paper-level experimental evidence."
     )
+
+
+def _mock_notice(config: dict[str, Any]) -> str:
+    for section_name in ("r2", "pilot"):
+        section = config.get(section_name)
+        if isinstance(section, dict) and section.get("mock_llm_notice"):
+            return str(section["mock_llm_notice"])
+    return ""

@@ -27,19 +27,24 @@ def leave_one_out_split(
     interactions: list[Interaction],
     *,
     min_history: int = 1,
+    train_examples_per_user: int | str | None = None,
     domain: str | None = None,
 ) -> list[UserExample]:
     """Create train/valid/test examples per user using the last two items as holdout."""
 
     if min_history < 1:
         raise ValueError("min_history must be >= 1")
+    train_limit = _train_example_limit(train_examples_per_user)
     examples: list[UserExample] = []
     for user_id, rows in chronological_user_sequences(interactions).items():
         item_ids = [row.item_id for row in rows]
         if len(item_ids) <= min_history:
             continue
         train_stop = max(min_history, len(item_ids) - 2)
-        for target_index in range(min_history, train_stop):
+        train_indices = list(range(min_history, train_stop))
+        if train_limit is not None:
+            train_indices = train_indices[-train_limit:]
+        for target_index in train_indices:
             examples.append(_example(user_id, item_ids, target_index, "train", domain))
         if len(item_ids) >= min_history + 2:
             examples.append(_example(user_id, item_ids, len(item_ids) - 2, "valid", domain))
@@ -105,3 +110,14 @@ def _example(
         domain=domain,
         metadata={"target_index": target_index},
     )
+
+
+def _train_example_limit(value: int | str | None) -> int | None:
+    if value in (None, "", "all"):
+        return None
+    if isinstance(value, str) and value in {"last", "last_only"}:
+        return 1
+    limit = int(value)
+    if limit < 1:
+        raise ValueError("train_examples_per_user must be >= 1, 'all', or 'last_only'")
+    return limit

@@ -402,7 +402,15 @@ class OursMethodRanker(CheckpointNotImplementedMixin):
             raise ValueError("target item ID leaked into OursMethod prompt")
         target_row = self.lookup.get(target_id)
         target_title = str((target_row or {}).get("title") or "").strip()
-        if target_title and target_title.casefold() in prompt.casefold():
+        prompt_titles = {
+            normalize_title(str(title))
+            for key in ("history_titles", "candidate_titles")
+            for title in metadata.get(key, [])
+        }
+        normalized_target_title = normalize_title(target_title)
+        if normalized_target_title and normalized_target_title in prompt_titles:
+            raise ValueError("target title leaked into OursMethod prompt")
+        if not metadata and target_title and target_title.casefold() in prompt.casefold():
             raise ValueError("target title leaked into OursMethod prompt")
 
 

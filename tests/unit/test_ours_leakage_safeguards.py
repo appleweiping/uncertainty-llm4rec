@@ -77,6 +77,47 @@ def test_numeric_target_id_does_not_false_positive_inside_allowed_title() -> Non
     assert "Held Out Target" not in provider.prompts[0]
 
 
+def test_target_title_substring_does_not_false_positive_inside_allowed_title() -> None:
+    provider = CapturingMockProvider()
+    ranker = OursMethodRanker(
+        provider=provider,
+        method_config=load_config("configs/methods/ours_uncertainty_guided.yaml"),
+        seed=13,
+    )
+    items = [
+        {"item_id": "10", "title": "Primal Fear (1996)"},
+        {"item_id": "20", "title": "Fear (1996)"},
+        {"item_id": "30", "title": "Allowed Candidate (1996)"},
+    ]
+    train = [
+        {
+            "example_id": "u1:1",
+            "user_id": "u1",
+            "history": ["10"],
+            "target": "30",
+            "candidates": ["20", "30"],
+            "split": "train",
+            "domain": "movies",
+            "metadata": {},
+        }
+    ]
+    example = {
+        "example_id": "u1:2",
+        "user_id": "u1",
+        "history": ["10"],
+        "target": "20",
+        "candidates": ["20", "30"],
+        "split": "test",
+        "domain": "movies",
+        "metadata": {},
+    }
+    ranker.fit(train, items)
+    result = ranker.rank(example, ["20", "30"])
+    assert result.metadata["target_excluded_from_prompt"] is True
+    assert result.metadata["history_titles"] == ["Primal Fear (1996)"]
+    assert "Primal Fear (1996)" in provider.prompts[0]
+
+
 def test_confidence_policy_metadata_does_not_drive_from_target_label() -> None:
     provider = CapturingMockProvider()
     ranker = OursMethodRanker(

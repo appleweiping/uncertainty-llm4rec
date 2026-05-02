@@ -48,7 +48,9 @@ def export_phase5_tables(input_dir: str | Path, *, output_dir: str | Path) -> di
                 "run_count": len(runs),
                 "table_row_count": len(rows),
                 "is_experiment_result": False,
-                "note": "Phase 5 smoke/export artifacts only; tables contain data and no paper claims.",
+                "evidence_labels": _evidence_labels(runs),
+                "mock_llm_notices": _mock_llm_notices(runs),
+                "note": _summary_note(runs),
             },
             indent=2,
             sort_keys=True,
@@ -57,6 +59,31 @@ def export_phase5_tables(input_dir: str | Path, *, output_dir: str | Path) -> di
     )
     exported["experiment_summary_json"] = str(summary_path)
     return exported
+
+
+def _evidence_labels(runs: list[dict[str, Any]]) -> list[str]:
+    labels = {
+        str((run.get("metrics", {}).get("metadata") or {}).get("evidence_label") or "").strip()
+        for run in runs
+    }
+    labels.discard("")
+    return sorted(labels)
+
+
+def _mock_llm_notices(runs: list[dict[str, Any]]) -> list[str]:
+    notices = {
+        str((run.get("metrics", {}).get("metadata") or {}).get("mock_llm_notice") or "").strip()
+        for run in runs
+    }
+    notices.discard("")
+    return sorted(notices)
+
+
+def _summary_note(runs: list[dict[str, Any]]) -> str:
+    labels = _evidence_labels(runs)
+    if labels:
+        return "Tables contain data only; evidence labels are preserved from run metrics and no paper claims are made."
+    return "Phase 5 smoke/export artifacts only; tables contain data and no paper claims."
 
 
 def _collect_reliability_rows(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:

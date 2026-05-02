@@ -1,0 +1,23 @@
+name: movielens_1m_r2
+type: tiny_csv
+status: local_real_r2_full_single_dataset
+domain: movies
+seed: 13
+source_dataset: movielens_1m
+source_config_path: configs/datasets/movielens_1m.yaml
+raw_data_path: data/raw/movielens_1m/ml-1m
+raw_interactions_path: data/raw/movielens_1m/ml-1m/ratings.dat
+raw_items_path: data/raw/movielens_1m/ml-1m/movies.dat
+interactions_path: data/processed/movielens_1m/r2_full_single_dataset_source/interactions.csv
+items_path: data/processed/movielens_1m/r2_full_single_dataset_source/items.csv
+processed_dir: data/processed/movielens_1m/r2_full_single_dataset
+split:
+  strategy: leave_one_out
+  min_history: 3
+  train_examples_per_user: 1
+candidate:
+  protocol: sampled
+  include_history: false
+  sample_size: 100
+evidence_label: full single-dataset experiment / candidate paper evidence, pending reviewer approval
+notes: Gate R2 uses all local MovieLens 1M users and interactions from raw ratings.dat/movies.dat converted to canonical CSV; train examples are one final training supervision example per user to keep candidate artifacts bounded while preserving full past history for train popularity.

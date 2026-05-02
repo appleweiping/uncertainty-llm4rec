@@ -18,6 +18,8 @@ from llm4rec.prompts.templates import (
     YES_NO_VERIFY_TEMPLATE_ID,
 )
 
+_LOOKUP_CACHE: dict[int, tuple[int, dict[str, dict[str, Any]]]] = {}
+
 
 def build_generative_title_prompt(
     *,
@@ -147,7 +149,7 @@ def _prompt_context(
     text_policy: str,
     exclude_item_ids: set[str] | None,
 ) -> dict[str, Any]:
-    lookup = {str(row["item_id"]): row for row in item_catalog}
+    lookup = _catalog_lookup(item_catalog)
     excluded = {str(item_id) for item_id in (exclude_item_ids or set()) if str(item_id)}
     raw_history_ids = [str(item_id) for item_id in example.get("history", [])]
     prompt_history_ids = [
@@ -200,3 +202,13 @@ def _item_record_like(row: dict[str, Any]) -> Any:
 
 def _json_list(values: list[str]) -> str:
     return json.dumps(values, ensure_ascii=False)
+
+
+def _catalog_lookup(item_catalog: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    cache_key = id(item_catalog)
+    cached = _LOOKUP_CACHE.get(cache_key)
+    if cached is not None and cached[0] == len(item_catalog):
+        return cached[1]
+    lookup = {str(row["item_id"]): row for row in item_catalog}
+    _LOOKUP_CACHE[cache_key] = (len(item_catalog), lookup)
+    return lookup

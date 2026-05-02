@@ -1,0 +1,9 @@
+name: mf
+type: ranker
+seed: 13
+params:
+  factors: 4
+  epochs: 5
+  learning_rate: 0.05
+  regularization: 0.001
+notes: Lightweight local MF setting for real-data gates; no GPU, no external training, and no downloads.
