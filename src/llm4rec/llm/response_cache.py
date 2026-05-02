@@ -28,6 +28,12 @@ class ResponseCache:
             return None
         return json.loads(path.read_text(encoding="utf-8"))
 
+    def get_required(self, key: str) -> dict[str, Any]:
+        cached = self.get(key)
+        if cached is None:
+            raise KeyError(f"missing response cache entry: {key}")
+        return cached
+
     def set(self, key: str, value: dict[str, Any]) -> Path:
         path = self._path(key)
         path.write_text(json.dumps(value, indent=2, ensure_ascii=False, sort_keys=True), encoding="utf-8")

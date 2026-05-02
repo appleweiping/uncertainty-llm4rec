@@ -6,6 +6,7 @@ import csv
 import json
 import os
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
@@ -62,8 +63,11 @@ class ControlledLLMProvider:
         self.max_requests = _optional_int(safety_config.get("max_requests") or request_limits.get("max_requests"))
         self.cost_limit_usd = _optional_float(safety_config.get("cost_limit_usd"))
         self.cache_enabled = bool(cache_config.get("enabled", False))
+        self.cache_require_hit = bool(cache_config.get("require_hit", False))
         cache_dir = str(cache_config.get("cache_dir") or "outputs/api_cache/llm4rec")
         self.cache = ResponseCache(cache_dir) if self.cache_enabled else None
+        if self.cache_require_hit and self.cache is None:
+            raise ValueError("llm.cache.require_hit requires llm.cache.enabled=true")
         pricing = dict(llm_config.get("pricing") or {})
         self.input_per_1m_tokens = float(pricing.get("input_per_1m_tokens") or 0.0)
         self.output_per_1m_tokens = float(pricing.get("output_per_1m_tokens") or 0.0)
@@ -76,14 +80,25 @@ class ControlledLLMProvider:
     def generate(self, request: LLMRequest) -> LLMResponse:
         cache_key = self._cache_key(request)
         if self.cache is not None:
+            replay_start = time.perf_counter()
             with self._lock:
                 cached = self.cache.get(cache_key)
+            replay_latency_seconds = time.perf_counter() - replay_start
             if cached is not None:
-                response = _response_from_cache(cached, cache_key=cache_key)
+                response = _response_from_cache(
+                    cached,
+                    cache_key=cache_key,
+                    replay_latency_seconds=replay_latency_seconds,
+                )
                 with self._lock:
                     self.cache_hit_count += 1
-                    self.records.append(_provider_record(response, estimated_cost=0.0))
+                    self.records.append(_provider_record(response, replay_estimated_cost=0.0))
                 return response
+            if self.cache_require_hit:
+                raise RuntimeError(
+                    "LLM cache-only replay missing response cache entry; "
+                    f"cache_key={cache_key}"
+                )
 
         with self._lock:
             if self.max_requests is not None and self.real_request_count >= self.max_requests:
@@ -116,7 +131,7 @@ class ControlledLLMProvider:
             metadata=metadata,
         )
         with self._lock:
-            self.records.append(_provider_record(guarded, estimated_cost=estimated_cost))
+            self.records.append(_provider_record(guarded, live_estimated_cost=estimated_cost))
         if self.cost_limit_usd is not None and estimated_cost_total > self.cost_limit_usd:
             raise RuntimeError(
                 f"LLM cost limit exceeded: estimated {estimated_cost_total:.6f} > {self.cost_limit_usd:.6f}"
@@ -155,24 +170,68 @@ class ControlledLLMProvider:
             records = [dict(row) for row in self.records]
             real_request_count = self.real_request_count
             cache_hit_count = self.cache_hit_count
-        real_records = [row for row in records if not row.get("cache_hit")]
-        latencies = [float(row.get("latency_seconds") or 0.0) for row in real_records]
+        live_records = [row for row in records if not row.get("cache_hit")]
+        cache_records = [row for row in records if row.get("cache_hit")]
+        current_latencies = [float(row.get("latency_seconds") or 0.0) for row in records]
+        original_live_latencies = [
+            float(row.get("original_latency_seconds") or row.get("latency_seconds") or 0.0)
+            for row in records
+        ]
+        live_cost_usd = sum(float(row.get("live_cost_usd") or row.get("estimated_cost") or 0.0) for row in live_records)
+        replay_cost_usd = sum(float(row.get("replay_cost_usd") or 0.0) for row in cache_records)
+        original_cached_cost_usd = sum(float(row.get("original_cached_cost_usd") or 0.0) for row in cache_records)
+        effective_cost_usd = live_cost_usd + original_cached_cost_usd
         return {
             "provider": self.provider_name,
             "model": self.model_name,
             "request_count": len(records),
+            "total_requests": len(records),
             "real_request_count": real_request_count,
+            "live_provider_requests": real_request_count,
             "cache_hit_count": cache_hit_count,
+            "cache_hit_requests": cache_hit_count,
             "cache_hit_rate": cache_hit_count / len(records) if records else 0.0,
-            "prompt_tokens": sum(int(row.get("prompt_tokens") or 0) for row in real_records),
-            "completion_tokens": sum(int(row.get("completion_tokens") or 0) for row in real_records),
-            "total_tokens": sum(int(row.get("total_tokens") or 0) for row in real_records),
-            "estimated_cost": sum(float(row.get("estimated_cost") or 0.0) for row in real_records),
-            "latency_p50": _percentile(latencies, 0.50),
-            "latency_p95": _percentile(latencies, 0.95),
+            "prompt_tokens": sum(int(row.get("prompt_tokens") or 0) for row in records),
+            "completion_tokens": sum(int(row.get("completion_tokens") or 0) for row in records),
+            "total_tokens": sum(int(row.get("total_tokens") or 0) for row in records),
+            "live_prompt_tokens": sum(int(row.get("prompt_tokens") or 0) for row in live_records),
+            "live_completion_tokens": sum(int(row.get("completion_tokens") or 0) for row in live_records),
+            "live_total_tokens": sum(int(row.get("total_tokens") or 0) for row in live_records),
+            "original_cached_prompt_tokens": sum(int(row.get("prompt_tokens") or 0) for row in cache_records),
+            "original_cached_completion_tokens": sum(int(row.get("completion_tokens") or 0) for row in cache_records),
+            "original_cached_total_tokens": sum(int(row.get("total_tokens") or 0) for row in cache_records),
+            "live_cost_usd": live_cost_usd,
+            "replay_cost_usd": replay_cost_usd,
+            "original_cached_cost_usd": original_cached_cost_usd,
+            "effective_cost_usd": effective_cost_usd,
+            "estimated_cost": effective_cost_usd,
+            "live_latency_seconds_sum": sum(float(row.get("latency_seconds") or 0.0) for row in live_records),
+            "replay_latency_seconds_sum": sum(float(row.get("replay_latency_seconds") or 0.0) for row in cache_records),
+            "original_cached_latency_seconds_sum": sum(float(row.get("original_latency_seconds") or 0.0) for row in cache_records),
+            "latency_p50_seconds": _percentile(current_latencies, 0.50),
+            "latency_p95_seconds": _percentile(current_latencies, 0.95),
+            "original_live_latency_p50_seconds": _percentile(original_live_latencies, 0.50),
+            "original_live_latency_p95_seconds": _percentile(original_live_latencies, 0.95),
+            "latency_p50": _percentile(current_latencies, 0.50),
+            "latency_p95": _percentile(current_latencies, 0.95),
             "max_requests": self.max_requests,
             "cost_limit_usd": self.cost_limit_usd,
+            "cache_require_hit": self.cache_require_hit,
         }
+
+
+class CacheOnlyLLMProviderStub:
+    """Configured provider identity for cache-only replay without network setup."""
+
+    supports_logprobs = False
+    supports_seed = True
+
+    def __init__(self, *, provider_name: str, model_name: str) -> None:
+        self.provider_name = provider_name
+        self.model_name = model_name
+
+    def generate(self, _request: LLMRequest) -> LLMResponse:
+        raise RuntimeError("cache-only replay forbids live provider calls")
 
 
 def run_preprocess_from_config(config_path: str | Path) -> dict[str, Any]:
@@ -549,6 +608,14 @@ def _build_llm_provider(config: dict[str, Any], *, run_dir: Path | None = None) 
             seed=int(llm_config.get("seed") or config.get("seed") or 0),
         )
     if provider_type == "openai_compatible":
+        if _cache_require_hit(llm_config):
+            provider = CacheOnlyLLMProviderStub(
+                provider_name="openai_compatible",
+                model_name=_required_llm_text(llm_config, "model"),
+            )
+            if run_dir is not None:
+                return ControlledLLMProvider(provider, llm_config=llm_config, safety_config=_safety_config(config))
+            return provider
         if run_dir is not None:
             _assert_api_execution_approved(config, llm_config)
         provider = OpenAICompatibleProvider(
@@ -592,6 +659,11 @@ def _assert_api_execution_approved(config: dict[str, Any], llm_config: dict[str,
 
 def _safety_config(config: dict[str, Any]) -> dict[str, Any]:
     return dict(config.get("safety") or {}) if isinstance(config.get("safety"), dict) else {}
+
+
+def _cache_require_hit(llm_config: dict[str, Any]) -> bool:
+    cache = llm_config.get("cache")
+    return isinstance(cache, dict) and bool(cache.get("require_hit", False))
 
 
 def _limit_eval_examples(config: dict[str, Any], eval_examples: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -663,11 +735,60 @@ def _cost_latency_for_run(metrics: dict[str, Any], run_dir: Path) -> dict[str, A
             "provider_request_count": provider_summary.get("request_count", 0),
             "provider_real_request_count": provider_summary.get("real_request_count", 0),
             "provider_cache_hit_count": provider_summary.get("cache_hit_count", 0),
+            "total_requests": provider_summary.get("total_requests", provider_summary.get("request_count", 0)),
+            "live_provider_requests": provider_summary.get(
+                "live_provider_requests", provider_summary.get("real_request_count", 0)
+            ),
+            "cache_hit_requests": provider_summary.get("cache_hit_requests", provider_summary.get("cache_hit_count", 0)),
             "cache_hit_rate": provider_summary.get("cache_hit_rate", cost_latency.get("cache_hit_rate", 0.0)),
             "prompt_tokens": provider_summary.get("prompt_tokens", cost_latency.get("prompt_tokens", 0)),
             "completion_tokens": provider_summary.get("completion_tokens", cost_latency.get("completion_tokens", 0)),
             "total_tokens": provider_summary.get("total_tokens", cost_latency.get("total_tokens", 0)),
             "estimated_cost": provider_summary.get("estimated_cost", cost_latency.get("estimated_cost", 0.0)),
+            "live_prompt_tokens": provider_summary.get("live_prompt_tokens", cost_latency.get("live_prompt_tokens", 0)),
+            "live_completion_tokens": provider_summary.get(
+                "live_completion_tokens", cost_latency.get("live_completion_tokens", 0)
+            ),
+            "live_total_tokens": provider_summary.get("live_total_tokens", cost_latency.get("live_total_tokens", 0)),
+            "original_cached_prompt_tokens": provider_summary.get(
+                "original_cached_prompt_tokens", cost_latency.get("original_cached_prompt_tokens", 0)
+            ),
+            "original_cached_completion_tokens": provider_summary.get(
+                "original_cached_completion_tokens", cost_latency.get("original_cached_completion_tokens", 0)
+            ),
+            "original_cached_total_tokens": provider_summary.get(
+                "original_cached_total_tokens", cost_latency.get("original_cached_total_tokens", 0)
+            ),
+            "live_cost_usd": provider_summary.get("live_cost_usd", cost_latency.get("live_cost_usd", 0.0)),
+            "replay_cost_usd": provider_summary.get("replay_cost_usd", cost_latency.get("replay_cost_usd", 0.0)),
+            "original_cached_cost_usd": provider_summary.get(
+                "original_cached_cost_usd", cost_latency.get("original_cached_cost_usd", 0.0)
+            ),
+            "effective_cost_usd": provider_summary.get("effective_cost_usd", cost_latency.get("effective_cost_usd", 0.0)),
+            "live_latency_seconds_sum": provider_summary.get(
+                "live_latency_seconds_sum", cost_latency.get("live_latency_seconds_sum", 0.0)
+            ),
+            "replay_latency_seconds_sum": provider_summary.get(
+                "replay_latency_seconds_sum", cost_latency.get("replay_latency_seconds_sum", 0.0)
+            ),
+            "original_cached_latency_seconds_sum": provider_summary.get(
+                "original_cached_latency_seconds_sum",
+                cost_latency.get("original_cached_latency_seconds_sum", 0.0),
+            ),
+            "latency_p50_seconds": provider_summary.get(
+                "latency_p50_seconds", cost_latency.get("latency_p50_seconds", cost_latency.get("latency_p50", 0.0))
+            ),
+            "latency_p95_seconds": provider_summary.get(
+                "latency_p95_seconds", cost_latency.get("latency_p95_seconds", cost_latency.get("latency_p95", 0.0))
+            ),
+            "original_live_latency_p50_seconds": provider_summary.get(
+                "original_live_latency_p50_seconds",
+                cost_latency.get("original_live_latency_p50_seconds", 0.0),
+            ),
+            "original_live_latency_p95_seconds": provider_summary.get(
+                "original_live_latency_p95_seconds",
+                cost_latency.get("original_live_latency_p95_seconds", 0.0),
+            ),
             "latency_p50": provider_summary.get("latency_p50", cost_latency.get("latency_p50", 0.0)),
             "latency_p95": provider_summary.get("latency_p95", cost_latency.get("latency_p95", 0.0)),
         }
@@ -675,17 +796,39 @@ def _cost_latency_for_run(metrics: dict[str, Any], run_dir: Path) -> dict[str, A
     return cost_latency
 
 
-def _provider_record(response: LLMResponse, *, estimated_cost: float) -> dict[str, Any]:
+def _provider_record(
+    response: LLMResponse,
+    *,
+    live_estimated_cost: float = 0.0,
+    replay_estimated_cost: float = 0.0,
+) -> dict[str, Any]:
     usage = dict(response.usage)
+    metadata = dict(response.metadata)
+    original_latency_seconds = float(metadata.get("original_latency_seconds") or response.latency_seconds or 0.0)
+    replay_latency_seconds = float(metadata.get("replay_latency_seconds") or (response.latency_seconds if response.cache_hit else 0.0) or 0.0)
+    original_cached_cost_usd = (
+        float(metadata.get("original_estimated_cost_usd") or 0.0)
+        if response.cache_hit
+        else 0.0
+    )
     return {
         "provider": response.provider,
         "model": response.model,
         "cache_hit": response.cache_hit,
         "latency_seconds": response.latency_seconds,
+        "original_latency_seconds": original_latency_seconds,
+        "replay_latency_seconds": replay_latency_seconds,
         "prompt_tokens": int(usage.get("prompt_tokens") or 0),
         "completion_tokens": int(usage.get("completion_tokens") or 0),
         "total_tokens": int(usage.get("total_tokens") or 0),
-        "estimated_cost": estimated_cost,
+        "prompt_cache_hit_tokens": int(usage.get("prompt_cache_hit_tokens") or 0),
+        "prompt_cache_miss_tokens": int(usage.get("prompt_cache_miss_tokens") or 0),
+        "estimated_cost": live_estimated_cost if not response.cache_hit else replay_estimated_cost,
+        "live_cost_usd": live_estimated_cost if not response.cache_hit else 0.0,
+        "replay_cost_usd": replay_estimated_cost if response.cache_hit else 0.0,
+        "original_cached_cost_usd": original_cached_cost_usd,
+        "effective_cost_usd": live_estimated_cost + original_cached_cost_usd,
+        "source": metadata.get("source") or metadata.get("cache_source") or ("cache" if response.cache_hit else "live"),
     }
 
 
@@ -701,14 +844,48 @@ def _response_cache_payload(response: LLMResponse) -> dict[str, Any]:
     }
 
 
-def _response_from_cache(payload: dict[str, Any], *, cache_key: str) -> LLMResponse:
+def _response_from_cache(
+    payload: dict[str, Any],
+    *,
+    cache_key: str,
+    replay_latency_seconds: float = 0.0,
+) -> LLMResponse:
+    usage = {
+        key: int(value)
+        for key, value in dict(payload.get("usage") or {}).items()
+        if isinstance(value, int)
+    }
     metadata = dict(payload.get("metadata") or {})
-    metadata.update({"cache_key": cache_key, "estimated_cost": 0.0, "cache_source": "response_cache"})
+    original_estimated_cost = float(
+        metadata.get("original_estimated_cost_usd")
+        or metadata.get("estimated_cost")
+        or 0.0
+    )
+    original_latency_seconds = float(
+        metadata.get("original_latency_seconds")
+        or payload.get("latency_seconds")
+        or 0.0
+    )
+    metadata.update(
+        {
+            "cache_key": cache_key,
+            "source": "cache",
+            "cache_source": "response_cache",
+            "estimated_cost": 0.0,
+            "replay_estimated_cost_usd": 0.0,
+            "original_estimated_cost_usd": original_estimated_cost,
+            "replay_latency_seconds": float(replay_latency_seconds or 0.0),
+            "original_latency_seconds": original_latency_seconds,
+            "original_usage": dict(usage),
+            "prompt_cache_hit_tokens": int(usage.get("prompt_cache_hit_tokens") or 0),
+            "prompt_cache_miss_tokens": int(usage.get("prompt_cache_miss_tokens") or 0),
+        }
+    )
     return LLMResponse(
         text=str(payload.get("text") or ""),
         raw_response=dict(payload.get("raw_response") or {}),
-        usage={key: int(value) for key, value in dict(payload.get("usage") or {}).items() if isinstance(value, int)},
-        latency_seconds=0.0,
+        usage=usage,
+        latency_seconds=float(replay_latency_seconds or 0.0),
         model=str(payload.get("model") or ""),
         provider=str(payload.get("provider") or ""),
         cache_hit=True,
