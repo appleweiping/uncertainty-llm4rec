@@ -72,20 +72,48 @@ def list_required_artifacts(
 
 def _planned_run_dirs(config: dict[str, Any], seeds: list[Any]) -> list[str]:
     baselines = config.get("baselines")
+    candidate_sizes = _candidate_sizes_for_config(config)
     if isinstance(baselines, list) and baselines:
         run_dirs = []
-        for seed in seeds:
-            for baseline in baselines:
-                child = _config_for_baseline(config, str(baseline), seed=int(seed))
-                output = child.get("output") if isinstance(child.get("output"), dict) else {}
-                output_dir = str(output.get("output_dir") or child.get("output_dir") or "outputs/runs")
-                run_name = str(output.get("run_name") or child.get("run_name") or "RUN_NAME_TBD")
-                run_dirs.append(str(Path(output_dir) / f"{run_name}_seed{seed}"))
+        for candidate_size in candidate_sizes:
+            sized_config = _config_for_candidate_size_for_listing(config, candidate_size)
+            for seed in seeds:
+                for baseline in baselines:
+                    child = _config_for_baseline(sized_config, str(baseline), seed=int(seed))
+                    output = child.get("output") if isinstance(child.get("output"), dict) else {}
+                    output_dir = str(output.get("output_dir") or child.get("output_dir") or "outputs/runs")
+                    run_name = str(output.get("run_name") or child.get("run_name") or "RUN_NAME_TBD")
+                    run_dirs.append(str(Path(output_dir) / f"{run_name}_seed{seed}"))
         return run_dirs
     output = config.get("output") if isinstance(config.get("output"), dict) else {}
     output_dir = str(output.get("output_dir") or config.get("output_dir") or "outputs/runs")
     run_name = str(output.get("run_name") or config.get("run_name") or "RUN_NAME_TBD")
     return [str(Path(output_dir) / f"{run_name}_seed{seed}") for seed in seeds]
+
+
+def _candidate_sizes_for_config(config: dict[str, Any]) -> list[int | None]:
+    sizes = config.get("candidate_sizes")
+    if isinstance(sizes, list) and sizes:
+        return [int(size) for size in sizes]
+    return [None]
+
+
+def _config_for_candidate_size_for_listing(config: dict[str, Any], candidate_size: int | None) -> dict[str, Any]:
+    if candidate_size is None:
+        return config
+    import json
+
+    child = json.loads(json.dumps(config))
+    base_run_name = str(
+        ((config.get("output") or {}) if isinstance(config.get("output"), dict) else {}).get("run_name")
+        or config.get("run_name")
+        or "candidate_sensitivity"
+    )
+    output = child.get("output") if isinstance(child.get("output"), dict) else {}
+    output["run_name"] = f"{base_run_name}_candidate{candidate_size}"
+    child["output"] = output
+    child["run_name"] = output["run_name"]
+    return child
 
 
 def main(argv: list[str] | None = None) -> int:

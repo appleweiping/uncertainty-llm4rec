@@ -298,6 +298,7 @@ def _metrics_metadata(
         "methods": methods,
         "dataset": dataset,
         "seed": seed,
+        "candidate_size": _candidate_size(config),
         "evidence_label": str(config.get("evidence_label") or ""),
         "mock_llm_notice": _mock_notice(config),
         "popularity_source": "train_examples_only",
@@ -343,3 +344,19 @@ def _mock_notice(config: dict[str, Any]) -> str:
         if isinstance(section, dict) and section.get("mock_llm_notice"):
             return str(section["mock_llm_notice"])
     return ""
+
+
+def _candidate_size(config: dict[str, Any]) -> int | None:
+    for section_name in ("candidate", "dataset"):
+        section = config.get(section_name)
+        if not isinstance(section, dict):
+            continue
+        for key in ("size", "sample_size", "k", "candidate_size"):
+            value = section.get(key)
+            if value in (None, ""):
+                continue
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                continue
+    return None

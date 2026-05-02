@@ -294,22 +294,30 @@ def run_all(config_path: str | Path) -> dict[str, Any]:
         return run_experiment_config(config, preprocess=True)
     if not isinstance(baselines, list) or not all(isinstance(item, str) for item in baselines):
         raise ValueError("config.baselines must be an inline list of baseline names")
-    dataset_config = load_config(_required_path(config, "dataset", "config_path"))
-    preprocess_manifest = preprocess_dataset(dataset_config)
     runs = []
+    preprocess_manifests = []
     seeds = _seeds_for_config(config)
-    for seed in seeds:
-        for baseline in baselines:
-            child_config = _config_for_baseline(config, baseline, seed=seed)
-            result = run_experiment_config(child_config, preprocess=False)
-            result["preprocess_manifest"] = preprocess_manifest
-            runs.append(result)
+    candidate_sizes = _candidate_sizes_for_config(config)
+    for candidate_size in candidate_sizes:
+        sized_config = _config_for_candidate_size(config, candidate_size)
+        dataset_config = _dataset_config_for_experiment(sized_config)
+        preprocess_manifest = preprocess_dataset(dataset_config)
+        preprocess_manifests.append(preprocess_manifest)
+        for seed in seeds:
+            for baseline in baselines:
+                child_config = _config_for_baseline(sized_config, baseline, seed=seed)
+                result = run_experiment_config(child_config, preprocess=False)
+                result["preprocess_manifest"] = preprocess_manifest
+                if candidate_size is not None:
+                    result["candidate_size"] = candidate_size
+                runs.append(result)
     postprocess = _postprocess_run_all(config, runs)
     return {
         "run_count": len(runs),
         "baseline_methods": baselines,
         "seeds": seeds,
-        "preprocess_manifest": preprocess_manifest,
+        "candidate_sizes": [size for size in candidate_sizes if size is not None],
+        "preprocess_manifest": preprocess_manifests[0] if len(preprocess_manifests) == 1 else preprocess_manifests,
         "runs": runs,
         "postprocess": postprocess,
     }
@@ -1176,6 +1184,75 @@ def _seeds_for_config(config: dict[str, Any]) -> list[int]:
     if isinstance(seeds, list) and seeds:
         return [int(seed) for seed in seeds]
     return [int(config.get("seed") or 0)]
+
+
+def _candidate_sizes_for_config(config: dict[str, Any]) -> list[int | None]:
+    sizes = config.get("candidate_sizes")
+    if isinstance(sizes, list) and sizes:
+        return [int(size) for size in sizes]
+    return [None]
+
+
+def _config_for_candidate_size(config: dict[str, Any], candidate_size: int | None) -> dict[str, Any]:
+    child = json.loads(json.dumps(config))
+    if candidate_size is None:
+        return child
+    child["active_candidate_size"] = candidate_size
+    candidate = child.get("candidate") if isinstance(child.get("candidate"), dict) else {}
+    candidate["size"] = candidate_size
+    candidate["k"] = candidate_size
+    candidate["sample_size"] = candidate_size
+    child["candidate"] = candidate
+
+    dataset = child.get("dataset") if isinstance(child.get("dataset"), dict) else {}
+    processed_dir = _candidate_processed_dir(child, candidate_size)
+    dataset["processed_dir"] = processed_dir
+    dataset["candidate_size"] = candidate_size
+    child["dataset"] = dataset
+    candidate["set_path"] = str(Path(processed_dir) / "candidate_sets.jsonl")
+
+    data_protocol = child.get("data_protocol") if isinstance(child.get("data_protocol"), dict) else {}
+    data_protocol["candidate_set_saved_path"] = candidate["set_path"]
+    child["data_protocol"] = data_protocol
+
+    base_run_name = str(
+        ((config.get("output") or {}) if isinstance(config.get("output"), dict) else {}).get("run_name")
+        or config.get("run_name")
+        or "candidate_sensitivity"
+    )
+    output = child.get("output") if isinstance(child.get("output"), dict) else {}
+    output["run_name"] = f"{base_run_name}_candidate{candidate_size}"
+    output["output_dir"] = str(output.get("output_dir") or child.get("output_dir") or "outputs/runs")
+    child["output"] = output
+    child["run_name"] = output["run_name"]
+    child["output_dir"] = output["output_dir"]
+    return child
+
+
+def _candidate_processed_dir(config: dict[str, Any], candidate_size: int) -> str:
+    sensitivity = config.get("candidate_sensitivity") if isinstance(config.get("candidate_sensitivity"), dict) else {}
+    template = str(
+        sensitivity.get("processed_dir_template")
+        or "data/processed/movielens_1m/r2_candidate_sensitivity/candidate_{candidate_size}"
+    )
+    return template.format(candidate_size=candidate_size)
+
+
+def _dataset_config_for_experiment(config: dict[str, Any]) -> dict[str, Any]:
+    dataset = config.get("dataset") if isinstance(config.get("dataset"), dict) else {}
+    dataset_config = load_config(_required_path(config, "dataset", "config_path"))
+    dataset_config.update({key: value for key, value in dataset.items() if key != "config_path"})
+    candidate = config.get("candidate") if isinstance(config.get("candidate"), dict) else {}
+    if candidate:
+        dataset_candidate = dict(dataset_config.get("candidate") or {})
+        if candidate.get("protocol") is not None:
+            dataset_candidate["protocol"] = candidate.get("protocol")
+        sample_size = candidate.get("sample_size") or candidate.get("size") or candidate.get("k")
+        if sample_size not in (None, ""):
+            dataset_candidate["sample_size"] = int(sample_size)
+        dataset_config["candidate"] = dataset_candidate
+    dataset_config["seed"] = int(config.get("seed") or dataset_config.get("seed") or 0)
+    return dataset_config
 
 
 def _postprocess_run_all(config: dict[str, Any], runs: list[dict[str, Any]]) -> dict[str, Any]:

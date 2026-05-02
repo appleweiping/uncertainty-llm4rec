@@ -349,7 +349,9 @@ def _configured_max_requests(config: dict[str, Any]) -> int | None:
 def _estimated_real_llm_requests(config: dict[str, Any], *, max_examples: int) -> int:
     baselines = config.get("baselines")
     methods = baselines if isinstance(baselines, list) and baselines else [config.get("method")]
-    return sum(_requests_per_example(method) * max_examples for method in methods)
+    candidate_sizes = config.get("candidate_sizes")
+    candidate_multiplier = len(candidate_sizes) if isinstance(candidate_sizes, list) and candidate_sizes else 1
+    return candidate_multiplier * sum(_requests_per_example(method) * max_examples for method in methods)
 
 
 def _requests_per_example(method: Any) -> int:
