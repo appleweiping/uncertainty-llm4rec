@@ -306,7 +306,9 @@ def run_all(config_path: str | Path) -> dict[str, Any]:
         for seed in seeds:
             for baseline in baselines:
                 child_config = _config_for_baseline(sized_config, baseline, seed=seed)
-                result = run_experiment_config(child_config, preprocess=False)
+                result = _completed_run_result(child_config)
+                if result is None:
+                    result = run_experiment_config(child_config, preprocess=False)
                 result["preprocess_manifest"] = preprocess_manifest
                 if candidate_size is not None:
                     result["candidate_size"] = candidate_size
@@ -1123,7 +1125,7 @@ def _run_name_for_child(config: dict[str, Any], method: str) -> str:
         return f"smoke_ours_ablation_{suffix}"
     if parent_name == "smoke_phase6_all":
         return f"smoke_phase6_{suffix}"
-    if parent_name.startswith(("pilot_", "real_", "r2_")):
+    if parent_name.startswith(("pilot_", "real_", "r2_", "r3_")):
         return f"{parent_name}_{suffix}"
     return _default_run_name_for(method)
 
@@ -1268,6 +1270,36 @@ def _postprocess_run_all(config: dict[str, Any], runs: list[dict[str, Any]]) -> 
     if bool(tables_config.get("enabled", False)):
         postprocess["tables"] = export_phase5_tables(runs_dir, output_dir=table_output_dir)
     return postprocess
+
+
+def _completed_run_result(config: dict[str, Any]) -> dict[str, Any] | None:
+    llm = config.get("llm") if isinstance(config.get("llm"), dict) else {}
+    resume = llm.get("resume") if isinstance(llm.get("resume"), dict) else {}
+    if resume.get("enabled") is not True:
+        return None
+    seed = int(config.get("seed") or 0)
+    run_name = _run_name(config, _method_name(config))
+    run_id = f"{run_name}_seed{seed}"
+    run_dir = Path(_output_dir(config)) / run_id
+    required = [
+        "resolved_config.yaml",
+        "environment.json",
+        "logs.txt",
+        "predictions.jsonl",
+        "metrics.json",
+        "metrics.csv",
+        "cost_latency.json",
+    ]
+    if not all((run_dir / name).exists() for name in required):
+        return None
+    metrics = json.loads((run_dir / "metrics.json").read_text(encoding="utf-8"))
+    return {
+        "run_id": run_id,
+        "run_dir": str(run_dir),
+        "predictions": str(run_dir / "predictions.jsonl"),
+        "metrics": metrics,
+        "resumed_from_complete_artifacts": True,
+    }
 
 
 def _required_path(config: dict[str, Any], section: str, key: str) -> str:

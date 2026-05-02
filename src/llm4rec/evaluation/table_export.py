@@ -52,6 +52,21 @@ def export_phase5_tables(input_dir: str | Path, *, output_dir: str | Path) -> di
         exported["candidate_sensitivity_csv"] = str(csv_path)
         exported["candidate_sensitivity_md"] = str(md_path)
         exported["candidate_sensitivity_tex"] = str(tex_path)
+    r3_tables = _collect_r3_movielens_tables(runs)
+    if r3_tables:
+        main_csv = output / "r3_movielens_1m_main_results.csv"
+        main_md = output / "r3_movielens_1m_main_results.md"
+        main_tex = output / "r3_movielens_1m_main_results.tex"
+        _write_csv(main_csv, r3_tables["main"])
+        _write_r3_markdown(main_md, r3_tables["main"])
+        _write_r3_latex(main_tex, r3_tables["main"])
+        exported["r3_movielens_1m_main_results_csv"] = str(main_csv)
+        exported["r3_movielens_1m_main_results_md"] = str(main_md)
+        exported["r3_movielens_1m_main_results_tex"] = str(main_tex)
+        for name in ("ablation", "uncertainty", "popularity_longtail", "cost_latency"):
+            path = output / f"r3_movielens_1m_{name}.csv"
+            _write_csv(path, r3_tables[name])
+            exported[f"r3_movielens_1m_{name}_csv"] = str(path)
     summary_path = output / "experiment_summary.json"
     summary_path.write_text(
         json.dumps(
@@ -134,6 +149,8 @@ def _collect_candidate_sensitivity_rows(runs: list[dict[str, Any]]) -> list[dict
     rows = []
     for run in runs:
         prefix = _row_prefix(run)
+        if "candidate_sensitivity" not in str(prefix.get("run_id") or ""):
+            continue
         candidate_size = prefix.get("candidate_size")
         if candidate_size in (None, "", "unknown"):
             continue
@@ -196,6 +213,186 @@ def _collect_candidate_sensitivity_rows(runs: list[dict[str, Any]]) -> list[dict
             }
         )
     return sorted(rows, key=lambda row: (int(row.get("candidate_size") or 0), str(row.get("method") or "")))
+
+
+def _collect_r3_movielens_tables(runs: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    run_rows = []
+    for run in runs:
+        prefix = _row_prefix(run)
+        run_id = str(prefix.get("run_id") or "")
+        if not run_id.startswith("r3_movielens_1m_real_llm_full_candidate500_"):
+            continue
+        metrics = run["metrics"]
+        aggregate = metrics.get("aggregate", {}) if isinstance(metrics.get("aggregate"), dict) else {}
+        efficiency = aggregate.get("efficiency", {}) if isinstance(aggregate.get("efficiency"), dict) else {}
+        confidence = aggregate.get("confidence", {}) if isinstance(aggregate.get("confidence"), dict) else {}
+        calibration = aggregate.get("calibration", {}) if isinstance(aggregate.get("calibration"), dict) else {}
+        long_tail = aggregate.get("long_tail", {}) if isinstance(aggregate.get("long_tail"), dict) else {}
+        novelty = aggregate.get("novelty", {}) if isinstance(aggregate.get("novelty"), dict) else {}
+        coverage = aggregate.get("coverage_metrics", {}) if isinstance(aggregate.get("coverage_metrics"), dict) else {}
+        diversity = aggregate.get("diversity", {}) if isinstance(aggregate.get("diversity"), dict) else {}
+        high_low = _high_low_confidence_counts(_load_predictions_for_run(run))
+        run_rows.append(
+            {
+                **prefix,
+                "recall@10": aggregate.get("recall@10"),
+                "ndcg@10": aggregate.get("ndcg@10"),
+                "mrr@10": aggregate.get("mrr@10"),
+                "hit_rate@10": aggregate.get("hit_rate@10"),
+                "validity_rate": aggregate.get("validity_rate"),
+                "hallucination_rate": aggregate.get("hallucination_rate"),
+                "parse_success_rate": aggregate.get("parse_success_rate"),
+                "grounding_success_rate": aggregate.get("grounding_success_rate"),
+                "coverage@10": _coverage_at_10(coverage, aggregate),
+                "novelty@10": novelty.get("novelty@10"),
+                "diversity@10": diversity.get("intra_list_diversity@10"),
+                "mean_confidence": confidence.get("mean_confidence"),
+                "ece": calibration.get("ece"),
+                "brier": calibration.get("brier_score"),
+                "high_confidence_wrong_count": high_low["high_confidence_wrong_count"],
+                "low_confidence_correct_count": high_low["low_confidence_correct_count"],
+                "head_recall@10": _bucket_metric(long_tail, "recall_by_popularity_bucket@10", "head"),
+                "mid_recall@10": _bucket_metric(long_tail, "recall_by_popularity_bucket@10", "mid"),
+                "tail_recall@10": _bucket_metric(long_tail, "recall_by_popularity_bucket@10", "tail"),
+                "head_hit_rate@10": _bucket_metric(long_tail, "hit_rate_by_popularity_bucket@10", "head"),
+                "mid_hit_rate@10": _bucket_metric(long_tail, "hit_rate_by_popularity_bucket@10", "mid"),
+                "tail_hit_rate@10": _bucket_metric(long_tail, "hit_rate_by_popularity_bucket@10", "tail"),
+                "total_requests": efficiency.get("total_requests"),
+                "live_provider_requests": efficiency.get("live_provider_requests"),
+                "cache_hit_requests": efficiency.get("cache_hit_requests"),
+                "cache_hit_rate": efficiency.get("cache_hit_rate"),
+                "total_tokens": efficiency.get("total_tokens"),
+                "live_cost_usd": efficiency.get("live_cost_usd"),
+                "effective_cost_usd": efficiency.get("effective_cost_usd", efficiency.get("estimated_cost")),
+                "latency_p50_seconds": efficiency.get("latency_p50_seconds", efficiency.get("latency_p50")),
+                "latency_p95_seconds": efficiency.get("latency_p95_seconds", efficiency.get("latency_p95")),
+            }
+        )
+    if not run_rows:
+        return {}
+
+    main_fields = [
+        "recall@10",
+        "ndcg@10",
+        "mrr@10",
+        "hit_rate@10",
+        "validity_rate",
+        "hallucination_rate",
+        "coverage@10",
+        "novelty@10",
+        "diversity@10",
+        "head_recall@10",
+        "mid_recall@10",
+        "tail_recall@10",
+        "head_hit_rate@10",
+        "mid_hit_rate@10",
+        "tail_hit_rate@10",
+    ]
+    uncertainty_fields = [
+        "parse_success_rate",
+        "grounding_success_rate",
+        "mean_confidence",
+        "ece",
+        "brier",
+        "high_confidence_wrong_count",
+        "low_confidence_correct_count",
+    ]
+    cost_fields = [
+        "total_requests",
+        "live_provider_requests",
+        "cache_hit_requests",
+        "cache_hit_rate",
+        "total_tokens",
+        "live_cost_usd",
+        "effective_cost_usd",
+        "latency_p50_seconds",
+        "latency_p95_seconds",
+    ]
+    main = _aggregate_r3_rows(run_rows, main_fields)
+    ablation = [
+        row for row in _aggregate_r3_rows(run_rows, main_fields + uncertainty_fields)
+        if str(row.get("method") or "").startswith("ours_")
+    ]
+    uncertainty = [
+        row for row in _aggregate_r3_rows(run_rows, uncertainty_fields)
+        if str(row.get("method") or "").startswith(("llm_", "ours_"))
+    ]
+    popularity_longtail = _aggregate_r3_rows(
+        run_rows,
+        ["coverage@10", "novelty@10", "diversity@10", "head_recall@10", "mid_recall@10", "tail_recall@10", "head_hit_rate@10", "mid_hit_rate@10", "tail_hit_rate@10"],
+    )
+    cost_latency = _aggregate_r3_rows(run_rows, cost_fields, sum_fields={"total_requests", "live_provider_requests", "cache_hit_requests", "total_tokens", "live_cost_usd", "effective_cost_usd"})
+    return {
+        "main": main,
+        "ablation": ablation,
+        "uncertainty": uncertainty,
+        "popularity_longtail": popularity_longtail,
+        "cost_latency": cost_latency,
+    }
+
+
+def _coverage_at_10(coverage: dict[str, Any], aggregate: dict[str, Any]) -> Any:
+    value = coverage.get("catalog_coverage@10")
+    if isinstance(value, dict):
+        return value.get("coverage_rate")
+    return aggregate.get("coverage@10")
+
+
+def _bucket_metric(long_tail: dict[str, Any], metric: str, bucket: str) -> Any:
+    values = long_tail.get(metric)
+    return values.get(bucket) if isinstance(values, dict) else None
+
+
+def _aggregate_r3_rows(
+    rows: list[dict[str, Any]],
+    fields: list[str],
+    *,
+    sum_fields: set[str] | None = None,
+) -> list[dict[str, Any]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        grouped.setdefault(str(row.get("method") or "unknown"), []).append(row)
+    output = []
+    for method, method_rows in sorted(grouped.items()):
+        result: dict[str, Any] = {
+            "method": method,
+            "dataset": method_rows[0].get("dataset"),
+            "candidate_size": method_rows[0].get("candidate_size"),
+            "seed_count": len({row.get("seed") for row in method_rows}),
+        }
+        for field in fields:
+            values = [_numeric(row.get(field)) for row in method_rows]
+            values = [value for value in values if value is not None]
+            if not values:
+                result[f"{field}_mean"] = None
+                result[f"{field}_std"] = None
+                if sum_fields and field in sum_fields:
+                    result[f"{field}_sum"] = None
+                continue
+            result[f"{field}_mean"] = sum(values) / len(values)
+            result[f"{field}_std"] = _sample_std(values)
+            if sum_fields and field in sum_fields:
+                result[f"{field}_sum"] = sum(values)
+        output.append(result)
+    return output
+
+
+def _numeric(value: Any) -> float | None:
+    if isinstance(value, bool) or value in (None, ""):
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _sample_std(values: list[float]) -> float:
+    if len(values) <= 1:
+        return 0.0
+    avg = sum(values) / len(values)
+    return (sum((value - avg) ** 2 for value in values) / (len(values) - 1)) ** 0.5
 
 
 def _load_predictions_for_run(run: dict[str, Any]) -> list[dict[str, Any]]:
@@ -301,6 +498,40 @@ def _write_latex(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def _write_candidate_latex(path: Path, rows: list[dict[str, Any]]) -> None:
     fields = ["candidate_size", "method", "recall@10", "ndcg@10", "mrr@10", "validity_rate"]
+    lines = [
+        "\\begin{tabular}{llllll}",
+        "\\toprule",
+        " & ".join(fields) + " \\\\",
+        "\\midrule",
+    ]
+    for row in rows:
+        lines.append(" & ".join(_escape_latex(_format_cell(row.get(field, ""))) for field in fields) + " \\\\")
+    lines.extend(["\\bottomrule", "\\end{tabular}", ""])
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_r3_markdown(path: Path, rows: list[dict[str, Any]]) -> None:
+    fields = [
+        "method",
+        "seed_count",
+        "recall@10_mean",
+        "recall@10_std",
+        "ndcg@10_mean",
+        "ndcg@10_std",
+        "mrr@10_mean",
+        "mrr@10_std",
+        "hit_rate@10_mean",
+        "validity_rate_mean",
+        "hallucination_rate_mean",
+    ]
+    lines = ["| " + " | ".join(fields) + " |", "| " + " | ".join(["---"] * len(fields)) + " |"]
+    for row in rows:
+        lines.append("| " + " | ".join(_format_cell(row.get(field, "")) for field in fields) + " |")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _write_r3_latex(path: Path, rows: list[dict[str, Any]]) -> None:
+    fields = ["method", "seed_count", "recall@10_mean", "recall@10_std", "ndcg@10_mean", "mrr@10_mean"]
     lines = [
         "\\begin{tabular}{llllll}",
         "\\toprule",

@@ -351,7 +351,9 @@ def _estimated_real_llm_requests(config: dict[str, Any], *, max_examples: int) -
     methods = baselines if isinstance(baselines, list) and baselines else [config.get("method")]
     candidate_sizes = config.get("candidate_sizes")
     candidate_multiplier = len(candidate_sizes) if isinstance(candidate_sizes, list) and candidate_sizes else 1
-    return candidate_multiplier * sum(_requests_per_example(method) * max_examples for method in methods)
+    seeds = config.get("seeds")
+    seed_multiplier = len(seeds) if isinstance(seeds, list) and seeds else 1
+    return candidate_multiplier * seed_multiplier * sum(_requests_per_example(method) * max_examples for method in methods)
 
 
 def _requests_per_example(method: Any) -> int:
