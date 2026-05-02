@@ -1,5 +1,14 @@
 # Reproduction
 
+This repository is TRUCE-Rec unless the user states otherwise. Current local
+path: `D:\Research\TRUCE-Rec`; current GitHub target: `https://github.com/appleweiping/TRUCE-Rec.git`;
+active branch for Gate R0 work: `main`.
+
+Smoke outputs and MockLLM outputs are not paper evidence. Pilot/API diagnostic
+outputs are not paper conclusions. Formal paper results must come from approved
+real experiment configs, tracked code, saved configs, logs, raw outputs when
+applicable, predictions, and metrics.
+
 ## 1. Install
 
 ```powershell

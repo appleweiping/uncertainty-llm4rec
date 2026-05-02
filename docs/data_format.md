@@ -15,7 +15,15 @@ Canonical interaction record:
 ```
 
 Required fields: `user_id`, `item_id`. Timestamps are required for temporal
-splits and strongly preferred for real experiments.
+splits and strongly preferred for real experiments. Raw interaction file paths,
+processed interaction paths, and field mappings must be declared in the dataset
+config or real-experiment template before any pilot run.
+
+User and item IDs may be remapped internally, but the mapping must be saved with
+processed artifacts and reused consistently for items, interactions, candidates,
+predictions, and metrics. Timestamp handling must be explicit: temporal splits
+use the configured timestamp field; leave-one-out splits must document the order
+used when timestamps are missing.
 
 ## Items
 
@@ -53,6 +61,10 @@ Canonical processed example:
 
 History must contain only interactions available before the target.
 
+Processed examples must record the split strategy and candidate protocol used to
+create them. Repeat-target or no-repeat-target slicing must be declared in the
+config; if both are analyzed, they must be reported as separate protocols.
+
 ## Candidate sets
 
 Candidate set records should include:
@@ -67,6 +79,15 @@ Candidate set records should include:
   "metadata": {}
 }
 ```
+
+Main ranking protocols must include the held-out target item in the candidate
+set. Candidate protocols that deliberately exclude the target are allowed only
+for grounding, retrieval-context, prompt, or other diagnostics and must not be
+interpreted as recommendation accuracy. Candidate sets used by comparable
+baselines and OursMethod must be identical or explicitly documented as a
+separate comparison. Saved candidate-set paths are required for real runs unless
+the full-ranking candidate set is reconstructible from the resolved config and
+catalog snapshot.
 
 ## Predictions
 
@@ -109,6 +130,23 @@ Raw LLM output records should preserve:
 - failure or retry metadata.
 
 Raw outputs must not contain API keys or secrets.
+
+## Real experiment template fields
+
+Before a real pilot, each template must declare:
+
+- raw data path and processed data path, or `TBD` while still a template;
+- interaction and item metadata schema;
+- user/item ID mapping policy and saved mapping location;
+- timestamp handling and split strategy;
+- temporal or leave-one-out policy;
+- negative sampling policy, including seed and sampling pool;
+- full-ranking vs sampled-ranking protocol;
+- candidate set construction and saved candidate-set path;
+- train-only popularity source for buckets, novelty, and long-tail metrics;
+- domain field for multi-domain runs;
+- repeat-target or no-repeat-target slicing policy;
+- whether any target-excluding candidate protocol is diagnostic only.
 
 ## Adapter plan
 

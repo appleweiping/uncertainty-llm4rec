@@ -2,7 +2,14 @@
 
 This runbook describes safe execution paths for smoke runs, API LLM runs, local
 HF inference, and LoRA/QLoRA training. It does not authorize expensive jobs by
-itself.
+itself. This repository is TRUCE-Rec unless the user states otherwise; the
+current local project path is `D:\Research\TRUCE-Rec`.
+
+No real experiments have been established as paper results by this runbook.
+Smoke outputs and MockLLM outputs are infrastructure checks only. Pilot/API
+diagnostic outputs are not paper conclusions. Formal paper results require
+approved real configs, tracked code, saved configs, logs, raw outputs when
+applicable, predictions, metrics, and provenance.
 
 ## Local smoke run
 

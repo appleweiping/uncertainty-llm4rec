@@ -9,16 +9,41 @@ domain: TBD
 dataset:
   name: TBD
   config_path: TBD
+  raw_data_path: TBD
   processed_dir: TBD
 split: test
+split_strategy:
+  name: temporal_or_leave_one_out_TBD
+  timestamp_field: timestamp
+  future_interactions: forbidden
+  history_policy: past_interactions_only
+  repeat_target_policy: TBD_document_before_real_run
 candidate:
   protocol: shared_sampled_TBD
   k: 100
   seed: 13
+  set_path: TBD
+  negative_sampling: fixed_seed_shared_negatives_TBD
+  target_policy: include_heldout_target_for_main_eval
+  target_excluding_protocol: diagnostic_only_not_accuracy
+  same_set_for_comparable_baselines: true
+data_protocol:
+  interaction_schema: [user_id, item_id, timestamp, rating, domain]
+  item_schema: [item_id, title, description, category, brand, domain, raw_text]
+  user_item_id_mapping: required_saved_in_processed_artifacts
+  timestamp_handling: required_for_temporal_or_document_leave_one_out_order
+  train_popularity_source: train_split_only
+  domain_field: domain
+  candidate_set_saved_path: TBD
 baselines: [ours_uncertainty_guided, ours_fallback_only, ours_ablation_no_uncertainty, ours_ablation_no_grounding, ours_ablation_no_candidate_normalized_confidence, ours_ablation_no_popularity_adjustment, ours_ablation_no_echo_guard]
 llm:
   config_path: configs/llm/mock.yaml
+  provider: mock
   response_mode: generative_correct
+  allow_api_calls: false
+  allow_download: false
+  allow_training: false
+  requires_confirm: true
   notes: replace_with_confirmed_api_or_hf_provider_for_real_run
 evaluation:
   config_path: configs/evaluation/full.yaml

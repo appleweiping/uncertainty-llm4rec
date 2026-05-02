@@ -1,5 +1,11 @@
 # Storyflow / TRUCE-Rec Implementation Plan
 
+Historical note: this file records early Storyflow-era planning. The active
+Gate R0 repository identity is TRUCE-Rec, the active package is `src/llm4rec/`,
+and the active GitHub target is
+`https://github.com/appleweiping/TRUCE-Rec.git`. Use current Phase 6/7 docs for
+pilot readiness decisions.
+
 This document turns the Storyflow research thesis into a staged engineering
 plan. It is intentionally scoped as governance and planning material only. It
 does not contain experimental results.
@@ -140,7 +146,8 @@ Deliverables:
 Exit criteria:
 
 - Repository is on `main`.
-- Remote is `https://github.com/appleweiping/uncertainty-llm4rec.git`.
+- Active GitHub target is `https://github.com/appleweiping/TRUCE-Rec.git`;
+  older `uncertainty-llm4rec` remotes are historical aliases only.
 - No data is downloaded.
 - No API is called.
 - No model or toy model is implemented.

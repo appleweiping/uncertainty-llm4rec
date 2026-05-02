@@ -52,6 +52,11 @@ Each run should state whether it is:
 
 No paper claim should be made from a run missing required artifacts.
 
+Current runner note: git commit and branch are recorded inside
+`environment.json`. A standalone `git_info.json` is encouraged when the launch
+environment can write it, but it is not required unless the run protocol
+explicitly enables that artifact.
+
 ## Main table export plan
 
 Main paper tables should be exported only from completed real `metrics.json`

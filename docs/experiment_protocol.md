@@ -27,6 +27,11 @@ Supported split strategies:
 The split used by each run must be recorded in `resolved_config.yaml`.
 Interactions after the example target timestamp must never be used as history,
 features, training evidence, popularity counts, or prompt context.
+Real experiment templates must include an explicit `split_strategy` section with
+the strategy name, timestamp handling, future-interaction policy, history policy,
+and repeat-target or no-repeat-target slicing policy. If target-excluding
+examples are constructed for a prompt or grounding diagnostic, that protocol must
+be reported separately and not used as main recommendation accuracy.
 
 ## Candidate protocol
 
@@ -39,6 +44,11 @@ Candidate construction must be one of:
 
 Comparable baselines and OursMethod must use comparable candidate sets. If a
 method requires a different candidate protocol, it must be reported separately.
+Real templates must declare the candidate-set saved path or explain how the full
+catalog candidate set is reconstructed from `resolved_config.yaml` and the
+catalog snapshot. Candidate sets that exclude the held-out target are diagnostic
+only; they can test prompt/grounding behavior, but their target correctness must
+not be interpreted as recommendation accuracy.
 
 ## Negative sampling protocol
 
@@ -52,6 +62,15 @@ Sampled negatives must:
 
 Negative sampling must not use target labels except to remove the positive item
 from negatives.
+
+## Data protocol
+
+Every real experiment config must declare raw data paths or `TBD`, processed
+data paths, interaction schema, item metadata schema, user/item ID mapping
+policy, timestamp handling, candidate-set path, train-only popularity source,
+domain field if multi-domain, and repeat-target/no-repeat-target slicing policy.
+Popularity buckets, novelty, and long-tail statistics must be computed from the
+training split only.
 
 ## Full-ranking vs sampled-ranking
 
@@ -141,6 +160,8 @@ outputs/runs/<run_id>/
 
 LLM runs should also preserve raw request/response artifacts when the provider
 layer exposes them.
+The current runner records git commit and branch inside `environment.json`;
+standalone `git_info.json` is optional unless a deployment wrapper adds it.
 
 ## Leakage avoidance
 

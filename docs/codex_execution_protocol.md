@@ -1,7 +1,9 @@
 # Codex Execution Protocol
 
-This document defines the required workflow for each Codex task in the
-Storyflow / TRUCE-Rec repository.
+This document is a historical execution note from the earlier Storyflow naming
+period. For Gate R0 and later work, the active repository is TRUCE-Rec unless
+the user states otherwise, the active package is `src/llm4rec/`, and the active
+GitHub target is `https://github.com/appleweiping/TRUCE-Rec.git`.
 
 ## Preflight
 
@@ -9,11 +11,14 @@ Before editing, Codex must:
 
 1. Confirm the current directory is `D:\Research\TRUCE-Rec`.
 2. Confirm the current branch is `main`.
-3. Confirm the remote is
-   `https://github.com/appleweiping/uncertainty-llm4rec.git`.
+3. Confirm the active GitHub target is
+   `https://github.com/appleweiping/TRUCE-Rec.git`. If the local checkout still
+   has a historical remote alias, treat it as an alias rather than the project
+   identity.
 4. Run `git status`.
 5. Inspect and report unexpected uncommitted changes before editing.
-6. Read `AGENTS.md` and `Storyflow.md` enough to keep the task aligned.
+6. Read `AGENTS.md` and `docs/RESEARCH_IDEA.md` enough to keep the task
+   aligned.
 
 If the branch is not `main`, Codex must stop and report in Chinese. Codex must
 not switch to archive branches and must not read or use

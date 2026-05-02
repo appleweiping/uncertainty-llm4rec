@@ -9,13 +9,33 @@ domain: movies
 dataset:
   name: movielens_TBD
   config_path: configs/datasets/movielens_1m.yaml
+  raw_data_path: TBD
   processed_dir: TBD
   raw_interactions_path: TBD
 split: test
+split_strategy:
+  name: temporal_or_leave_one_out_TBD
+  timestamp_field: timestamp
+  future_interactions: forbidden
+  history_policy: past_interactions_only
+  repeat_target_policy: TBD_document_before_real_run
 candidate:
   protocol: full_or_shared_sampled_TBD
   k: null
   seed: 13
+  set_path: TBD
+  negative_sampling: TBD_if_sampled
+  target_policy: include_heldout_target_for_main_eval
+  target_excluding_protocol: diagnostic_only_not_accuracy
+  same_set_for_comparable_baselines: true
+data_protocol:
+  interaction_schema: [user_id, item_id, timestamp, rating, domain]
+  item_schema: [item_id, title, description, category, brand, domain, raw_text]
+  user_item_id_mapping: required_saved_in_processed_artifacts
+  timestamp_handling: required_for_temporal_or_document_leave_one_out_order
+  train_popularity_source: train_split_only
+  domain_field: domain
+  candidate_set_saved_path: TBD
 baselines: [random, popularity, bm25, mf, sequential_markov]
 evaluation:
   config_path: configs/evaluation/full.yaml

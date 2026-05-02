@@ -35,9 +35,14 @@ def validate_experiment_ready(config_path: str | Path) -> dict[str, Any]:
         "config_exists": True,
         "method_configured": _method_configured(config),
         "metrics_configured": _metrics_configured(config),
+        "seeds_configured": _seeds_configured(config),
         "output_dir_writable": _output_dir_writable(config, errors),
+        "split_strategy_configured": _split_strategy_configured(config),
+        "candidate_protocol_configured": _candidate_protocol_configured(config),
+        "data_protocol_configured": _data_protocol_configured(config, errors, warnings),
         "leakage_safeguards_present": _leakage_safeguards_present(config),
         "dataset_paths_ok_or_tbd": _dataset_paths_ok_or_tbd(config, errors, warnings),
+        "safety_defaults_safe": _safety_defaults_safe(config, errors),
         "expensive_flags_safe": _expensive_flags_safe(config, errors, warnings),
     }
     for name, passed in checks.items():
@@ -72,6 +77,11 @@ def _metrics_configured(config: dict[str, Any]) -> bool:
     return bool(config.get("metrics") or config.get("top_k") or (config.get("evaluation") or {}).get("top_k"))
 
 
+def _seeds_configured(config: dict[str, Any]) -> bool:
+    seeds = config.get("seeds")
+    return bool(config.get("seed") is not None or (isinstance(seeds, list) and seeds))
+
+
 def _output_dir_writable(config: dict[str, Any], errors: list[str]) -> bool:
     output = config.get("output") if isinstance(config.get("output"), dict) else {}
     output_dir = Path(str(output.get("output_dir") or config.get("output_dir") or "outputs/runs"))
@@ -88,7 +98,85 @@ def _output_dir_writable(config: dict[str, Any], errors: list[str]) -> bool:
 def _leakage_safeguards_present(config: dict[str, Any]) -> bool:
     safety = config.get("safety") if isinstance(config.get("safety"), dict) else {}
     candidate = config.get("candidate") if isinstance(config.get("candidate"), dict) else {}
-    return bool(safety.get("leakage_safeguards") and config.get("split") and candidate.get("protocol"))
+    split_strategy = config.get("split_strategy") if isinstance(config.get("split_strategy"), dict) else {}
+    return bool(
+        safety.get("leakage_safeguards")
+        and config.get("split")
+        and split_strategy.get("future_interactions") == "forbidden"
+        and split_strategy.get("history_policy") == "past_interactions_only"
+        and candidate.get("protocol")
+        and candidate.get("same_set_for_comparable_baselines") is True
+        and candidate.get("target_policy")
+        and candidate.get("target_excluding_protocol") == "diagnostic_only_not_accuracy"
+    )
+
+
+def _split_strategy_configured(config: dict[str, Any]) -> bool:
+    split_strategy = config.get("split_strategy") if isinstance(config.get("split_strategy"), dict) else {}
+    required = [
+        "name",
+        "timestamp_field",
+        "future_interactions",
+        "history_policy",
+        "repeat_target_policy",
+    ]
+    return bool(config.get("split") and all(split_strategy.get(key) for key in required))
+
+
+def _candidate_protocol_configured(config: dict[str, Any]) -> bool:
+    candidate = config.get("candidate") if isinstance(config.get("candidate"), dict) else {}
+    required = [
+        "protocol",
+        "seed",
+        "set_path",
+        "target_policy",
+        "target_excluding_protocol",
+    ]
+    return bool(all(candidate.get(key) is not None and candidate.get(key) != "" for key in required))
+
+
+def _data_protocol_configured(
+    config: dict[str, Any],
+    errors: list[str],
+    warnings: list[str],
+) -> bool:
+    data_protocol = config.get("data_protocol") if isinstance(config.get("data_protocol"), dict) else {}
+    required = [
+        "interaction_schema",
+        "item_schema",
+        "user_item_id_mapping",
+        "timestamp_handling",
+        "train_popularity_source",
+        "domain_field",
+        "candidate_set_saved_path",
+    ]
+    missing = [key for key in required if not data_protocol.get(key)]
+    if missing:
+        errors.append(f"data_protocol missing fields: {', '.join(missing)}")
+        return False
+    if data_protocol.get("train_popularity_source") != "train_split_only":
+        errors.append("data_protocol.train_popularity_source must be train_split_only")
+        return False
+    if _is_tbd(str(data_protocol.get("candidate_set_saved_path", ""))):
+        warnings.append("data_protocol.candidate_set_saved_path is marked TBD")
+    return True
+
+
+def _safety_defaults_safe(config: dict[str, Any], errors: list[str]) -> bool:
+    safety = config.get("safety") if isinstance(config.get("safety"), dict) else {}
+    template = bool(config.get("template", False))
+    if not safety:
+        errors.append("safety section is missing")
+        return False
+    ok = True
+    for key in ["allow_api_calls", "allow_download", "allow_training"]:
+        if safety.get(key) is not False:
+            errors.append(f"safety.{key} must be false by default")
+            ok = False
+    if template and not (config.get("dry_run") is True or config.get("requires_confirm") is True):
+        errors.append("template must be dry_run=true or requires_confirm=true")
+        ok = False
+    return ok
 
 
 def _dataset_paths_ok_or_tbd(

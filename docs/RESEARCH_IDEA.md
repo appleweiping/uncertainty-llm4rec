@@ -326,34 +326,27 @@ We introduce a generative recommendation uncertainty observation framework that 
 
 A later method may use these findings to design uncertainty-aware training, filtering, abstention, or reranking.
 
-## 10. OursMethod Is Not Implemented Yet
+## 10. OursMethod Status
 
-Temporary placeholder:
-
-```text
-OursMethod
-```
-
-OursMethod must not be implemented until the user confirms the final mechanism.
-
-Potential later method direction:
+Phase 6 implemented a minimal smoke-capable OursMethod integration after the
+user confirmed the mechanism. The implemented method direction is:
 
 ```text
 Calibrated Uncertainty-Guided Generative Recommendation
 ```
 
-Possible mechanisms:
+Implemented Phase 6 mechanisms include:
 
 - uncertainty-aware abstention;
-- retrieve-more-if-uncertain;
 - confidence-normalized candidate comparison;
 - popularity-bias-adjusted confidence;
-- tail-aware calibration;
-- uncertainty-weighted pseudo-label training;
 - high-confidence hallucination filtering;
 - confidence-diversity tradeoff reranking.
 
-These are future possibilities, not implemented claims.
+This integration is not a paper result. It is a config-driven smoke pipeline
+for real-experiment planning. No effectiveness, calibration, popularity-bias
+mitigation, or echo-risk mitigation claim is allowed until approved real
+experiments produce metrics.
 
 ## 11. Phase 3 Implication
 
@@ -375,7 +368,8 @@ It should include:
 - API provider interface;
 - HF provider interface.
 
-Phase 3 must not implement OursMethod.
+Phase 3 must not implement OursMethod. Phase 6 is the first phase where the
+user-approved OursMethod integration exists.
 
 ## 12. Literature Inspiration
 

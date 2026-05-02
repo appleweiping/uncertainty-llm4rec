@@ -1,7 +1,10 @@
 # Real Experiment Matrix
 
 This matrix defines planned real experiment groups. It contains no completed
-results.
+results. This repository is TRUCE-Rec unless the user states otherwise. All
+entries below are planning targets: smoke/mock outputs are not paper evidence,
+and pilot/API diagnostics are not paper conclusions unless a later approved
+protocol promotes them with complete artifacts.
 
 ## Group A: Traditional baselines
 
