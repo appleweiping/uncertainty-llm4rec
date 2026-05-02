@@ -1,6 +1,6 @@
 template: false
-dry_run: true
-requires_confirm: true
+dry_run: false
+requires_confirm: false
 evidence_label: real LLM subgate / small MovieLens subset evidence, pending reviewer approval
 seed: 13
 seeds: [13]
@@ -51,14 +51,20 @@ llm:
   config_path: configs/llm/openai_compatible.yaml
   provider: openai_compatible
   type: openai_compatible
-  model: TBD_REAL_LLM_MODEL
-  api_key_env: OPENAI_API_KEY
-  base_url: TBD_OPENAI_COMPATIBLE_BASE_URL
-  timeout_seconds: 60
-  max_retries: 2
+  model: deepseek-v4-flash
+  api_key_env: DEEPSEEK_API_KEY
+  base_url: https://api.deepseek.com
+  timeout_seconds: 120
+  max_retries: 3
+  backoff_seconds: 2
   temperature: 0.0
   top_p: 1.0
   max_tokens: 256
+  extra_body:
+    response_format:
+      type: json_object
+    thinking:
+      type: disabled
   cache:
     enabled: true
     cache_dir: outputs/api_cache/r2_movielens_1m_real_llm_subgate
@@ -70,40 +76,49 @@ llm:
     save_responses: true
     path: outputs/runs/r2_movielens_1m_real_llm_subgate_raw_llm_outputs.jsonl
   request_limits:
-    max_requests: 2200
-    max_concurrency: 1
-    requests_per_minute: 20
-  cost:
-    cost_limit_usd: 5.0
-    stop_on_limit: true
-    pricing_source: user_confirmed_provider_pricing_required_before_execution
+    max_requests: 3000
+    max_concurrency: 16
+    requests_per_minute: 300
+  pricing:
+    input_per_1m_tokens: 0.14
+    output_per_1m_tokens: 0.28
 evaluation:
   config_path: configs/evaluation/full.yaml
   top_k: [1, 5, 10, 20]
 top_k: [1, 5, 10, 20]
 metrics: [ranking, validity, grounding, confidence, calibration, coverage, diversity, novelty, long_tail, efficiency, cold_start]
 safety:
-  allow_api_calls: false
+  dry_run: false
+  requires_confirm: false
+  allow_api_calls: true
   allow_download: false
   allow_training: false
-  acknowledged_expensive_run: false
+  acknowledged_expensive_run: true
   leakage_safeguards: true
+  subset_size: 200
+  max_examples: 200
+  max_requests: 3000
+  cost_limit_usd: 999999
+  concurrency: 16
+  request_timeout_seconds: 120
+  max_retries: 3
+  backoff_seconds: 2
   requires_provider_confirmation: true
   requires_budget_confirmation: true
   requires_subset_enforcement_confirmation: true
 r2_real_llm_subgate:
   label: real LLM subgate / small MovieLens subset evidence, pending reviewer approval
-  status: preflight_only_until_provider_and_budget_are_confirmed
+  status: provider_approved_but_request_budget_must_pass_preflight
   subset_size: 200
   candidate_protocol: sampled_100_target_included_seed_13
   expected_request_upper_bound: 2200
-  provider_status: TBD
+  provider_status: approved_deepseek_openai_compatible
   approved_execution_requires:
     allow_api_calls: true
     requires_confirm: false
     dry_run: false
-    model: non_tbd
-    base_url: non_tbd_openai_compatible_chat_completions_base
+    model: deepseek-v4-flash
+    base_url: https://api.deepseek.com
     api_key_env_present: true
 logging:
   level: INFO

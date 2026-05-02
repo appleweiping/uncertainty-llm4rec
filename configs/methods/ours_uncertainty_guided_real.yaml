@@ -27,7 +27,7 @@ params:
     fallback: true
     fallback_only: false
   ablation:
-    variant: full_real_llm_subgate
+    variant: full
     disabled_components: []
   fallback_params:
     text_policy: title

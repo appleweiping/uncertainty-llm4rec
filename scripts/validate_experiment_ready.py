@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -44,6 +45,8 @@ def validate_experiment_ready(config_path: str | Path) -> dict[str, Any]:
         "dataset_paths_ok_or_tbd": _dataset_paths_ok_or_tbd(config, errors, warnings),
         "safety_defaults_safe": _safety_defaults_safe(config, errors),
         "expensive_flags_safe": _expensive_flags_safe(config, errors, warnings),
+        "api_environment_ready": _api_environment_ready(config, errors, warnings),
+        "request_budget_configured": _request_budget_configured(config, errors, warnings),
     }
     for name, passed in checks.items():
         if not passed:
@@ -171,12 +174,32 @@ def _safety_defaults_safe(config: dict[str, Any], errors: list[str]) -> bool:
     ok = True
     for key in ["allow_api_calls", "allow_download", "allow_training"]:
         if safety.get(key) is not False:
+            if key == "allow_api_calls" and _api_execution_explicitly_approved(config):
+                continue
             errors.append(f"safety.{key} must be false by default")
             ok = False
     if template and not (config.get("dry_run") is True or config.get("requires_confirm") is True):
         errors.append("template must be dry_run=true or requires_confirm=true")
         ok = False
     return ok
+
+
+def _api_execution_explicitly_approved(config: dict[str, Any]) -> bool:
+    safety = config.get("safety") if isinstance(config.get("safety"), dict) else {}
+    llm = config.get("llm") if isinstance(config.get("llm"), dict) else {}
+    provider = str(llm.get("provider") or llm.get("type") or "")
+    return bool(
+        provider == "openai_compatible"
+        and config.get("dry_run") is False
+        and config.get("requires_confirm") is False
+        and safety.get("dry_run") is False
+        and safety.get("requires_confirm") is False
+        and safety.get("allow_api_calls") is True
+        and safety.get("acknowledged_expensive_run") is True
+        and not _is_tbd(str(llm.get("model") or ""))
+        and not _is_tbd(str(llm.get("base_url") or ""))
+        and not _is_tbd(str(llm.get("api_key_env") or ""))
+    )
 
 
 def _dataset_paths_ok_or_tbd(
@@ -242,6 +265,126 @@ def _expensive_flags_safe(
         for message in errors
         if "acknowledged_expensive_run" in message or "neither dry_run" in message
     )
+
+
+def _api_environment_ready(
+    config: dict[str, Any],
+    errors: list[str],
+    warnings: list[str],
+) -> bool:
+    safety = config.get("safety") if isinstance(config.get("safety"), dict) else {}
+    llm = config.get("llm") if isinstance(config.get("llm"), dict) else {}
+    provider = str(llm.get("provider") or llm.get("type") or "")
+    if provider != "openai_compatible":
+        return True
+    if safety.get("allow_api_calls") is not True:
+        return True
+    ok = True
+    for key in ["model", "base_url", "api_key_env"]:
+        value = str(llm.get(key) or "").strip()
+        if _is_tbd(value):
+            errors.append(f"llm.{key} must be set before approved API execution")
+            ok = False
+    base_url = str(llm.get("base_url") or "")
+    if base_url and not _is_tbd(base_url) and not base_url.startswith(("http://", "https://")):
+        errors.append("llm.base_url must start with http:// or https://")
+        ok = False
+    api_key_env = str(llm.get("api_key_env") or "").strip()
+    if api_key_env and not _is_tbd(api_key_env) and not os.environ.get(api_key_env):
+        errors.append(f"API key environment variable is not set: {api_key_env}")
+        ok = False
+    if ok:
+        warnings.append("API key environment variable is present; key value was not inspected")
+    return ok
+
+
+def _request_budget_configured(
+    config: dict[str, Any],
+    errors: list[str],
+    warnings: list[str],
+) -> bool:
+    safety = config.get("safety") if isinstance(config.get("safety"), dict) else {}
+    llm = config.get("llm") if isinstance(config.get("llm"), dict) else {}
+    provider = str(llm.get("provider") or llm.get("type") or "")
+    if provider != "openai_compatible" or safety.get("allow_api_calls") is not True:
+        return True
+    max_examples = _configured_max_examples(config)
+    max_requests = _configured_max_requests(config)
+    ok = True
+    if max_examples is None:
+        errors.append("approved API execution requires safety.max_examples or subset_size")
+        ok = False
+    if max_requests is None:
+        errors.append("approved API execution requires safety.max_requests")
+        ok = False
+    if max_examples is None or max_requests is None:
+        return False
+    estimate = _estimated_real_llm_requests(config, max_examples=max_examples)
+    warnings.append(f"estimated real LLM requests for configured method set: {estimate}")
+    if estimate > max_requests:
+        errors.append(f"estimated real LLM requests ({estimate}) exceed safety.max_requests ({max_requests})")
+        ok = False
+    return ok
+
+
+def _configured_max_examples(config: dict[str, Any]) -> int | None:
+    dataset = config.get("dataset") if isinstance(config.get("dataset"), dict) else {}
+    safety = config.get("safety") if isinstance(config.get("safety"), dict) else {}
+    values = [
+        _optional_int(dataset.get("subset_size")),
+        _optional_int(safety.get("subset_size")),
+        _optional_int(safety.get("max_examples")),
+    ]
+    active = [value for value in values if value is not None]
+    return min(active) if active else None
+
+
+def _configured_max_requests(config: dict[str, Any]) -> int | None:
+    safety = config.get("safety") if isinstance(config.get("safety"), dict) else {}
+    llm = config.get("llm") if isinstance(config.get("llm"), dict) else {}
+    request_limits = llm.get("request_limits") if isinstance(llm.get("request_limits"), dict) else {}
+    return _optional_int(safety.get("max_requests") or request_limits.get("max_requests"))
+
+
+def _estimated_real_llm_requests(config: dict[str, Any], *, max_examples: int) -> int:
+    baselines = config.get("baselines")
+    methods = baselines if isinstance(baselines, list) and baselines else [config.get("method")]
+    return sum(_requests_per_example(method) * max_examples for method in methods)
+
+
+def _requests_per_example(method: Any) -> int:
+    method_config = _method_config(method)
+    name = str(method_config.get("name") or method or "")
+    if name in {"llm_generative", "llm_generative_mock"}:
+        return 1
+    if name == "llm_rerank":
+        return 1
+    if name == "llm_confidence_observation":
+        return 3
+    if name.startswith("ours_") or str(method_config.get("type") or "") == "ours_method":
+        components = method_config.get("params", {}).get("components") if isinstance(method_config.get("params"), dict) else None
+        if not isinstance(components, dict):
+            components = method_config.get("components") if isinstance(method_config.get("components"), dict) else {}
+        if components.get("fallback_only") is True:
+            return 0
+        return 1 + int(components.get("candidate_normalized_confidence", True) is not False)
+    return 0
+
+
+def _method_config(method: Any) -> dict[str, Any]:
+    if isinstance(method, dict):
+        return method
+    name = str(method or "")
+    path = ROOT / "configs" / "methods" / f"{name}.yaml"
+    if path.exists():
+        return load_config(path)
+    return {"name": name}
+
+
+def _optional_int(value: Any) -> int | None:
+    if value in (None, ""):
+        return None
+    return int(value)
 
 
 def _is_tbd(value: str) -> bool:

@@ -452,6 +452,7 @@ def _response_metadata(response: Any) -> dict[str, Any]:
         "model": response.model,
         "latency_seconds": response.latency_seconds,
         "token_usage": dict(response.usage),
+        "estimated_cost": float(dict(response.metadata).get("estimated_cost") or 0.0),
         "cache_hit": response.cache_hit,
         "provider_metadata": dict(response.metadata),
     }

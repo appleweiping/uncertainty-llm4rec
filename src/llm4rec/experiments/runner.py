@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import csv
 import json
+import os
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
@@ -15,9 +18,11 @@ from llm4rec.experiments.config import load_config, save_resolved_config
 from llm4rec.experiments.logging import RunLogger
 from llm4rec.experiments.seeding import set_seed
 from llm4rec.io.artifacts import create_run_dir, read_jsonl, write_environment, write_json, write_jsonl
+from llm4rec.llm.base import LLMRequest, LLMResponse
 from llm4rec.llm.hf_provider import HFLocalProvider
 from llm4rec.llm.mock_provider import MockLLMProvider
 from llm4rec.llm.openai_provider import OpenAICompatibleProvider
+from llm4rec.llm.response_cache import ResponseCache
 from llm4rec.methods.ours_method import OursMethodRanker
 from llm4rec.rankers.base import BaseRanker
 from llm4rec.rankers.bm25 import BM25Ranker
@@ -33,6 +38,141 @@ from llm4rec.trainers.traditional import TraditionalRankerTrainer
 
 
 SEQUENTIAL_METHODS = {"sequential_last_item", "sequential_markov", "sasrec_interface", "sequential_interface"}
+
+
+class ControlledLLMProvider:
+    """Runtime guard for approved API runs: cache, cap requests, and estimate cost."""
+
+    def __init__(
+        self,
+        provider: Any,
+        *,
+        llm_config: dict[str, Any],
+        safety_config: dict[str, Any],
+    ) -> None:
+        self.provider = provider
+        self.provider_name = provider.provider_name
+        self.model_name = provider.model_name
+        self.supports_logprobs = provider.supports_logprobs
+        self.supports_seed = provider.supports_seed
+        self.llm_config = llm_config
+        self.safety_config = safety_config
+        request_limits = dict(llm_config.get("request_limits") or {})
+        cache_config = dict(llm_config.get("cache") or {})
+        self.max_requests = _optional_int(safety_config.get("max_requests") or request_limits.get("max_requests"))
+        self.cost_limit_usd = _optional_float(safety_config.get("cost_limit_usd"))
+        self.cache_enabled = bool(cache_config.get("enabled", False))
+        cache_dir = str(cache_config.get("cache_dir") or "outputs/api_cache/llm4rec")
+        self.cache = ResponseCache(cache_dir) if self.cache_enabled else None
+        pricing = dict(llm_config.get("pricing") or {})
+        self.input_per_1m_tokens = float(pricing.get("input_per_1m_tokens") or 0.0)
+        self.output_per_1m_tokens = float(pricing.get("output_per_1m_tokens") or 0.0)
+        self.real_request_count = 0
+        self.cache_hit_count = 0
+        self.estimated_cost_total = 0.0
+        self.records: list[dict[str, Any]] = []
+        self._lock = threading.Lock()
+
+    def generate(self, request: LLMRequest) -> LLMResponse:
+        cache_key = self._cache_key(request)
+        if self.cache is not None:
+            with self._lock:
+                cached = self.cache.get(cache_key)
+            if cached is not None:
+                response = _response_from_cache(cached, cache_key=cache_key)
+                with self._lock:
+                    self.cache_hit_count += 1
+                    self.records.append(_provider_record(response, estimated_cost=0.0))
+                return response
+
+        with self._lock:
+            if self.max_requests is not None and self.real_request_count >= self.max_requests:
+                raise RuntimeError(f"LLM max_requests exceeded: {self.max_requests}")
+
+        response = self.provider.generate(request)
+        estimated_cost = self._estimated_cost(response.usage)
+        with self._lock:
+            self.real_request_count += 1
+            self.estimated_cost_total += estimated_cost
+            real_request_index = self.real_request_count
+            estimated_cost_total = self.estimated_cost_total
+        metadata = dict(response.metadata)
+        metadata.update(
+            {
+                "cache_key": cache_key,
+                "real_request_index": real_request_index,
+                "estimated_cost": estimated_cost,
+                "estimated_cost_total": estimated_cost_total,
+            }
+        )
+        guarded = LLMResponse(
+            text=response.text,
+            raw_response=response.raw_response,
+            usage=response.usage,
+            latency_seconds=response.latency_seconds,
+            model=response.model,
+            provider=response.provider,
+            cache_hit=False,
+            metadata=metadata,
+        )
+        with self._lock:
+            self.records.append(_provider_record(guarded, estimated_cost=estimated_cost))
+        if self.cost_limit_usd is not None and estimated_cost_total > self.cost_limit_usd:
+            raise RuntimeError(
+                f"LLM cost limit exceeded: estimated {estimated_cost_total:.6f} > {self.cost_limit_usd:.6f}"
+            )
+        if self.cache is not None:
+            with self._lock:
+                self.cache.set(cache_key, _response_cache_payload(guarded))
+        return guarded
+
+    def _cache_key(self, request: LLMRequest) -> str:
+        if self.cache is None:
+            return ""
+        return self.cache.key_for(
+            provider=self.provider_name,
+            model=self.model_name,
+            prompt=request.prompt,
+            params={
+                "temperature": request.temperature,
+                "top_p": request.top_p,
+                "max_tokens": request.max_tokens,
+                "seed": request.seed,
+                "extra_body": self.llm_config.get("extra_body") or {},
+            },
+        )
+
+    def _estimated_cost(self, usage: dict[str, int]) -> float:
+        prompt_tokens = int(usage.get("prompt_tokens") or 0)
+        completion_tokens = int(usage.get("completion_tokens") or 0)
+        return (
+            prompt_tokens / 1_000_000.0 * self.input_per_1m_tokens
+            + completion_tokens / 1_000_000.0 * self.output_per_1m_tokens
+        )
+
+    def summary(self) -> dict[str, Any]:
+        with self._lock:
+            records = [dict(row) for row in self.records]
+            real_request_count = self.real_request_count
+            cache_hit_count = self.cache_hit_count
+        real_records = [row for row in records if not row.get("cache_hit")]
+        latencies = [float(row.get("latency_seconds") or 0.0) for row in real_records]
+        return {
+            "provider": self.provider_name,
+            "model": self.model_name,
+            "request_count": len(records),
+            "real_request_count": real_request_count,
+            "cache_hit_count": cache_hit_count,
+            "cache_hit_rate": cache_hit_count / len(records) if records else 0.0,
+            "prompt_tokens": sum(int(row.get("prompt_tokens") or 0) for row in real_records),
+            "completion_tokens": sum(int(row.get("completion_tokens") or 0) for row in real_records),
+            "total_tokens": sum(int(row.get("total_tokens") or 0) for row in real_records),
+            "estimated_cost": sum(float(row.get("estimated_cost") or 0.0) for row in real_records),
+            "latency_p50": _percentile(latencies, 0.50),
+            "latency_p95": _percentile(latencies, 0.95),
+            "max_requests": self.max_requests,
+            "cost_limit_usd": self.cost_limit_usd,
+        }
 
 
 def run_preprocess_from_config(config_path: str | Path) -> dict[str, Any]:
@@ -63,6 +203,7 @@ def run_experiment_config(config: dict[str, Any], *, preprocess: bool = False) -
     predictions = _build_predictions(config, run_dir=run_dir)
     predictions_path = run_dir / "predictions.jsonl"
     write_jsonl(predictions_path, predictions)
+    _write_raw_llm_outputs(run_dir, predictions)
     logger.log(f"wrote predictions count={len(predictions)}")
     eval_context = _evaluation_context_for_config(config)
     metrics = evaluate_predictions(
@@ -75,7 +216,7 @@ def run_experiment_config(config: dict[str, Any], *, preprocess: bool = False) -
         evaluation_config=config,
     )
     logger.log("wrote metrics.json and metrics.csv")
-    cost_latency = dict(metrics.get("aggregate", {}).get("efficiency", {}))
+    cost_latency = _cost_latency_for_run(metrics, run_dir)
     write_json(run_dir / "cost_latency.json", cost_latency)
     logger.log("wrote cost_latency.json")
     logger.log("finish")
@@ -170,10 +311,10 @@ def _build_ranker_predictions(config: dict[str, Any], *, run_dir: Path) -> list[
     item_catalog = _read_csv(processed_dir / "items.csv")
     interactions = _read_csv(processed_dir / "interactions.csv")
     train_examples = [row for row in examples if str(row.get("split")) == "train"]
-    eval_examples = [row for row in examples if str(row.get("split")) == split]
+    eval_examples = _limit_eval_examples(config, [row for row in examples if str(row.get("split")) == split])
     if not eval_examples:
         raise ValueError(f"no examples found for split={split} in {processed_dir}")
-    ranker = _build_ranker(config)
+    ranker = _build_ranker(config, run_dir=run_dir)
     if _method_name(config) in SEQUENTIAL_METHODS:
         training = _training_config(config)
         checkpoint_dir = Path(str(training.get("checkpoint_dir") or (run_dir / "checkpoints")))
@@ -196,19 +337,14 @@ def _build_ranker_predictions(config: dict[str, Any], *, run_dir: Path) -> list[
         interactions=interactions,
     )
     trainer_result = trainer.train()
-    predictions = []
-    for example in eval_examples:
-        candidates = [str(item_id) for item_id in example.get("candidates", [])]
-        result = ranker.rank(example, candidates)
-        record = result.to_prediction_record()
-        record["metadata"].update(
-            {
-                "trainer": trainer_result.metadata,
-                "not_ours_method": True,
-            }
-        )
-        record["metadata"].setdefault("phase", "phase2_minimal_baseline")
-        predictions.append(record)
+    predictions = _rank_eval_examples(
+        config,
+        ranker=ranker,
+        eval_examples=eval_examples,
+        trainer_metadata=trainer_result.metadata,
+        run_dir=run_dir,
+    )
+    _write_llm_provider_artifacts(run_dir, ranker)
     return predictions
 
 
@@ -221,7 +357,134 @@ def _build_lora_dry_run(config: dict[str, Any], *, run_dir: Path) -> list[dict[s
     return []
 
 
-def _build_ranker(config: dict[str, Any]) -> BaseRanker:
+def _rank_eval_examples(
+    config: dict[str, Any],
+    *,
+    ranker: BaseRanker,
+    eval_examples: list[dict[str, Any]],
+    trainer_metadata: dict[str, Any],
+    run_dir: Path,
+) -> list[dict[str, Any]]:
+    concurrency_levels = _concurrency_levels(config)
+    if len(concurrency_levels) == 1 and concurrency_levels[0] == 1:
+        return [
+            _rank_one_example(ranker, example, trainer_metadata=trainer_metadata)
+            for example in eval_examples
+        ]
+
+    predictions_by_index: dict[int, dict[str, Any]] = {}
+    remaining = list(enumerate(eval_examples))
+    failure_rows: list[dict[str, Any]] = []
+    for concurrency in concurrency_levels:
+        current_failures: list[tuple[int, dict[str, Any], str]] = []
+        with ThreadPoolExecutor(max_workers=concurrency) as executor:
+            futures = {
+                executor.submit(_rank_one_example, ranker, example, trainer_metadata=trainer_metadata): (index, example)
+                for index, example in remaining
+            }
+            for future in as_completed(futures):
+                index, example = futures[future]
+                try:
+                    predictions_by_index[index] = future.result()
+                except Exception as exc:  # noqa: BLE001 - preserve partial API artifacts for audit.
+                    current_failures.append((index, example, str(exc)))
+        failure_rows.extend(
+            {
+                "example_index": index,
+                "example_id": example.get("example_id"),
+                "user_id": example.get("user_id"),
+                "method": _method_name(config),
+                "concurrency": concurrency,
+                "error": error,
+            }
+            for index, example, error in current_failures
+        )
+        if not current_failures:
+            remaining = []
+            break
+        remaining = [(index, example) for index, example, _ in current_failures]
+
+    if remaining:
+        method = _method_name(config)
+        for index, example in remaining:
+            predictions_by_index[index] = _api_failure_prediction(config, example, method=method)
+    if failure_rows:
+        write_jsonl(run_dir / "artifacts" / "api_failures.jsonl", failure_rows)
+    return [predictions_by_index[index] for index in sorted(predictions_by_index)]
+
+
+def _rank_one_example(
+    ranker: BaseRanker,
+    example: dict[str, Any],
+    *,
+    trainer_metadata: dict[str, Any],
+) -> dict[str, Any]:
+    candidates = [str(item_id) for item_id in example.get("candidates", [])]
+    result = ranker.rank(example, candidates)
+    record = result.to_prediction_record()
+    record["metadata"].update(
+        {
+            "trainer": trainer_metadata,
+            "not_ours_method": True,
+        }
+    )
+    record["metadata"].setdefault("phase", "phase2_minimal_baseline")
+    return record
+
+
+def _concurrency_levels(config: dict[str, Any]) -> list[int]:
+    if not _method_uses_llm(config):
+        return [1]
+    safety = _safety_config(config)
+    start = _optional_int(safety.get("concurrency")) or 1
+    start = max(1, start)
+    if start == 1:
+        return [1]
+    levels = []
+    value = start
+    while value >= 2:
+        levels.append(value)
+        value //= 2
+    return _unique_ints(levels)
+
+
+def _method_uses_llm(config: dict[str, Any]) -> bool:
+    method = _method_name(config)
+    method_config = _method_config(config)
+    provider = ""
+    llm = config.get("llm")
+    if isinstance(llm, dict):
+        provider = str(llm.get("provider") or llm.get("type") or "")
+    return bool(provider == "openai_compatible" and (method.startswith("llm_") or _is_ours_method(method, method_config)))
+
+
+def _api_failure_prediction(config: dict[str, Any], example: dict[str, Any], *, method: str) -> dict[str, Any]:
+    return {
+        "user_id": str(example.get("user_id") or ""),
+        "target_item": str(example.get("target") or ""),
+        "candidate_items": [str(item_id) for item_id in example.get("candidates", [])],
+        "predicted_items": [],
+        "scores": [],
+        "method": method,
+        "domain": str(example.get("domain") or config.get("domain") or "unknown"),
+        "raw_output": None,
+        "metadata": {
+            "example_id": example.get("example_id"),
+            "split": example.get("split"),
+            "api_failure": True,
+            "parse_success": False,
+            "parse_error": "api_failure_after_concurrency_retries",
+            "is_catalog_valid": False,
+            "is_hallucinated": False,
+            "candidate_adherent": False,
+            "confidence": None,
+            "provider": (_llm_config(config).get("provider") if isinstance(config.get("llm"), dict) else None),
+            "model": (_llm_config(config).get("model") if isinstance(config.get("llm"), dict) else None),
+        },
+    }
+
+
+def _build_ranker(config: dict[str, Any], *, run_dir: Path | None = None) -> BaseRanker:
     method = _method_name(config)
     method_config = _method_config(config)
     params = dict(method_config.get("params") or {})
@@ -252,32 +515,32 @@ def _build_ranker(config: dict[str, Any]) -> BaseRanker:
         return SasrecInterfaceRanker(max_history_length=int(params.get("max_history_length") or 50))
     if method in {"llm_generative", "llm_generative_mock"}:
         return LLMGenerativeRanker(
-            provider=_build_llm_provider(config),
+            provider=_build_llm_provider(config, run_dir=run_dir),
             method_name=str(params.get("prediction_method") or "llm_generative_mock"),
             text_policy=str(params.get("text_policy") or "title"),
         )
     if method == "llm_rerank":
         return LLMReranker(
-            provider=_build_llm_provider(config),
+            provider=_build_llm_provider(config, run_dir=run_dir),
             method_name=str(params.get("prediction_method") or "llm_rerank_mock"),
             text_policy=str(params.get("text_policy") or "title"),
         )
     if method == "llm_confidence_observation":
         return LLMConfidenceObservationRanker(
-            provider=_build_llm_provider(config),
+            provider=_build_llm_provider(config, run_dir=run_dir),
             method_name=str(params.get("prediction_method") or "llm_confidence_observation_mock"),
             text_policy=str(params.get("text_policy") or "title"),
         )
     if _is_ours_method(method, method_config):
         return OursMethodRanker(
-            provider=_build_llm_provider(config),
+            provider=_build_llm_provider(config, run_dir=run_dir),
             method_config=method_config,
             seed=seed,
         )
     raise ValueError(f"unknown experiment method: {method}")
 
 
-def _build_llm_provider(config: dict[str, Any]) -> Any:
+def _build_llm_provider(config: dict[str, Any], *, run_dir: Path | None = None) -> Any:
     llm_config = _llm_config(config)
     provider_type = str(llm_config.get("provider") or llm_config.get("type") or "")
     if provider_type == "mock":
@@ -286,19 +549,207 @@ def _build_llm_provider(config: dict[str, Any]) -> Any:
             seed=int(llm_config.get("seed") or config.get("seed") or 0),
         )
     if provider_type == "openai_compatible":
-        return OpenAICompatibleProvider(
+        if run_dir is not None:
+            _assert_api_execution_approved(config, llm_config)
+        provider = OpenAICompatibleProvider(
             model_name=_required_llm_text(llm_config, "model"),
             api_key_env=_required_llm_text(llm_config, "api_key_env"),
             base_url=_required_llm_text(llm_config, "base_url"),
-            timeout_seconds=float(llm_config.get("timeout_seconds") or 60.0),
-            max_retries=int(llm_config.get("max_retries") or 2),
+            timeout_seconds=float(llm_config.get("timeout_seconds") or _safety_config(config).get("request_timeout_seconds") or 60.0),
+            max_retries=int(llm_config.get("max_retries") or _safety_config(config).get("max_retries") or 2),
+            backoff_seconds=float(llm_config.get("backoff_seconds") or _safety_config(config).get("backoff_seconds") or 0.25),
+            extra_body=dict(llm_config.get("extra_body") or {}),
         )
+        if run_dir is not None:
+            return ControlledLLMProvider(provider, llm_config=llm_config, safety_config=_safety_config(config))
+        return provider
     if provider_type == "hf_local":
         return HFLocalProvider(
             model_name_or_path=_required_llm_text(llm_config, "model_name_or_path"),
             device=str(llm_config.get("device") or "auto"),
         )
     raise ValueError(f"unknown llm provider type: {provider_type}")
+
+
+def _assert_api_execution_approved(config: dict[str, Any], llm_config: dict[str, Any]) -> None:
+    safety = _safety_config(config)
+    if bool(config.get("dry_run", False)) or bool(safety.get("dry_run", False)):
+        raise RuntimeError("real API execution blocked: dry_run must be false")
+    if bool(config.get("requires_confirm", False)) or bool(safety.get("requires_confirm", False)):
+        raise RuntimeError("real API execution blocked: requires_confirm must be false")
+    if safety.get("allow_api_calls") is not True:
+        raise RuntimeError("real API execution blocked: safety.allow_api_calls must be true")
+    if safety.get("acknowledged_expensive_run") is not True:
+        raise RuntimeError("real API execution blocked: safety.acknowledged_expensive_run must be true")
+    model = _required_llm_text(llm_config, "model")
+    base_url = _required_llm_text(llm_config, "base_url")
+    api_key_env = _required_llm_text(llm_config, "api_key_env")
+    if _is_tbd_text(model) or _is_tbd_text(base_url) or _is_tbd_text(api_key_env):
+        raise RuntimeError("real API execution blocked: provider model/base_url/api_key_env must not be TBD")
+    if not os.environ.get(api_key_env):
+        raise RuntimeError(f"real API execution blocked: missing API key environment variable {api_key_env}")
+
+
+def _safety_config(config: dict[str, Any]) -> dict[str, Any]:
+    return dict(config.get("safety") or {}) if isinstance(config.get("safety"), dict) else {}
+
+
+def _limit_eval_examples(config: dict[str, Any], eval_examples: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    dataset = dict(config.get("dataset") or {}) if isinstance(config.get("dataset"), dict) else {}
+    safety = _safety_config(config)
+    limits = [
+        _optional_int(dataset.get("subset_size")),
+        _optional_int(safety.get("subset_size")),
+        _optional_int(safety.get("max_examples")),
+    ]
+    active = [value for value in limits if value is not None]
+    if not active:
+        return eval_examples
+    limit = min(active)
+    if limit <= 0:
+        raise ValueError("subset_size/max_examples must be positive when configured")
+    return eval_examples[:limit]
+
+
+def _write_raw_llm_outputs(run_dir: Path, predictions: list[dict[str, Any]]) -> None:
+    rows = []
+    for index, row in enumerate(predictions):
+        metadata = dict(row.get("metadata") or {})
+        raw_fields = {
+            "raw_output": row.get("raw_output"),
+            "candidate_normalized_raw_output": metadata.get("candidate_normalized_raw_output"),
+            "verification_raw_output": metadata.get("verification_raw_output"),
+        }
+        if not any(value for value in raw_fields.values()):
+            continue
+        rows.append(
+            {
+                "row_index": index,
+                "user_id": row.get("user_id"),
+                "method": row.get("method"),
+                "provider": metadata.get("provider"),
+                "model": metadata.get("model"),
+                "prompt_template_id": metadata.get("prompt_template_id"),
+                "prompt_hash": metadata.get("prompt_hash"),
+                "cache_hit": metadata.get("cache_hit"),
+                "token_usage": metadata.get("token_usage"),
+                "latency_seconds": metadata.get("latency_seconds"),
+                **raw_fields,
+            }
+        )
+    if rows:
+        write_jsonl(run_dir / "raw_llm_outputs.jsonl", rows)
+
+
+def _write_llm_provider_artifacts(run_dir: Path, ranker: BaseRanker) -> None:
+    provider = getattr(ranker, "provider", None)
+    if not isinstance(provider, ControlledLLMProvider):
+        return
+    write_json(run_dir / "artifacts" / "llm_provider_summary.json", provider.summary())
+    with provider._lock:
+        records = [dict(row) for row in provider.records]
+    if records:
+        write_jsonl(run_dir / "artifacts" / "llm_request_log.jsonl", records)
+
+
+def _cost_latency_for_run(metrics: dict[str, Any], run_dir: Path) -> dict[str, Any]:
+    cost_latency = dict(metrics.get("aggregate", {}).get("efficiency", {}))
+    provider_summary_path = run_dir / "artifacts" / "llm_provider_summary.json"
+    if not provider_summary_path.exists():
+        return cost_latency
+    provider_summary = json.loads(provider_summary_path.read_text(encoding="utf-8"))
+    cost_latency.update(
+        {
+            "provider_request_count": provider_summary.get("request_count", 0),
+            "provider_real_request_count": provider_summary.get("real_request_count", 0),
+            "provider_cache_hit_count": provider_summary.get("cache_hit_count", 0),
+            "cache_hit_rate": provider_summary.get("cache_hit_rate", cost_latency.get("cache_hit_rate", 0.0)),
+            "prompt_tokens": provider_summary.get("prompt_tokens", cost_latency.get("prompt_tokens", 0)),
+            "completion_tokens": provider_summary.get("completion_tokens", cost_latency.get("completion_tokens", 0)),
+            "total_tokens": provider_summary.get("total_tokens", cost_latency.get("total_tokens", 0)),
+            "estimated_cost": provider_summary.get("estimated_cost", cost_latency.get("estimated_cost", 0.0)),
+            "latency_p50": provider_summary.get("latency_p50", cost_latency.get("latency_p50", 0.0)),
+            "latency_p95": provider_summary.get("latency_p95", cost_latency.get("latency_p95", 0.0)),
+        }
+    )
+    return cost_latency
+
+
+def _provider_record(response: LLMResponse, *, estimated_cost: float) -> dict[str, Any]:
+    usage = dict(response.usage)
+    return {
+        "provider": response.provider,
+        "model": response.model,
+        "cache_hit": response.cache_hit,
+        "latency_seconds": response.latency_seconds,
+        "prompt_tokens": int(usage.get("prompt_tokens") or 0),
+        "completion_tokens": int(usage.get("completion_tokens") or 0),
+        "total_tokens": int(usage.get("total_tokens") or 0),
+        "estimated_cost": estimated_cost,
+    }
+
+
+def _response_cache_payload(response: LLMResponse) -> dict[str, Any]:
+    return {
+        "text": response.text,
+        "raw_response": response.raw_response,
+        "usage": dict(response.usage),
+        "latency_seconds": response.latency_seconds,
+        "model": response.model,
+        "provider": response.provider,
+        "metadata": dict(response.metadata),
+    }
+
+
+def _response_from_cache(payload: dict[str, Any], *, cache_key: str) -> LLMResponse:
+    metadata = dict(payload.get("metadata") or {})
+    metadata.update({"cache_key": cache_key, "estimated_cost": 0.0, "cache_source": "response_cache"})
+    return LLMResponse(
+        text=str(payload.get("text") or ""),
+        raw_response=dict(payload.get("raw_response") or {}),
+        usage={key: int(value) for key, value in dict(payload.get("usage") or {}).items() if isinstance(value, int)},
+        latency_seconds=0.0,
+        model=str(payload.get("model") or ""),
+        provider=str(payload.get("provider") or ""),
+        cache_hit=True,
+        metadata=metadata,
+    )
+
+
+def _optional_int(value: Any) -> int | None:
+    if value in (None, ""):
+        return None
+    return int(value)
+
+
+def _optional_float(value: Any) -> float | None:
+    if value in (None, ""):
+        return None
+    return float(value)
+
+
+def _percentile(values: list[float], q: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    index = min(len(ordered) - 1, max(0, int(round((len(ordered) - 1) * q))))
+    return ordered[index]
+
+
+def _unique_ints(values: list[int]) -> list[int]:
+    output = []
+    seen: set[int] = set()
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        output.append(value)
+    return output
+
+
+def _is_tbd_text(value: Any) -> bool:
+    text = str(value or "").strip()
+    return not text or text.upper() == "TBD" or "TBD" in text
 
 
 def _llm_config(config: dict[str, Any]) -> dict[str, Any]:
