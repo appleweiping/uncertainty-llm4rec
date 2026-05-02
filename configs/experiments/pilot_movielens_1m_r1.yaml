@@ -1,0 +1,74 @@
+template: false
+dry_run: false
+requires_confirm: false
+evidence_label: pilot / non-paper evidence
+seed: 13
+seeds: [13]
+run_name: pilot_movielens_1m_r1
+output_dir: outputs/runs
+domain: movies
+dataset:
+  name: pilot_movielens_1m_r1
+  config_path: configs/datasets/pilot_movielens_1m_r1.yaml
+  raw_data_path: data/raw/movielens_1m/ml-1m
+  raw_interactions_path: data/raw/movielens_1m/ml-1m/ratings.dat
+  raw_items_path: data/raw/movielens_1m/ml-1m/movies.dat
+  interactions_path: data/processed/movielens_1m/sanity_50_users/interactions.csv
+  items_path: data/processed/movielens_1m/sanity_50_users/item_catalog.csv
+  processed_dir: data/processed/pilot_movielens_1m_r1
+split: test
+split_strategy:
+  name: leave_one_out
+  timestamp_field: timestamp
+  future_interactions: forbidden
+  history_policy: past_interactions_only
+  repeat_target_policy: allow_repeat_items_in_history_but_exclude_history_from_candidates
+candidate:
+  protocol: sampled
+  k: 100
+  seed: 13
+  set_path: data/processed/pilot_movielens_1m_r1/candidate_sets.jsonl
+  negative_sampling: fixed_seed_without_replacement_from_catalog_excluding_target_and_history
+  target_policy: include_heldout_target_for_main_eval
+  target_excluding_protocol: diagnostic_only_not_accuracy
+  same_set_for_comparable_baselines: true
+data_protocol:
+  interaction_schema: [user_id, item_id, timestamp, rating, domain]
+  item_schema: [item_id, title, description, category, brand, domain, raw_text]
+  user_item_id_mapping: source_item_and_user_ids_preserved_from_movielens_sanity_artifacts
+  timestamp_handling: chronological_per_user_sort_by_timestamp_then_item_id
+  train_popularity_source: train_split_only
+  domain_field: domain
+  candidate_set_saved_path: data/processed/pilot_movielens_1m_r1/candidate_sets.jsonl
+baselines: [popularity, bm25, mf, sequential_markov, llm_generative_mock, ours_uncertainty_guided, ours_fallback_only, ours_ablation_no_uncertainty, ours_ablation_no_grounding]
+llm:
+  config_path: configs/llm/mock.yaml
+  response_mode: generative_correct
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [1, 5, 10, 20]
+top_k: [1, 5, 10, 20]
+metrics: [ranking, validity, grounding, confidence, calibration, coverage, diversity, novelty, long_tail, efficiency, cold_start]
+safety:
+  allow_api_calls: false
+  allow_download: false
+  allow_training: false
+  acknowledged_expensive_run: true
+  leakage_safeguards: true
+pilot:
+  label: pilot / non-paper evidence
+  mock_llm_notice: MockLLM results test pipeline only and are not real LLM evidence.
+  allow_api_calls: false
+  allow_download: false
+  allow_training: false
+logging:
+  level: INFO
+aggregate:
+  enabled: true
+  output_dir: outputs/tables
+tables:
+  enabled: true
+  output_dir: outputs/tables
+output:
+  run_name: pilot_movielens_1m_r1
+  output_dir: outputs/runs

@@ -487,6 +487,8 @@ def _run_name_for_child(config: dict[str, Any], method: str) -> str:
         return f"smoke_ours_ablation_{suffix}"
     if parent_name == "smoke_phase6_all":
         return f"smoke_phase6_{suffix}"
+    if parent_name.startswith(("pilot_", "real_")):
+        return f"{parent_name}_{suffix}"
     return _default_run_name_for(method)
 
 

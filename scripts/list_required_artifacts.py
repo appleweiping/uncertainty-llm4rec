@@ -14,6 +14,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from llm4rec.experiments.config import load_config  # noqa: E402
+from llm4rec.experiments.runner import _config_for_baseline  # noqa: E402
 
 REQUIRED_ARTIFACTS = [
     "resolved_config.yaml",
@@ -51,15 +52,15 @@ def list_required_artifacts(
     }
     if config_path:
         config = load_config(config_path)
+        seeds = config.get("seeds") if isinstance(config.get("seeds"), list) and config.get("seeds") else [config.get("seed", "SEED_TBD")]
+        planned_run_dirs = _planned_run_dirs(config, seeds)
         output = config.get("output") if isinstance(config.get("output"), dict) else {}
         output_dir = str(output.get("output_dir") or config.get("output_dir") or "outputs/runs")
-        run_name = str(output.get("run_name") or config.get("run_name") or "RUN_NAME_TBD")
-        seeds = config.get("seeds") if isinstance(config.get("seeds"), list) and config.get("seeds") else [config.get("seed", "SEED_TBD")]
         payload.update(
             {
                 "config": str(config_path),
                 "planned_output_dir": output_dir,
-                "planned_run_dirs": [str(Path(output_dir) / f"{run_name}_seed{seed}") for seed in seeds],
+                "planned_run_dirs": planned_run_dirs,
                 "template": bool(config.get("template", False)),
             }
         )
@@ -67,6 +68,24 @@ def list_required_artifacts(
         inspected = _inspect_run_dir(Path(run_dir))
         payload.update(inspected)
     return payload
+
+
+def _planned_run_dirs(config: dict[str, Any], seeds: list[Any]) -> list[str]:
+    baselines = config.get("baselines")
+    if isinstance(baselines, list) and baselines:
+        run_dirs = []
+        for seed in seeds:
+            for baseline in baselines:
+                child = _config_for_baseline(config, str(baseline), seed=int(seed))
+                output = child.get("output") if isinstance(child.get("output"), dict) else {}
+                output_dir = str(output.get("output_dir") or child.get("output_dir") or "outputs/runs")
+                run_name = str(output.get("run_name") or child.get("run_name") or "RUN_NAME_TBD")
+                run_dirs.append(str(Path(output_dir) / f"{run_name}_seed{seed}"))
+        return run_dirs
+    output = config.get("output") if isinstance(config.get("output"), dict) else {}
+    output_dir = str(output.get("output_dir") or config.get("output_dir") or "outputs/runs")
+    run_name = str(output.get("run_name") or config.get("run_name") or "RUN_NAME_TBD")
+    return [str(Path(output_dir) / f"{run_name}_seed{seed}") for seed in seeds]
 
 
 def main(argv: list[str] | None = None) -> int:

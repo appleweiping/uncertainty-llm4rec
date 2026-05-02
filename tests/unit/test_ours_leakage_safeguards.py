@@ -35,6 +35,48 @@ def test_ours_prompts_exclude_target_id_and_title() -> None:
     assert "i4" in result.metadata["excluded_item_ids"]
 
 
+def test_numeric_target_id_does_not_false_positive_inside_allowed_title() -> None:
+    provider = CapturingMockProvider()
+    ranker = OursMethodRanker(
+        provider=provider,
+        method_config=load_config("configs/methods/ours_uncertainty_guided.yaml"),
+        seed=13,
+    )
+    items = [
+        {"item_id": "10", "title": "Allowed History"},
+        {"item_id": "60", "title": "Held Out Target"},
+        {"item_id": "101", "title": "Gone in 60 Seconds (2000)"},
+    ]
+    train = [
+        {
+            "example_id": "u1:1",
+            "user_id": "u1",
+            "history": ["10"],
+            "target": "101",
+            "candidates": ["60", "101"],
+            "split": "train",
+            "domain": "movies",
+            "metadata": {},
+        }
+    ]
+    example = {
+        "example_id": "u1:2",
+        "user_id": "u1",
+        "history": ["10"],
+        "target": "60",
+        "candidates": ["60", "101"],
+        "split": "test",
+        "domain": "movies",
+        "metadata": {},
+    }
+    ranker.fit(train, items)
+    result = ranker.rank(example, ["60", "101"])
+    assert result.metadata["target_excluded_from_prompt"] is True
+    assert result.metadata["prompt_candidate_item_ids"] == ["101"]
+    assert "Gone in 60 Seconds (2000)" in provider.prompts[0]
+    assert "Held Out Target" not in provider.prompts[0]
+
+
 def test_confidence_policy_metadata_does_not_drive_from_target_label() -> None:
     provider = CapturingMockProvider()
     ranker = OursMethodRanker(

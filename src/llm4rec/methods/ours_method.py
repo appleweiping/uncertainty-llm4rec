@@ -79,7 +79,7 @@ class OursMethodRanker(CheckpointNotImplementedMixin):
             text_policy=self.text_policy,
             exclude_item_ids={target_id},
         )
-        self._assert_no_target_leakage(prompt.prompt, example)
+        self._assert_no_target_leakage(prompt.prompt, example, prompt.metadata)
         response = self.provider.generate(
             LLMRequest(prompt=prompt.prompt, metadata=prompt.metadata, seed=self.seed)
         )
@@ -170,7 +170,7 @@ class OursMethodRanker(CheckpointNotImplementedMixin):
             text_policy=self.text_policy,
             exclude_item_ids={str(example["target"])},
         )
-        self._assert_no_target_leakage(prompt.prompt, example)
+        self._assert_no_target_leakage(prompt.prompt, example, prompt.metadata)
         response = self.provider.generate(LLMRequest(prompt=prompt.prompt, metadata=prompt.metadata, seed=self.seed))
         parsed = parse_candidate_normalized_response(response.text)
         options = parsed.data.get("options") if parsed.parse_success else []
@@ -385,9 +385,20 @@ class OursMethodRanker(CheckpointNotImplementedMixin):
         title = grounded_title or generated_title
         return max((token_overlap(title, history_title) for history_title in history_titles), default=0.0)
 
-    def _assert_no_target_leakage(self, prompt: str, example: dict[str, Any]) -> None:
+    def _assert_no_target_leakage(
+        self,
+        prompt: str,
+        example: dict[str, Any],
+        prompt_metadata: dict[str, Any] | None = None,
+    ) -> None:
         target_id = str(example.get("target") or "")
-        if target_id and target_id in prompt:
+        metadata = prompt_metadata or {}
+        prompt_ids = {
+            str(item_id)
+            for key in ("history_item_ids", "prompt_candidate_item_ids")
+            for item_id in metadata.get(key, [])
+        }
+        if target_id and target_id in prompt_ids:
             raise ValueError("target item ID leaked into OursMethod prompt")
         target_row = self.lookup.get(target_id)
         target_title = str((target_row or {}).get("title") or "").strip()
