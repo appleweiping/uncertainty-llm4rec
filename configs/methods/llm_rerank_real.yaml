@@ -1,0 +1,6 @@
+name: llm_rerank
+type: llm
+seed: 13
+params:
+  prediction_method: llm_rerank_real
+  text_policy: title
