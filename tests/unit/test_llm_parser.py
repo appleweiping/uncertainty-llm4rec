@@ -31,6 +31,18 @@ def test_typed_parsers_validate_expected_shapes() -> None:
     ).parse_success
 
 
+def test_rerank_parser_recovers_closed_ranked_items_from_truncated_reason() -> None:
+    parsed = parse_rerank_response(
+        '{"ranked_items": ['
+        '{"title": "Alpha Movie", "confidence": 0.9},'
+        '{"title": "Beta Movie", "confidence": 0.7}'
+        '], "reason": "provider output was truncated'
+    )
+    assert parsed.parse_success
+    assert parsed.metadata["partial_recovery"] is True
+    assert [row["title"] for row in parsed.data["ranked_items"]] == ["Alpha Movie", "Beta Movie"]
+
+
 def test_typed_parsers_reject_wrong_or_empty_fields_and_keep_raw_output() -> None:
     malformed = parse_generation_response("prefix not-json")
     assert not malformed.parse_success

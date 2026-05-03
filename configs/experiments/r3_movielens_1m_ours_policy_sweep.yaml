@@ -1,0 +1,43 @@
+template: false
+dry_run: false
+offline_only: true
+requires_confirm: false
+allow_api_calls: false
+run_name: r3_movielens_1m_ours_policy_sweep
+runs_dir: outputs/runs
+output_dir: outputs/tables
+dataset:
+  name: movielens_1m_r2
+  processed_dir: data/processed/movielens_1m/r2_full_single_dataset
+source_run_name: r3_movielens_1m_real_llm_full_candidate500
+methods:
+  ours: ours_uncertainty_guided_real
+  fallback: ours_fallback_only
+seeds: [13, 21, 42]
+validation_seed: 13
+confirmation_seeds: [21, 42]
+sweep:
+  min_accept_confidence: [0.7, 0.8, 0.85, 0.9, 0.95]
+  min_grounding_score: [0.7, 0.8, 0.9, 1.0]
+  enable_accept: [true, false]
+  enable_rerank: [true, false]
+  fallback_on_any_uncertainty: true
+  fallback_unless_candidate_adherent: true
+  fallback_unless_candidate_adherent_and_confidence: true
+  fallback_unless_candidate_adherent_top_candidate_normalized: true
+conservative_policy:
+  name: ours_conservative_uncertainty_gate
+  default: fallback
+  min_accept_confidence: 0.95
+  min_grounding_score: 1.0
+  enable_accept: true
+  enable_rerank: false
+  require_candidate_adherent: true
+  require_candidate_normalized: true
+notes:
+  evidence_status: diagnostic_only_from_existing_test_artifacts
+  no_api_calls: true
+  prompt_changes: forbidden
+  evaluator_changes: forbidden
+  split_or_candidate_protocol_changes: forbidden
+

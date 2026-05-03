@@ -1,0 +1,31 @@
+name: ours_conservative_uncertainty_gate
+type: ours_method_policy_refinement
+offline_refinement: true
+not_new_research_feature_until_validated: true
+params:
+  prediction_method: ours_conservative_uncertainty_gate
+  fallback_method: bm25
+  policy:
+    default_action: fallback
+    override_fallback_only_when:
+      decision_in: [accept]
+      min_accept_confidence: 0.95
+      min_grounding_score: 1.0
+      require_candidate_adherent: true
+      require_candidate_normalized_confidence: true
+    enable_rerank_override: false
+    preserve_fallback_top10_on_reject: true
+  components:
+    uncertainty_policy: true
+    grounding_check: true
+    candidate_normalized_confidence: true
+    popularity_adjustment: true
+    echo_risk_guard: true
+    fallback: true
+  constraints:
+    no_prompt_change: true
+    no_evaluator_change: true
+    no_split_change: true
+    no_candidate_protocol_change: true
+    no_api_calls_for_offline_replay: true
+

@@ -48,7 +48,12 @@ def parse_generation_response(text: str, *, allow_confidence_clamp: bool = False
 def parse_rerank_response(text: str, *, allow_confidence_clamp: bool = False) -> ParseResult:
     result = parse_llm_json(text, allow_confidence_clamp=allow_confidence_clamp)
     if not result.parse_success:
-        return result
+        recovered = _parse_partial_rerank_response(
+            text,
+            original_error=result.error,
+            allow_confidence_clamp=allow_confidence_clamp,
+        )
+        return recovered or result
     ranked = result.data.get("ranked_items")
     if not isinstance(ranked, list):
         return _failed(result, "ranked_items must be a list")
@@ -58,6 +63,43 @@ def parse_rerank_response(text: str, *, allow_confidence_clamp: bool = False) ->
         if not isinstance(row, dict) or not isinstance(row.get("title"), str):
             return _failed(result, f"ranked_items[{index}].title must be a string")
     return result
+
+
+def _parse_partial_rerank_response(
+    text: str,
+    *,
+    original_error: str | None,
+    allow_confidence_clamp: bool,
+) -> ParseResult | None:
+    """Recover a closed ranked_items array from an otherwise truncated object.
+
+    Some providers can finish the requested ranked_items list but truncate in a
+    trailing explanation field. That should not discard the usable ranked list.
+    """
+    try:
+        array_payload = _extract_json_array_for_key(text or "", "ranked_items")
+        ranked = json.loads(array_payload)
+        data = {"ranked_items": ranked}
+        _validate_confidences(data, allow_clamp=allow_confidence_clamp)
+    except Exception:
+        return None
+    if not isinstance(ranked, list) or not ranked:
+        return None
+    for index, row in enumerate(ranked):
+        if not isinstance(row, dict) or not isinstance(row.get("title"), str):
+            return ParseResult(
+                data=data,
+                parse_success=False,
+                raw_output=text or "",
+                error=f"ranked_items[{index}].title must be a string",
+                metadata={"partial_recovery": True, "original_error": original_error},
+            )
+    return ParseResult(
+        data=data,
+        parse_success=True,
+        raw_output=text or "",
+        metadata={"partial_recovery": True, "original_error": original_error},
+    )
 
 
 def parse_yes_no_response(text: str, *, allow_confidence_clamp: bool = False) -> ParseResult:
@@ -116,6 +158,37 @@ def _extract_json_object(text: str) -> str:
             if depth == 0:
                 return text[start:index + 1]
     raise ValueError("unterminated JSON object")
+
+
+def _extract_json_array_for_key(text: str, key: str) -> str:
+    key_match = re.search(rf'"{re.escape(key)}"\s*:', text)
+    if not key_match:
+        raise ValueError(f"{key} key not found")
+    start = text.find("[", key_match.end())
+    if start < 0:
+        raise ValueError(f"{key} array not found")
+    depth = 0
+    in_string = False
+    escape = False
+    for index in range(start, len(text)):
+        char = text[index]
+        if in_string:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "[":
+            depth += 1
+        elif char == "]":
+            depth -= 1
+            if depth == 0:
+                return text[start:index + 1]
+    raise ValueError(f"unterminated {key} array")
 
 
 def _validate_confidences(value: Any, *, allow_clamp: bool) -> Any:
