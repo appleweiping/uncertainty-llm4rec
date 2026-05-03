@@ -1,0 +1,35 @@
+# Protocol: CU-GR offline pipeline on MovieLens R3 candidate-500 artifacts.
+# No API calls; uses seeds 13/21/42 from existing r3_movielens_1m_real_llm_full_candidate500_* runs.
+evidence_label: CU-GR offline calibrator + policy replay from R3 predictions only
+dataset:
+  name: movielens_1m_r2
+  split: test
+  candidate_protocol: sampled_500_target_included_seed_13
+runs:
+  prefix: r3_movielens_1m_real_llm_full_candidate500
+  required_methods:
+    - bm25
+    - ours_uncertainty_guided_real
+    - ours_fallback_only
+    - sequential_markov
+    - popularity
+    - llm_generative_real
+  optional_methods:
+    - ours_conservative_uncertainty_gate
+seeds:
+  train: 13
+  validation: 21
+  test: 42
+commands:
+  build: py -3 scripts/build_calibrator_dataset.py --runs outputs/runs --output outputs/tables/cu_gr_calibrator_dataset.csv
+  train: py -3 scripts/train_override_calibrator.py --input outputs/tables/cu_gr_calibrator_dataset.csv --output outputs/models/cu_gr_calibrator
+  replay: py -3 scripts/replay_cu_gr_policy.py --input outputs/tables/cu_gr_calibrator_dataset.csv --model outputs/models/cu_gr_calibrator --output outputs/tables
+outputs:
+  dataset_csv: outputs/tables/cu_gr_calibrator_dataset.csv
+  class_balance_csv: outputs/tables/cu_gr_class_balance.csv
+  feature_importance_csv: outputs/tables/cu_gr_feature_importance.csv
+  threshold_sweep_csv: outputs/tables/cu_gr_threshold_sweep.csv
+  policy_results_csv: outputs/tables/cu_gr_policy_results.csv
+  vs_fallback_csv: outputs/tables/cu_gr_vs_fallback.csv
+  error_cases_csv: outputs/tables/cu_gr_error_cases.csv
+  model_dir: outputs/models/cu_gr_calibrator

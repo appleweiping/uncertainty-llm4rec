@@ -47,6 +47,19 @@ Use the repository venv if it already exists.
 .\.venv\bin\python.exe scripts\aggregate_runs.py --input outputs/runs --output outputs/tables
 ```
 
+## 5.1 R3b conservative gate (cache-only, no API)
+
+Requires MovieLens 1M processed data, R2 candidate artifacts, and a populated
+`outputs/api_cache/r2_movielens_1m_real_llm_subgate` directory from the prior R3
+real-LLM run (cache keys must hit for every LLM request).
+
+```powershell
+.\.venv\bin\python.exe scripts\run_all.py --config configs/experiments/r3b_movielens_1m_conservative_gate_cache_replay.yaml
+.\.venv\bin\python.exe scripts\export_tables.py --input outputs/runs --output outputs/tables
+.\.venv\bin\python.exe scripts\aggregate_runs.py --input outputs/runs --output outputs/tables
+.\.venv\bin\python.exe scripts\export_r3b_tables.py --input outputs/runs --output outputs/tables
+```
+
 ## 6. Where outputs are saved
 
 Run artifacts are saved under `outputs/runs/<run_id>/`. Tables are saved under

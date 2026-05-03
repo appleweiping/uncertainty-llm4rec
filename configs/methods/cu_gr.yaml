@@ -1,0 +1,22 @@
+# CU-GR: Calibrated Uncertainty-Gated Recommendation (offline replay).
+# Learned heads + threshold policy; does not replace OursMethod in-runner.
+# Train/evaluate only via scripts (no live LLM).
+name: cu_gr
+description: >
+  Offline learned calibrator (improve / harm) over R3 artifacts; default BM25
+  top-10; optional promote grounded generative item when gates and thresholds pass.
+train_seed: 13
+validation_seed: 21
+test_seed: 42
+fallback_method: bm25
+source_ours_method: ours_uncertainty_guided_real
+policy:
+  first_version_actions:
+    - KEEP_FALLBACK
+    - PROMOTE_GENERATED_ITEM
+  harm_tolerance: 0.01
+  min_accepted_overrides_on_validation: 10
+scripts:
+  build_dataset: scripts/build_calibrator_dataset.py
+  train: scripts/train_override_calibrator.py
+  replay: scripts/replay_cu_gr_policy.py

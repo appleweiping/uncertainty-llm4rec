@@ -73,6 +73,8 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _method_configured(config: dict[str, Any]) -> bool:
+    if str(config.get("experiment_kind") or "") == "cu_gr_v2_preference_subgate":
+        return True
     return bool(config.get("method") or config.get("baselines"))
 
 
@@ -347,6 +349,10 @@ def _configured_max_requests(config: dict[str, Any]) -> int | None:
 
 
 def _estimated_real_llm_requests(config: dict[str, Any], *, max_examples: int) -> int:
+    if str(config.get("experiment_kind") or "") == "cu_gr_v2_preference_subgate":
+        seeds = config.get("seeds") if isinstance(config.get("seeds"), list) and config.get("seeds") else [config.get("seed", 13)]
+        n_seed = len(seeds) if isinstance(seeds, list) else 1
+        return int(max_examples) * int(n_seed)
     baselines = config.get("baselines")
     methods = baselines if isinstance(baselines, list) and baselines else [config.get("method")]
     candidate_sizes = config.get("candidate_sizes")

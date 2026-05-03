@@ -243,7 +243,23 @@ grounding decisions.
 - Latency, token usage, and cost/latency summaries when available.
 - Ablation summary by method and disabled component.
 
-## 20. What must not be claimed yet
+## 20. Evidence after R3 (offline refinement)
+
+MovieLens 1M, candidate-500 (target included), real-LLM R3 artifacts (see
+`docs/r3_ours_error_decomposition.md`):
+
+- **Observation-first** uncertainty / calibration / grounding / fallback-impact
+  analysis is supported.
+- **OursMethod ranking improvement** over fallback-only is **not** supported:
+  Ours full is worse; accepted overrides **hurt**; conservative gate behavior is
+  primarily **fallback-safe**, not a lift claim.
+
+R3b (`configs/experiments/r3b_movielens_1m_conservative_gate_cache_replay.yaml`)
+replays the conservative gate from **cache only** across seeds; use
+`outputs/tables/r3b_*.csv` for updated numbers. Do not change prompts, evaluator,
+split, or candidate protocol for R3b.
+
+## 21. What must not be claimed yet
 
 - Do not claim the method improves recommendation quality.
 - Do not claim calibrated uncertainty has been achieved.

@@ -1,0 +1,28 @@
+# CU-GR v2: listwise (default) or pairwise LLM preference over anonymous panel labels.
+name: llm_candidate_preference_real
+description: >
+  Collect candidate-normalized listwise scores from DeepSeek over a local panel
+  built from BM25 + contrasts (no target leakage in prompt).
+preference_mode: listwise
+llm:
+  config_path: configs/llm/openai_compatible.yaml
+  provider: openai_compatible
+  model: deepseek-v4-flash
+  api_key_env: DEEPSEEK_API_KEY
+  base_url: https://api.deepseek.com
+  temperature: 0.0
+  max_tokens: 512
+  cache:
+    enabled: true
+    cache_dir: outputs/api_cache/cu_gr_v2_preference
+  resume:
+    enabled: true
+  raw_outputs:
+    enabled: true
+    save_responses: true
+prompt:
+  show_fallback_rank: false
+  max_history_titles: 40
+safety:
+  allow_api_calls: false
+  note: Set allow_api_calls true only after subgate approval in experiment config.

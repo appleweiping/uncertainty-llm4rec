@@ -10,6 +10,43 @@ TBD: fill from real metrics files. The abstract should summarize the problem,
 implemented framework, datasets, baselines, main empirical findings, and
 limitations only after real experiments are complete.
 
+### 2.1 Evidence after R3 (offline refinement)
+
+Current R3 artifacts support an **observation-first** framing. They do **not**
+support claiming **OursMethod ranking improvement** over strong fallbacks.
+
+### 2.2 Evidence after R3b (cache replay)
+
+Run `configs/experiments/r3b_movielens_1m_conservative_gate_cache_replay.yaml`
+(cache-only, no live API) and read `outputs/tables/r3b_*.csv` produced by
+`scripts/export_r3b_tables.py`. Populate this subsection only from those
+artifacts; do not invent metrics.
+
+As of `docs/r3b_completion_report.md`, **`ours_conservative_uncertainty_gate`**
+is present for seed **13** when its run directory is complete at export time.
+Other configured methods or seeds may still be absent if their shards never
+finished or lack `metrics.json` / `predictions.jsonl`—do not interpolate.
+
+### 2.3 Updated contribution framing (observation-first candidate)
+
+1. **Generative recommendation uncertainty observation framework**: generated
+   title, catalog grounding, verbalized confidence, calibration, hallucination,
+   popularity / long-tail structure, and fallback impact.
+2. **Real-LLM empirical study** (MovieLens candidate-500 protocol): strong
+   high-confidence-wrong behavior and poor calibration under generative
+   recommendation; direct generative and rerank baselines can fail under the
+   same protocol.
+3. **Fallback-safe uncertainty gate analysis**: when LLM overrides should be
+   suppressed to avoid harming a fixed fallback policy (not a claim of ranking
+   lift over fallback-only unless R3b tables explicitly show it).
+4. **Reproducible LLM4Rec codebase**: shared candidate protocol, grounding,
+   confidence metrics, cache replay, and artifact export.
+
+**Do not claim** (unless future evidence explicitly supports each item): OursMethod
+beats baselines; LLM confidence is reliable without calibration; echo-chamber
+mitigation is proven; unconstrained direct generative recommendation works;
+candidate-500 equals full ranking.
+
 ## 3. Introduction outline
 
 - Motivation: LLMs can generate plausible item titles, but plausibility is not

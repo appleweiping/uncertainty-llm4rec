@@ -53,3 +53,23 @@ def test_policy_without_uncertainty_accepts_grounded_parse() -> None:
     decision = policy.decide(_signals(confidence=0.1))
     assert decision.decision == "accept"
     assert decision.reasons == ["uncertainty_policy_disabled"]
+
+
+def test_require_candidate_adherent_fallback() -> None:
+    policy = UncertaintyPolicy(policy={"require_candidate_adherent": True})
+    decision = policy.decide(
+        _signals(
+            grounded_item_in_candidates=False,
+            confidence=0.96,
+            candidate_normalized_confidence=0.96,
+        )
+    )
+    assert decision.decision == "fallback"
+    assert "not_candidate_adherent" in decision.reasons
+
+
+def test_rerank_disabled_maps_to_fallback() -> None:
+    policy = UncertaintyPolicy(policy={"enable_rerank_override": False})
+    decision = policy.decide(_signals(confidence=0.95, popularity_bucket="head"))
+    assert decision.decision == "fallback"
+    assert "rerank_disabled_treat_as_fallback" in decision.reasons

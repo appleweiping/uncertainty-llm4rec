@@ -71,6 +71,11 @@ def list_required_artifacts(
 
 
 def _planned_run_dirs(config: dict[str, Any], seeds: list[Any]) -> list[str]:
+    if str(config.get("experiment_kind") or "") == "cu_gr_v2_preference_subgate":
+        output = config.get("output") if isinstance(config.get("output"), dict) else {}
+        output_dir = str(output.get("output_dir") or config.get("output_dir") or "outputs/runs")
+        run_name = str(output.get("run_name") or config.get("run_name") or "r3_v2_movielens_preference_signal_subgate")
+        return [str(Path(output_dir) / f"{run_name}_seed{seed}") for seed in seeds]
     baselines = config.get("baselines")
     candidate_sizes = _candidate_sizes_for_config(config)
     if isinstance(baselines, list) and baselines:

@@ -1,11 +1,27 @@
 name: ours_conservative_uncertainty_gate
-type: ours_method_policy_refinement
+type: ours_method
 offline_refinement: true
 not_new_research_feature_until_validated: true
+seed: 13
 params:
   prediction_method: ours_conservative_uncertainty_gate
+  text_policy: title
   fallback_method: bm25
+  min_grounding_token_overlap: 0.5
+  thresholds:
+    min_accept_confidence: 0.95
+    min_grounding_score: 1.0
+    min_candidate_normalized_confidence: 0.95
+    high_confidence: 0.85
+    echo_similarity_threshold: 0.8
   policy:
+    allow_abstain: true
+    fallback_on_low_confidence: true
+    fallback_on_grounding_failure: true
+    penalize_head_item_overconfidence: true
+    echo_risk_guard: true
+    enable_rerank_override: false
+    require_candidate_adherent: true
     default_action: fallback
     override_fallback_only_when:
       decision_in: [accept]
@@ -13,7 +29,6 @@ params:
       min_grounding_score: 1.0
       require_candidate_adherent: true
       require_candidate_normalized_confidence: true
-    enable_rerank_override: false
     preserve_fallback_top10_on_reject: true
   components:
     uncertainty_policy: true
@@ -22,10 +37,17 @@ params:
     popularity_adjustment: true
     echo_risk_guard: true
     fallback: true
+    fallback_only: false
+  ablation:
+    variant: full
+    disabled_components: []
+  fallback_params:
+    text_policy: title
+    k1: 1.5
+    b: 0.75
   constraints:
     no_prompt_change: true
     no_evaluator_change: true
     no_split_change: true
     no_candidate_protocol_change: true
     no_api_calls_for_offline_replay: true
-

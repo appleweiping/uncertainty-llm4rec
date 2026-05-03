@@ -141,3 +141,31 @@ Next recommended action:
 
 Run R3b conservative policy real-LLM replay from cache.
 
+## R3b conservative gate cache replay (observation-first pivot)
+
+Config: `configs/experiments/r3b_movielens_1m_conservative_gate_cache_replay.yaml`.
+
+Requirements:
+
+- Same MovieLens 1M R2 processed data and candidate-500 protocol as R3
+  (`include_target: true`, candidate seed `13` on disk).
+- `llm.cache.require_hit: true` and `safety.allow_api_calls: false` (no DeepSeek
+  calls; no `DEEPSEEK_API_KEY` required).
+- Methods: `bm25`, `ours_fallback_only`, `ours_uncertainty_guided_real`,
+  `ours_conservative_uncertainty_gate`, `ours_ablation_no_uncertainty`,
+  `llm_generative_real`.
+- Seeds `[13, 21, 42]`; stop with error if any cache entry is missing.
+
+After successful runs:
+
+```text
+python scripts/export_tables.py --input outputs/runs --output outputs/tables
+python scripts/aggregate_runs.py --input outputs/runs --output outputs/tables
+python scripts/export_r3b_tables.py --runs outputs/runs --output outputs/tables
+```
+
+Expected tables: `r3b_conservative_gate_main.csv`,
+`r3b_conservative_gate_ablation.csv`, `r3b_conservative_gate_decision_stats.csv`,
+`r3b_observation_failures.csv`. Populate numeric claims in this section **only**
+from those files (or from `metrics.json` per run), never from memory.
+

@@ -94,6 +94,10 @@ class UncertaintyPolicy:
             if float(normalized) < self._threshold("min_candidate_normalized_confidence"):
                 return self._fallback_decision(["low_candidate_normalized_confidence"], risk_flags=risk_flags)
 
+        if bool(self.policy.get("require_candidate_adherent", False)):
+            if not bool(signals.get("grounded_item_in_candidates", False)):
+                return self._fallback_decision(["not_candidate_adherent"], risk_flags=risk_flags)
+
         if risk_flags.get("head_item_overconfidence", False):
             return self._rerank_or_fallback(["head_item_overconfidence"], risk_flags=risk_flags)
         if risk_flags.get("echo_risk", False):
@@ -152,6 +156,8 @@ class UncertaintyPolicy:
         *,
         risk_flags: dict[str, bool],
     ) -> PolicyDecision:
+        if not bool(self.policy.get("enable_rerank_override", True)):
+            return self._fallback_decision([*reasons, "rerank_disabled_treat_as_fallback"], risk_flags=risk_flags)
         if self.components.get("fallback", True):
             return PolicyDecision("rerank", reasons, risk_flags)
         if bool(self.policy.get("allow_abstain", True)):

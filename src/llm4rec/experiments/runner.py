@@ -289,6 +289,10 @@ def run_experiment_config(config: dict[str, Any], *, preprocess: bool = False) -
 
 def run_all(config_path: str | Path) -> dict[str, Any]:
     config = load_config(config_path)
+    if str(config.get("experiment_kind") or "") == "cu_gr_v2_preference_subgate":
+        from llm4rec.experiments.cu_gr_v2_preference import run_cu_gr_v2_preference_subgate
+
+        return run_cu_gr_v2_preference_subgate(config_path)
     baselines = config.get("baselines")
     if not baselines:
         return run_experiment_config(config, preprocess=True)
@@ -1101,7 +1105,9 @@ def _default_run_name_for(method: str) -> str:
 def _is_ours_method(method: str, method_config: dict[str, Any]) -> bool:
     return (
         str(method_config.get("type") or "") == "ours_method"
+        or str(method_config.get("type") or "") == "ours_method_policy_refinement"
         or method == "ours_uncertainty_guided"
+        or method == "ours_conservative_uncertainty_gate"
         or method.startswith("ours_ablation_")
         or method == "ours_fallback_only"
     )
@@ -1125,7 +1131,7 @@ def _run_name_for_child(config: dict[str, Any], method: str) -> str:
         return f"smoke_ours_ablation_{suffix}"
     if parent_name == "smoke_phase6_all":
         return f"smoke_phase6_{suffix}"
-    if parent_name.startswith(("pilot_", "real_", "r2_", "r3_")):
+    if parent_name.startswith(("pilot_", "real_", "r2_", "r3_", "r3b_")):
         return f"{parent_name}_{suffix}"
     return _default_run_name_for(method)
 

@@ -57,3 +57,24 @@ AUROC/AUPRC only from real completed predictions with enough sample size.
 - `reliability_diagram.csv`
 - `risk_coverage.csv`
 - `confidence_by_popularity_bucket.csv`
+
+## Evidence after R3 / R3b
+
+R3 MovieLens candidate-500 artifacts show **strong miscalibration** (high ECE /
+Brier relative to a well-calibrated model) and frequent **high-confidence wrong**
+generations under verbalized confidence. These support calibration-focused
+**observation** sections; they do **not** justify claims that raw LLM confidence
+is decision-ready without grounding, adherence checks, or conservative routing.
+
+R3b tables (`r3b_conservative_gate_main.csv`, `r3b_observation_failures.csv`)
+aggregate the same diagnostics across seeds under **cache-only** replay; fill
+paper text from those files only after the gate run finishes.
+
+## Rerank parser follow-up (no live API yet)
+
+R3 found `llm_rerank_real` near **zero-hit** behavior driven largely by
+**truncated JSON / parse failure**, not evaluator bugs. A narrow parser recovery
+for closed `ranked_items` arrays is already in tree; **do not** rerun live rerank
+API until a small **rerank-only** subgate is approved. Prefer **cache replay**
+from saved raw outputs; if raw outputs cannot reconstruct scores, plan a
+minimal new API batch under `docs/server_runbook.md` safeguards.

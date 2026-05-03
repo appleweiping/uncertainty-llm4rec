@@ -79,3 +79,17 @@ under-confidence, and abstention/fallback rates by bucket. Echo-risk analysis
 should use history similarity, category repetition, diversity, and novelty
 proxies, with high-confidence cases inspected separately. TBD: fill from real
 metrics files.
+
+## Evidence after R3 / R3b
+
+R3 offline refinement supports **observation-first** claims: miscalibration,
+high-confidence wrong behavior, grounding and candidate adherence failures,
+parse failures, and accept/fallback/rerank decision attribution. It does **not**
+support a primary claim that **OursMethod improves ranking** over fallback-only.
+
+R3b conservative gate cache replay (`r3b_movielens_1m_conservative_gate_cache_replay`)
+validates the conservative configuration against the **same** R3 cache without
+live API calls; export `outputs/tables/r3b_conservative_gate_*.csv` and
+`r3b_observation_failures.csv` via `scripts/export_r3b_tables.py` after runs
+complete. Do not scale to multi-dataset **method** comparisons in this gate;
+multi-dataset **observation** studies are a separate, explicitly scoped track.

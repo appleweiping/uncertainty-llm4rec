@@ -1,0 +1,116 @@
+template: false
+dry_run: false
+requires_confirm: false
+evidence_label: R3b artifact-gap repair — cache-only replay for ours_conservative_uncertainty_gate seed 13 only; no API
+seed: 13
+seeds: [13]
+run_name: r3b_movielens_1m_conservative_gate_cache_replay
+output_dir: outputs/runs
+domain: movies
+dataset:
+  name: movielens_1m_r2
+  config_path: configs/datasets/movielens_1m_r2.yaml
+  raw_data_path: data/raw/movielens_1m/ml-1m
+  raw_interactions_path: data/raw/movielens_1m/ml-1m/ratings.dat
+  raw_items_path: data/raw/movielens_1m/ml-1m/movies.dat
+  interactions_path: data/processed/movielens_1m/r2_full_single_dataset_source/interactions.csv
+  items_path: data/processed/movielens_1m/r2_full_single_dataset_source/items.csv
+  processed_dir: data/processed/movielens_1m/r2_full_single_dataset
+split: test
+split_strategy:
+  name: leave_one_out
+  timestamp_field: timestamp
+  future_interactions: forbidden
+  history_policy: past_interactions_only
+  repeat_target_policy: allow_repeat_items_in_history_but_exclude_history_from_candidates
+  train_examples_per_user: 1
+candidate:
+  protocol: sampled
+  size: 500
+  k: 500
+  sample_size: 500
+  include_target: true
+  seed: 13
+  set_path: data/processed/movielens_1m/r2_full_single_dataset/candidate_sets.jsonl
+  negative_sampling: fixed_seed_without_replacement_from_catalog_excluding_target_and_history
+  target_policy: include_heldout_target_for_main_eval
+  target_excluding_protocol: diagnostic_only_not_accuracy
+  same_set_for_comparable_baselines: true
+data_protocol:
+  interaction_schema: [user_id, item_id, timestamp, rating, domain]
+  item_schema: [item_id, title, description, category, brand, domain, raw_text]
+  user_item_id_mapping: source_item_and_user_ids_preserved_from_movielens_1m
+  timestamp_handling: chronological_per_user_sort_by_timestamp_then_item_id
+  train_popularity_source: train_split_only
+  domain_field: domain
+  candidate_set_saved_path: data/processed/movielens_1m/r2_full_single_dataset/candidate_sets.jsonl
+baselines: [ours_conservative_uncertainty_gate]
+llm:
+  config_path: configs/llm/openai_compatible.yaml
+  provider: openai_compatible
+  type: openai_compatible
+  model: deepseek-v4-flash
+  api_key_env: DEEPSEEK_API_KEY
+  base_url: https://api.deepseek.com
+  timeout_seconds: 120
+  max_retries: 0
+  backoff_seconds: 0
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 256
+  extra_body:
+    response_format:
+      type: json_object
+    thinking:
+      type: disabled
+  cache:
+    enabled: true
+    require_hit: true
+    cache_dir: outputs/api_cache/r2_movielens_1m_real_llm_subgate
+  resume:
+    enabled: true
+  raw_outputs:
+    enabled: true
+    save_requests: false
+    save_responses: true
+    path: outputs/runs/r3b_movielens_1m_conservative_gate_cache_replay_raw_llm_outputs.jsonl
+  request_limits:
+    max_requests: 340000
+    max_concurrency: 16
+    requests_per_minute: 300
+  pricing:
+    input_per_1m_tokens: 0.14
+    output_per_1m_tokens: 0.28
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [1, 5, 10, 20]
+top_k: [1, 5, 10, 20]
+metrics: [ranking, validity, grounding, confidence, calibration, coverage, diversity, novelty, long_tail, efficiency, cold_start]
+safety:
+  dry_run: false
+  requires_confirm: false
+  allow_api_calls: false
+  allow_download: false
+  allow_training: false
+  acknowledged_expensive_run: false
+  leakage_safeguards: true
+  max_examples: 6040
+  max_requests: 340000
+  cost_limit_usd: 999999
+  concurrency: 16
+  request_timeout_seconds: 120
+  max_retries: 0
+  backoff_seconds: 0
+  cache_only_replay: true
+r3b:
+  label: R3b artifact-gap repair conservative-only
+  repair: incomplete_run_dir_missing_metrics
+logging:
+  level: INFO
+aggregate:
+  enabled: false
+tables:
+  enabled: false
+output:
+  run_name: r3b_movielens_1m_conservative_gate_cache_replay
+  output_dir: outputs/runs
