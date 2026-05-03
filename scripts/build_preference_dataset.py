@@ -13,7 +13,7 @@ _SRC = _ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from llm4rec.experiments.cu_gr_v2_preference import build_dataset_csv_from_signals  # noqa: E402
+from llm4rec.experiments.cu_gr_v2_preference import build_dataset_csv_from_signal_paths, build_dataset_csv_from_signals  # noqa: E402
 
 
 def _pick_latest_signals(*, repo: Path, runs_roots: list[Path], run_name_prefix: str) -> Path | None:
@@ -36,6 +36,31 @@ def _pick_latest_signals(*, repo: Path, runs_roots: list[Path], run_name_prefix:
     return best
 
 
+def _pick_latest_signal_group(*, repo: Path, runs_roots: list[Path], run_name_prefix: str) -> list[Path]:
+    groups: dict[str, list[Path]] = {}
+    group_mtimes: dict[str, float] = {}
+    for rel in runs_roots:
+        root = Path(rel)
+        if not root.is_absolute():
+            root = repo / root
+        if not root.is_dir():
+            continue
+        for candidate in sorted(root.glob(f"{run_name_prefix}*_seed*/preference_signals.jsonl")):
+            run_dir = candidate.parent.name
+            if "_seed" not in run_dir:
+                continue
+            group = run_dir.rsplit("_seed", 1)[0]
+            groups.setdefault(group, []).append(candidate)
+            try:
+                group_mtimes[group] = max(group_mtimes.get(group, -1.0), candidate.stat().st_mtime)
+            except OSError:
+                pass
+    if not groups:
+        return []
+    latest = max(groups, key=lambda key: group_mtimes.get(key, -1.0))
+    return sorted(groups[latest])
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs", nargs="*", type=Path, default=[Path("outputs/runs")], help="directories to scan for *_seed/preference_signals.jsonl")
@@ -55,11 +80,15 @@ def main(argv: list[str] | None = None) -> int:
         signals = signals if signals.is_absolute() else _ROOT / signals
         if not signals.is_file():
             raise SystemExit(f"preferences-jsonl missing: {signals}")
+        signal_group = [signals]
     else:
-        sig = _pick_latest_signals(repo=_ROOT, runs_roots=list(args.runs), run_name_prefix=args.run_name_prefix)
+        signal_group = _pick_latest_signal_group(repo=_ROOT, runs_roots=list(args.runs), run_name_prefix=args.run_name_prefix)
+        sig = signal_group[-1] if signal_group else _pick_latest_signals(repo=_ROOT, runs_roots=list(args.runs), run_name_prefix=args.run_name_prefix)
         if sig is None:
             raise SystemExit("no preference_signals.jsonl matched; specify --preferences-jsonl")
         signals = sig
+        if not signal_group:
+            signal_group = [signals]
 
     out = args.output
     if str(out).endswith(".csv"):
@@ -70,14 +99,23 @@ def main(argv: list[str] | None = None) -> int:
         dataset_csv = stats_parent / "cu_gr_v2_preference_dataset.csv"
     stats_csv = stats_parent / "cu_gr_v2_preference_parser_stats.csv"
 
-    n = build_dataset_csv_from_signals(
-        ROOT=_ROOT,
-        signals_path=signals,
-        processed_dir=args.processed_dir,
-        dataset_csv=dataset_csv,
-        parser_stats_csv=stats_csv,
-    )
-    print(json.dumps({"signals": str(signals), "rows": n, "dataset_csv": str(dataset_csv), "parser_stats_csv": str(stats_csv)}, indent=2))
+    if len(signal_group) == 1:
+        n = build_dataset_csv_from_signals(
+            ROOT=_ROOT,
+            signals_path=signal_group[0],
+            processed_dir=args.processed_dir,
+            dataset_csv=dataset_csv,
+            parser_stats_csv=stats_csv,
+        )
+    else:
+        n = build_dataset_csv_from_signal_paths(
+            ROOT=_ROOT,
+            signals_paths=signal_group,
+            processed_dir=args.processed_dir,
+            dataset_csv=dataset_csv,
+            parser_stats_csv=stats_csv,
+        )
+    print(json.dumps({"signals": [str(p) for p in signal_group], "rows": n, "dataset_csv": str(dataset_csv), "parser_stats_csv": str(stats_csv)}, indent=2))
     return 0
 
 

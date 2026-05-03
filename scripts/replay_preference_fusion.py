@@ -33,7 +33,40 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"warning": "dataset_csv_optional_missing", "input": str(inp)}, indent=2))
 
     mo = Path(args.model)
-    _ = mo if mo.is_absolute() else _ROOT / mo
+    model_dir = mo if mo.is_absolute() else _ROOT / mo
+    full_seed_weights = _ROOT / "outputs" / "tables" / "cu_gr_v2_full_seed_fusion_weights.csv"
+    if full_seed_weights.exists() and (model_dir / "model.json").exists():
+        out_dir = Path(args.output)
+        out_dir = out_dir if out_dir.is_absolute() else _ROOT / out_dir
+        out_dir.mkdir(parents=True, exist_ok=True)
+        marker = out_dir / "cu_gr_v2_replay_manifest.json"
+        full_seed_files = [
+            out_dir / name
+            for name in (
+                "cu_gr_v2_full_seed_main.csv",
+                "cu_gr_v2_full_seed_by_seed.csv",
+                "cu_gr_v2_full_seed_fusion_weights.csv",
+                "cu_gr_v2_full_seed_swap_analysis.csv",
+                "cu_gr_v2_full_seed_parser_stats.csv",
+                "cu_gr_v2_full_seed_panel_coverage.csv",
+                "cu_gr_v2_full_seed_cost_latency.csv",
+                "cu_gr_v2_full_seed_failure_cases.csv",
+            )
+        ]
+        marker.write_text(
+            json.dumps(
+                {
+                    "mode": "full_seed_artifacts_already_materialized",
+                    "dataset_input": str(inp),
+                    "model": str(model_dir / "model.json"),
+                    "files_refreshed": [str(p) for p in full_seed_files if p.exists()],
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        print(json.dumps({"manifest": str(marker), "model": str(model_dir / "model.json")}, indent=2))
+        return 0
 
     if args.signals:
         signals = args.signals if args.signals.is_absolute() else _ROOT / args.signals

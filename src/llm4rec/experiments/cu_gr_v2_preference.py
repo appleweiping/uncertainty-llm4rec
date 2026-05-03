@@ -19,6 +19,7 @@ from llm4rec.methods.candidate_panel import (
     build_candidate_panel,
     fallback_full_ranking_in_candidates,
     normalized_fallback_scores_in_panel,
+    oracle_rerank_top10_metrics,
     panel_item_ids,
 )
 from llm4rec.methods.preference_fusion import fused_top_k
@@ -473,6 +474,585 @@ def _evaluate_aggregate(rows_out: list[dict[str, Any]], *, train_pop: dict[str, 
     return agg, primary_preds, model_payload, diagnostics
 
 
+FUSION_FIXED_PARAMS = {"alpha": 0.7, "beta": 0.3, "gamma": 0.1, "lambda": 0.05}
+FUSION_GRID = [
+    {"alpha": a, "beta": b, "gamma": g, "lambda": lam}
+    for a in [0.5, 0.7, 0.9, 1.0]
+    for b in [0.1, 0.3, 0.5, 0.7]
+    for g in [0.0, 0.1, 0.2]
+    for lam in [0.0, 0.05, 0.1]
+]
+SAFE_MARGIN_GRID = [0.0, 0.03, 0.05, 0.08, 0.1]
+SAFE_CONFIDENCE_GRID = [0.5, 0.55, 0.6, 0.65, 0.7]
+
+
+def _pack(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [{"idx": i, **row} for i, row in enumerate(rows)]
+
+
+def _metric_rows(pack: list[dict[str, Any]], top_fn: Callable[[dict[str, Any]], list[str]]) -> list[dict[str, Any]]:
+    return _rows_for_ranking_metrics(pack, top_fn)
+
+
+def _policy_metrics(pack: list[dict[str, Any]], top_fn: Callable[[dict[str, Any]], list[str]]) -> dict[str, Any]:
+    return ranking_metrics(_metric_rows(pack, top_fn), top_k=[10])
+
+
+def _ndcg_delta_and_swaps(
+    pack: list[dict[str, Any]],
+    top_fn: Callable[[dict[str, Any]], list[str]],
+) -> dict[str, Any]:
+    beneficial = harmful = neutral = changed = 0
+    delta_sum = 0.0
+    for row in pack:
+        target = str(row["target_item"])
+        cand = list(row["bm_row"].get("candidate_items") or [])
+        base = _fallback_top(row)
+        pred = dedupe(top_fn(row))[:10]
+        if pred != dedupe(base)[:10]:
+            changed += 1
+        base_nd = float(_ndcg_at_k({"target_item": target, "predicted_items": base, "candidate_items": cand}, 10))
+        pred_nd = float(_ndcg_at_k({"target_item": target, "predicted_items": pred, "candidate_items": cand}, 10))
+        delta = pred_nd - base_nd
+        delta_sum += delta
+        if delta > 1e-14:
+            beneficial += 1
+        elif delta < -1e-14:
+            harmful += 1
+        else:
+            neutral += 1
+    n = max(len(pack), 1)
+    return {
+        "beneficial_swaps": beneficial,
+        "harmful_swaps": harmful,
+        "neutral_swaps": neutral,
+        "harmful_swap_rate": harmful / n,
+        "avg_ndcg_delta_per_example": delta_sum / n,
+        "top10_changed_rate": changed / n,
+    }
+
+
+def _select_fusion_weights(
+    *,
+    train_pack: list[dict[str, Any]],
+    val_pack: list[dict[str, Any]],
+    train_pop: dict[str, int],
+) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    for params in FUSION_GRID:
+        fn = lambda r, p=dict(params): _fusion_top(r, p, train_pop)
+        train_m = _policy_metrics(train_pack, fn) if train_pack else {}
+        val_m = _policy_metrics(val_pack, fn) if val_pack else {}
+        swaps = _ndcg_delta_and_swaps(val_pack, fn) if val_pack else {}
+        rows.append(
+            {
+                **params,
+                "train_ndcg@10": float(train_m.get("ndcg@10") or 0.0),
+                "validation_ndcg@10": float(val_m.get("ndcg@10") or 0.0),
+                "validation_harmful_swap_rate": float(swaps.get("harmful_swap_rate") or 0.0),
+                "constraint_met": float(swaps.get("harmful_swap_rate") or 0.0) <= 0.05,
+            }
+        )
+    eligible = [row for row in rows if row["constraint_met"]]
+    pool = eligible if eligible else rows
+    best = max(
+        pool,
+        key=lambda row: (
+            float(row["validation_ndcg@10"]),
+            -float(row["validation_harmful_swap_rate"]),
+            -float(row["alpha"]),
+            -float(row["beta"]),
+            -float(row["gamma"]),
+            -float(row["lambda"]),
+        ),
+    )
+    return {"selected": best, "grid_rows": rows, "constraint_satisfied": bool(eligible)}
+
+
+def _select_safe_thresholds(*, val_pack: list[dict[str, Any]]) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    for margin in SAFE_MARGIN_GRID:
+        for conf in SAFE_CONFIDENCE_GRID:
+            fn = lambda r, m=margin, c=conf: _safe_llm_panel_top_k(r, m, c, k=10)
+            met = _policy_metrics(val_pack, fn) if val_pack else {}
+            swaps = _ndcg_delta_and_swaps(val_pack, fn) if val_pack else {}
+            rows.append(
+                {
+                    "margin": margin,
+                    "confidence_min": conf,
+                    "validation_ndcg@10": float(met.get("ndcg@10") or 0.0),
+                    "validation_harmful_swap_rate": float(swaps.get("harmful_swap_rate") or 0.0),
+                    "constraint_met": float(swaps.get("harmful_swap_rate") or 0.0) <= 0.05,
+                }
+            )
+    eligible = [row for row in rows if row["constraint_met"]]
+    pool = eligible if eligible else rows
+    best = max(
+        pool,
+        key=lambda row: (
+            float(row["validation_ndcg@10"]),
+            -float(row["validation_harmful_swap_rate"]),
+            -float(row["margin"]),
+            -float(row["confidence_min"]),
+        ),
+    )
+    return {"selected": best, "grid_rows": rows, "constraint_satisfied": bool(eligible)}
+
+
+def _panel_stats(pack: list[dict[str, Any]]) -> dict[str, Any]:
+    n = max(len(pack), 1)
+    in_panel = 0
+    fb_rank_sum = 0.0
+    llm_rank_sum = 0.0
+    llm_top1 = 0
+    denom_rank = 0
+    oracle_ndcg_sum = 0.0
+    for row in pack:
+        target = str(row["target_item"])
+        panel_ids = panel_item_ids(row.get("panel") or {})
+        fb_order, _ = fallback_full_ranking_in_candidates(row["bm_row"])
+        oracle = oracle_rerank_top10_metrics(
+            full_fallback_order=fb_order,
+            panel_ids=panel_ids,
+            target_item=target,
+            candidate_items=list(row["bm_row"].get("candidate_items") or []),
+        )
+        oracle_ndcg_sum += float(oracle.get("oracle_ndcg_at_10") or 0.0)
+        if target not in panel_ids:
+            continue
+        in_panel += 1
+        if row.get("parse_success"):
+            fb_rank, llm_rank, top1 = _ranking_feat(row)
+            fb_rank_sum += fb_rank
+            llm_rank_sum += llm_rank
+            llm_top1 += int(top1 > 0)
+            denom_rank += 1
+    return {
+        "target_in_panel_rate": in_panel / n,
+        "fallback_target_rank_in_panel": fb_rank_sum / denom_rank if denom_rank else "",
+        "llm_target_rank_in_panel": llm_rank_sum / denom_rank if denom_rank else "",
+        "llm_top1_panel_hit_rate": llm_top1 / denom_rank if denom_rank else "",
+        "panel_oracle_ndcg_upper_bound": oracle_ndcg_sum / n,
+    }
+
+
+def _parser_stats(pack: list[dict[str, Any]]) -> dict[str, Any]:
+    n = max(len(pack), 1)
+    parse_ok = sum(1 for row in pack if row.get("parse_success"))
+    invalid = sum(1 for row in pack if int(row.get("invalid_label_incident") or 0) > 0)
+    dup = sum(1 for row in pack if int(row.get("duplicate_label_incident") or 0) > 0)
+    partial = 0
+    confidence_values: list[float] = []
+    top1_conf: list[float] = []
+    top1_correct: list[float] = []
+    for row in pack:
+        if not row.get("parse_success"):
+            continue
+        ranking = list(row.get("parsed_ranking") or [])
+        if len(ranking) < int(row.get("panel_size") or 0):
+            partial += 1
+        for rr in ranking:
+            confidence_values.append(float(rr.get("confidence") or 0.0))
+        if ranking:
+            ordered = sorted(ranking, key=lambda rr: (-float(rr.get("score") or 0.0), str(rr.get("label") or "")))
+            top = ordered[0]
+            top1_conf.append(float(top.get("confidence") or 0.0))
+            top1_correct.append(1.0 if str(top.get("item_id")) == str(row.get("target_item")) else 0.0)
+    mean_conf = sum(confidence_values) / len(confidence_values) if confidence_values else 0.0
+    top1_acc = sum(top1_correct) / len(top1_correct) if top1_correct else ""
+    top1_conf_mean = sum(top1_conf) / len(top1_conf) if top1_conf else ""
+    return {
+        "parse_success_count": parse_ok,
+        "parser_success_rate": parse_ok / n,
+        "invalid_label_rate": invalid / n,
+        "duplicate_label_rate": dup / n,
+        "partial_ranking_rate": partial / n,
+        "confidence_mean": mean_conf,
+        "top1_confidence_mean": top1_conf_mean,
+        "top1_panel_correct_rate": top1_acc,
+    }
+
+
+def _reference_metrics_for_seed(
+    *,
+    ROOT: Path,
+    seed: int,
+    method: str,
+    source_rows: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    path = method_run_dir(ROOT / "outputs" / "runs", method, seed) / "predictions.jsonl"
+    if not path.exists():
+        return None
+    ref_by = index_rows(read_jsonl(path))
+    rows = []
+    for source in source_rows:
+        rid = example_id_key(source["bm_row"])
+        ref = ref_by.get(rid)
+        if not ref:
+            continue
+        rows.append(
+            {
+                "target_item": str(ref.get("target_item")),
+                "predicted_items": list(ref.get("predicted_items") or []),
+                "candidate_items": list(ref.get("candidate_items") or []),
+            }
+        )
+    if not rows:
+        return None
+    return ranking_metrics(rows, top_k=[10])
+
+
+def _write_csv_rows(path: Path, rows: list[dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        path.write_text("", encoding="utf-8")
+        return
+    fields: list[str] = []
+    for row in rows:
+        for key in row:
+            if key not in fields:
+                fields.append(key)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({key: row.get(key, "") for key in fields})
+
+
+def _write_full_seed_outputs(
+    *,
+    ROOT: Path,
+    run_name: str,
+    rows_by_seed: dict[int, list[dict[str, Any]]],
+    provider_summaries_by_seed: dict[int, dict[str, Any]],
+    train_pop: dict[str, int],
+) -> dict[str, Any]:
+    out_dir = ROOT / "outputs" / "tables"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    packs_by_seed = {seed: _pack(rows) for seed, rows in rows_by_seed.items()}
+    all_pack = [row for seed in sorted(packs_by_seed) for row in packs_by_seed[seed]]
+    train_pack = packs_by_seed.get(13, [])
+    val_pack = packs_by_seed.get(21, [])
+    test_pack = packs_by_seed.get(42, [])
+
+    fusion_choice = _select_fusion_weights(train_pack=train_pack, val_pack=val_pack, train_pop=train_pop)
+    selected = dict(fusion_choice["selected"])
+    selected_params = {k: float(selected[k]) for k in ("alpha", "beta", "gamma", "lambda")}
+    safe_choice = _select_safe_thresholds(val_pack=val_pack)
+    safe_selected = dict(safe_choice["selected"])
+    safe_margin = float(safe_selected["margin"])
+    safe_conf = float(safe_selected["confidence_min"])
+
+    policy_top_fns: dict[str, Callable[[dict[str, Any]], list[str]]] = {
+        "fallback_only": _fallback_top,
+        "llm_listwise_panel": _llm_panel_top,
+        "fusion_fixed_grid": lambda r: _fusion_top(r, FUSION_FIXED_PARAMS, train_pop),
+        "fusion_train_best": lambda r: _fusion_top(r, selected_params, train_pop),
+        "safe_fusion": lambda r: _safe_llm_panel_top_k(r, safe_margin, safe_conf, k=10),
+    }
+
+    by_seed_rows: list[dict[str, Any]] = []
+    main_rows: list[dict[str, Any]] = []
+    swap_rows: list[dict[str, Any]] = []
+    parser_rows: list[dict[str, Any]] = []
+    panel_rows: list[dict[str, Any]] = []
+    failure_rows: list[dict[str, Any]] = []
+
+    for seed, pack in sorted(packs_by_seed.items()):
+        parser_rows.append({"seed": seed, **_parser_stats(pack)})
+        panel_rows.append({"seed": seed, **_panel_stats(pack)})
+        for policy, fn in policy_top_fns.items():
+            metrics = _policy_metrics(pack, fn)
+            swaps = _ndcg_delta_and_swaps(pack, fn)
+            by_seed_rows.append(
+                {
+                    "seed": seed,
+                    "method": policy,
+                    "Recall@10": metrics.get("recall@10"),
+                    "NDCG@10": metrics.get("ndcg@10"),
+                    "MRR@10": metrics.get("mrr@10"),
+                    "HitRate@10": metrics.get("hit_rate@10"),
+                    "evaluated_count": metrics.get("evaluated_count"),
+                }
+            )
+            swap_rows.append({"seed": seed, "method": policy, **swaps})
+
+        for ref_method, label in (
+            ("bm25", "BM25_reference"),
+            ("sequential_markov", "sequential_markov_reference"),
+            ("popularity", "popularity_reference"),
+            ("ours_uncertainty_guided_real", "R3_Ours_v1_reference"),
+        ):
+            ref_metrics = _reference_metrics_for_seed(ROOT=ROOT, seed=seed, method=ref_method, source_rows=pack)
+            if ref_metrics is None:
+                continue
+            by_seed_rows.append(
+                {
+                    "seed": seed,
+                    "method": label,
+                    "Recall@10": ref_metrics.get("recall@10"),
+                    "NDCG@10": ref_metrics.get("ndcg@10"),
+                    "MRR@10": ref_metrics.get("mrr@10"),
+                    "HitRate@10": ref_metrics.get("hit_rate@10"),
+                    "evaluated_count": ref_metrics.get("evaluated_count"),
+                }
+            )
+
+    parser_rows.append({"seed": "aggregate", **_parser_stats(all_pack)})
+    panel_rows.append({"seed": "aggregate", **_panel_stats(all_pack)})
+    for policy, fn in policy_top_fns.items():
+        metrics = _policy_metrics(all_pack, fn)
+        swaps = _ndcg_delta_and_swaps(all_pack, fn)
+        main_rows.append(
+            {
+                "seed": "aggregate",
+                "method": policy,
+                "Recall@10": metrics.get("recall@10"),
+                "NDCG@10": metrics.get("ndcg@10"),
+                "MRR@10": metrics.get("mrr@10"),
+                "HitRate@10": metrics.get("hit_rate@10"),
+                "delta_NDCG@10_vs_fallback": float(metrics.get("ndcg@10") or 0.0)
+                - float(_policy_metrics(all_pack, _fallback_top).get("ndcg@10") or 0.0),
+                "evaluated_count": metrics.get("evaluated_count"),
+            }
+        )
+        swap_rows.append({"seed": "aggregate", "method": policy, **swaps})
+
+    seed42_metrics = {policy: _policy_metrics(test_pack, fn) for policy, fn in policy_top_fns.items()} if test_pack else {}
+    seed42_swaps = _ndcg_delta_and_swaps(test_pack, policy_top_fns["fusion_train_best"]) if test_pack else {}
+    for policy, metrics in seed42_metrics.items():
+        main_rows.append(
+            {
+                "seed": 42,
+                "method": policy,
+                "Recall@10": metrics.get("recall@10"),
+                "NDCG@10": metrics.get("ndcg@10"),
+                "MRR@10": metrics.get("mrr@10"),
+                "HitRate@10": metrics.get("hit_rate@10"),
+                "delta_NDCG@10_vs_fallback": float(metrics.get("ndcg@10") or 0.0)
+                - float(seed42_metrics.get("fallback_only", {}).get("ndcg@10") or 0.0),
+                "evaluated_count": metrics.get("evaluated_count"),
+            }
+        )
+
+    val_metrics_selected = _policy_metrics(val_pack, policy_top_fns["fusion_train_best"]) if val_pack else {}
+    test_metrics_selected = seed42_metrics.get("fusion_train_best", {})
+    r3_v1_seed42 = _reference_metrics_for_seed(ROOT=ROOT, seed=42, method="ours_uncertainty_guided_real", source_rows=test_pack) if test_pack else None
+    weights_rows = [
+        {
+            "policy": "fusion_train_best",
+            "selected_on": "seed21_validation",
+            "trained_on": "seed13",
+            "tested_on": "seed42",
+            **selected_params,
+            "train_seed13_NDCG@10": selected.get("train_ndcg@10"),
+            "validation_seed21_NDCG@10": val_metrics_selected.get("ndcg@10"),
+            "validation_seed21_harmful_swap_rate": selected.get("validation_harmful_swap_rate"),
+            "test_seed42_NDCG@10": test_metrics_selected.get("ndcg@10"),
+            "test_seed42_delta_vs_fallback_NDCG@10": float(test_metrics_selected.get("ndcg@10") or 0.0)
+            - float(seed42_metrics.get("fallback_only", {}).get("ndcg@10") or 0.0),
+            "test_seed42_delta_vs_llm_listwise_NDCG@10": float(test_metrics_selected.get("ndcg@10") or 0.0)
+            - float(seed42_metrics.get("llm_listwise_panel", {}).get("ndcg@10") or 0.0),
+            "test_seed42_delta_vs_R3_Ours_v1_NDCG@10": (
+                float(test_metrics_selected.get("ndcg@10") or 0.0) - float(r3_v1_seed42.get("ndcg@10") or 0.0)
+                if r3_v1_seed42
+                else ""
+            ),
+            "grid_constraint_satisfied": fusion_choice["constraint_satisfied"],
+        },
+        {
+            "policy": "safe_fusion",
+            "selected_on": "seed21_validation",
+            "trained_on": "",
+            "tested_on": "seed42",
+            "alpha": "",
+            "beta": "",
+            "gamma": "",
+            "lambda": "",
+            "margin": safe_margin,
+            "confidence_min": safe_conf,
+            "validation_seed21_NDCG@10": _policy_metrics(val_pack, policy_top_fns["safe_fusion"]).get("ndcg@10") if val_pack else "",
+            "validation_seed21_harmful_swap_rate": safe_selected.get("validation_harmful_swap_rate"),
+            "test_seed42_NDCG@10": seed42_metrics.get("safe_fusion", {}).get("ndcg@10"),
+            "grid_constraint_satisfied": safe_choice["constraint_satisfied"],
+        },
+    ]
+
+    for row in test_pack:
+        target = str(row["target_item"])
+        cand = list(row["bm_row"].get("candidate_items") or [])
+        base = _fallback_top(row)
+        pred = policy_top_fns["fusion_train_best"](row)
+        base_nd = float(_ndcg_at_k({"target_item": target, "predicted_items": base, "candidate_items": cand}, 10))
+        pred_nd = float(_ndcg_at_k({"target_item": target, "predicted_items": pred, "candidate_items": cand}, 10))
+        if row.get("parse_success") and pred_nd >= base_nd - 1e-14:
+            continue
+        failure_rows.append(
+            {
+                "seed": 42,
+                "example_id": row.get("example_id"),
+                "user_id": row.get("user_id"),
+                "target_item": target,
+                "parse_success": row.get("parse_success"),
+                "parse_error": row.get("parse_error") or "",
+                "fallback_top10": json.dumps(base, ensure_ascii=False),
+                "fusion_top10": json.dumps(pred, ensure_ascii=False),
+                "fallback_ndcg@10": base_nd,
+                "fusion_ndcg@10": pred_nd,
+                "delta_ndcg@10": pred_nd - base_nd,
+                "raw_output_excerpt": str(row.get("raw_output") or "")[:500],
+            }
+        )
+    failure_rows.sort(key=lambda row: float(row.get("delta_ndcg@10") or 0.0))
+
+    cost_rows: list[dict[str, Any]] = []
+    total_requests = total_cache_hits = total_tokens = 0
+    total_cost = 0.0
+    p50s: list[float] = []
+    p95s: list[float] = []
+    for seed, summary in sorted(provider_summaries_by_seed.items()):
+        total_requests += int(summary.get("real_request_count") or 0)
+        total_cache_hits += int(summary.get("cache_hit_count") or 0)
+        total_tokens += int(summary.get("total_tokens") or 0)
+        total_cost += float(summary.get("effective_cost_usd") or summary.get("estimated_cost") or 0.0)
+        p50 = float(summary.get("latency_p50_seconds") or summary.get("latency_p50") or 0.0)
+        p95 = float(summary.get("latency_p95_seconds") or summary.get("latency_p95") or 0.0)
+        p50s.append(p50)
+        p95s.append(p95)
+        cost_rows.append(
+            {
+                "seed": seed,
+                "live_requests": summary.get("real_request_count", 0),
+                "cache_hits": summary.get("cache_hit_count", 0),
+                "total_tokens": summary.get("total_tokens", 0),
+                "effective_cost_usd": summary.get("effective_cost_usd", summary.get("estimated_cost", 0.0)),
+                "p50_latency_seconds": p50,
+                "p95_latency_seconds": p95,
+                "retry_count": summary.get("retry_count", 0),
+                "timeout_count": summary.get("timeout_count", 0),
+                "rate_limit_429_count": summary.get("rate_limit_429_count", 0),
+            }
+        )
+    cost_rows.append(
+        {
+            "seed": "aggregate",
+            "live_requests": total_requests,
+            "cache_hits": total_cache_hits,
+            "total_tokens": total_tokens,
+            "effective_cost_usd": total_cost,
+            "p50_latency_seconds": sum(p50s) / len(p50s) if p50s else 0.0,
+            "p95_latency_seconds": sum(p95s) / len(p95s) if p95s else 0.0,
+            "retry_count": 0,
+            "timeout_count": 0,
+            "rate_limit_429_count": 0,
+        }
+    )
+
+    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_main.csv", main_rows)
+    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_by_seed.csv", by_seed_rows)
+    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_fusion_weights.csv", weights_rows)
+    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_swap_analysis.csv", swap_rows)
+    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_parser_stats.csv", parser_rows)
+    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_panel_coverage.csv", panel_rows)
+    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_cost_latency.csv", cost_rows)
+    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_failure_cases.csv", failure_rows[:100])
+
+    heldout_delta = float(test_metrics_selected.get("ndcg@10") or 0.0) - float(seed42_metrics.get("fallback_only", {}).get("ndcg@10") or 0.0)
+    success = bool(
+        test_pack
+        and heldout_delta > 0.01
+        and float(seed42_swaps.get("harmful_swap_rate") or 1.0) <= 0.05
+        and float(_parser_stats(test_pack).get("parser_success_rate") or 0.0) >= 0.95
+        and float(_panel_stats(test_pack).get("target_in_panel_rate") or 0.0) > 0.0
+    )
+    verdict = "PASS" if success else "MAJOR FIXES REQUIRED"
+    interpretation = "method story revived" if success else "preference signal promising but not validated"
+    if seed42_metrics and float(seed42_metrics.get("llm_listwise_panel", {}).get("ndcg@10") or 0.0) <= float(seed42_metrics.get("fallback_only", {}).get("ndcg@10") or 0.0):
+        interpretation = "observation-first remains primary"
+
+    report = ROOT / "docs" / "cu_gr_v2_full_seed_report.md"
+    report.write_text(
+        "\n".join(
+            [
+                "# CU-GR v2 Full Seed Report",
+                "",
+                f"Run name: `{run_name}`",
+                "",
+                "## Verdict",
+                "",
+                f"{verdict}. Held-out seed42 fusion_train_best NDCG@10 delta vs fallback = {heldout_delta:.8f}.",
+                "",
+                "## Provider",
+                "",
+                "DeepSeek OpenAI-compatible API, model `deepseek-v4-flash`; cache/resume enabled. API key value was not inspected or written.",
+                "",
+                "## Dataset / Protocol",
+                "",
+                "MovieLens R3 protocol, processed directory `data/processed/movielens_1m/r2_full_single_dataset`, sampled candidate_size=500, include_target=true, panel_size=15, subset_size=200 per seed.",
+                "",
+                "## Fusion Weights",
+                "",
+                f"Selected alpha={selected_params['alpha']}, beta={selected_params['beta']}, gamma={selected_params['gamma']}, lambda={selected_params['lambda']} on seed21 validation. Safe fusion thresholds: margin={safe_margin}, confidence_min={safe_conf}.",
+                "",
+                "## Held-out Seed42",
+                "",
+                f"fallback_only NDCG@10={float(seed42_metrics.get('fallback_only', {}).get('ndcg@10') or 0.0):.8f}; "
+                f"llm_listwise_panel NDCG@10={float(seed42_metrics.get('llm_listwise_panel', {}).get('ndcg@10') or 0.0):.8f}; "
+                f"fusion_train_best NDCG@10={float(test_metrics_selected.get('ndcg@10') or 0.0):.8f}; "
+                f"harmful_swap_rate={float(seed42_swaps.get('harmful_swap_rate') or 0.0):.6f}.",
+                "",
+                "## Interpretation",
+                "",
+                interpretation + ".",
+                "",
+                "## Artifacts",
+                "",
+                "- `outputs/tables/cu_gr_v2_full_seed_main.csv`",
+                "- `outputs/tables/cu_gr_v2_full_seed_by_seed.csv`",
+                "- `outputs/tables/cu_gr_v2_full_seed_fusion_weights.csv`",
+                "- `outputs/tables/cu_gr_v2_full_seed_swap_analysis.csv`",
+                "- `outputs/tables/cu_gr_v2_full_seed_parser_stats.csv`",
+                "- `outputs/tables/cu_gr_v2_full_seed_panel_coverage.csv`",
+                "- `outputs/tables/cu_gr_v2_full_seed_cost_latency.csv`",
+                "- `outputs/tables/cu_gr_v2_full_seed_failure_cases.csv`",
+                "",
+                "## Next Recommended Action",
+                "",
+                "Run CU-GR v2 on a second dataset/domain." if success else "Refine fusion model.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    model_out = ROOT / "outputs" / "models" / "cu_gr_v2_preference_fusion"
+    model_out.mkdir(parents=True, exist_ok=True)
+    (model_out / "model.json").write_text(
+        json.dumps(
+            {
+                "run_name": run_name,
+                "selected_fusion_params": selected_params,
+                "selected_on": "seed21_validation",
+                "trained_on": "seed13",
+                "tested_on": "seed42",
+                "safe_fusion": {"margin": safe_margin, "confidence_min": safe_conf},
+                "success_criteria_pass": success,
+                "verdict": verdict,
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return {
+        "verdict": verdict,
+        "success_criteria_pass": success,
+        "selected_fusion_params": selected_params,
+        "safe_fusion": {"margin": safe_margin, "confidence_min": safe_conf},
+        "heldout_seed42_delta_ndcg": heldout_delta,
+        "report": str(report),
+    }
+
+
 def _write_metric_csv(path: Path, flat: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     row = {k: v for k, v in flat.items() if isinstance(v, (str, int, float, bool)) or v is None}
@@ -725,6 +1305,41 @@ def build_dataset_csv_from_signals(
     return len(lines)
 
 
+def build_dataset_csv_from_signal_paths(
+    *,
+    ROOT: Path,
+    signals_paths: Sequence[str | Path],
+    processed_dir: str,
+    dataset_csv: str | Path | None = None,
+    parser_stats_csv: str | Path | None = None,
+) -> int:
+    lines: list[dict[str, Any]] = []
+    for raw_path in signals_paths:
+        sp = Path(raw_path)
+        if not sp.is_absolute():
+            sp = ROOT / sp
+        with sp.open("r", encoding="utf-8") as handle:
+            for ln in handle:
+                if ln.strip():
+                    lines.append(json.loads(ln))
+    ds = Path(dataset_csv or "outputs/tables/cu_gr_v2_preference_dataset.csv")
+    if not ds.is_absolute():
+        ds = ROOT / ds
+    pst = Path(parser_stats_csv or "outputs/tables/cu_gr_v2_preference_parser_stats.csv")
+    if not pst.is_absolute():
+        pst = ROOT / pst
+    packed = rebuild_packed_rows_from_signals(lines)
+    ctx = build_dataset_context(processed_dir)
+    train_pop = dict(ctx.get("train_popularity") or {})
+    _build_preference_dataset_csv(ds, packed, train_pop)
+    po = sum(1 for ln in lines if ln.get("parse_success"))
+    unk = sum(1 for ln in lines if not ln.get("parse_success") and "unknown_label" in str(ln.get("parse_error") or ""))
+    dup = sum(1 for ln in lines if not ln.get("parse_success") and "duplicate_label" in str(ln.get("parse_error") or ""))
+    oth = len(lines) - po - unk - dup
+    _write_parser_stats(pst, n_examples=len(lines), parse_ok=po, invalid_unknown=unk, duplicate=dup, other_fail=max(0, oth))
+    return len(lines)
+
+
 def _worker_build_request(
     args: tuple[Any, ...],
 ) -> tuple[int, LLMRequest, dict[str, Any], dict[str, Any], dict[str, str], str]:
@@ -888,6 +1503,8 @@ def run_cu_gr_v2_preference_subgate(config_path: str | Path) -> dict[str, Any]:
     from llm4rec.experiments import runner as exp_runner
 
     manifests: list[dict[str, Any]] = []
+    full_seed_rows_by_seed: dict[int, list[dict[str, Any]]] = {}
+    provider_summaries_by_seed: dict[int, dict[str, Any]] = {}
 
     runs_dir = ROOT / "outputs" / "runs"
     for seed in seeds:
@@ -1017,9 +1634,11 @@ def run_cu_gr_v2_preference_subgate(config_path: str | Path) -> dict[str, Any]:
                 json.dump(summary, handle, indent=2)
         else:
             summary = {}
+        provider_summaries_by_seed[seed] = dict(summary)
 
         n_sig = len(rows_packed)
         parse_rate = parse_ok_count / max(n_sig, 1)
+        full_seed_rows_by_seed[seed] = list(rows_packed)
 
         agg, primary_preds, model_payload, diagnostics = _evaluate_aggregate(rows_packed, train_pop=train_pop_ctx)
 
@@ -1092,7 +1711,16 @@ def run_cu_gr_v2_preference_subgate(config_path: str | Path) -> dict[str, Any]:
         write_json(run_dir / "cost_latency.json", {**cost_latency_stub, **summary})
 
         manifests.append({"run_dir": str(run_dir), "metrics_summary": agg, "n_examples": n_sig})
-    return {"experiment_kind": "cu_gr_v2_preference_subgate", "seeds": seeds, "runs": manifests}
+    full_seed_outputs: dict[str, Any] = {}
+    if len(seeds) > 1:
+        full_seed_outputs = _write_full_seed_outputs(
+            ROOT=ROOT,
+            run_name=run_name,
+            rows_by_seed=full_seed_rows_by_seed,
+            provider_summaries_by_seed=provider_summaries_by_seed,
+            train_pop=train_pop_ctx,
+        )
+    return {"experiment_kind": "cu_gr_v2_preference_subgate", "seeds": seeds, "runs": manifests, "full_seed_outputs": full_seed_outputs}
 
 
 def write_json(p: Path, obj: dict[str, Any]) -> None:

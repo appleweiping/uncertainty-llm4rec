@@ -1,0 +1,164 @@
+experiment_kind: cu_gr_v2_preference_subgate
+evidence_label: CU-GR v2 full seed validation - listwise DeepSeek preference on candidate-local panels
+template: false
+dry_run: false
+requires_confirm: false
+seed: 13
+seeds: [13, 21, 42]
+run_name: r3_v2_movielens_preference_signal_subgate_full_seeds
+output_dir: outputs/runs
+domain: movies
+
+dataset:
+  name: movielens_1m_r2
+  config_path: configs/datasets/movielens_1m_r2.yaml
+  raw_data_path: data/raw/movielens_1m/ml-1m
+  raw_interactions_path: data/raw/movielens_1m/ml-1m/ratings.dat
+  raw_items_path: data/raw/movielens_1m/ml-1m/movies.dat
+  interactions_path: data/processed/movielens_1m/r2_full_single_dataset_source/interactions.csv
+  items_path: data/processed/movielens_1m/r2_full_single_dataset_source/items.csv
+  processed_dir: data/processed/movielens_1m/r2_full_single_dataset
+  subset_size: 200
+
+split: test
+
+split_strategy:
+  name: leave_one_out
+  timestamp_field: timestamp
+  future_interactions: forbidden
+  history_policy: past_interactions_only
+  repeat_target_policy: allow_repeat_items_in_history_but_exclude_history_from_candidates
+  train_examples_per_user: 1
+
+candidate:
+  protocol: sampled
+  size: 500
+  k: 500
+  sample_size: 500
+  include_target: true
+  seed: 13
+  set_path: data/processed/movielens_1m/r2_full_single_dataset/candidate_sets.jsonl
+  negative_sampling: fixed_seed_without_replacement_from_catalog_excluding_target_and_history
+  target_policy: include_heldout_target_for_main_eval
+  target_excluding_protocol: diagnostic_only_not_accuracy
+  same_set_for_comparable_baselines: true
+
+data_protocol:
+  interaction_schema: [user_id, item_id, timestamp, rating, domain]
+  item_schema: [item_id, title, description, category, brand, domain, raw_text]
+  user_item_id_mapping: source_item_and_user_ids_preserved_from_movielens_1m
+  timestamp_handling: chronological_per_user_sort_by_timestamp_then_item_id
+  train_popularity_source: train_split_only
+  domain_field: domain
+  candidate_set_saved_path: data/processed/movielens_1m/r2_full_single_dataset/candidate_sets.jsonl
+
+subset:
+  max_examples: 200
+
+preference:
+  method_config: configs/methods/llm_candidate_preference_real.yaml
+  panel_size: 15
+  mode: listwise
+  show_fallback_rank: false
+
+cu_gr_v2:
+  panel_size: 15
+  show_fallback_rank: false
+  policies: [fallback_only, llm_listwise_panel, fusion_fixed_grid, fusion_train_best, safe_fusion]
+  fusion_fixed_grid:
+    alpha: 0.7
+    beta: 0.3
+    gamma: 0.1
+    lambda: 0.05
+  fusion_train_best:
+    train_seed: 13
+    validation_seed: 21
+    test_seed: 42
+    alpha: [0.5, 0.7, 0.9, 1.0]
+    beta: [0.1, 0.3, 0.5, 0.7]
+    gamma: [0.0, 0.1, 0.2]
+    lambda: [0.0, 0.05, 0.1]
+    selection_metric: NDCG@10
+    max_harmful_swap_rate: 0.05
+  safe_fusion:
+    validation_seed: 21
+    test_seed: 42
+
+llm:
+  config_path: configs/llm/openai_compatible.yaml
+  provider: openai_compatible
+  type: openai_compatible
+  model: deepseek-v4-flash
+  api_key_env: DEEPSEEK_API_KEY
+  base_url: https://api.deepseek.com
+  timeout_seconds: 120
+  max_retries: 3
+  backoff_seconds: 2
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 2048
+  extra_body:
+    response_format:
+      type: json_object
+    thinking:
+      type: disabled
+  cache:
+    enabled: true
+    cache_dir: outputs/api_cache/cu_gr_v2_preference
+  resume:
+    enabled: true
+  raw_outputs:
+    enabled: true
+  request_limits:
+    max_requests: 750
+    max_concurrency: 16
+    requests_per_minute: 300
+  pricing:
+    input_per_1m_tokens: 0.14
+    output_per_1m_tokens: 0.28
+
+cache:
+  enabled: true
+
+resume:
+  enabled: true
+
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [10]
+
+top_k: [10]
+metrics: [ranking]
+
+runs:
+  base_prefix: r3_movielens_1m_real_llm_full_candidate500
+
+safety:
+  dry_run: false
+  requires_confirm: false
+  allow_api_calls: true
+  allow_download: false
+  allow_training: false
+  acknowledged_expensive_run: true
+  leakage_safeguards: true
+  subset_size: 200
+  max_examples: 200
+  panel_size: 15
+  candidate_size: 500
+  cost_limit_usd: 999999
+  concurrency: 16
+  request_timeout_seconds: 120
+  max_retries: 3
+  backoff_seconds: 2
+  max_requests: 750
+
+output:
+  run_name: r3_v2_movielens_preference_signal_subgate_full_seeds
+  output_dir: outputs/runs
+
+logging:
+  level: INFO
+
+r3_cu_gr_v2:
+  note: first CU-GR v2 full seed validation; seed13 train, seed21 validation, seed42 held-out test
+  bm25_predictions_expected_prefix: r3_movielens_1m_real_llm_full_candidate500_bm25
