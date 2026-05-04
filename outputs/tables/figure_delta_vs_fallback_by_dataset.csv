@@ -1,0 +1,5 @@
+Dataset,Method,delta_NDCG@10_vs_fallback
+MovieLens 1M,LLM listwise panel,0.088928
+MovieLens 1M,CU-GR v2 fusion,0.056721
+Amazon Beauty,LLM listwise panel,-0.00841
+Amazon Beauty,CU-GR v2 fusion,0.011731

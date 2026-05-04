@@ -1,0 +1,8 @@
+| Dataset | Method | mean confidence | ECE | Brier | high-confidence wrong count | hallucination rate | parse success | grounding success |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| MovieLens 1M | llm_generative_real | 0.851666 | 0.851666 | 0.725769 | 5984 | 0.244205 | 0.999007 | 0.998179 |
+| MovieLens 1M | llm_confidence_observation_real | 0.851666 | 0.851666 | 0.725769 | 5984 | 0.244205 | 0.999007 | 0.998179 |
+| MovieLens 1M | ours_uncertainty_guided_real | 0.850955 | 0.850955 | 0.725265 | 5676 | 0 | 0.999007 | 0.998234 |
+| MovieLens 1M | ours_fallback_only | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| MovieLens 1M | CU-GR v2 listwise preference parser | 0.451825 |  |  |  | 0 | 0.99 |  |
+| Amazon Beauty | CU-GR v2 listwise preference parser | 0.523524 |  |  |  | 0 | 0.953333 |  |

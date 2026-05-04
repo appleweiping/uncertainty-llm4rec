@@ -1,0 +1,25 @@
+Dataset,Ablation,Recall@10,NDCG@10,MRR@10,HitRate@10,Harmful swap rate,Parser success,Panel size,Delta NDCG@10 vs fallback,Source artifact
+MovieLens 1M,Fallback only,0.09,0.049339,0.036889,0.09,0,0.99,15,0,outputs/tables/cu_gr_v2_full_seed_main.csv
+MovieLens 1M,LLM listwise only,0.25,0.138267,0.102788,0.25,0.06,0.99,15,0.088928,outputs/tables/cu_gr_v2_full_seed_main.csv
+MovieLens 1M,Fusion fixed grid,0.115,0.064796,0.049484,0.115,0.03,0.99,15,0.015456,outputs/tables/cu_gr_v2_full_seed_main.csv
+MovieLens 1M,Fusion train-best,0.2,0.10606,0.077544,0.2,0.035,0.99,15,0.056721,outputs/tables/cu_gr_v2_full_seed_main.csv
+MovieLens 1M,Safe fusion,0.18,0.093082,0.06645,0.18,0.02,0.99,15,0.043743,outputs/tables/cu_gr_v2_full_seed_main.csv
+MovieLens 1M,no confidence term,0.175,0.094679,0.070409,0.175,0.035,0.99,15,0.045339,offline replay from preference_signals.jsonl
+MovieLens 1M,no popularity penalty,0.2,0.106852,0.078383,0.2,0.035,0.99,15,0.057513,offline replay from preference_signals.jsonl
+MovieLens 1M,no fallback score,0.25,0.138046,0.102573,0.25,0.06,0.99,15,0.088706,offline replay from preference_signals.jsonl
+MovieLens 1M,no LLM score,0.105,0.061331,0.048456,0.105,0.02,0.99,15,0.011992,offline replay from preference_signals.jsonl
+MovieLens 1M,panel size 10 oracle,,0.079917,,,,,10,0.050895,outputs/tables/cu_gr_v2_panel_coverage.csv
+MovieLens 1M,panel size 15 oracle,,0.256493,,,,,15,0.227471,outputs/tables/cu_gr_v2_panel_coverage.csv
+MovieLens 1M,panel size 20 oracle,,0.271523,,,,,20,0.242502,outputs/tables/cu_gr_v2_panel_coverage.csv
+Amazon Beauty,Fallback only,0.175,0.142486,0.13231,0.175,0,0.95,15,0,outputs/tables/cu_gr_v2_amazon_beauty_main.csv
+Amazon Beauty,LLM listwise only,0.16,0.134076,0.125917,0.16,0.045,0.95,15,-0.00841,outputs/tables/cu_gr_v2_amazon_beauty_main.csv
+Amazon Beauty,Fusion fixed grid,0.175,0.148086,0.139548,0.175,0.015,0.95,15,0.0056,outputs/tables/cu_gr_v2_amazon_beauty_main.csv
+Amazon Beauty,Fusion train-best,0.175,0.154217,0.147548,0.175,0.015,0.95,15,0.011731,outputs/tables/cu_gr_v2_amazon_beauty_main.csv
+Amazon Beauty,Safe fusion,0.16,0.145535,0.141125,0.16,0.02,0.95,15,0.003049,outputs/tables/cu_gr_v2_amazon_beauty_main.csv
+Amazon Beauty,no confidence term,0.175,0.154217,0.147548,0.175,0.015,0.95,15,0.011731,offline replay from preference_signals.jsonl
+Amazon Beauty,no popularity penalty,0.175,0.14612,0.137214,0.175,0.015,0.95,15,0.003634,offline replay from preference_signals.jsonl
+Amazon Beauty,no fallback score,0.165,0.151131,0.146548,0.165,0.02,0.95,15,0.008645,offline replay from preference_signals.jsonl
+Amazon Beauty,no LLM score,0.175,0.156245,0.15,0.175,0,0.95,15,0.013759,offline replay from preference_signals.jsonl
+Amazon Beauty,panel size 10 oracle,,0.166781,,,,,10,0.024295,outputs/tables/cu_gr_v2_amazon_beauty_panel_feasibility_coverage.csv
+Amazon Beauty,panel size 15 oracle,,0.18,,,,,15,0.037514,outputs/tables/cu_gr_v2_amazon_beauty_panel_feasibility_coverage.csv
+Amazon Beauty,panel size 20 oracle,,0.19,,,,,20,0.047514,outputs/tables/cu_gr_v2_amazon_beauty_panel_feasibility_coverage.csv

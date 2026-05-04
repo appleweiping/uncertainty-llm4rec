@@ -1,0 +1,21 @@
+Dataset,seed,method,beneficial_swaps,harmful_swaps,neutral_swaps,harmful_swap_rate,avg_ndcg_delta_per_example,top10_changed_rate
+MovieLens 1M,42,fallback_only,0,0,200,0.0,0.0,0.0
+MovieLens 1M,42,llm_listwise_panel,41,12,147,0.06,0.08892769581413618,0.99
+MovieLens 1M,42,fusion_fixed_grid,15,6,179,0.03,0.015456410960275729,0.99
+MovieLens 1M,42,fusion_train_best,32,7,161,0.035,0.05672118738767147,0.99
+MovieLens 1M,42,safe_fusion,22,4,174,0.02,0.04374252803759302,1.0
+MovieLens 1M,aggregate,fallback_only,0,0,600,0.0,0.0,0.0
+MovieLens 1M,aggregate,llm_listwise_panel,116,34,450,0.056666666666666664,0.08252917802523313,0.99
+MovieLens 1M,aggregate,fusion_fixed_grid,48,16,536,0.02666666666666667,0.01879639170233028,0.99
+MovieLens 1M,aggregate,fusion_train_best,91,20,489,0.03333333333333333,0.054469736111200574,0.99
+MovieLens 1M,aggregate,safe_fusion,63,12,525,0.02,0.040529243881930875,1.0
+Amazon Beauty,42,fallback_only,0,0,200,0.0,0.0,0.0
+Amazon Beauty,42,llm_listwise_panel,7,9,184,0.045,-0.008409975908214051,0.945
+Amazon Beauty,42,fusion_fixed_grid,9,3,188,0.015,0.005599510035614684,0.945
+Amazon Beauty,42,fusion_train_best,9,3,188,0.015,0.01173098196326927,0.945
+Amazon Beauty,42,safe_fusion,7,4,189,0.02,0.0030487534042854436,0.995
+Amazon Beauty,aggregate,fallback_only,0,0,600,0.0,0.0,0.0
+Amazon Beauty,aggregate,llm_listwise_panel,22,24,554,0.04,-0.007337050257391337,0.9433333333333334
+Amazon Beauty,aggregate,fusion_fixed_grid,24,8,568,0.013333333333333334,0.004722683658776474,0.94
+Amazon Beauty,aggregate,fusion_train_best,25,8,567,0.013333333333333334,0.009778577149530026,0.95
+Amazon Beauty,aggregate,safe_fusion,22,12,566,0.02,0.002849737836948847,0.99

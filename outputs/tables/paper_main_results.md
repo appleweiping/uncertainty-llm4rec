@@ -1,0 +1,18 @@
+| Dataset | Method | Recall@10 | NDCG@10 | MRR@10 | HitRate@10 | Harmful swap rate if applicable | Parser success if applicable | Cost per 200 examples if applicable |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| MovieLens 1M | Popularity | 0.19 | 0.096381 | 0.068833 | 0.19 |  |  | 0 |
+| MovieLens 1M | BM25/fallback | 0.09 | 0.049339 | 0.036889 | 0.09 | 0 |  | 0 |
+| MovieLens 1M | Sequential Markov | 0.46 | 0.310736 | 0.264274 | 0.46 |  |  | 0 |
+| MovieLens 1M | LLM direct generation | 0 | 0 | 0 | 0 |  | 0.999007 | 0.191745 |
+| MovieLens 1M | LLM listwise panel | 0.25 | 0.138267 | 0.102788 | 0.25 | 0.06 | 0.99 | 0.059083 |
+| MovieLens 1M | CU-GR v2 fusion | 0.2 | 0.10606 | 0.077544 | 0.2 | 0.035 | 0.99 | 0.059083 |
+| MovieLens 1M | CU-GR v1 / Ours v1 | 0.085 | 0.046414 | 0.034458 | 0.085 |  |  |  |
+| MovieLens 1M | Conservative gate | 0.059106 | 0.029196 | 0.020301 | 0.059106 |  | 0.99851 | 0.390876 |
+| Amazon Beauty | Popularity | 0 | 0 | 0 | 0 |  |  | 0 |
+| Amazon Beauty | BM25/fallback | 0.175 | 0.142486 | 0.13231 | 0.175 | 0 |  | 0 |
+| Amazon Beauty | Sequential Markov | 0 | 0 | 0 | 0 |  |  | 0 |
+| Amazon Beauty | LLM direct generation (not run for this domain) |  |  |  |  |  |  |  |
+| Amazon Beauty | LLM listwise panel | 0.16 | 0.134076 | 0.125917 | 0.16 | 0.045 | 0.95 | 0.076183 |
+| Amazon Beauty | CU-GR v2 fusion | 0.175 | 0.154217 | 0.147548 | 0.175 | 0.015 | 0.95 | 0.076183 |
+| Amazon Beauty | CU-GR v1 / Ours v1 (not run for this domain) |  |  |  |  |  |  |  |
+| Amazon Beauty | Conservative gate (not run for this domain) |  |  |  |  |  |  |  |
