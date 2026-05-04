@@ -11,3 +11,5 @@
 - **Selective prediction and reject options.** CU-GR v2 can be viewed as a selective intervention on a fallback ranking rather than a standalone recommender. If the LLM response is invalid or unsafe, the system can preserve fallback behavior. This is related to reject-option and selective-prediction framing, but the decision surface is ranking-specific and measured through harmful swaps.
 
 - **Reranking.** Unlike pure LLM reranking, CU-GR v2 only reranks a deterministic panel and preserves fallback order outside that panel. This limits the intervention surface, keeps all outputs candidate-adherent, and makes harmful swaps auditable under the sampled candidate protocol.
+
+- **Sequential and graph baselines.** SASRec [SASRec] and LightGCN [LightGCN] are the intended reviewer-grade sequential and graph collaborative filtering comparators. The current repository routes these through a RecBole adapter so that training can use the external library while final predictions are imported into the TRUCE schema and evaluated by the same evaluator as CU-GR v2.

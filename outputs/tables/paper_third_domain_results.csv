@@ -1,0 +1,11 @@
+Dataset,Seed,Method,Recall@10,NDCG@10,MRR@10,HitRate@10,Delta NDCG@10 vs fallback,Harmful swap rate,Parser success,Target in panel rate,Gate status
+Amazon Video Games,42,BM25/fallback,0.170000,0.096066,0.073696,0.170000,0.000000,0.000000,NA,0.190000,reference
+Amazon Video Games,42,LLM listwise panel,0.150000,0.088131,0.069506,0.150000,-0.007935,0.100000,0.975000,0.190000,failed_vs_fallback
+Amazon Video Games,42,Fusion fixed grid,0.180000,0.104612,0.082062,0.180000,0.008546,0.050000,0.975000,0.190000,below_required_delta
+Amazon Video Games,42,CU-GR v2 fusion_train_best,0.175000,0.104206,0.082901,0.175000,0.008140,0.020000,0.975000,0.190000,failed_delta_threshold
+Amazon Video Games,42,Safe fusion,0.160000,0.092905,0.072587,0.160000,-0.003161,0.060000,0.975000,0.190000,failed_vs_fallback
+Amazon Video Games,aggregate,BM25/fallback,0.170000,0.096066,0.073696,0.170000,0.000000,0.000000,NA,0.193333,reference
+Amazon Video Games,aggregate,LLM listwise panel,0.151667,0.089516,0.070918,0.151667,-0.006551,0.098333,0.978333,0.193333,failed_vs_fallback
+Amazon Video Games,aggregate,Fusion fixed grid,0.181667,0.102552,0.078737,0.181667,0.006485,0.048333,0.978333,0.193333,below_required_delta
+Amazon Video Games,aggregate,CU-GR v2 fusion_train_best,0.176667,0.102960,0.080660,0.176667,0.006894,0.020000,0.978333,0.193333,failed_delta_threshold
+Amazon Video Games,aggregate,Safe fusion,0.151667,0.094435,0.077118,0.151667,-0.001631,0.066667,0.978333,0.193333,failed_vs_fallback

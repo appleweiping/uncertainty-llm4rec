@@ -1,0 +1,22 @@
+Dataset,Method,Recall@10,NDCG@10,MRR@10,HitRate@10,Harmful swap rate if applicable,Parser success if applicable,Cost per 200 examples if applicable,Evidence status,Notes
+MovieLens 1M,Popularity,0.190000,0.096381,0.068833,0.190000,NA,NA,0.000000,paper_candidate,TRUCE evaluator
+MovieLens 1M,BM25/fallback,0.090000,0.049339,0.036889,0.090000,0.000000,NA,0.000000,paper_candidate,TRUCE evaluator
+MovieLens 1M,Sequential Markov,0.460000,0.310736,0.264274,0.460000,NA,NA,0.000000,paper_candidate,TRUCE evaluator
+MovieLens 1M,SASRec,NA,NA,NA,NA,NA,NA,NA,not_available,RecBole adapter prepared but training not completed
+MovieLens 1M,LightGCN,NA,NA,NA,NA,NA,NA,NA,not_available,RecBole adapter prepared but training not completed
+MovieLens 1M,LLM direct generation,0.000000,0.000000,0.000000,0.000000,NA,0.999007,0.191745,paper_candidate_negative,Free-form generation failure evidence retained
+MovieLens 1M,LLM listwise panel,0.250000,0.138267,0.102788,0.250000,0.060000,0.990000,0.059083,paper_candidate,DeepSeek v4 flash real calls
+MovieLens 1M,CU-GR v2 fusion,0.200000,0.106060,0.077544,0.200000,0.035000,0.990000,0.059083,paper_candidate,Passed held-out seed42 gate
+Amazon Beauty,Popularity,0.000000,0.000000,0.000000,0.000000,NA,NA,0.000000,paper_candidate,TRUCE evaluator
+Amazon Beauty,BM25/fallback,0.175000,0.142486,0.132310,0.175000,0.000000,NA,0.000000,paper_candidate,TRUCE evaluator
+Amazon Beauty,Sequential Markov,0.000000,0.000000,0.000000,0.000000,NA,NA,0.000000,paper_candidate,TRUCE evaluator
+Amazon Beauty,SASRec,NA,NA,NA,NA,NA,NA,NA,not_available,RecBole adapter prepared but training not completed
+Amazon Beauty,LightGCN,NA,NA,NA,NA,NA,NA,NA,not_available,RecBole adapter prepared but training not completed
+Amazon Beauty,LLM direct generation,NA,NA,NA,NA,NA,NA,NA,not_run,No direct-generation API run for this domain
+Amazon Beauty,LLM listwise panel,0.160000,0.134076,0.125917,0.160000,0.045000,0.950000,0.076183,paper_candidate,DeepSeek v4 flash real calls
+Amazon Beauty,CU-GR v2 fusion,0.175000,0.154217,0.147548,0.175000,0.015000,0.950000,0.076183,paper_candidate,Passed held-out seed42 gate
+Amazon Video Games,BM25/fallback,0.170000,0.096066,0.073696,0.170000,0.000000,NA,0.000000,paper_candidate_diagnostic,TRUCE evaluator
+Amazon Video Games,SASRec,NA,NA,NA,NA,NA,NA,NA,not_available,RecBole adapter prepared but training not completed
+Amazon Video Games,LightGCN,NA,NA,NA,NA,NA,NA,NA,not_available,RecBole adapter prepared but training not completed
+Amazon Video Games,LLM listwise panel,0.150000,0.088131,0.069506,0.150000,0.100000,0.975000,0.061430,paper_candidate_diagnostic,Third-domain seed42 degraded vs fallback
+Amazon Video Games,CU-GR v2 fusion,0.175000,0.104206,0.082901,0.175000,0.020000,0.975000,0.061430,paper_candidate_diagnostic,Improved by +0.008140 but failed +0.01 gate

@@ -1,0 +1,7 @@
+Dataset,Baseline,Integration route,Data export,Training status,Prediction import status,TRUCE evaluator status,Paper-candidate evidence,Blocking issue
+MovieLens 1M,SASRec,RecBole optional adapter,completed,not_completed,not_completed,not_run,no,RecBole not installed
+MovieLens 1M,LightGCN,RecBole optional adapter,completed,not_completed,not_completed,not_run,no,RecBole not installed
+Amazon Beauty,SASRec,RecBole optional adapter,completed,not_completed,not_completed,not_run,no,RecBole not installed
+Amazon Beauty,LightGCN,RecBole optional adapter,completed,not_completed,not_completed,not_run,no,RecBole not installed
+Amazon Video Games,SASRec,RecBole optional adapter,completed,not_completed,not_completed,not_run,no,RecBole not installed
+Amazon Video Games,LightGCN,RecBole optional adapter,completed,not_completed,not_completed,not_run,no,RecBole not installed

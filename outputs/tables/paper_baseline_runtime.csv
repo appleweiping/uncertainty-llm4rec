@@ -1,0 +1,10 @@
+Dataset,Stage,Baseline,Status,Observed wall time seconds,Runtime source
+MovieLens 1M,RecBole data export,SASRec/LightGCN input,completed,14.2,interactive command timing
+Amazon Beauty,RecBole data export,SASRec/LightGCN input,completed,3.0,interactive command timing
+Amazon Video Games,RecBole data export,SASRec/LightGCN input,completed,8.0,interactive command timing
+MovieLens 1M,RecBole adapter training,SASRec,not_completed,15.3,failed early because RecBole missing
+MovieLens 1M,RecBole adapter training,LightGCN,not_completed,15.3,failed early because RecBole missing
+Amazon Beauty,RecBole adapter training,SASRec,not_completed,15.3,failed early because RecBole missing
+Amazon Beauty,RecBole adapter training,LightGCN,not_completed,15.3,failed early because RecBole missing
+Amazon Video Games,RecBole adapter training,SASRec,not_completed,7.9,failed early because RecBole missing
+Amazon Video Games,RecBole adapter training,LightGCN,not_completed,7.9,failed early because RecBole missing

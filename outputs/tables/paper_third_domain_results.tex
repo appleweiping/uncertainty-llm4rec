@@ -1,0 +1,11 @@
+\begin{tabular}{llrrrrrrrll}
+\toprule
+Dataset & Method & Recall@10 & NDCG@10 & MRR@10 & HitRate@10 & $\Delta$NDCG@10 & Harmful & Parser & Gate \\
+\midrule
+Amazon Video Games seed42 & BM25/fallback & 0.170000 & 0.096066 & 0.073696 & 0.170000 & 0.000000 & 0.000000 & NA & reference \\
+Amazon Video Games seed42 & LLM listwise panel & 0.150000 & 0.088131 & 0.069506 & 0.150000 & -0.007935 & 0.100000 & 0.975000 & failed \\
+Amazon Video Games seed42 & Fusion fixed grid & 0.180000 & 0.104612 & 0.082062 & 0.180000 & 0.008546 & 0.050000 & 0.975000 & below threshold \\
+Amazon Video Games seed42 & CU-GR v2 fusion & 0.175000 & 0.104206 & 0.082901 & 0.175000 & 0.008140 & 0.020000 & 0.975000 & failed delta \\
+Amazon Video Games seed42 & Safe fusion & 0.160000 & 0.092905 & 0.072587 & 0.160000 & -0.003161 & 0.060000 & 0.975000 & failed \\
+\bottomrule
+\end{tabular}

@@ -51,14 +51,23 @@ experimental conclusions.
 - Output schema: unified prediction schema.
 - Status: smoke-capable sequential fallback/baseline.
 
-### SASRec interface
+### SASRec via RecBole adapter
 
-- Input signals: currently scaffolded through Markov-compatible smoke behavior.
+- Input signals: exported canonical train interactions and evaluation histories.
 - Training data used: train examples only.
 - Forbidden signals: held-out targets and future interactions.
 - Candidate protocol: shared candidate set.
-- Output schema: unified prediction schema.
-- Status: scaffold unless true SASRec is implemented.
+- Output schema: imported into unified prediction schema after external scoring.
+- Status: adapter/config/export implemented; training not completed because RecBole is not installed in the current environment. No SASRec paper metric should be reported yet.
+
+### LightGCN via RecBole adapter
+
+- Input signals: exported canonical train interactions.
+- Training data used: train examples only.
+- Forbidden signals: held-out targets, validation/test popularity leakage, and external evaluator metrics as final paper numbers.
+- Candidate protocol: shared candidate set.
+- Output schema: imported into unified prediction schema after external scoring.
+- Status: adapter/config/export implemented; training not completed because RecBole is not installed in the current environment. No LightGCN paper metric should be reported yet.
 
 ### LLM generative / rerank / confidence observation
 
@@ -82,3 +91,5 @@ Baseline strength varies by implementation maturity. Minimal smoke-capable
 baselines should not be presented as paper-grade strong baselines until the real
 experiment protocol, multi-seed runs, and comparable candidate sets are
 complete.
+
+RecBole-backed baselines are optional. Install with `py -3 -m pip install -e .[baselines]` in a compatible environment before running SASRec or LightGCN.

@@ -1,0 +1,21 @@
+name: amazon_reviews_2023_video_games_cu_gr_v2
+status: local_processed_cu_gr_v2_subset
+type: tiny_csv
+description: Amazon Reviews 2023 Video_Games converted from local prepared observation artifacts into the shared CU-GR v2 R3-style schema.
+domain: amazon_video_games
+source_dataset_config: configs/datasets/amazon_reviews_2023_video_games.yaml
+source_processed_dir: data/processed/amazon_reviews_2023_video_games/full
+processed_dir: data/processed/amazon_reviews_2023_video_games/cu_gr_v2
+interactions_path: data/processed/amazon_reviews_2023_video_games/cu_gr_v2/interactions.csv
+items_path: data/processed/amazon_reviews_2023_video_games/cu_gr_v2/items.csv
+examples_path: data/processed/amazon_reviews_2023_video_games/cu_gr_v2/examples.jsonl
+candidate_sets_path: data/processed/amazon_reviews_2023_video_games/cu_gr_v2/candidate_sets.jsonl
+candidate_size_requested: 500
+candidate_size_effective: 500
+candidate_protocol: sampled
+include_target: true
+split_strategy:
+  name: prepared_amazon_chronological_leave_last
+  future_interactions: forbidden
+  history_policy: past_interactions_only
+  repeat_target_policy: exclude_history_from_candidates_except_heldout_target

@@ -22,6 +22,9 @@ dev = [
     "numpy>=1.24",
     "scikit-learn>=1.3",
 ]
+baselines = [
+    "recbole==1.2.0",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

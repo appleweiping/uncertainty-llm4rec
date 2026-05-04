@@ -20,13 +20,14 @@ def main() -> int:
     parser.add_argument("--candidate-size", type=int, default=500)
     parser.add_argument("--candidate-size-requested", type=int, default=None)
     parser.add_argument("--candidate-seed", type=int, default=13)
+    parser.add_argument("--max-examples-per-split", type=int, default=None)
+    parser.add_argument("--required-splits", default="train,val,test")
     args = parser.parse_args()
 
     source = args.source_dir
     output = args.output_dir
     items = _read_csv(source / "item_catalog.csv")
     interactions = _read_csv(source / "interactions.csv")
-    examples = _read_jsonl(source / "observation_examples.jsonl")
     popularity = {str(row["item_id"]): int(row.get("popularity") or 0) for row in _read_csv(source / "item_popularity.csv")}
 
     item_ids = sorted(str(row["item_id"]) for row in items)
@@ -68,7 +69,16 @@ def main() -> int:
 
     out_examples: list[dict[str, Any]] = []
     candidate_rows: list[dict[str, Any]] = []
-    for row in examples:
+    split_seen: dict[str, int] = {}
+    required_splits = {s.strip() for s in str(args.required_splits).split(",") if s.strip()}
+    for row in _iter_jsonl(source / "observation_examples.jsonl"):
+        split = str(row.get("split") or "")
+        if args.max_examples_per_split is not None:
+            if split_seen.get(split, 0) >= int(args.max_examples_per_split):
+                if required_splits and all(split_seen.get(s, 0) >= int(args.max_examples_per_split) for s in required_splits):
+                    break
+                continue
+        split_seen[split] = split_seen.get(split, 0) + 1
         target = str(row["target_item_id"])
         history = [str(x) for x in row.get("history_item_ids") or []]
         history_titles = [str(x) for x in row.get("history_item_titles") or []]
@@ -89,7 +99,7 @@ def main() -> int:
             "target": target,
             "target_title": str(row.get("target_title") or item_title.get(target, "")),
             "candidates": candidates,
-            "split": str(row.get("split") or ""),
+            "split": split,
             "domain": args.domain,
             "metadata": {
                 "example_id": str(row["example_id"]),
@@ -111,6 +121,9 @@ def main() -> int:
                 "domain": args.domain,
             }
         )
+        if args.max_examples_per_split is not None and required_splits:
+            if all(split_seen.get(s, 0) >= int(args.max_examples_per_split) for s in required_splits):
+                break
 
     _write_jsonl(output / "examples.jsonl", out_examples)
     _write_jsonl(output / "candidate_sets.jsonl", candidate_rows)
@@ -128,6 +141,7 @@ def main() -> int:
         "candidate_size_requested": int(args.candidate_size_requested or args.candidate_size),
         "candidate_size_effective_max": max((len(row["candidate_items"]) for row in candidate_rows), default=0),
         "candidate_seed": args.candidate_seed,
+        "max_examples_per_split": args.max_examples_per_split,
         "item_count": len(items),
         "interaction_count": len(interactions),
         "example_count": len(out_examples),
@@ -172,12 +186,14 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    rows = []
+    return list(_iter_jsonl(path))
+
+
+def _iter_jsonl(path: Path):
     with path.open("r", encoding="utf-8") as handle:
         for line in handle:
             if line.strip():
-                rows.append(json.loads(line))
-    return rows
+                yield json.loads(line)
 
 
 def _write_csv(path: Path, rows: list[dict[str, Any]]) -> None:

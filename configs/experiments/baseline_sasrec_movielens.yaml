@@ -1,0 +1,17 @@
+template: false
+seed: 13
+run_name: baseline_sasrec_movielens
+output_dir: outputs/external_baselines
+dataset:
+  name: movielens_1m_r2
+  processed_dir: data/processed/movielens_1m/r2_full_single_dataset
+external_baseline:
+  name: sasrec_recbole
+  config_path: configs/baselines/sasrec_recbole.yaml
+  dataset_name: movielens_1m_r2_recbole
+  training:
+    epochs: 100
+candidate:
+  protocol: sampled
+  size: 500
+  include_target: true
