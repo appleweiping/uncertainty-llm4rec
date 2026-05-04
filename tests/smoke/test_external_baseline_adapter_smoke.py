@@ -11,10 +11,16 @@ def test_recbole_smoke_skips_when_not_installed() -> None:
         pytest.skip("RecBole optional baseline dependency is not installed")
     repo = Path(__file__).resolve().parents[2]
     result = subprocess.run(
-        [sys.executable, str(repo / "scripts" / "run_external_baseline.py"), "--config", str(repo / "configs" / "experiments" / "baseline_sasrec_amazon_beauty.yaml")],
+        [
+            sys.executable,
+            str(repo / "scripts" / "run_external_baseline.py"),
+            "--config",
+            str(repo / "configs" / "experiments" / "baseline_sasrec_amazon_beauty.yaml"),
+            "--prepare-only",
+        ],
         cwd=repo,
         text=True,
         capture_output=True,
         timeout=120,
     )
-    assert result.returncode in {0, 2}
+    assert result.returncode == 0

@@ -8,3 +8,4 @@
 - Raw outputs saved: `preference_signals.jsonl` and raw LLM output artifacts exist for real CU-GR v2 runs.
 - Cost/latency saved: per-seed cost latency CSV/JSON artifacts exist for both CU-GR v2 gates.
 - Failed v1 evidence retained: MovieLens R3/R3b tables and case studies are kept and referenced as motivation, not deleted or hidden.
+- Strong baselines: RecBole SASRec/LightGCN now route through TRUCE candidate scoring/import/evaluation. MovieLens 1M and Amazon Beauty have completed TRUCE-evaluated rows. Amazon Video Games RecBole rows were not run and are not claimed as passed.

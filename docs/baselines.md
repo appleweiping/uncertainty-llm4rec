@@ -58,7 +58,16 @@ experimental conclusions.
 - Forbidden signals: held-out targets and future interactions.
 - Candidate protocol: shared candidate set.
 - Output schema: imported into unified prediction schema after external scoring.
-- Status: adapter/config/export implemented; training not completed because RecBole is not installed in the current environment. No SASRec paper metric should be reported yet.
+- Status: adapter/config/export/training/scoring/import are implemented. MovieLens 1M and Amazon Beauty completed end-to-end on CPU with RecBole 1.2.1 and TRUCE evaluator metrics saved under `outputs/runs/movielens_1m_r2_sasrec_recbole_seed13/` and `outputs/runs/amazon_reviews_2023_beauty_cu_gr_v2_sasrec_recbole_seed13/`.
+
+### BERT4Rec via RecBole adapter
+
+- Input signals: exported chronological histories with `item_id_list`.
+- Training data used: train examples only.
+- Forbidden signals: held-out targets and future interactions.
+- Candidate protocol: shared candidate set.
+- Output schema: imported into unified prediction schema after external scoring.
+- Status: adapter/config/export/training/scoring/import are implemented. MovieLens 1M and Amazon Beauty completed end-to-end on CPU with TRUCE evaluator metrics saved under `outputs/runs/movielens_1m_r2_bert4rec_recbole_seed13/` and `outputs/runs/amazon_reviews_2023_beauty_cu_gr_v2_bert4rec_recbole_seed13/`.
 
 ### LightGCN via RecBole adapter
 
@@ -67,7 +76,18 @@ experimental conclusions.
 - Forbidden signals: held-out targets, validation/test popularity leakage, and external evaluator metrics as final paper numbers.
 - Candidate protocol: shared candidate set.
 - Output schema: imported into unified prediction schema after external scoring.
-- Status: adapter/config/export implemented; training not completed because RecBole is not installed in the current environment. No LightGCN paper metric should be reported yet.
+- Status: adapter/config/export/training/scoring/import are implemented. MovieLens 1M and Amazon Beauty completed end-to-end on CPU with RecBole 1.2.1 and TRUCE evaluator metrics saved under `outputs/runs/movielens_1m_r2_lightgcn_recbole_seed13/` and `outputs/runs/amazon_reviews_2023_beauty_cu_gr_v2_lightgcn_recbole_seed13/`.
+
+## Optional RecBole Environment
+
+Tested local environment: Python 3.12.0, torch 2.10.0+cpu, RecBole 1.2.1, NumPy 1.26.4, SciPy 1.11.4, Ray 2.55.1 compatibility workaround, CPU only on Intel Core i5-1240P. CUDA was unavailable. RecBole 1.2.1 declares `ray<=2.6.3`, but that Ray range has no Python 3.12 Windows wheel; a cleaner paper environment should use Python 3.10 or 3.11 with the pinned baseline extra.
+
+Install command used here:
+
+```powershell
+py -3 -m pip install recbole==1.2.1 --no-deps -i https://pypi.org/simple
+py -3 -m pip install colorlog==4.7.2 colorama==0.4.4 tensorboard thop tabulate plotly texttable psutil "ray[tune]" "numpy<2" "scipy==1.11.4" -i https://pypi.org/simple
+```
 
 ### LLM generative / rerank / confidence observation
 
@@ -93,3 +113,9 @@ experiment protocol, multi-seed runs, and comparable candidate sets are
 complete.
 
 RecBole-backed baselines are optional. Install with `py -3 -m pip install -e .[baselines]` in a compatible environment before running SASRec or LightGCN.
+
+## Strong Baseline Adapter Completion Notes
+
+MovieLens 1M SASRec: Recall@10 0.184934, NDCG@10 0.108555, MRR@10 0.085336. MovieLens 1M BERT4Rec: Recall@10 0.199172, NDCG@10 0.107392, MRR@10 0.079387. MovieLens 1M LightGCN: Recall@10 0.212086, NDCG@10 0.107865, MRR@10 0.076519. Amazon Beauty SASRec: Recall@10 0.013333, NDCG@10 0.005158, MRR@10 0.002667. Amazon Beauty BERT4Rec and LightGCN: all three top-10 ranking metrics are 0.000000.
+
+These are TRUCE evaluator metrics computed from imported RecBole candidate scores, not RecBole evaluator metrics. SASRec and BERT4Rec use chronological item histories exported as `item_id_list`; LightGCN uses train interactions only. Validation is used only by RecBole model selection/early stopping, and test candidates are scored only after training.

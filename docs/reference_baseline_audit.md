@@ -25,11 +25,11 @@ The local lightweight reference note does not name a specific runnable baseline 
 - Exporting canonical TRUCE data to RecBole-compatible atomic files is feasible and implemented.
 - Importing externally scored candidate predictions back into the TRUCE prediction schema is feasible and implemented.
 - Writing RecBole config files for SASRec and LightGCN is feasible and implemented.
-- Running RecBole training is not feasible in the current environment because `recbole` is not installed.
+- Running RecBole training is feasible after installing the optional baseline stack. MovieLens 1M and Amazon Beauty completed for both SASRec and LightGCN and final metrics were computed by the TRUCE evaluator.
 
 ## Too Expensive or Incompatible Now
 
-- Full SASRec and LightGCN training cannot be reported as paper-candidate evidence until the optional RecBole dependency is installed and the scoring/import path is executed.
+- Amazon Video Games SASRec and LightGCN were not run in this stage because the minimum MovieLens/Beauty scope was completed and the third-domain CU-GR v2 gate is already a diagnostic non-pass. Do not tune or extend that domain unless explicitly requested.
 - No external evaluator metrics should be copied into paper tables. External projects may train and score candidates, but TRUCE must compute Recall@10, NDCG@10, MRR@10, and HitRate@10.
 
 ## Integration Plan
@@ -50,7 +50,9 @@ The local lightweight reference note does not name a specific runnable baseline 
 
 ## RecBole Availability
 
-RecBole is not installed in the current Python environment. The project now declares an optional `baselines` extra:
+RecBole 1.2.1 was installed as an optional baseline dependency for this gate. The tested stack was Python 3.12.0, torch 2.10.0+cpu, RecBole 1.2.1, NumPy 1.26.4, SciPy 1.11.4, Ray 2.55.1, CPU only. RecBole 1.2.1 pins `ray<=2.6.3`, which does not have a Python 3.12 Windows wheel, so Python 3.10/3.11 is recommended for cleaner paper-grade reproduction.
+
+The project declares an optional `baselines` extra:
 
 ```bash
 py -3 -m pip install -e .[baselines]
@@ -58,8 +60,18 @@ py -3 -m pip install -e .[baselines]
 
 The external baseline scripts fail clearly when RecBole is missing instead of falling back to toy implementations.
 
+Environment check commands for this gate:
+
+```powershell
+py -3 -c "import sys; print(sys.version)"
+py -3 -c "import torch; print(torch.__version__)"
+py -3 -c "import recbole; print(recbole.__version__)"
+```
+
+Observed environment: Python 3.12.0, torch 2.10.0+cpu, RecBole 1.2.1, CPU only on Intel Core i5-1240P. CUDA was unavailable.
+
 ## Paper-Candidate Evidence Status
 
 - Paper-candidate evidence exists for existing TRUCE-evaluated baselines and CU-GR v2 artifacts already produced by the pipeline.
-- SASRec and LightGCN are not paper-candidate evidence yet because training/scoring was not completed in this environment.
+- MovieLens 1M and Amazon Beauty SASRec/LightGCN now have TRUCE-evaluated prediction artifacts. Amazon Video Games SASRec/LightGCN were not run and must not be marked passed.
 - The Amazon Video Games third-domain CU-GR v2 run is valid negative/diagnostic evidence, but it did not pass the held-out seed42 success gate.

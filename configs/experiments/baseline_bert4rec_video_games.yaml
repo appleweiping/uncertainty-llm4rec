@@ -1,17 +1,17 @@
 template: false
 seed: 13
-run_name: baseline_lightgcn_video_games
+run_name: baseline_bert4rec_video_games
 output_dir: outputs/external_baselines
 dataset:
   name: amazon_reviews_2023_video_games_cu_gr_v2
   processed_dir: data/processed/amazon_reviews_2023_video_games/cu_gr_v2
 external_baseline:
-  name: lightgcn_recbole
-  config_path: configs/baselines/lightgcn_recbole.yaml
+  name: bert4rec_recbole
+  config_path: configs/baselines/bert4rec_recbole.yaml
   dataset_name: amazon_video_games_cu_gr_v2_recbole
   training:
     epochs: 100
-    train_batch_size: 65536
+    MAX_ITEM_LIST_LENGTH: 50
 candidate:
   protocol: sampled
   size: 500

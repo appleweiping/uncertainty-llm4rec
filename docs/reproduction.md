@@ -24,6 +24,54 @@ Use the repository venv if it already exists.
 .\.venv\bin\python.exe -m pytest
 ```
 
+## 2.1 Optional RecBole Strong Baselines
+
+RecBole is optional and must not be treated as a mandatory dependency for smoke
+tests. The tested local compatibility stack for this gate was Python 3.12.0,
+torch 2.10.0+cpu, RecBole 1.2.1, NumPy 1.26.4, SciPy 1.11.4, Ray 2.55.1, CPU
+only. Because RecBole 1.2.1 pins `ray<=2.6.3` and that Ray range is not
+available for Python 3.12 on Windows, paper-grade reproduction should prefer a
+Python 3.10/3.11 environment.
+
+Adapter validation:
+
+```powershell
+py -3 scripts\export_recbole_data.py --config configs\experiments\baseline_sasrec_movielens.yaml
+py -3 scripts\export_recbole_data.py --config configs\experiments\baseline_lightgcn_movielens.yaml
+py -3 -m pytest tests\unit\test_external_baseline_data_export.py tests\unit\test_external_prediction_import.py tests\unit\test_recbole_adapter_config.py
+```
+
+Full external baselines train with RecBole, score TRUCE candidates, and save
+TRUCE evaluator metrics under `outputs/runs/<dataset>_<baseline>_<seed>/`.
+MovieLens 1M completed for SASRec, BERT4Rec, and LightGCN on the tested CPU
+host. Amazon Beauty completed for SASRec, BERT4Rec, and LightGCN on the same
+host. Amazon Video Games was not run in this strong-baseline completion stage.
+
+Minimum completed commands:
+
+```powershell
+py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_sasrec_movielens.yaml
+py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_sasrec_movielens.yaml
+py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_bert4rec_movielens.yaml
+py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_bert4rec_movielens.yaml
+py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_lightgcn_movielens.yaml
+py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_lightgcn_movielens.yaml
+py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_sasrec_amazon_beauty.yaml
+py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_sasrec_amazon_beauty.yaml
+py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_bert4rec_amazon_beauty.yaml
+py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_bert4rec_amazon_beauty.yaml
+py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_lightgcn_amazon_beauty.yaml
+py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_lightgcn_amazon_beauty.yaml
+```
+
+BERT4Rec adapter readiness was checked before training:
+
+```powershell
+py -3 scripts\export_recbole_data.py --config configs\experiments\baseline_bert4rec_movielens.yaml
+py -3 scripts\export_recbole_data.py --config configs\experiments\baseline_bert4rec_amazon_beauty.yaml
+py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_bert4rec_amazon_beauty.yaml --prepare-only
+```
+
 ## 3. Run Phase 1-6 smoke pipelines
 
 ```powershell

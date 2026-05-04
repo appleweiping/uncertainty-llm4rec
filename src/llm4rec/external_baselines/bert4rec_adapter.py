@@ -1,4 +1,4 @@
-"""SASRec adapter metadata for RecBole-backed external baseline runs."""
+"""BERT4Rec adapter metadata for RecBole-backed external baseline runs."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from typing import Any
 from llm4rec.external_baselines.base import ExternalBaselineConfig
 
 
-def sasrec_config(
+def bert4rec_config(
     *,
     dataset_name: str,
     processed_dir: str | Path,
@@ -18,8 +18,8 @@ def sasrec_config(
     candidate_protocol: dict[str, Any] | None = None,
 ) -> ExternalBaselineConfig:
     return ExternalBaselineConfig(
-        name="sasrec_recbole",
-        model_name="SASRec",
+        name="bert4rec_recbole",
+        model_name="BERT4Rec",
         source_project="RecBole",
         dataset_name=dataset_name,
         processed_dir=Path(processed_dir),

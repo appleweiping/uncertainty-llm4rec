@@ -25,6 +25,7 @@ def main() -> int:
     config = load_config(args.config)
     dataset = config.get("dataset") if isinstance(config.get("dataset"), dict) else {}
     baseline = config.get("external_baseline") if isinstance(config.get("external_baseline"), dict) else {}
+    training = baseline.get("training") if isinstance(baseline.get("training"), dict) else {}
     processed_dir = dataset.get("processed_dir")
     dataset_name = baseline.get("dataset_name") or dataset.get("name") or config.get("run_name")
     if not processed_dir:
@@ -34,6 +35,7 @@ def main() -> int:
         output_dir=args.output,
         dataset_name=str(dataset_name),
         seed=int(config.get("seed") or 0),
+        sasrec_max_item_list_length=int(training.get("MAX_ITEM_LIST_LENGTH") or 50),
     )
     print(json.dumps(manifest, indent=2))
     return 0

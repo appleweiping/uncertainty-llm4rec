@@ -21,6 +21,7 @@ def import_scored_candidates(
     checkpoint_path: str | Path | None = None,
     seed: int = 0,
     candidate_protocol: dict[str, Any] | None = None,
+    split: str | None = None,
 ) -> dict[str, Any]:
     """Convert per-candidate external scores into prediction JSONL."""
 
@@ -31,6 +32,8 @@ def import_scored_candidates(
     n = 0
     with output.open("w", encoding="utf-8") as handle:
         for ex in examples:
+            if split is not None and _normalize_split(ex.get("split")) != _normalize_split(split):
+                continue
             example_id = _example_id(ex)
             candidate_items = [str(x) for x in ex.get("candidates") or ex.get("candidate_items") or []]
             scored = {item: float(scores.get((example_id, item), scores.get((str(ex.get("user_id")), item), 0.0))) for item in candidate_items}
@@ -48,12 +51,17 @@ def import_scored_candidates(
                     "example_id": example_id,
                     "split": ex.get("split"),
                     "external_baseline": True,
+                    "library": source_project,
+                    "source_project": source_project,
                     "source_project/library": source_project,
+                    "recbole_version": _recbole_version() if source_project.lower() == "recbole" else "",
                     "model_name": model_name,
                     "training_config": training_config or {},
                     "checkpoint_path": str(checkpoint_path or ""),
                     "seed": int(seed),
                     "candidate_protocol": candidate_protocol or {},
+                    "score_import_method": "per_candidate_score_csv",
+                    "truce_evaluator_used": True,
                     "import_time": datetime.now(timezone.utc).isoformat(),
                 },
             }
@@ -87,3 +95,19 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 def _example_id(row: dict[str, Any]) -> str:
     meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
     return str(row.get("example_id") or meta.get("example_id") or row.get("user_id") or "")
+
+
+def _normalize_split(value: Any) -> str:
+    split = str(value or "").lower()
+    if split in {"val", "validation"}:
+        return "valid"
+    return split
+
+
+def _recbole_version() -> str:
+    try:
+        import recbole
+
+        return str(recbole.__version__)
+    except Exception:
+        return ""
