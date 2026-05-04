@@ -69,6 +69,15 @@ experimental conclusions.
 - Output schema: imported into unified prediction schema after external scoring.
 - Status: adapter/config/export/training/scoring/import are implemented. MovieLens 1M and Amazon Beauty completed end-to-end on CPU with TRUCE evaluator metrics saved under `outputs/runs/movielens_1m_r2_bert4rec_recbole_seed13/` and `outputs/runs/amazon_reviews_2023_beauty_cu_gr_v2_bert4rec_recbole_seed13/`.
 
+### GRU4Rec via RecBole adapter
+
+- Input signals: exported chronological histories with `item_id_list`.
+- Training data used: train examples only.
+- Forbidden signals: held-out targets and future interactions.
+- Candidate protocol: shared candidate set.
+- Output schema: imported into unified prediction schema after external scoring.
+- Status: adapter/config/export/training/scoring/import are implemented. MovieLens 1M and Amazon Beauty completed end-to-end on CPU with TRUCE evaluator metrics saved under `outputs/runs/movielens_1m_r2_gru4rec_recbole_seed13/` and `outputs/runs/amazon_reviews_2023_beauty_cu_gr_v2_gru4rec_recbole_seed13/`.
+
 ### LightGCN via RecBole adapter
 
 - Input signals: exported canonical train interactions.
@@ -116,6 +125,6 @@ RecBole-backed baselines are optional. Install with `py -3 -m pip install -e .[b
 
 ## Strong Baseline Adapter Completion Notes
 
-MovieLens 1M SASRec: Recall@10 0.184934, NDCG@10 0.108555, MRR@10 0.085336. MovieLens 1M BERT4Rec: Recall@10 0.199172, NDCG@10 0.107392, MRR@10 0.079387. MovieLens 1M LightGCN: Recall@10 0.212086, NDCG@10 0.107865, MRR@10 0.076519. Amazon Beauty SASRec: Recall@10 0.013333, NDCG@10 0.005158, MRR@10 0.002667. Amazon Beauty BERT4Rec and LightGCN: all three top-10 ranking metrics are 0.000000.
+MovieLens 1M SASRec: Recall@10 0.184934, NDCG@10 0.108555, MRR@10 0.085336. MovieLens 1M BERT4Rec: Recall@10 0.199172, NDCG@10 0.107392, MRR@10 0.079387. MovieLens 1M GRU4Rec: Recall@10 0.160099, NDCG@10 0.088435, MRR@10 0.066755. MovieLens 1M LightGCN: Recall@10 0.212086, NDCG@10 0.107865, MRR@10 0.076519. Amazon Beauty SASRec: Recall@10 0.013333, NDCG@10 0.005158, MRR@10 0.002667. Amazon Beauty BERT4Rec, GRU4Rec, and LightGCN: all three top-10 ranking metrics are 0.000000.
 
-These are TRUCE evaluator metrics computed from imported RecBole candidate scores, not RecBole evaluator metrics. SASRec and BERT4Rec use chronological item histories exported as `item_id_list`; LightGCN uses train interactions only. Validation is used only by RecBole model selection/early stopping, and test candidates are scored only after training.
+These are TRUCE evaluator metrics computed from imported RecBole candidate scores, not RecBole evaluator metrics. SASRec, BERT4Rec, and GRU4Rec use chronological item histories exported as `item_id_list`; LightGCN uses train interactions only. Validation is used only by RecBole model selection/early stopping, and test candidates are scored only after training.

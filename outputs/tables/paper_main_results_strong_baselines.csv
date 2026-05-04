@@ -5,6 +5,7 @@ MovieLens 1M,MF,0.055960,0.025797,0.016732,0.055960,NA,NA,0.000000,paper_candida
 MovieLens 1M,sequential_markov,0.460000,0.310736,0.264274,0.460000,NA,NA,0.000000,paper_candidate,TRUCE evaluator
 MovieLens 1M,SASRec,0.184934,0.108555,0.085336,0.184934,NA,NA,0.000000,paper_candidate,RecBole trained/scored; TRUCE evaluator
 MovieLens 1M,BERT4Rec,0.199172,0.107392,0.079387,0.199172,NA,NA,0.000000,paper_candidate,RecBole trained/scored; TRUCE evaluator
+MovieLens 1M,GRU4Rec,0.160099,0.088435,0.066755,0.160099,NA,NA,0.000000,paper_candidate,RecBole trained/scored; TRUCE evaluator
 MovieLens 1M,LightGCN,0.212086,0.107865,0.076519,0.212086,NA,NA,0.000000,paper_candidate,RecBole trained/scored; TRUCE evaluator
 MovieLens 1M,LLM direct generation,0.000000,0.000000,0.000000,0.000000,NA,0.999007,0.191745,paper_candidate_negative,Free-form generation failure evidence retained
 MovieLens 1M,LLM listwise panel,0.250000,0.138267,0.102788,0.250000,0.060000,0.990000,0.059083,paper_candidate,DeepSeek v4 flash real calls
@@ -15,12 +16,14 @@ Amazon Beauty,MF,NA,NA,NA,NA,NA,NA,NA,not_run,No Beauty MF artifact found for th
 Amazon Beauty,sequential_markov,0.000000,0.000000,0.000000,0.000000,NA,NA,0.000000,paper_candidate,TRUCE evaluator
 Amazon Beauty,SASRec,0.013333,0.005158,0.002667,0.013333,NA,NA,0.000000,paper_candidate,RecBole clean rerun; TRUCE evaluator
 Amazon Beauty,BERT4Rec,0.000000,0.000000,0.000000,0.000000,NA,NA,0.000000,paper_candidate,RecBole trained/scored; TRUCE evaluator
+Amazon Beauty,GRU4Rec,0.000000,0.000000,0.000000,0.000000,NA,NA,0.000000,paper_candidate,RecBole trained/scored; TRUCE evaluator
 Amazon Beauty,LightGCN,0.000000,0.000000,0.000000,0.000000,NA,NA,0.000000,paper_candidate,RecBole clean rerun; TRUCE evaluator
 Amazon Beauty,LLM direct generation,NA,NA,NA,NA,NA,NA,NA,not_run,No direct-generation API run for this domain
 Amazon Beauty,LLM listwise panel,0.160000,0.134076,0.125917,0.160000,0.045000,0.950000,0.076183,paper_candidate,DeepSeek v4 flash real calls
 Amazon Beauty,CU-GR v2 fusion,0.175000,0.154217,0.147548,0.175000,0.015000,0.950000,0.076183,paper_candidate,Passed held-out seed42 gate; stronger than RecBole baselines in this protocol
 Amazon Video Games,BM25/fallback,0.170000,0.096066,0.073696,0.170000,0.000000,NA,0.000000,paper_candidate_diagnostic,TRUCE evaluator
 Amazon Video Games,SASRec,NA,NA,NA,NA,NA,NA,NA,not_run,Not run; third domain was not tuned or extended in this stage
+Amazon Video Games,GRU4Rec,NA,NA,NA,NA,NA,NA,NA,not_run,Not run; third domain was not tuned or extended in this stage
 Amazon Video Games,LightGCN,NA,NA,NA,NA,NA,NA,NA,not_run,Not run; third domain was not tuned or extended in this stage
 Amazon Video Games,LLM listwise panel,0.150000,0.088131,0.069506,0.150000,0.100000,0.975000,0.061430,paper_candidate_diagnostic,Third-domain seed42 degraded vs fallback
 Amazon Video Games,CU-GR v2 fusion,0.175000,0.104206,0.082901,0.175000,0.020000,0.975000,0.061430,paper_candidate_diagnostic,Improved by +0.008140 but failed +0.01 gate

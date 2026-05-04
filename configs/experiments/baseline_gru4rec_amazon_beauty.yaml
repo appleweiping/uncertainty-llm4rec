@@ -1,0 +1,17 @@
+seed: 13
+run_name: baseline_gru4rec_amazon_beauty
+output_dir: outputs/external_baselines
+dataset:
+  name: amazon_reviews_2023_beauty_cu_gr_v2
+  processed_dir: data/processed/amazon_reviews_2023_beauty/cu_gr_v2
+external_baseline:
+  name: gru4rec_recbole
+  config_path: configs/baselines/gru4rec_recbole.yaml
+  dataset_name: amazon_beauty_cu_gr_v2_recbole
+  training:
+    epochs: 100
+    MAX_ITEM_LIST_LENGTH: 50
+candidate:
+  protocol: sampled
+  size: 479
+  include_target: true

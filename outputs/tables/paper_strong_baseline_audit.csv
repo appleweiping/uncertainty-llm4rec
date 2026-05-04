@@ -1,9 +1,12 @@
 Dataset,Baseline,Integration route,Data export,Training status,Prediction import status,TRUCE evaluator status,Paper-candidate evidence,Blocking issue
 MovieLens 1M,SASRec,RecBole optional adapter,completed,completed,completed,completed,yes,none
 MovieLens 1M,BERT4Rec,RecBole optional adapter,completed,completed,completed,completed,yes,none
+MovieLens 1M,GRU4Rec,RecBole optional adapter,completed,completed,completed,completed,yes,none
 MovieLens 1M,LightGCN,RecBole optional adapter,completed,completed,completed,completed,yes,none
 Amazon Beauty,SASRec,RecBole optional adapter,completed,completed,completed,completed,yes,none
 Amazon Beauty,BERT4Rec,RecBole optional adapter,completed,completed,completed,completed,yes,none
+Amazon Beauty,GRU4Rec,RecBole optional adapter,completed,completed,completed,completed,yes,none
 Amazon Beauty,LightGCN,RecBole optional adapter,completed,completed,completed,completed,yes,none
 Amazon Video Games,SASRec,RecBole optional adapter,completed,not_run,not_run,not_run,no,not attempted by scope; third domain was not tuned
+Amazon Video Games,GRU4Rec,RecBole optional adapter,not_run,not_run,not_run,not_run,no,not attempted by scope; third domain was not tuned
 Amazon Video Games,LightGCN,RecBole optional adapter,completed,not_run,not_run,not_run,no,not attempted by scope; third domain was not tuned

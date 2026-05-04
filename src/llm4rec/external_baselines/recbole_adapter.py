@@ -403,4 +403,4 @@ def _normalize_split(value: Any) -> str:
 
 
 def _is_sequential_recbole_model(model_name: Any) -> bool:
-    return str(model_name or "").lower() in {"sasrec", "bert4rec"}
+    return str(model_name or "").lower() in {"sasrec", "bert4rec", "gru4rec"}

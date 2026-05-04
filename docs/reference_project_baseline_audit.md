@@ -139,19 +139,26 @@ to the TRUCE artifact contract:
 
 ## Near-Term Traditional Baseline Patch
 
-BERT4Rec has been added as a RecBole-backed external baseline adapter:
+BERT4Rec and GRU4Rec have been added as RecBole-backed external baseline adapters:
 
 - `configs/baselines/bert4rec_recbole.yaml`
+- `configs/baselines/gru4rec_recbole.yaml`
 - `configs/experiments/baseline_bert4rec_movielens.yaml`
 - `configs/experiments/baseline_bert4rec_amazon_beauty.yaml`
 - `configs/experiments/baseline_bert4rec_video_games.yaml`
+- `configs/experiments/baseline_gru4rec_movielens.yaml`
+- `configs/experiments/baseline_gru4rec_amazon_beauty.yaml`
+- `configs/experiments/baseline_gru4rec_video_games.yaml`
 - `src/llm4rec/external_baselines/bert4rec_adapter.py`
+- `src/llm4rec/external_baselines/gru4rec_adapter.py`
 
 It reuses the chronological sequential benchmark export with
 `item_id_list:token_seq`. MovieLens completed end-to-end on CPU with TRUCE
-Recall@10 0.199172, NDCG@10 0.107392, and MRR@10 0.079387. Amazon Beauty also
-completed end-to-end on CPU: TRUCE Recall@10, NDCG@10, and MRR@10 are all
-0.000000 under the current adapter/config.
+Recall@10 0.199172, NDCG@10 0.107392, and MRR@10 0.079387 for BERT4Rec; GRU4Rec
+reached Recall@10 0.160099, NDCG@10 0.088435, and MRR@10 0.066755. Amazon
+Beauty also completed end-to-end on CPU: BERT4Rec, GRU4Rec, and LightGCN all
+have TRUCE Recall@10, NDCG@10, and MRR@10 of 0.000000 under the current
+adapter/config.
 
 Recommended commands:
 

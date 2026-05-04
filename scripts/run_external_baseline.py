@@ -27,6 +27,7 @@ from llm4rec.external_baselines.data_export import export_recbole_atomic  # noqa
 from llm4rec.external_baselines.prediction_import import import_scored_candidates  # noqa: E402
 from llm4rec.external_baselines.recbole_adapter import build_recbole_config, run_recbole_training, score_recbole_candidates, write_recbole_config  # noqa: E402
 from llm4rec.external_baselines.bert4rec_adapter import bert4rec_config  # noqa: E402
+from llm4rec.external_baselines.gru4rec_adapter import gru4rec_config  # noqa: E402
 from llm4rec.external_baselines.sasrec_adapter import sasrec_config  # noqa: E402
 from llm4rec.external_baselines.lightgcn_adapter import lightgcn_config  # noqa: E402
 from llm4rec.io.artifacts import write_environment, write_json  # noqa: E402
@@ -57,6 +58,8 @@ def main() -> int:
         ext_config = sasrec_config(dataset_name=dataset_name, processed_dir=processed_dir, output_dir=out_dir, seed=seed, training_config=baseline.get("training") or {}, candidate_protocol=candidate)
     elif name == "bert4rec_recbole":
         ext_config = bert4rec_config(dataset_name=dataset_name, processed_dir=processed_dir, output_dir=out_dir, seed=seed, training_config=baseline.get("training") or {}, candidate_protocol=candidate)
+    elif name == "gru4rec_recbole":
+        ext_config = gru4rec_config(dataset_name=dataset_name, processed_dir=processed_dir, output_dir=out_dir, seed=seed, training_config=baseline.get("training") or {}, candidate_protocol=candidate)
     elif name == "lightgcn_recbole":
         ext_config = lightgcn_config(dataset_name=dataset_name, processed_dir=processed_dir, output_dir=out_dir, seed=seed, training_config=baseline.get("training") or {}, candidate_protocol=candidate)
     else:

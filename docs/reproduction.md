@@ -43,9 +43,10 @@ py -3 -m pytest tests\unit\test_external_baseline_data_export.py tests\unit\test
 
 Full external baselines train with RecBole, score TRUCE candidates, and save
 TRUCE evaluator metrics under `outputs/runs/<dataset>_<baseline>_<seed>/`.
-MovieLens 1M completed for SASRec, BERT4Rec, and LightGCN on the tested CPU
-host. Amazon Beauty completed for SASRec, BERT4Rec, and LightGCN on the same
-host. Amazon Video Games was not run in this strong-baseline completion stage.
+MovieLens 1M completed for SASRec, BERT4Rec, GRU4Rec, and LightGCN on the
+tested CPU host. Amazon Beauty completed for SASRec, BERT4Rec, GRU4Rec, and
+LightGCN on the same host. Amazon Video Games was not run in this
+strong-baseline completion stage.
 
 Minimum completed commands:
 
@@ -54,12 +55,16 @@ py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_sas
 py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_sasrec_movielens.yaml
 py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_bert4rec_movielens.yaml
 py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_bert4rec_movielens.yaml
+py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_gru4rec_movielens.yaml
+py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_gru4rec_movielens.yaml
 py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_lightgcn_movielens.yaml
 py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_lightgcn_movielens.yaml
 py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_sasrec_amazon_beauty.yaml
 py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_sasrec_amazon_beauty.yaml
 py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_bert4rec_amazon_beauty.yaml
 py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_bert4rec_amazon_beauty.yaml
+py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_gru4rec_amazon_beauty.yaml
+py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_gru4rec_amazon_beauty.yaml
 py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_lightgcn_amazon_beauty.yaml
 py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_lightgcn_amazon_beauty.yaml
 ```

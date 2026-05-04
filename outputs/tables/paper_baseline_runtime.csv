@@ -5,13 +5,18 @@ MovieLens 1M,RecBole adapter training,SASRec,completed,1380.244,run cost_latency
 MovieLens 1M,RecBole adapter candidate scoring,SASRec,completed,40.559,run cost_latency.json
 MovieLens 1M,RecBole adapter training,BERT4Rec,completed,628.036,run cost_latency.json
 MovieLens 1M,RecBole adapter candidate scoring,BERT4Rec,completed,57.943,run cost_latency.json
+MovieLens 1M,RecBole adapter training,GRU4Rec,completed,411.428,run cost_latency.json
+MovieLens 1M,RecBole adapter candidate scoring,GRU4Rec,completed,95.349,run cost_latency.json
 MovieLens 1M,RecBole adapter training,LightGCN,completed,2920.000,RecBole log timestamps 19:01:47-19:50:27
 MovieLens 1M,RecBole adapter candidate scoring,LightGCN,completed,43.153,run cost_latency.json
 Amazon Beauty,RecBole adapter training,SASRec,completed,105.817,run cost_latency.json
 Amazon Beauty,RecBole adapter candidate scoring,SASRec,completed,4.080,run cost_latency.json
 Amazon Beauty,RecBole adapter training,BERT4Rec,completed,60.670,run cost_latency.json
 Amazon Beauty,RecBole adapter candidate scoring,BERT4Rec,completed,3.423,run cost_latency.json
+Amazon Beauty,RecBole adapter training,GRU4Rec,completed,33.709,run cost_latency.json
+Amazon Beauty,RecBole adapter candidate scoring,GRU4Rec,completed,1.462,run cost_latency.json
 Amazon Beauty,RecBole adapter training,LightGCN,completed,13.125,run cost_latency.json
 Amazon Beauty,RecBole adapter candidate scoring,LightGCN,completed,4.141,run cost_latency.json
 Amazon Video Games,RecBole adapter training,SASRec,not_run,0.000,out of scope after MovieLens/Beauty completion
+Amazon Video Games,RecBole adapter training,GRU4Rec,not_run,0.000,out of scope after MovieLens/Beauty completion
 Amazon Video Games,RecBole adapter training,LightGCN,not_run,0.000,out of scope after MovieLens/Beauty completion

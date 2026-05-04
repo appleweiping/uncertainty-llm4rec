@@ -2,6 +2,7 @@ from pathlib import Path
 
 from llm4rec.external_baselines.recbole_adapter import build_recbole_config
 from llm4rec.external_baselines.bert4rec_adapter import bert4rec_config
+from llm4rec.external_baselines.gru4rec_adapter import gru4rec_config
 from llm4rec.external_baselines.sasrec_adapter import sasrec_config
 from llm4rec.external_baselines.lightgcn_adapter import lightgcn_config
 
@@ -34,6 +35,19 @@ def test_bert4rec_recbole_config_contract(tmp_path: Path) -> None:
     assert rb["dataset"] == "d"
     assert rb["seed"] == 34
     assert rb["epochs"] == 5
+    assert rb["eval_args"]["order"] == "TO"
+    assert rb["benchmark_filename"] == ["sasrec_train", "sasrec_valid", "sasrec_test"]
+    assert "item_id_list" in rb["load_col"]["inter"]
+    assert rb["alias_of_item_id"] == ["item_id_list"]
+
+
+def test_gru4rec_recbole_config_contract(tmp_path: Path) -> None:
+    cfg = gru4rec_config(dataset_name="d", processed_dir=tmp_path, output_dir=tmp_path / "out", seed=55, training_config={"epochs": 7})
+    rb = build_recbole_config(cfg, exported_dataset_dir=tmp_path / "out" / "d")
+    assert rb["model"] == "GRU4Rec"
+    assert rb["dataset"] == "d"
+    assert rb["seed"] == 55
+    assert rb["epochs"] == 7
     assert rb["eval_args"]["order"] == "TO"
     assert rb["benchmark_filename"] == ["sasrec_train", "sasrec_valid", "sasrec_test"]
     assert "item_id_list" in rb["load_col"]["inter"]
