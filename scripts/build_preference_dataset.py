@@ -13,6 +13,7 @@ _SRC = _ROOT / "src"
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
+from llm4rec.experiments.config import load_config  # noqa: E402
 from llm4rec.experiments.cu_gr_v2_preference import build_dataset_csv_from_signal_paths, build_dataset_csv_from_signals  # noqa: E402
 
 
@@ -61,12 +62,37 @@ def _pick_latest_signal_group(*, repo: Path, runs_roots: list[Path], run_name_pr
     return sorted(groups[latest])
 
 
+def _infer_run_name_prefix(output: Path) -> str:
+    name = output.name if str(output).endswith(".csv") else ""
+    if name.startswith("cu_gr_v2_") and name.endswith("_preference_dataset.csv"):
+        middle = name.removeprefix("cu_gr_v2_").removesuffix("_preference_dataset.csv")
+        if middle:
+            return f"r3_v2_{middle}_preference_full_seeds"
+    return "r3_v2_movielens_preference_signal_subgate"
+
+
+def _infer_processed_dir(signal_group: list[Path], fallback: str) -> str:
+    for signal in signal_group:
+        config_path = signal.parent / "resolved_config.yaml"
+        if not config_path.exists():
+            continue
+        try:
+            config = load_config(config_path)
+        except Exception:
+            continue
+        dataset = config.get("dataset") if isinstance(config.get("dataset"), dict) else {}
+        processed_dir = str(dataset.get("processed_dir") or "").strip()
+        if processed_dir:
+            return processed_dir
+    return fallback
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs", nargs="*", type=Path, default=[Path("outputs/runs")], help="directories to scan for *_seed/preference_signals.jsonl")
-    parser.add_argument("--run-name-prefix", default="r3_v2_movielens_preference_signal_subgate")
+    parser.add_argument("--run-name-prefix", default=None)
     parser.add_argument("--preferences-jsonl", type=Path, default=None, help="If set, use this file directly")
-    parser.add_argument("--processed-dir", default="data/processed/movielens_1m/r2_full_single_dataset")
+    parser.add_argument("--processed-dir", default=None)
     parser.add_argument(
         "--output",
         type=Path,
@@ -75,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    run_name_prefix = args.run_name_prefix or _infer_run_name_prefix(args.output)
     if args.preferences_jsonl:
         signals = args.preferences_jsonl
         signals = signals if signals.is_absolute() else _ROOT / signals
@@ -82,8 +109,8 @@ def main(argv: list[str] | None = None) -> int:
             raise SystemExit(f"preferences-jsonl missing: {signals}")
         signal_group = [signals]
     else:
-        signal_group = _pick_latest_signal_group(repo=_ROOT, runs_roots=list(args.runs), run_name_prefix=args.run_name_prefix)
-        sig = signal_group[-1] if signal_group else _pick_latest_signals(repo=_ROOT, runs_roots=list(args.runs), run_name_prefix=args.run_name_prefix)
+        signal_group = _pick_latest_signal_group(repo=_ROOT, runs_roots=list(args.runs), run_name_prefix=run_name_prefix)
+        sig = signal_group[-1] if signal_group else _pick_latest_signals(repo=_ROOT, runs_roots=list(args.runs), run_name_prefix=run_name_prefix)
         if sig is None:
             raise SystemExit("no preference_signals.jsonl matched; specify --preferences-jsonl")
         signals = sig
@@ -94,16 +121,21 @@ def main(argv: list[str] | None = None) -> int:
     if str(out).endswith(".csv"):
         dataset_csv = out if out.is_absolute() else _ROOT / out
         stats_parent = dataset_csv.parent
+        if dataset_csv.name.endswith("_preference_dataset.csv"):
+            stats_csv = stats_parent / dataset_csv.name.replace("_preference_dataset.csv", "_preference_parser_stats.csv")
+        else:
+            stats_csv = stats_parent / "cu_gr_v2_preference_parser_stats.csv"
     else:
         stats_parent = out if out.is_absolute() else _ROOT / out
         dataset_csv = stats_parent / "cu_gr_v2_preference_dataset.csv"
-    stats_csv = stats_parent / "cu_gr_v2_preference_parser_stats.csv"
+        stats_csv = stats_parent / "cu_gr_v2_preference_parser_stats.csv"
+    processed_dir = args.processed_dir or _infer_processed_dir(signal_group, "data/processed/movielens_1m/r2_full_single_dataset")
 
     if len(signal_group) == 1:
         n = build_dataset_csv_from_signals(
             ROOT=_ROOT,
             signals_path=signal_group[0],
-            processed_dir=args.processed_dir,
+            processed_dir=processed_dir,
             dataset_csv=dataset_csv,
             parser_stats_csv=stats_csv,
         )
@@ -111,11 +143,11 @@ def main(argv: list[str] | None = None) -> int:
         n = build_dataset_csv_from_signal_paths(
             ROOT=_ROOT,
             signals_paths=signal_group,
-            processed_dir=args.processed_dir,
+            processed_dir=processed_dir,
             dataset_csv=dataset_csv,
             parser_stats_csv=stats_csv,
         )
-    print(json.dumps({"signals": [str(p) for p in signal_group], "rows": n, "dataset_csv": str(dataset_csv), "parser_stats_csv": str(stats_csv)}, indent=2))
+    print(json.dumps({"signals": [str(p) for p in signal_group], "rows": n, "dataset_csv": str(dataset_csv), "parser_stats_csv": str(stats_csv), "processed_dir": processed_dir}, indent=2))
     return 0
 
 

@@ -1,0 +1,173 @@
+experiment_kind: cu_gr_v2_preference_subgate
+evidence_label: CU-GR v2 second-domain validation - Amazon Beauty listwise DeepSeek preference on candidate-local panels
+template: false
+dry_run: false
+requires_confirm: false
+seed: 13
+seeds: [13, 21, 42]
+run_name: r3_v2_amazon_beauty_preference_full_seeds
+output_dir: outputs/runs
+domain: amazon_beauty
+
+dataset:
+  name: amazon_reviews_2023_beauty_cu_gr_v2
+  config_path: configs/datasets/amazon_reviews_2023_beauty_cu_gr_v2.yaml
+  raw_data_path: data/processed/amazon_reviews_2023_beauty/full
+  interactions_path: data/processed/amazon_reviews_2023_beauty/cu_gr_v2/interactions.csv
+  items_path: data/processed/amazon_reviews_2023_beauty/cu_gr_v2/items.csv
+  processed_dir: data/processed/amazon_reviews_2023_beauty/cu_gr_v2
+  subset_size: 200
+
+split: test
+
+split_strategy:
+  name: prepared_amazon_chronological_leave_last
+  timestamp_field: timestamp
+  future_interactions: forbidden
+  history_policy: past_interactions_only
+  repeat_target_policy: exclude_history_from_candidates_except_heldout_target
+  train_examples_per_user: prepared_observation_split
+
+candidate:
+  protocol: sampled
+  size: 479
+  k: 479
+  sample_size: 479
+  include_target: true
+  seed: 13
+  set_path: data/processed/amazon_reviews_2023_beauty/cu_gr_v2/candidate_sets.jsonl
+  negative_sampling: fixed_seed_without_replacement_from_catalog_excluding_target_and_history
+  target_policy: include_heldout_target_for_main_eval
+  target_excluding_protocol: diagnostic_only_not_accuracy
+  same_set_for_comparable_baselines: true
+
+data_protocol:
+  interaction_schema: [user_id, item_id, timestamp, rating, domain]
+  item_schema: [item_id, title, description, category, brand, domain, raw_text]
+  user_item_id_mapping: source_item_and_user_ids_preserved_from_amazon_reviews_2023
+  timestamp_handling: prepared_observation_chronological_split
+  train_popularity_source: train_split_only
+  domain_field: domain
+  candidate_set_saved_path: data/processed/amazon_reviews_2023_beauty/cu_gr_v2/candidate_sets.jsonl
+
+subset:
+  max_examples: 200
+
+preference:
+  method_config: configs/methods/llm_candidate_preference_real.yaml
+  panel_size: 15
+  mode: listwise
+  show_fallback_rank: false
+
+cu_gr_v2:
+  panel_size: 15
+  show_fallback_rank: false
+  policies: [fallback_only, llm_listwise_panel, fusion_fixed_grid, fusion_train_best, safe_fusion]
+  fusion_fixed_grid:
+    alpha: 0.7
+    beta: 0.3
+    gamma: 0.1
+    lambda: 0.05
+  fusion_train_best:
+    train_seed: 13
+    validation_seed: 21
+    test_seed: 42
+    alpha: [0.5, 0.7, 0.9, 1.0]
+    beta: [0.1, 0.3, 0.5, 0.7]
+    gamma: [0.0, 0.1, 0.2]
+    lambda: [0.0, 0.05, 0.1]
+    selection_metric: NDCG@10
+    max_harmful_swap_rate: 0.05
+  safe_fusion:
+    validation_seed: 21
+    test_seed: 42
+
+llm:
+  config_path: configs/llm/openai_compatible.yaml
+  provider: openai_compatible
+  type: openai_compatible
+  model: deepseek-v4-flash
+  api_key_env: DEEPSEEK_API_KEY
+  base_url: https://api.deepseek.com
+  timeout_seconds: 120
+  max_retries: 3
+  backoff_seconds: 2
+  temperature: 0.0
+  top_p: 1.0
+  max_tokens: 2048
+  extra_body:
+    response_format:
+      type: json_object
+    thinking:
+      type: disabled
+  cache:
+    enabled: true
+    cache_dir: outputs/api_cache/cu_gr_v2_amazon_beauty_preference
+  resume:
+    enabled: true
+  raw_outputs:
+    enabled: true
+    path: outputs/runs/r3_v2_amazon_beauty_preference_full_seeds_raw_llm_outputs.jsonl
+  request_limits:
+    max_requests: 750
+    max_concurrency: 16
+    requests_per_minute: 300
+  pricing:
+    input_per_1m_tokens: 0.14
+    output_per_1m_tokens: 0.28
+
+cache:
+  enabled: true
+
+resume:
+  enabled: true
+
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [10]
+
+top_k: [10]
+metrics: [ranking]
+
+runs:
+  base_prefix: r3_v2_amazon_beauty_full_candidate479
+
+tables:
+  enabled: true
+  output_dir: outputs/tables
+  prefix: cu_gr_v2_amazon_beauty
+
+report:
+  path: docs/cu_gr_v2_amazon_beauty_report.md
+
+safety:
+  dry_run: false
+  requires_confirm: false
+  allow_api_calls: true
+  allow_download: false
+  allow_training: false
+  acknowledged_expensive_run: true
+  leakage_safeguards: true
+  subset_size: 200
+  max_examples: 200
+  panel_size: 15
+  candidate_size: 479
+  candidate_size_requested: 500
+  cost_limit_usd: 999999
+  concurrency: 16
+  request_timeout_seconds: 120
+  max_retries: 3
+  backoff_seconds: 2
+  max_requests: 750
+
+output:
+  run_name: r3_v2_amazon_beauty_preference_full_seeds
+  output_dir: outputs/runs
+
+logging:
+  level: INFO
+
+r3_cu_gr_v2:
+  note: second-domain CU-GR v2 validation; seed13 train, seed21 validation, seed42 held-out test
+  bm25_predictions_expected_prefix: r3_v2_amazon_beauty_full_candidate479_bm25
+  candidate_size_adjustment: Amazon Beauty local catalog has 479 items, so candidate_size=479 is the largest feasible target-included candidate pool.

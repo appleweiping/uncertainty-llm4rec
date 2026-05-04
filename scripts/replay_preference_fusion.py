@@ -16,6 +16,14 @@ if str(_SRC) not in sys.path:
 from llm4rec.experiments.cu_gr_v2_preference import export_tables_after_signals  # noqa: E402
 
 
+def _table_prefix_for_input(input_path: Path) -> str:
+    name = input_path.name
+    suffix = "_preference_dataset.csv"
+    if name.startswith("cu_gr_v2_") and name.endswith(suffix):
+        return name[: -len(suffix)]
+    return "cu_gr_v2_full_seed"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True, help="Optional dataset path for bookkeeping.")
@@ -34,7 +42,8 @@ def main(argv: list[str] | None = None) -> int:
 
     mo = Path(args.model)
     model_dir = mo if mo.is_absolute() else _ROOT / mo
-    full_seed_weights = _ROOT / "outputs" / "tables" / "cu_gr_v2_full_seed_fusion_weights.csv"
+    table_prefix = _table_prefix_for_input(inp)
+    full_seed_weights = _ROOT / "outputs" / "tables" / f"{table_prefix}_fusion_weights.csv"
     if full_seed_weights.exists() and (model_dir / "model.json").exists():
         out_dir = Path(args.output)
         out_dir = out_dir if out_dir.is_absolute() else _ROOT / out_dir
@@ -43,14 +52,14 @@ def main(argv: list[str] | None = None) -> int:
         full_seed_files = [
             out_dir / name
             for name in (
-                "cu_gr_v2_full_seed_main.csv",
-                "cu_gr_v2_full_seed_by_seed.csv",
-                "cu_gr_v2_full_seed_fusion_weights.csv",
-                "cu_gr_v2_full_seed_swap_analysis.csv",
-                "cu_gr_v2_full_seed_parser_stats.csv",
-                "cu_gr_v2_full_seed_panel_coverage.csv",
-                "cu_gr_v2_full_seed_cost_latency.csv",
-                "cu_gr_v2_full_seed_failure_cases.csv",
+                f"{table_prefix}_main.csv",
+                f"{table_prefix}_by_seed.csv",
+                f"{table_prefix}_fusion_weights.csv",
+                f"{table_prefix}_swap_analysis.csv",
+                f"{table_prefix}_parser_stats.csv",
+                f"{table_prefix}_panel_coverage.csv",
+                f"{table_prefix}_cost_latency.csv",
+                f"{table_prefix}_failure_cases.csv",
             )
         ]
         marker.write_text(

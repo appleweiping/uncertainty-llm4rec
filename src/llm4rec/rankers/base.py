@@ -74,6 +74,11 @@ def prediction_from_scores(
         [str(item_id) for item_id in candidate_items],
         key=lambda item_id: (-float(item_scores.get(item_id, 0.0)), item_id),
     )
+    inherited_metadata = {
+        key: example.get(key)
+        for key in ("history_titles", "history_item_ids", "target_title")
+        if example.get(key) is not None
+    }
     return RankingResult(
         user_id=str(example["user_id"]),
         target_item=str(example["target"]),
@@ -86,6 +91,7 @@ def prediction_from_scores(
         metadata={
             "example_id": example.get("example_id"),
             "split": example.get("split"),
+            **inherited_metadata,
             **(metadata or {}),
         },
     )

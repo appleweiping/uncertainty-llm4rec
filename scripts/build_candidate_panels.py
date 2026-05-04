@@ -16,6 +16,7 @@ if str(_SRC) not in sys.path:
 
 from llm4rec.analysis.calibrator_features import build_dataset_context, example_id_key
 from llm4rec.analysis.ours_error_decomposition import method_run_dir, read_jsonl
+from llm4rec.experiments.config import load_config
 from llm4rec.methods.candidate_panel import (
     build_candidate_panel,
     fallback_full_ranking_in_candidates,
@@ -26,6 +27,54 @@ def index_rows(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return {example_id_key(r): r for r in rows}
 
 
+def _method_run_dir_for_prefix(runs_dir: Path, base_prefix: str | None, method: str, seed: int) -> Path:
+    if not base_prefix:
+        return method_run_dir(runs_dir, method, seed)
+    path = runs_dir / f"{base_prefix}_{method}_seed{seed}"
+    if path.exists():
+        return path
+    aliases = {
+        "ours_ablation_no_uncertainty": "ours_no_uncertainty",
+        "ours_ablation_no_grounding": "ours_no_grounding",
+        "ours_ablation_no_popularity_adjustment": "ours_no_popularity_adjustment",
+        "ours_ablation_no_echo_guard": "ours_no_echo_guard",
+    }
+    alias = aliases.get(method)
+    if alias:
+        alias_path = runs_dir / f"{base_prefix}_{alias}_seed{seed}"
+        if alias_path.exists():
+            return alias_path
+    return path
+
+
+def _resolve_dataset_arg(dataset: str | None) -> dict[str, Any]:
+    if not dataset:
+        return {}
+    path = Path(dataset)
+    if not path.exists():
+        path = Path("configs") / "experiments" / dataset
+    if not path.exists() and not str(path).endswith(".yaml"):
+        path = path.with_suffix(".yaml")
+    if not path.exists():
+        path = Path("configs") / "datasets" / dataset
+    if not path.exists() and not str(path).endswith(".yaml"):
+        path = path.with_suffix(".yaml")
+    if not path.exists():
+        raise SystemExit(f"dataset/config not found: {dataset}")
+    cfg = load_config(path)
+    out: dict[str, Any] = {"config_path": str(path)}
+    ds = cfg.get("dataset") if isinstance(cfg.get("dataset"), dict) else cfg
+    if isinstance(ds, dict):
+        out["processed_dir"] = ds.get("processed_dir")
+    runs = cfg.get("runs") if isinstance(cfg.get("runs"), dict) else {}
+    if runs:
+        out["base_prefix"] = runs.get("base_prefix")
+    tables = cfg.get("tables") if isinstance(cfg.get("tables"), dict) else {}
+    if tables:
+        out["table_prefix"] = tables.get("prefix")
+    return out
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs", type=Path, default=Path("outputs/runs"))
@@ -33,24 +82,32 @@ def main() -> None:
     parser.add_argument("--panel-sizes", type=str, default="10,15,20")
     parser.add_argument("--seeds", type=str, default="13,21,42")
     parser.add_argument("--processed-dir", type=Path, default=None)
+    parser.add_argument("--dataset", type=str, default=None, help="Experiment/dataset config path or name")
+    parser.add_argument("--run-prefix", type=str, default=None)
+    parser.add_argument("--table-prefix", type=str, default="cu_gr_v2")
     args = parser.parse_args()
+
+    dataset_info = _resolve_dataset_arg(args.dataset)
+    processed_dir = args.processed_dir or (Path(str(dataset_info["processed_dir"])) if dataset_info.get("processed_dir") else None)
+    run_prefix = args.run_prefix or dataset_info.get("base_prefix")
+    table_prefix = str(dataset_info.get("table_prefix") or args.table_prefix)
 
     panel_sizes = [int(x.strip()) for x in args.panel_sizes.split(",") if x.strip()]
     seeds = [int(x.strip()) for x in args.seeds.split(",") if x.strip()]
-    ctx = build_dataset_context(str(args.processed_dir) if args.processed_dir else None)
+    ctx = build_dataset_context(str(processed_dir) if processed_dir else None)
 
     coverage_rows: list[dict[str, Any]] = []
     swap_rows: list[dict[str, Any]] = []
     vs_rows: list[dict[str, Any]] = []
 
     for seed in seeds:
-        bm_path = method_run_dir(args.runs, "bm25", seed) / "predictions.jsonl"
+        bm_path = _method_run_dir_for_prefix(args.runs, run_prefix, "bm25", seed) / "predictions.jsonl"
         if not bm_path.exists():
             raise SystemExit(f"missing {bm_path}")
         bm_rows = read_jsonl(bm_path)
-        ours_path = method_run_dir(args.runs, "ours_uncertainty_guided_real", seed) / "predictions.jsonl"
+        ours_path = _method_run_dir_for_prefix(args.runs, run_prefix, "ours_uncertainty_guided_real", seed) / "predictions.jsonl"
         ours_rows = read_jsonl(ours_path) if ours_path.exists() else []
-        seq_path = method_run_dir(args.runs, "sequential_markov", seed) / "predictions.jsonl"
+        seq_path = _method_run_dir_for_prefix(args.runs, run_prefix, "sequential_markov", seed) / "predictions.jsonl"
         seq_rows = read_jsonl(seq_path) if seq_path.exists() else []
         ours_by = index_rows(ours_rows)
         seq_by = index_rows(seq_rows)
@@ -138,21 +195,21 @@ def main() -> None:
             )
 
     args.output.mkdir(parents=True, exist_ok=True)
-    cov_path = args.output / "cu_gr_v2_panel_coverage.csv"
+    cov_path = args.output / f"{table_prefix}_panel_feasibility_coverage.csv"
     with cov_path.open("w", encoding="utf-8", newline="") as handle:
         w = csv.DictWriter(handle, fieldnames=list(coverage_rows[0].keys()))
         w.writeheader()
         for row in coverage_rows:
             w.writerow(row)
 
-    swap_path = args.output / "cu_gr_v2_swap_analysis.csv"
+    swap_path = args.output / f"{table_prefix}_panel_feasibility_swap_analysis.csv"
     with swap_path.open("w", encoding="utf-8", newline="") as handle:
         w = csv.DictWriter(handle, fieldnames=list(swap_rows[0].keys()))
         w.writeheader()
         for row in swap_rows:
             w.writerow(row)
 
-    vs_path = args.output / "cu_gr_v2_vs_fallback.csv"
+    vs_path = args.output / f"{table_prefix}_panel_feasibility_vs_fallback.csv"
     with vs_path.open("w", encoding="utf-8", newline="") as handle:
         w = csv.DictWriter(handle, fieldnames=list(vs_rows[0].keys()))
         w.writeheader()

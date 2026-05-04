@@ -37,6 +37,18 @@ def _pick_latest_signals(*, repo: Path, runs_roots: list[Path], run_name_prefix:
     return best
 
 
+def _weights_path_for_input(input_path: Path | None) -> Path:
+    if input_path is not None:
+        name = input_path.name
+        suffix = "_preference_dataset.csv"
+        if name.startswith("cu_gr_v2_") and name.endswith(suffix):
+            stem = name[: -len(suffix)]
+            candidate = _ROOT / "outputs" / "tables" / f"{stem}_fusion_weights.csv"
+            if candidate.exists():
+                return candidate
+    return _ROOT / "outputs" / "tables" / "cu_gr_v2_full_seed_fusion_weights.csv"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, default=None, help="Preference dataset CSV from build_preference_dataset.py")
@@ -53,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
     mo = mo if mo.is_absolute() else _ROOT / mo
     mo.mkdir(parents=True, exist_ok=True)
 
-    full_seed_weights = _ROOT / "outputs" / "tables" / "cu_gr_v2_full_seed_fusion_weights.csv"
+    full_seed_weights = _weights_path_for_input(args.input)
     if args.input is not None and full_seed_weights.exists():
         with full_seed_weights.open("r", encoding="utf-8", newline="") as handle:
             rows = list(csv.DictReader(handle))

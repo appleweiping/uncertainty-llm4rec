@@ -302,10 +302,23 @@ def run_all(config_path: str | Path) -> dict[str, Any]:
     preprocess_manifests = []
     seeds = _seeds_for_config(config)
     candidate_sizes = _candidate_sizes_for_config(config)
+    preprocess_enabled = not (
+        isinstance(config.get("preprocess"), dict)
+        and config.get("preprocess", {}).get("enabled") is False
+    )
     for candidate_size in candidate_sizes:
         sized_config = _config_for_candidate_size(config, candidate_size)
-        dataset_config = _dataset_config_for_experiment(sized_config)
-        preprocess_manifest = preprocess_dataset(dataset_config)
+        if preprocess_enabled:
+            dataset_config = _dataset_config_for_experiment(sized_config)
+            preprocess_manifest = preprocess_dataset(dataset_config)
+        else:
+            processed_dir = Path(_required_path(sized_config, "dataset", "processed_dir"))
+            manifest_path = processed_dir / "preprocess_manifest.json"
+            preprocess_manifest = (
+                json.loads(manifest_path.read_text(encoding="utf-8"))
+                if manifest_path.exists()
+                else {"processed_dir": str(processed_dir), "preprocess_skipped": True}
+            )
         preprocess_manifests.append(preprocess_manifest)
         for seed in seeds:
             for baseline in baselines:

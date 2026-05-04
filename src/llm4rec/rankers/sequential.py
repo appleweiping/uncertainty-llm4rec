@@ -207,6 +207,11 @@ def _prediction(
     metadata: dict[str, Any],
 ) -> RankingResult:
     ordered = sorted([str(item_id) for item_id in candidate_items], key=lambda item_id: (-scores[item_id], item_id))
+    inherited_metadata = {
+        key: example.get(key)
+        for key in ("history_titles", "history_item_ids", "target_title")
+        if example.get(key) is not None
+    }
     return RankingResult(
         user_id=str(example["user_id"]),
         target_item=str(example["target"]),
@@ -219,6 +224,7 @@ def _prediction(
         metadata={
             "example_id": example.get("example_id"),
             "split": example.get("split"),
+            **inherited_metadata,
             "phase": "phase4_sequential_training_layer",
             **metadata,
         },

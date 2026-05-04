@@ -70,6 +70,29 @@ def cfg_raw_path(config: dict[str, Any], seed: int) -> Path:
     return Path("outputs/runs") / f"r3_v2_movielens_preference_signal_subgate_seed{seed}_raw_llm_outputs.jsonl"
 
 
+def _configured_run_prefix(config: dict[str, Any]) -> str:
+    runs = config.get("runs") if isinstance(config.get("runs"), dict) else {}
+    return str(runs.get("base_prefix") or "r3_movielens_1m_real_llm_full_candidate500")
+
+
+def _method_run_dir_for_prefix(runs_dir: str | Path, base_prefix: str, method: str, seed: int) -> Path:
+    path = Path(runs_dir) / f"{base_prefix}_{method}_seed{seed}"
+    if path.exists():
+        return path
+    aliases = {
+        "ours_ablation_no_uncertainty": "ours_no_uncertainty",
+        "ours_ablation_no_grounding": "ours_no_grounding",
+        "ours_ablation_no_popularity_adjustment": "ours_no_popularity_adjustment",
+        "ours_ablation_no_echo_guard": "ours_no_echo_guard",
+    }
+    alias = aliases.get(method)
+    if alias:
+        alias_path = Path(runs_dir) / f"{base_prefix}_{alias}_seed{seed}"
+        if alias_path.exists():
+            return alias_path
+    return path
+
+
 def _resolve_repo_path(ROOT: Path, p: Path) -> Path:
     return p if p.is_absolute() else (ROOT / p)
 
@@ -679,8 +702,9 @@ def _reference_metrics_for_seed(
     seed: int,
     method: str,
     source_rows: list[dict[str, Any]],
+    base_prefix: str = "r3_movielens_1m_real_llm_full_candidate500",
 ) -> dict[str, Any] | None:
-    path = method_run_dir(ROOT / "outputs" / "runs", method, seed) / "predictions.jsonl"
+    path = _method_run_dir_for_prefix(ROOT / "outputs" / "runs", base_prefix, method, seed) / "predictions.jsonl"
     if not path.exists():
         return None
     ref_by = index_rows(read_jsonl(path))
@@ -726,6 +750,9 @@ def _write_full_seed_outputs(
     rows_by_seed: dict[int, list[dict[str, Any]]],
     provider_summaries_by_seed: dict[int, dict[str, Any]],
     train_pop: dict[str, int],
+    table_prefix: str = "cu_gr_v2_full_seed",
+    report_path: str | Path | None = None,
+    base_prefix: str = "r3_movielens_1m_real_llm_full_candidate500",
 ) -> dict[str, Any]:
     out_dir = ROOT / "outputs" / "tables"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -783,7 +810,7 @@ def _write_full_seed_outputs(
             ("popularity", "popularity_reference"),
             ("ours_uncertainty_guided_real", "R3_Ours_v1_reference"),
         ):
-            ref_metrics = _reference_metrics_for_seed(ROOT=ROOT, seed=seed, method=ref_method, source_rows=pack)
+            ref_metrics = _reference_metrics_for_seed(ROOT=ROOT, seed=seed, method=ref_method, source_rows=pack, base_prefix=base_prefix)
             if ref_metrics is None:
                 continue
             by_seed_rows.append(
@@ -837,7 +864,7 @@ def _write_full_seed_outputs(
 
     val_metrics_selected = _policy_metrics(val_pack, policy_top_fns["fusion_train_best"]) if val_pack else {}
     test_metrics_selected = seed42_metrics.get("fusion_train_best", {})
-    r3_v1_seed42 = _reference_metrics_for_seed(ROOT=ROOT, seed=42, method="ours_uncertainty_guided_real", source_rows=test_pack) if test_pack else None
+    r3_v1_seed42 = _reference_metrics_for_seed(ROOT=ROOT, seed=42, method="ours_uncertainty_guided_real", source_rows=test_pack, base_prefix=base_prefix) if test_pack else None
     weights_rows = [
         {
             "policy": "fusion_train_best",
@@ -948,14 +975,14 @@ def _write_full_seed_outputs(
         }
     )
 
-    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_main.csv", main_rows)
-    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_by_seed.csv", by_seed_rows)
-    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_fusion_weights.csv", weights_rows)
-    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_swap_analysis.csv", swap_rows)
-    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_parser_stats.csv", parser_rows)
-    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_panel_coverage.csv", panel_rows)
-    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_cost_latency.csv", cost_rows)
-    _write_csv_rows(out_dir / "cu_gr_v2_full_seed_failure_cases.csv", failure_rows[:100])
+    _write_csv_rows(out_dir / f"{table_prefix}_main.csv", main_rows)
+    _write_csv_rows(out_dir / f"{table_prefix}_by_seed.csv", by_seed_rows)
+    _write_csv_rows(out_dir / f"{table_prefix}_fusion_weights.csv", weights_rows)
+    _write_csv_rows(out_dir / f"{table_prefix}_swap_analysis.csv", swap_rows)
+    _write_csv_rows(out_dir / f"{table_prefix}_parser_stats.csv", parser_rows)
+    _write_csv_rows(out_dir / f"{table_prefix}_panel_coverage.csv", panel_rows)
+    _write_csv_rows(out_dir / f"{table_prefix}_cost_latency.csv", cost_rows)
+    _write_csv_rows(out_dir / f"{table_prefix}_failure_cases.csv", failure_rows[:100])
 
     heldout_delta = float(test_metrics_selected.get("ndcg@10") or 0.0) - float(seed42_metrics.get("fallback_only", {}).get("ndcg@10") or 0.0)
     success = bool(
@@ -970,7 +997,10 @@ def _write_full_seed_outputs(
     if seed42_metrics and float(seed42_metrics.get("llm_listwise_panel", {}).get("ndcg@10") or 0.0) <= float(seed42_metrics.get("fallback_only", {}).get("ndcg@10") or 0.0):
         interpretation = "observation-first remains primary"
 
-    report = ROOT / "docs" / "cu_gr_v2_full_seed_report.md"
+    report = Path(report_path) if report_path is not None else ROOT / "docs" / "cu_gr_v2_full_seed_report.md"
+    if not report.is_absolute():
+        report = ROOT / report
+    report.parent.mkdir(parents=True, exist_ok=True)
     report.write_text(
         "\n".join(
             [
@@ -1007,14 +1037,14 @@ def _write_full_seed_outputs(
                 "",
                 "## Artifacts",
                 "",
-                "- `outputs/tables/cu_gr_v2_full_seed_main.csv`",
-                "- `outputs/tables/cu_gr_v2_full_seed_by_seed.csv`",
-                "- `outputs/tables/cu_gr_v2_full_seed_fusion_weights.csv`",
-                "- `outputs/tables/cu_gr_v2_full_seed_swap_analysis.csv`",
-                "- `outputs/tables/cu_gr_v2_full_seed_parser_stats.csv`",
-                "- `outputs/tables/cu_gr_v2_full_seed_panel_coverage.csv`",
-                "- `outputs/tables/cu_gr_v2_full_seed_cost_latency.csv`",
-                "- `outputs/tables/cu_gr_v2_full_seed_failure_cases.csv`",
+                f"- `outputs/tables/{table_prefix}_main.csv`",
+                f"- `outputs/tables/{table_prefix}_by_seed.csv`",
+                f"- `outputs/tables/{table_prefix}_fusion_weights.csv`",
+                f"- `outputs/tables/{table_prefix}_swap_analysis.csv`",
+                f"- `outputs/tables/{table_prefix}_parser_stats.csv`",
+                f"- `outputs/tables/{table_prefix}_panel_coverage.csv`",
+                f"- `outputs/tables/{table_prefix}_cost_latency.csv`",
+                f"- `outputs/tables/{table_prefix}_failure_cases.csv`",
                 "",
                 "## Next Recommended Action",
                 "",
@@ -1357,7 +1387,8 @@ def _worker_build_request(
     ours_row = ours_by.get(eid) or {}
     meta_raw = ours_row.get("metadata")
     meta = dict(meta_raw) if isinstance(meta_raw, dict) else {}
-    ht = meta.get("history_titles") or []
+    bm_meta = bm_row.get("metadata") if isinstance(bm_row.get("metadata"), dict) else {}
+    ht = meta.get("history_titles") or bm_meta.get("history_titles") or []
     history_titles = list(ht) if isinstance(ht, (list, tuple)) else []
     prompt, label_map = build_listwise_preference_prompt(
         history_titles=history_titles,
@@ -1507,6 +1538,7 @@ def run_cu_gr_v2_preference_subgate(config_path: str | Path) -> dict[str, Any]:
     provider_summaries_by_seed: dict[int, dict[str, Any]] = {}
 
     runs_dir = ROOT / "outputs" / "runs"
+    base_prefix = _configured_run_prefix(config)
     for seed in seeds:
         run_dir = Path(out_base) / f"{run_name}_seed{seed}"
         if not run_dir.is_absolute():
@@ -1518,11 +1550,11 @@ def run_cu_gr_v2_preference_subgate(config_path: str | Path) -> dict[str, Any]:
         with Path(run_dir / "environment.json").open("w", encoding="utf-8") as handle:
             json.dump({"experiment_kind": "cu_gr_v2_preference_subgate", "processed_dir": proc_dir}, handle, indent=2)
 
-        bm_file = method_run_dir(runs_dir, "bm25", seed) / "predictions.jsonl"
+        bm_file = _method_run_dir_for_prefix(runs_dir, base_prefix, "bm25", seed) / "predictions.jsonl"
         if not bm_file.exists():
             raise FileNotFoundError(f"missing bm25 artifact: {bm_file}")
-        ours_file = method_run_dir(runs_dir, "ours_uncertainty_guided_real", seed) / "predictions.jsonl"
-        seq_file = method_run_dir(runs_dir, "sequential_markov", seed) / "predictions.jsonl"
+        ours_file = _method_run_dir_for_prefix(runs_dir, base_prefix, "ours_uncertainty_guided_real", seed) / "predictions.jsonl"
+        seq_file = _method_run_dir_for_prefix(runs_dir, base_prefix, "sequential_markov", seed) / "predictions.jsonl"
         bm_all = read_jsonl(bm_file)
         bm_rows = _limit_examples(config, bm_all)
         ours_by = index_rows(read_jsonl(ours_file)) if ours_file.exists() else {}
@@ -1719,6 +1751,9 @@ def run_cu_gr_v2_preference_subgate(config_path: str | Path) -> dict[str, Any]:
             rows_by_seed=full_seed_rows_by_seed,
             provider_summaries_by_seed=provider_summaries_by_seed,
             train_pop=train_pop_ctx,
+            table_prefix=str((config.get("tables") or {}).get("prefix") or "cu_gr_v2_full_seed"),
+            report_path=((config.get("report") or {}).get("path") if isinstance(config.get("report"), dict) else None),
+            base_prefix=base_prefix,
         )
     return {"experiment_kind": "cu_gr_v2_preference_subgate", "seeds": seeds, "runs": manifests, "full_seed_outputs": full_seed_outputs}
 

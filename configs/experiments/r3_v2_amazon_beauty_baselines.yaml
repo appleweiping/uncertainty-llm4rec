@@ -1,0 +1,79 @@
+template: false
+dry_run: false
+requires_confirm: false
+seed: 13
+seeds: [13, 21, 42]
+run_name: r3_v2_amazon_beauty_full_candidate479
+output_dir: outputs/runs
+domain: amazon_beauty
+
+preprocess:
+  enabled: false
+
+dataset:
+  name: amazon_reviews_2023_beauty_cu_gr_v2
+  config_path: configs/datasets/amazon_reviews_2023_beauty_cu_gr_v2.yaml
+  raw_data_path: data/processed/amazon_reviews_2023_beauty/full
+  interactions_path: data/processed/amazon_reviews_2023_beauty/cu_gr_v2/interactions.csv
+  items_path: data/processed/amazon_reviews_2023_beauty/cu_gr_v2/items.csv
+  processed_dir: data/processed/amazon_reviews_2023_beauty/cu_gr_v2
+  subset_size: 200
+
+split: test
+
+split_strategy:
+  name: prepared_amazon_chronological_leave_last
+  timestamp_field: timestamp
+  future_interactions: forbidden
+  history_policy: past_interactions_only
+  repeat_target_policy: exclude_history_from_candidates_except_heldout_target
+  train_examples_per_user: prepared_observation_split
+
+candidate:
+  protocol: sampled
+  size: 479
+  k: 479
+  sample_size: 479
+  include_target: true
+  seed: 13
+  set_path: data/processed/amazon_reviews_2023_beauty/cu_gr_v2/candidate_sets.jsonl
+  negative_sampling: fixed_seed_without_replacement_from_catalog_excluding_target_and_history
+  target_policy: include_heldout_target_for_main_eval
+  target_excluding_protocol: diagnostic_only_not_accuracy
+  same_set_for_comparable_baselines: true
+
+data_protocol:
+  interaction_schema: [user_id, item_id, timestamp, rating, domain]
+  item_schema: [item_id, title, description, category, brand, domain, raw_text]
+  user_item_id_mapping: source_item_and_user_ids_preserved_from_amazon_reviews_2023
+  timestamp_handling: prepared_observation_chronological_split
+  train_popularity_source: train_split_only
+  domain_field: domain
+  candidate_set_saved_path: data/processed/amazon_reviews_2023_beauty/cu_gr_v2/candidate_sets.jsonl
+
+baselines: [popularity, bm25, sequential_markov]
+
+evaluation:
+  config_path: configs/evaluation/full.yaml
+  top_k: [10]
+
+top_k: [10]
+metrics: [ranking]
+
+safety:
+  dry_run: false
+  requires_confirm: false
+  allow_api_calls: false
+  allow_download: false
+  allow_training: false
+  acknowledged_expensive_run: false
+  leakage_safeguards: true
+  subset_size: 200
+  max_examples: 200
+
+logging:
+  level: INFO
+
+output:
+  run_name: r3_v2_amazon_beauty_full_candidate479
+  output_dir: outputs/runs
