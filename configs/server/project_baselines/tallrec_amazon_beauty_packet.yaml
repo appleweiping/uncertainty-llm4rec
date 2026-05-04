@@ -1,0 +1,16 @@
+project: tallrec
+official_repo: https://github.com/SAI990323/TALLRec
+seed: 13
+output_dir: outputs/server_packets/tallrec_amazon_beauty
+dataset:
+  name: amazon_reviews_2023_beauty_cu_gr_v2
+  processed_dir: data/processed/amazon_reviews_2023_beauty/cu_gr_v2
+candidate:
+  protocol: sampled
+  size: 479
+  include_target: true
+tallrec:
+  max_history_items: 20
+  negatives_per_train_example: 63
+  expected_external_output: candidate_scores.csv
+  notes: Train on pairwise Yes/No rows; score every test candidate and import the Yes probability/logit as the TRUCE candidate score.

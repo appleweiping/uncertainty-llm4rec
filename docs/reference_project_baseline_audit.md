@@ -196,7 +196,12 @@ metrics:
 
 ## Recommended Sequence
 
-1. Prepare server run packets for OpenP5 and TALLRec.
+1. Prepare server run packets for OpenP5 and TALLRec. Completed locally as
+   configs and scripts: `scripts/prepare_project_baseline_packet.py`,
+   `configs/server/project_baselines/openp5_*_packet.yaml`,
+   `configs/server/project_baselines/tallrec_*_packet.yaml`, and
+   `docs/openp5_tallrec_server_packets.md`. These packets are not execution
+   results.
 2. Add BIGRec/DEALRec if one of the first two is blocked or if compute allows a
    third official LLM4Rec baseline.
 3. Add LC-Rec or LLaRA as the first "LLM + collaborative signal" project.

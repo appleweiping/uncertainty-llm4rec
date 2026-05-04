@@ -1,0 +1,16 @@
+project: openp5
+official_repo: https://github.com/agiresearch/OpenP5
+seed: 13
+output_dir: outputs/server_packets/openp5_amazon_beauty
+dataset:
+  name: amazon_reviews_2023_beauty_cu_gr_v2
+  processed_dir: data/processed/amazon_reviews_2023_beauty/cu_gr_v2
+candidate:
+  protocol: sampled
+  size: 479
+  include_target: true
+openp5:
+  task: sequential_recommendation
+  max_history_items: 50
+  expected_external_output: candidate_scores.csv
+  notes: Convert TRUCE sequential task JSONL into OpenP5 task templates; do not use OpenP5 evaluator metrics as paper metrics.

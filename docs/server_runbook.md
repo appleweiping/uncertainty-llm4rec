@@ -122,6 +122,22 @@ Risks:
 
 No real LoRA/QLoRA command should be executed by default from Phase 7 templates.
 
+## External LLM4Rec project packets
+
+OpenP5 and TALLRec packets are prepared with:
+
+```powershell
+py -3 scripts/prepare_project_baseline_packet.py --config configs/server/project_baselines/openp5_movielens_packet.yaml
+py -3 scripts/prepare_project_baseline_packet.py --config configs/server/project_baselines/openp5_amazon_beauty_packet.yaml
+py -3 scripts/prepare_project_baseline_packet.py --config configs/server/project_baselines/tallrec_movielens_packet.yaml
+py -3 scripts/prepare_project_baseline_packet.py --config configs/server/project_baselines/tallrec_amazon_beauty_packet.yaml
+```
+
+These commands only create server inputs and manifests. External projects must
+return `candidate_scores.csv`, after which TRUCE imports and evaluates the
+predictions. Official project evaluator values are audit-only and must not be
+copied into paper tables.
+
 ## Claim policy
 
 Do not claim any API, HF, or server result unless the run directory contains
