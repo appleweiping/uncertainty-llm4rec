@@ -1,0 +1,18 @@
+project: collm
+official_repo: https://github.com/zyang1580/CoLLM
+seed: 13
+output_dir: outputs/server_packets/collm_amazon_beauty
+upstream_status: clone_required
+execution_status: packet_ready_only
+dataset:
+  name: amazon_reviews_2023_beauty_cu_gr_v2
+  processed_dir: data/processed/amazon_reviews_2023_beauty/cu_gr_v2
+candidate:
+  protocol: sampled
+  size: 479
+  include_target: true
+collm:
+  task: candidate_ranking
+  max_history_items: 50
+  expected_external_output: candidate_scores.csv
+  notes: CoLLM collaborative-embedding adapter packet; record embedding alignment and checkpoint details before official comparison.

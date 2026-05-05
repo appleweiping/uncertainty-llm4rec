@@ -3,6 +3,10 @@
 This document defines the next external-project baseline step. It contains no
 experimental result claims.
 
+For the broader external-project matrix covering BIGRec, DEALRec, LC-Rec,
+LLaRA, CoLLM, LLM-ESR, and SLMRec, see
+`docs/external_project_baseline_packets.md`.
+
 ## Source Repositories
 
 - OpenP5 official repository: <https://github.com/agiresearch/OpenP5>
@@ -43,8 +47,8 @@ example_id,user_id,item_id,score
 Then import and evaluate with TRUCE:
 
 ```powershell
-py -3 scripts/import_external_predictions.py --scores <candidate_scores.csv> --examples <packet>/truce_examples.jsonl --output <run_dir>/predictions.jsonl --method openp5_official --source-project OpenP5 --model-name OpenP5 --seed 13
-py -3 scripts/import_external_predictions.py --scores <candidate_scores.csv> --examples <packet>/truce_examples.jsonl --output <run_dir>/predictions.jsonl --method tallrec_official --source-project TALLRec --model-name TALLRec --seed 13
+py -3 scripts/import_external_predictions.py --scores <candidate_scores.csv> --examples <packet>/truce_examples.jsonl --output <run_dir>/predictions.jsonl --method openp5_official --source-project OpenP5 --model-name OpenP5 --seed 13 --split test
+py -3 scripts/import_external_predictions.py --scores <candidate_scores.csv> --examples <packet>/truce_examples.jsonl --output <run_dir>/predictions.jsonl --method tallrec_official --source-project TALLRec --model-name TALLRec --seed 13 --split test
 py -3 scripts/evaluate_predictions.py --predictions <run_dir>/predictions.jsonl --output-dir <run_dir>
 ```
 
@@ -55,6 +59,19 @@ split and avoids importing train/valid examples into diagnostic runs.
 Do not use OpenP5/TALLRec evaluator metrics as paper metrics.
 
 ## Current Diagnostic Result
+
+OpenP5 Amazon Beauty has one server-side adapter smoke row:
+
+- method: `openp5_adapter_smoke_no_model`;
+- run directory: `outputs/runs/openp5_adapter_smoke_amazon_beauty_seed13`;
+- input scores:
+  `~/projects/OpenP5/truce_outputs/openp5_beauty_adapter_smoke_candidate_scores.csv`;
+- TRUCE evaluator count: 225 test examples;
+- Recall@10 0.017778, NDCG@10 0.005872, MRR@10 0.002519.
+
+This row verifies only the OpenP5 packet-to-TRUCE import/evaluation plumbing.
+It uses deterministic no-model scores and is not an official OpenP5 result.
+Do not include it in paper result tables.
 
 Amazon Beauty has one server-side diagnostic row:
 

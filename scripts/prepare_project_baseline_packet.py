@@ -25,6 +25,55 @@ if str(SRC) not in sys.path:
 from llm4rec.experiments.config import load_config  # noqa: E402
 
 
+PROJECT_SPECS: dict[str, dict[str, str]] = {
+    "openp5": {
+        "display_name": "OpenP5",
+        "family": "generative_llm_recommender",
+        "adapter": "openp5_sequential",
+    },
+    "tallrec": {
+        "display_name": "TALLRec",
+        "family": "instruction_tuning_recommendation",
+        "adapter": "pairwise_yes_no",
+    },
+    "bigrec": {
+        "display_name": "BIGRec",
+        "family": "data_efficient_llm4rec",
+        "adapter": "generic_candidate_ranking",
+    },
+    "dealrec": {
+        "display_name": "DEALRec",
+        "family": "data_efficient_llm4rec",
+        "adapter": "generic_candidate_ranking",
+    },
+    "lc_rec": {
+        "display_name": "LC-Rec",
+        "family": "llm_collaborative_signal",
+        "adapter": "generic_candidate_ranking",
+    },
+    "llara": {
+        "display_name": "LLaRA",
+        "family": "llm_collaborative_signal",
+        "adapter": "generic_candidate_ranking",
+    },
+    "collm": {
+        "display_name": "CoLLM",
+        "family": "llm_collaborative_signal",
+        "adapter": "generic_candidate_ranking",
+    },
+    "llmesr": {
+        "display_name": "LLM-ESR",
+        "family": "long_tail_sequential_llm4rec",
+        "adapter": "generic_candidate_ranking",
+    },
+    "slmrec": {
+        "display_name": "SLMRec",
+        "family": "small_sequential_llm4rec",
+        "adapter": "generic_candidate_ranking",
+    },
+}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
@@ -36,8 +85,8 @@ def main() -> int:
 
 
 def prepare_packet(*, config: dict[str, Any], config_path: Path) -> dict[str, Any]:
-    project = str(config.get("project") or "").lower()
-    if project not in {"openp5", "tallrec"}:
+    project = _normalize_project(config.get("project"))
+    if project not in PROJECT_SPECS:
         raise SystemExit(f"unsupported project: {project}")
     dataset = _as_dict(config.get("dataset"))
     processed_dir = ROOT / str(dataset.get("processed_dir") or "")
@@ -52,8 +101,16 @@ def prepare_packet(*, config: dict[str, Any], config_path: Path) -> dict[str, An
     _write_items_jsonl(output_dir / "item_catalog.jsonl", items)
     if project == "tallrec":
         project_files = _write_tallrec_files(config=config, output_dir=output_dir, examples=examples, items=items)
-    else:
+    elif project == "openp5":
         project_files = _write_openp5_files(config=config, output_dir=output_dir, examples=examples, items=items)
+    else:
+        project_files = _write_generic_project_files(
+            config=config,
+            output_dir=output_dir,
+            examples=examples,
+            items=items,
+            project=project,
+        )
     manifest = _manifest(config=config, config_path=config_path, output_dir=output_dir, examples=examples, items=items, project_files=project_files)
     (output_dir / "project_baseline_manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True),
@@ -168,6 +225,78 @@ def _write_openp5_files(
     return files
 
 
+def _write_generic_project_files(
+    *,
+    config: dict[str, Any],
+    output_dir: Path,
+    examples: list[dict[str, Any]],
+    items: dict[str, dict[str, str]],
+    project: str,
+) -> dict[str, str]:
+    settings = _as_dict(config.get(project)) or _as_dict(config.get("generic_project"))
+    max_history = int(settings.get("max_history_items") or 50)
+    project_dir = output_dir / project
+    project_dir.mkdir(parents=True, exist_ok=True)
+    rows_by_split = {"train": [], "valid": [], "test": []}
+    for ex in examples:
+        split = _normalize_split(ex.get("split"))
+        if split not in rows_by_split:
+            continue
+        candidates = [str(item) for item in ex.get("candidates") or ex.get("candidate_items") or []]
+        target = str(ex.get("target") or ex.get("target_item") or "")
+        rows_by_split[split].append({
+            "task": str(settings.get("task") or "candidate_ranking"),
+            "project": PROJECT_SPECS[project]["display_name"],
+            "adapter_family": PROJECT_SPECS[project]["family"],
+            "example_id": _example_id(ex),
+            "user_id": str(ex.get("user_id") or ""),
+            "domain": str(ex.get("domain") or ""),
+            "split": split,
+            "history_item_ids": [str(item) for item in (ex.get("history") or ex.get("history_item_ids") or [])][-max_history:],
+            "history_text": _history_text(ex, items=items, max_history=max_history),
+            "target_item_id": target,
+            "target_text": _item_text(target, items),
+            "candidate_item_ids": candidates,
+            "candidate_texts": [{"item_id": item_id, "text": _item_text(item_id, items)} for item_id in candidates],
+            "output_contract": "Score or rank only these candidate_item_ids, then return candidate_scores.csv with columns example_id,user_id,item_id,score.",
+            "leakage_guard": "Use target_item_id only for train/valid supervision. Do not expose target_item_id while scoring test examples.",
+        })
+    files: dict[str, str] = {}
+    all_tasks = project_dir / "project_tasks.jsonl"
+    _write_jsonl(all_tasks, [row for split in ["train", "valid", "test"] for row in rows_by_split[split]])
+    files["project_tasks"] = str(all_tasks)
+    for split, rows in rows_by_split.items():
+        path = project_dir / f"{split}_project_tasks.jsonl"
+        _write_jsonl(path, rows)
+        files[f"{project}_{split}_project_tasks"] = str(path)
+    id_map = project_dir / "item_id_mapping.csv"
+    with id_map.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["item_id", "title", "category", "domain", "text"])
+        writer.writeheader()
+        for item_id in sorted(items):
+            row = items[item_id]
+            writer.writerow({
+                "item_id": item_id,
+                "title": row.get("title", ""),
+                "category": row.get("category", ""),
+                "domain": row.get("domain", ""),
+                "text": _item_text(item_id, items),
+            })
+    files["item_id_mapping"] = str(id_map)
+    test_map = [
+        {"example_id": row["example_id"], "user_id": row["user_id"], "item_id": item_id, "split": "test"}
+        for row in rows_by_split["test"]
+        for item_id in row["candidate_item_ids"]
+    ]
+    row_map = project_dir / "test_candidate_map.jsonl"
+    _write_jsonl(row_map, test_map)
+    files["test_candidate_map"] = str(row_map)
+    scores_template = project_dir / "candidate_scores_template.csv"
+    _write_score_template(scores_template, test_map)
+    files["candidate_scores_template"] = str(scores_template)
+    return files
+
+
 def _manifest(
     *,
     config: dict[str, Any],
@@ -177,7 +306,8 @@ def _manifest(
     items: dict[str, dict[str, str]],
     project_files: dict[str, str],
 ) -> dict[str, Any]:
-    project = str(config.get("project") or "")
+    project = _normalize_project(config.get("project"))
+    spec = PROJECT_SPECS[project]
     split_counts: dict[str, int] = {}
     for ex in examples:
         split = _normalize_split(ex.get("split"))
@@ -185,7 +315,12 @@ def _manifest(
     return {
         "schema_version": "truce_project_baseline_packet_v1",
         "project": project,
+        "project_display_name": spec["display_name"],
+        "project_family": spec["family"],
+        "adapter_contract": spec["adapter"],
         "official_repo": str(config.get("official_repo") or ""),
+        "upstream_status": str(config.get("upstream_status") or "not_cloned_by_packet_script"),
+        "execution_status": str(config.get("execution_status") or "packet_ready_only"),
         "config_path": str(config_path),
         "output_dir": str(output_dir),
         "dataset": _as_dict(config.get("dataset")),
@@ -206,7 +341,7 @@ def _manifest(
             "stdout/stderr logs",
             "checkpoint or generated-output reference",
         ],
-        "truce_import_command_template": "py -3 scripts/import_external_predictions.py --scores <candidate_scores.csv> --examples <packet>/truce_examples.jsonl --output <run_dir>/predictions.jsonl --method <method> --source-project <project> --model-name <model> --seed <seed>",
+        "truce_import_command_template": "py -3 scripts/import_external_predictions.py --scores <candidate_scores.csv> --examples <packet>/truce_examples.jsonl --output <run_dir>/predictions.jsonl --method <method> --source-project <project> --model-name <model> --seed <seed> --split test",
         "project_files": project_files,
         "is_experiment_result": False,
         "is_paper_result": False,
@@ -306,6 +441,19 @@ def _normalize_split(value: Any) -> str:
     if split in {"val", "validation"}:
         return "valid"
     return split
+
+
+def _normalize_project(value: Any) -> str:
+    project = str(value or "").strip().lower().replace("-", "_")
+    aliases = {
+        "lc_rec": "lc_rec",
+        "lcrec": "lc_rec",
+        "llm_esr": "llmesr",
+        "llm_esr_": "llmesr",
+        "llm_esr_longtail": "llmesr",
+        "slm_rec": "slmrec",
+    }
+    return aliases.get(project, project)
 
 
 if __name__ == "__main__":

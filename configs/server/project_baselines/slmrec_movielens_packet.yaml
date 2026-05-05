@@ -1,0 +1,18 @@
+project: slmrec
+official_repo: https://github.com/WujiangXu/SLMRec
+seed: 13
+output_dir: outputs/server_packets/slmrec_movielens_1m
+upstream_status: clone_required
+execution_status: packet_ready_only
+dataset:
+  name: movielens_1m_r2
+  processed_dir: data/processed/movielens_1m/r2_full_single_dataset
+candidate:
+  protocol: sampled
+  size: 500
+  include_target: true
+slmrec:
+  task: sequential_candidate_ranking
+  max_history_items: 50
+  expected_external_output: candidate_scores.csv
+  notes: Small sequential LLM4Rec packet; import only per-candidate scores/rankings into TRUCE.

@@ -65,3 +65,29 @@ def test_openp5_packet_exports_sequential_tasks(tmp_path: Path) -> None:
     first = json.loads((packet / "openp5" / "test_sequential_tasks.jsonl").read_text(encoding="utf-8").splitlines()[0])
     assert first["candidate_item_ids"] == ["i1", "i2"]
     assert first["target_item_id"] == "i1"
+
+
+def test_generic_project_packet_exports_candidate_contract(tmp_path: Path) -> None:
+    processed = _fixture_processed_dir(tmp_path)
+    config = {
+        "project": "lc_rec",
+        "official_repo": "https://github.com/RUCAIBox/LC-Rec/",
+        "seed": 7,
+        "output_dir": str(tmp_path / "packet"),
+        "dataset": {"name": "tiny", "processed_dir": str(processed)},
+        "candidate": {"protocol": "sampled", "size": 2, "include_target": True},
+        "lc_rec": {"task": "candidate_ranking", "max_history_items": 2},
+    }
+    manifest = prepare_packet(config=config, config_path=tmp_path / "cfg.yaml")
+    packet = Path(manifest["output_dir"])
+    project_dir = packet / "lc_rec"
+    assert (project_dir / "project_tasks.jsonl").exists()
+    assert (project_dir / "test_candidate_map.jsonl").exists()
+    assert (project_dir / "candidate_scores_template.csv").exists()
+    first = json.loads((project_dir / "test_project_tasks.jsonl").read_text(encoding="utf-8").splitlines()[0])
+    assert first["candidate_item_ids"] == ["i1", "i2"]
+    assert first["candidate_texts"][0]["item_id"] == "i1"
+    assert first["output_contract"].startswith("Score or rank only")
+    assert manifest["project_display_name"] == "LC-Rec"
+    assert manifest["adapter_contract"] == "generic_candidate_ranking"
+    assert "--split test" in manifest["truce_import_command_template"]

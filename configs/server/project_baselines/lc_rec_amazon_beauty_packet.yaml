@@ -1,0 +1,18 @@
+project: lc_rec
+official_repo: https://github.com/RUCAIBox/LC-Rec/
+seed: 13
+output_dir: outputs/server_packets/lc_rec_amazon_beauty
+upstream_status: clone_required
+execution_status: packet_ready_only
+dataset:
+  name: amazon_reviews_2023_beauty_cu_gr_v2
+  processed_dir: data/processed/amazon_reviews_2023_beauty/cu_gr_v2
+candidate:
+  protocol: sampled
+  size: 479
+  include_target: true
+lc_rec:
+  task: candidate_ranking
+  max_history_items: 50
+  expected_external_output: candidate_scores.csv
+  notes: LLM plus collaborative-signal packet. Export final candidate scores or rankings only; evaluate with TRUCE.

@@ -205,14 +205,12 @@ appendix/diagnostic tables only.
 
 ## Recommended Sequence
 
-1. Prepare server run packets for OpenP5 and TALLRec. Completed locally as
-   configs and scripts: `scripts/prepare_project_baseline_packet.py`,
-   `configs/server/project_baselines/openp5_*_packet.yaml`,
-   `configs/server/project_baselines/tallrec_*_packet.yaml`, and
-   `docs/openp5_tallrec_server_packets.md`. These packets are not execution
-   results.
-2. Add BIGRec/DEALRec if one of the first two is blocked or if compute allows a
-   third official LLM4Rec baseline.
-3. Add LC-Rec or LLaRA as the first "LLM + collaborative signal" project.
-4. Use SLMRec/LLM-ESR for long-tail or efficiency robustness, not as the first
-   external-project integration.
+1. Run OpenP5 first. OpenP5 has a project-specific sequential packet and should
+   be the next official external-project attempt on the server.
+2. TALLRec packet support is ready. The existing Beauty Qwen3 scorer is only a
+   diagnostic row until official instruction tuning is run.
+3. BIGRec/DEALRec, LC-Rec, LLaRA, CoLLM, LLM-ESR, and SLMRec now have generic
+   candidate-ranking packet configs for MovieLens and Amazon Beauty. These are
+   execution contracts, not results.
+4. Use `docs/external_project_baseline_packets.md` as the live status matrix and
+   blocker log for external-project runs.

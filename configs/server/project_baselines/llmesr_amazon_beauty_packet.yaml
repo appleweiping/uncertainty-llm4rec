@@ -1,0 +1,18 @@
+project: llmesr
+official_repo: https://github.com/liuqidong07/LLM-ESR
+seed: 13
+output_dir: outputs/server_packets/llmesr_amazon_beauty
+upstream_status: clone_required
+execution_status: packet_ready_only
+dataset:
+  name: amazon_reviews_2023_beauty_cu_gr_v2
+  processed_dir: data/processed/amazon_reviews_2023_beauty/cu_gr_v2
+candidate:
+  protocol: sampled
+  size: 479
+  include_target: true
+llmesr:
+  task: long_tail_sequential_candidate_ranking
+  max_history_items: 50
+  expected_external_output: candidate_scores.csv
+  notes: Long-tail/sequential packet. Keep TRUCE long-tail slices and final evaluator as the only paper metric source.

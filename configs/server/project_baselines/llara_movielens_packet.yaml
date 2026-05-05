@@ -1,0 +1,18 @@
+project: llara
+official_repo: https://github.com/ljy0ustc/LLaRA
+seed: 13
+output_dir: outputs/server_packets/llara_movielens_1m
+upstream_status: clone_required
+execution_status: packet_ready_only
+dataset:
+  name: movielens_1m_r2
+  processed_dir: data/processed/movielens_1m/r2_full_single_dataset
+candidate:
+  protocol: sampled
+  size: 500
+  include_target: true
+llara:
+  task: candidate_ranking
+  max_history_items: 50
+  expected_external_output: candidate_scores.csv
+  notes: LLaRA packet for LLM plus recommender-signal comparison; generated outputs must be grounded to candidate item IDs.
