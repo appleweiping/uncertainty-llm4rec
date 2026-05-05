@@ -1,0 +1,30 @@
+project: dealrec
+controlled_baseline_name: dealrec_qwen3_lora_amazon_beauty
+seed: 13
+base_model: /home/ajifang/models/Qwen/Qwen3-8B
+packet_dir: outputs/server_packets/dealrec_amazon_beauty
+output_dir: outputs/server_training/controlled_baselines/dealrec_qwen3_lora_amazon_beauty
+max_train_examples: null
+max_valid_examples: null
+training:
+  num_train_epochs: 1
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 16
+  learning_rate: 0.0002
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  bf16: true
+  gradient_checkpointing: true
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+scoring:
+  type: candidate_id_likelihood
+  output: candidate_scores.csv
+paper_policy:
+  controlled_backbone: true
+  official_project_checkpoint: false
+  main_table_after_real_training_only: true

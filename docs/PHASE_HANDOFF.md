@@ -61,5 +61,9 @@ Server handoff:
 - Main external-framework comparison should now use controlled Qwen3-8B LoRA
   baselines rather than mixing different upstream backbones. See
   `docs/qwen3_lora_controlled_baselines.md`.
-- First controlled baselines to run:
-  `TALLRec-Qwen3-LoRA` and `OpenP5-style-Qwen3-LoRA`.
+- First controlled main-table suite:
+  `TALLRec-Qwen3-LoRA`, `OpenP5-style-Qwen3-LoRA`,
+  `DEALRec-Qwen3-LoRA`, and `LC-Rec-Qwen3-LoRA`.
+- Prepare the suite with `python scripts/prepare_controlled_baseline_suite.py`,
+  then run the generated server smoke queue before removing limits for the full
+  long-running experiments.

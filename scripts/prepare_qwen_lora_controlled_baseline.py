@@ -22,7 +22,7 @@ if str(SRC) not in sys.path:
 from llm4rec.experiments.config import load_config  # noqa: E402
 
 
-SUPPORTED_PROJECTS = {"tallrec", "openp5"}
+SUPPORTED_PROJECTS = {"tallrec", "openp5", "dealrec", "lc_rec"}
 
 
 def main() -> int:
@@ -36,7 +36,7 @@ def main() -> int:
 
 
 def prepare_controlled_baseline(*, config: dict[str, Any], config_path: Path) -> dict[str, Any]:
-    project = str(config.get("project") or "").lower()
+    project = _normalize_project(config.get("project"))
     if project not in SUPPORTED_PROJECTS:
         raise SystemExit(f"unsupported controlled baseline project: {project}")
     packet_dir = ROOT / str(config.get("packet_dir") or "")
@@ -46,8 +46,10 @@ def prepare_controlled_baseline(*, config: dict[str, Any], config_path: Path) ->
     output_dir.mkdir(parents=True, exist_ok=True)
     if project == "tallrec":
         files = _prepare_tallrec(config=config, packet_dir=packet_dir, output_dir=output_dir)
-    else:
+    elif project == "openp5":
         files = _prepare_openp5(config=config, packet_dir=packet_dir, output_dir=output_dir)
+    else:
+        files = _prepare_generic_project(config=config, packet_dir=packet_dir, output_dir=output_dir, project=project)
     manifest = _manifest(config=config, config_path=config_path, output_dir=output_dir, files=files)
     (output_dir / "controlled_baseline_manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True),
@@ -61,7 +63,9 @@ def _prepare_tallrec(*, config: dict[str, Any], packet_dir: Path, output_dir: Pa
     project_dir = packet_dir / "tallrec"
     train_rows = json.loads((project_dir / "train.json").read_text(encoding="utf-8"))
     valid_rows = json.loads((project_dir / "valid.json").read_text(encoding="utf-8"))
+    test_rows = json.loads((project_dir / "test.json").read_text(encoding="utf-8"))
     test_row_map = _read_jsonl(project_dir / "test_row_map.jsonl")
+    test_meta_by_row_id = {str(row.get("row_id") or ""): row for row in test_row_map}
     max_train = _optional_int(config, "max_train_examples")
     max_valid = _optional_int(config, "max_valid_examples")
     train_sft = output_dir / "train_sft.jsonl"
@@ -69,7 +73,7 @@ def _prepare_tallrec(*, config: dict[str, Any], packet_dir: Path, output_dir: Pa
     _write_jsonl(train_sft, [_tallrec_sft_row(row) for row in train_rows[:max_train]])
     _write_jsonl(valid_sft, [_tallrec_sft_row(row) for row in valid_rows[:max_valid]])
     score_plan = output_dir / "test_score_plan.jsonl"
-    _write_jsonl(score_plan, test_row_map)
+    _write_jsonl(score_plan, [_tallrec_score_row(row, test_meta_by_row_id=test_meta_by_row_id) for row in test_rows])
     return {
         "train_sft": str(train_sft),
         "valid_sft": str(valid_sft),
@@ -102,6 +106,34 @@ def _prepare_openp5(*, config: dict[str, Any], packet_dir: Path, output_dir: Pat
     }
 
 
+def _prepare_generic_project(
+    *,
+    config: dict[str, Any],
+    packet_dir: Path,
+    output_dir: Path,
+    project: str,
+) -> dict[str, str]:
+    project_dir = packet_dir / project
+    max_train = _optional_int(config, "max_train_examples")
+    max_valid = _optional_int(config, "max_valid_examples")
+    train_tasks = _read_jsonl(project_dir / "train_project_tasks.jsonl")
+    valid_tasks = _read_jsonl(project_dir / "valid_project_tasks.jsonl")
+    test_tasks = _read_jsonl(project_dir / "test_project_tasks.jsonl")
+    train_sft = output_dir / "train_sft.jsonl"
+    valid_sft = output_dir / "valid_sft.jsonl"
+    test_score_plan = output_dir / "test_score_plan.jsonl"
+    _write_jsonl(train_sft, [_generic_sft_row(row, project=project) for row in train_tasks[:max_train]])
+    _write_jsonl(valid_sft, [_generic_sft_row(row, project=project) for row in valid_tasks[:max_valid]])
+    _write_jsonl(test_score_plan, [_generic_score_row(row, project=project) for row in test_tasks])
+    return {
+        "train_sft": str(train_sft),
+        "valid_sft": str(valid_sft),
+        "test_score_plan": str(test_score_plan),
+        "candidate_scores_template": str(project_dir / "candidate_scores_template.csv"),
+        "item_id_mapping": str(project_dir / "item_id_mapping.csv"),
+    }
+
+
 def _tallrec_sft_row(row: dict[str, Any]) -> dict[str, Any]:
     prompt = f"{row.get('instruction', '')}\n\n{row.get('input', '')}".strip()
     return {
@@ -113,6 +145,24 @@ def _tallrec_sft_row(row: dict[str, Any]) -> dict[str, Any]:
             "source_project": "TALLRec",
             "truce_row_id": str(row.get("truce_row_id") or ""),
         },
+    }
+
+
+def _tallrec_score_row(row: dict[str, Any], *, test_meta_by_row_id: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    prompt = f"{row.get('instruction', '')}\n\n{row.get('input', '')}".strip()
+    row_id = str(row.get("truce_row_id") or "")
+    meta = test_meta_by_row_id.get(row_id, {})
+    return {
+        "example_id": str(meta.get("example_id") or ""),
+        "user_id": str(meta.get("user_id") or ""),
+        "prompt": prompt,
+        "candidate_item_ids": [str(meta.get("item_id") or "")],
+        "candidate_outputs": ["Yes."],
+        "metadata": {
+            "source_project": "TALLRec",
+            "truce_row_id": row_id,
+        },
+        "scoring_contract": "Compute causal-LM log-likelihood of Yes. for this pairwise prompt, then write one candidate score.",
     }
 
 
@@ -158,6 +208,53 @@ def _openp5_prompt(row: dict[str, Any], *, item_map: dict[str, str]) -> str:
     )
 
 
+def _generic_sft_row(row: dict[str, Any], *, project: str) -> dict[str, Any]:
+    target = str(row.get("target_item_id") or "")
+    return {
+        "messages": [
+            {"role": "user", "content": _generic_prompt(row, project=project)},
+            {"role": "assistant", "content": target},
+        ],
+        "metadata": {
+            "source_project": _project_display(project),
+            "example_id": str(row.get("example_id") or ""),
+            "target_item_id": target,
+        },
+    }
+
+
+def _generic_score_row(row: dict[str, Any], *, project: str) -> dict[str, Any]:
+    candidates = [str(item) for item in row.get("candidate_item_ids") or []]
+    return {
+        "example_id": str(row.get("example_id") or ""),
+        "user_id": str(row.get("user_id") or ""),
+        "prompt": _generic_prompt(row, project=project),
+        "candidate_item_ids": candidates,
+        "candidate_outputs": candidates,
+        "scoring_contract": "Compute causal-LM log-likelihood for each candidate item id given prompt, then write candidate_scores.csv.",
+    }
+
+
+def _generic_prompt(row: dict[str, Any], *, project: str) -> str:
+    candidate_lines = []
+    for candidate in row.get("candidate_texts") or []:
+        if not isinstance(candidate, dict):
+            continue
+        candidate_lines.append(f"- {candidate.get('item_id')}: {candidate.get('text')}")
+    family_hint = {
+        "dealrec": "Use a data-efficient recommendation adaptation.",
+        "lc_rec": "Use collaborative preference evidence from the user history and item text.",
+    }.get(project, "Use the project-style recommendation adaptation.")
+    return (
+        f"{_project_display(project)} controlled recommendation task.\n"
+        f"{family_hint}\n"
+        f"User history: {row.get('history_text') or ''}\n"
+        "Candidates:\n"
+        + "\n".join(candidate_lines)
+        + "\nReturn exactly one candidate item id."
+    )
+
+
 def _manifest(
     *,
     config: dict[str, Any],
@@ -165,7 +262,7 @@ def _manifest(
     output_dir: Path,
     files: dict[str, str],
 ) -> dict[str, Any]:
-    project = str(config.get("project") or "").lower()
+    project = _normalize_project(config.get("project"))
     return {
         "schema_version": "truce_qwen_lora_controlled_baseline_v1",
         "project": project,
@@ -271,6 +368,24 @@ def _optional_int(config: dict[str, Any], key: str) -> int | None:
 
 def _as_dict(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
+
+
+def _normalize_project(value: Any) -> str:
+    project = str(value or "").strip().lower().replace("-", "_")
+    aliases = {
+        "lcrec": "lc_rec",
+        "lc_rec": "lc_rec",
+    }
+    return aliases.get(project, project)
+
+
+def _project_display(project: str) -> str:
+    return {
+        "tallrec": "TALLRec",
+        "openp5": "OpenP5",
+        "dealrec": "DEALRec",
+        "lc_rec": "LC-Rec",
+    }.get(project, project)
 
 
 if __name__ == "__main__":

@@ -32,6 +32,7 @@ def _tallrec_packet(tmp_path: Path) -> Path:
     ]
     (project / "train.json").write_text(json.dumps(rows), encoding="utf-8")
     (project / "valid.json").write_text(json.dumps(rows[:1]), encoding="utf-8")
+    (project / "test.json").write_text(json.dumps(rows), encoding="utf-8")
     _write_jsonl(
         project / "test_row_map.jsonl",
         [
@@ -86,7 +87,9 @@ def test_tallrec_qwen_lora_controlled_contract(tmp_path: Path) -> None:
     first = json.loads(train[0])
     assert first["messages"][0]["role"] == "user"
     assert first["messages"][1]["content"] == "Yes."
-    assert Path(manifest["files"]["test_score_plan"]).exists()
+    score = json.loads(Path(manifest["files"]["test_score_plan"]).read_text(encoding="utf-8").splitlines()[0])
+    assert score["prompt"].startswith("Answer Yes. or No.")
+    assert score["candidate_outputs"] == ["Yes."]
     assert manifest["paper_table_policy"].startswith("Eligible for controlled")
 
 
@@ -111,3 +114,39 @@ def test_openp5_qwen_lora_controlled_contract(tmp_path: Path) -> None:
     score = json.loads(Path(manifest["files"]["test_score_plan"]).read_text(encoding="utf-8").splitlines()[0])
     assert score["candidate_outputs"] == ["<item_2>", "<item_3>"]
     assert "candidate_scores.csv" in Path(tmp_path / "out" / "server_command_plan.md").read_text(encoding="utf-8")
+
+
+def test_dealrec_qwen_lora_controlled_contract(tmp_path: Path) -> None:
+    packet = tmp_path / "dealrec_packet"
+    project = packet / "dealrec"
+    project.mkdir(parents=True)
+    task = {
+        "example_id": "e1",
+        "user_id": "u1",
+        "history_text": "One",
+        "target_item_id": "i2",
+        "candidate_item_ids": ["i2", "i3"],
+        "candidate_texts": [{"item_id": "i2", "text": "Two"}, {"item_id": "i3", "text": "Three"}],
+    }
+    _write_jsonl(project / "train_project_tasks.jsonl", [task])
+    _write_jsonl(project / "valid_project_tasks.jsonl", [task])
+    _write_jsonl(project / "test_project_tasks.jsonl", [task])
+    (project / "candidate_scores_template.csv").write_text("example_id,user_id,item_id,score\n", encoding="utf-8")
+    (project / "item_id_mapping.csv").write_text("item_id,title,category,domain,text\n", encoding="utf-8")
+    config = {
+        "project": "dealrec",
+        "controlled_baseline_name": "dealrec_qwen3_lora_tiny",
+        "base_model": "/models/qwen",
+        "packet_dir": str(packet),
+        "output_dir": str(tmp_path / "out"),
+        "seed": 13,
+        "lora": {"r": 16, "alpha": 32},
+        "training": {"num_train_epochs": 1},
+        "scoring": {"type": "candidate_id_likelihood"},
+    }
+    manifest = prepare_controlled_baseline(config=config, config_path=tmp_path / "cfg.yaml")
+    first = json.loads(Path(manifest["files"]["train_sft"]).read_text(encoding="utf-8").splitlines()[0])
+    assert "DEALRec controlled recommendation task" in first["messages"][0]["content"]
+    assert first["messages"][1]["content"] == "i2"
+    score = json.loads(Path(manifest["files"]["test_score_plan"]).read_text(encoding="utf-8").splitlines()[0])
+    assert score["candidate_outputs"] == ["i2", "i3"]

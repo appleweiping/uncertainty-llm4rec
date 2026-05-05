@@ -4,7 +4,8 @@ This document tracks official external LLM4Rec project integrations. It is a
 packet and execution-status matrix, not a paper result table.
 
 For the main fair-comparison lane that controls the small LLM backbone and LoRA
-budget, see `docs/qwen3_lora_controlled_baselines.md`.
+budget, see `docs/qwen3_lora_controlled_baselines.md`. The first main-table
+suite is TALLRec, OpenP5-style, DEALRec, and LC-Rec with Qwen3-8B LoRA.
 
 ## Status Matrix
 

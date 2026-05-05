@@ -23,7 +23,21 @@ Official upstream reproductions can still be useful, but they belong in a
 separate reference/appendix table if they use T5, LLaMA, Vicuna, or a project
 checkpoint not shared by the controlled comparison.
 
-## First Two Controlled Baselines
+## Main4 Controlled Baselines
+
+The first main-table suite should use four baselines:
+
+| Baseline | Comparison role | Status |
+| --- | --- | --- |
+| TALLRec-Qwen3-LoRA | instruction tuning for recommendation | configured |
+| OpenP5-style-Qwen3-LoRA | P5-style generative/sequential recommendation | configured |
+| DEALRec-Qwen3-LoRA | data-efficient LLM4Rec | configured |
+| LC-Rec-Qwen3-LoRA | LLM plus collaborative signal | configured |
+
+These four cover the core external-framework families without spreading the
+first experiment phase too thin. CoLLM/LLaRA should follow as additional
+collaborative-signal baselines. LLM-ESR/SLMRec should follow as long-tail or
+sequential-specialist robustness baselines.
 
 ### TALLRec-Qwen3-LoRA
 
@@ -56,6 +70,33 @@ checkpoint not shared by the controlled comparison.
 This is not an official OpenP5 T5/P5 result. It is the controlled-backbone
 adaptation needed for a fair framework comparison.
 
+### DEALRec-Qwen3-LoRA
+
+- Config:
+  `configs/server/controlled_baselines/dealrec_qwen3_lora_amazon_beauty.yaml`
+- Packet:
+  `outputs/server_packets/dealrec_amazon_beauty`
+- Training input:
+  data-efficient project-style prompts from the generic candidate-ranking
+  packet.
+- Scoring:
+  compute candidate item-id likelihood for every TRUCE candidate.
+- Paper label after completion:
+  `DEALRec-Qwen3-LoRA (controlled)`.
+
+### LC-Rec-Qwen3-LoRA
+
+- Config:
+  `configs/server/controlled_baselines/lc_rec_qwen3_lora_amazon_beauty.yaml`
+- Packet:
+  `outputs/server_packets/lc_rec_amazon_beauty`
+- Training input:
+  collaborative-signal prompts using user history and candidate item text.
+- Scoring:
+  compute candidate item-id likelihood for every TRUCE candidate.
+- Paper label after completion:
+  `LC-Rec-Qwen3-LoRA (controlled)`.
+
 ## Prepare Server Inputs
 
 On the server, after pulling the latest repository:
@@ -73,6 +114,16 @@ python scripts/prepare_qwen_lora_controlled_baseline.py \
   --config configs/server/controlled_baselines/tallrec_qwen3_lora_amazon_beauty.yaml
 python scripts/prepare_qwen_lora_controlled_baseline.py \
   --config configs/server/controlled_baselines/openp5_style_qwen3_lora_amazon_beauty.yaml
+python scripts/prepare_qwen_lora_controlled_baseline.py \
+  --config configs/server/controlled_baselines/dealrec_qwen3_lora_amazon_beauty.yaml
+python scripts/prepare_qwen_lora_controlled_baseline.py \
+  --config configs/server/controlled_baselines/lc_rec_qwen3_lora_amazon_beauty.yaml
+```
+
+Or prepare the full first suite:
+
+```bash
+python scripts/prepare_controlled_baseline_suite.py
 ```
 
 Each controlled-baseline output directory contains:
@@ -82,6 +133,15 @@ Each controlled-baseline output directory contains:
 - `test_score_plan.jsonl`
 - `controlled_baseline_manifest.json`
 - `server_command_plan.md`
+
+`prepare_controlled_baseline_suite.py` also writes a smoke run queue:
+
+```text
+outputs/server_training/controlled_baselines/qwen3_lora_main4_amazon_beauty/server_run_queue.sh
+```
+
+Run that queue first to validate the four training/scoring paths with tiny
+limits, then remove `--max-*` flags for the full runs.
 
 The server training runner must create:
 
