@@ -6,6 +6,7 @@ packet_dir: outputs/server_packets/dealrec_amazon_beauty
 output_dir: outputs/server_training/controlled_baselines/dealrec_qwen3_lora_amazon_beauty
 max_train_examples: null
 max_valid_examples: null
+negatives_per_train_example: 15
 training:
   num_train_epochs: 1
   per_device_train_batch_size: 1
@@ -22,7 +23,7 @@ lora:
   dropout: 0.05
   target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
 scoring:
-  type: candidate_id_likelihood
+  type: pairwise_yes_likelihood
   output: candidate_scores.csv
 paper_policy:
   controlled_backbone: true

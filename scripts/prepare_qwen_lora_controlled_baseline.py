@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import random
 import sys
 from pathlib import Path
 from typing import Any
@@ -116,15 +117,38 @@ def _prepare_generic_project(
     project_dir = packet_dir / project
     max_train = _optional_int(config, "max_train_examples")
     max_valid = _optional_int(config, "max_valid_examples")
+    negatives_per_train = int(config.get("negatives_per_train_example") or 15)
+    rng = random.Random(int(config.get("seed") or 13))
     train_tasks = _read_jsonl(project_dir / "train_project_tasks.jsonl")
     valid_tasks = _read_jsonl(project_dir / "valid_project_tasks.jsonl")
     test_tasks = _read_jsonl(project_dir / "test_project_tasks.jsonl")
     train_sft = output_dir / "train_sft.jsonl"
     valid_sft = output_dir / "valid_sft.jsonl"
     test_score_plan = output_dir / "test_score_plan.jsonl"
-    _write_jsonl(train_sft, [_generic_sft_row(row, project=project) for row in train_tasks[:max_train]])
-    _write_jsonl(valid_sft, [_generic_sft_row(row, project=project) for row in valid_tasks[:max_valid]])
-    _write_jsonl(test_score_plan, [_generic_score_row(row, project=project) for row in test_tasks])
+    train_rows = [
+        sft_row
+        for row in train_tasks
+        for sft_row in _generic_pairwise_sft_rows(
+            row,
+            project=project,
+            negatives_per_train=negatives_per_train,
+            rng=rng,
+        )
+    ]
+    valid_rows = [
+        sft_row
+        for row in valid_tasks
+        for sft_row in _generic_pairwise_sft_rows(
+            row,
+            project=project,
+            negatives_per_train=negatives_per_train,
+            rng=rng,
+        )
+    ]
+    score_rows = [score_row for row in test_tasks for score_row in _generic_pairwise_score_rows(row, project=project)]
+    _write_jsonl(train_sft, train_rows[:max_train])
+    _write_jsonl(valid_sft, valid_rows[:max_valid])
+    _write_jsonl(test_score_plan, score_rows)
     return {
         "train_sft": str(train_sft),
         "valid_sft": str(valid_sft),
@@ -208,39 +232,55 @@ def _openp5_prompt(row: dict[str, Any], *, item_map: dict[str, str]) -> str:
     )
 
 
-def _generic_sft_row(row: dict[str, Any], *, project: str) -> dict[str, Any]:
+def _generic_pairwise_sft_rows(
+    row: dict[str, Any],
+    *,
+    project: str,
+    negatives_per_train: int,
+    rng: random.Random,
+) -> list[dict[str, Any]]:
     target = str(row.get("target_item_id") or "")
-    return {
-        "messages": [
-            {"role": "user", "content": _generic_prompt(row, project=project)},
-            {"role": "assistant", "content": target},
-        ],
-        "metadata": {
-            "source_project": _project_display(project),
+    negatives = [str(item) for item in row.get("candidate_item_ids") or [] if str(item) != target]
+    negatives = rng.sample(negatives, k=min(negatives_per_train, len(negatives)))
+    candidate_ids = ([target] if target else []) + negatives
+    rng.shuffle(candidate_ids)
+    return [
+        {
+            "messages": [
+                {"role": "user", "content": _generic_pairwise_prompt(row, project=project, candidate_item_id=item_id)},
+                {"role": "assistant", "content": "Yes." if item_id == target else "No."},
+            ],
+            "metadata": {
+                "source_project": _project_display(project),
+                "example_id": str(row.get("example_id") or ""),
+                "target_item_id": target,
+                "candidate_item_id": item_id,
+            },
+        }
+        for item_id in candidate_ids
+    ]
+
+
+def _generic_pairwise_score_rows(row: dict[str, Any], *, project: str) -> list[dict[str, Any]]:
+    return [
+        {
             "example_id": str(row.get("example_id") or ""),
-            "target_item_id": target,
-        },
-    }
+            "user_id": str(row.get("user_id") or ""),
+            "prompt": _generic_pairwise_prompt(row, project=project, candidate_item_id=str(item_id)),
+            "candidate_item_ids": [str(item_id)],
+            "candidate_outputs": ["Yes."],
+            "scoring_contract": "Compute causal-LM log-likelihood of Yes. for this candidate prompt, then write one candidate score.",
+        }
+        for item_id in row.get("candidate_item_ids") or []
+    ]
 
 
-def _generic_score_row(row: dict[str, Any], *, project: str) -> dict[str, Any]:
-    candidates = [str(item) for item in row.get("candidate_item_ids") or []]
-    return {
-        "example_id": str(row.get("example_id") or ""),
-        "user_id": str(row.get("user_id") or ""),
-        "prompt": _generic_prompt(row, project=project),
-        "candidate_item_ids": candidates,
-        "candidate_outputs": candidates,
-        "scoring_contract": "Compute causal-LM log-likelihood for each candidate item id given prompt, then write candidate_scores.csv.",
-    }
-
-
-def _generic_prompt(row: dict[str, Any], *, project: str) -> str:
-    candidate_lines = []
+def _generic_pairwise_prompt(row: dict[str, Any], *, project: str, candidate_item_id: str) -> str:
+    candidate_text = candidate_item_id
     for candidate in row.get("candidate_texts") or []:
-        if not isinstance(candidate, dict):
-            continue
-        candidate_lines.append(f"- {candidate.get('item_id')}: {candidate.get('text')}")
+        if isinstance(candidate, dict) and str(candidate.get("item_id") or "") == candidate_item_id:
+            candidate_text = str(candidate.get("text") or candidate_item_id)
+            break
     family_hint = {
         "dealrec": "Use a data-efficient recommendation adaptation.",
         "lc_rec": "Use collaborative preference evidence from the user history and item text.",
@@ -249,9 +289,9 @@ def _generic_prompt(row: dict[str, Any], *, project: str) -> str:
         f"{_project_display(project)} controlled recommendation task.\n"
         f"{family_hint}\n"
         f"User history: {row.get('history_text') or ''}\n"
-        "Candidates:\n"
-        + "\n".join(candidate_lines)
-        + "\nReturn exactly one candidate item id."
+        f"Candidate item: {candidate_text}\n"
+        f"Candidate item id: {candidate_item_id}\n"
+        "Answer exactly Yes. or No."
     )
 
 

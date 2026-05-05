@@ -147,6 +147,7 @@ def test_dealrec_qwen_lora_controlled_contract(tmp_path: Path) -> None:
     manifest = prepare_controlled_baseline(config=config, config_path=tmp_path / "cfg.yaml")
     first = json.loads(Path(manifest["files"]["train_sft"]).read_text(encoding="utf-8").splitlines()[0])
     assert "DEALRec controlled recommendation task" in first["messages"][0]["content"]
-    assert first["messages"][1]["content"] == "i2"
+    assert first["messages"][1]["content"] in {"Yes.", "No."}
     score = json.loads(Path(manifest["files"]["test_score_plan"]).read_text(encoding="utf-8").splitlines()[0])
-    assert score["candidate_outputs"] == ["i2", "i3"]
+    assert score["candidate_outputs"] == ["Yes."]
+    assert len(Path(manifest["files"]["test_score_plan"]).read_text(encoding="utf-8").splitlines()) == 2

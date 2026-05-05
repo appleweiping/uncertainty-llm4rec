@@ -81,16 +81,16 @@ def run(manifest: dict[str, Any], *, args: argparse.Namespace) -> dict[str, Any]
         train_seconds = _train(model, tokenizer, train_rows, manifest=manifest, max_steps=args.max_steps)
         model.save_pretrained(adapter_dir)
         tokenizer.save_pretrained(adapter_dir)
+        score_model = model
     else:
         train_seconds = 0.0
-
-    score_model = AutoModelForCausalLM.from_pretrained(
-        base_model,
-        torch_dtype=torch.bfloat16 if manifest["training"].get("bf16") else torch.float16,
-        device_map="auto",
-        trust_remote_code=args.trust_remote_code,
-    )
-    score_model = PeftModel.from_pretrained(score_model, adapter_dir)
+        score_model = AutoModelForCausalLM.from_pretrained(
+            base_model,
+            torch_dtype=torch.bfloat16 if manifest["training"].get("bf16") else torch.float16,
+            device_map="auto",
+            trust_remote_code=args.trust_remote_code,
+        )
+        score_model = PeftModel.from_pretrained(score_model, adapter_dir)
     score_model.eval()
     score_rows = _read_jsonl(Path(manifest["files"]["test_score_plan"]))
     if args.max_score_rows:
