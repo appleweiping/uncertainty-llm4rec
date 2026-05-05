@@ -66,7 +66,7 @@ def _write_run_queue(path: Path, manifests: list[dict]) -> None:
         "#!/usr/bin/env bash",
         "set -euo pipefail",
         "cd ~/projects/TRUCE-Rec",
-        "source .venv_truce/bin/activate",
+        "source ${QWEN_LORA_ENV:-$HOME/projects/TALLRec/.venv_tallrec/bin/activate}",
         "",
         "# Smoke each baseline first. Remove --max-* flags for full runs after the smoke succeeds.",
     ]
