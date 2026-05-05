@@ -38,7 +38,6 @@ def main() -> int:
 def run(manifest: dict[str, Any], *, args: argparse.Namespace) -> dict[str, Any]:
     import torch
     from peft import LoraConfig, PeftModel, get_peft_model
-    from torch.utils.data import DataLoader
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     output_dir = Path(str(manifest["output_dir"]))
@@ -118,6 +117,7 @@ def run(manifest: dict[str, Any], *, args: argparse.Namespace) -> dict[str, Any]
 
 def _train(model: Any, tokenizer: Any, rows: list[dict[str, Any]], *, manifest: dict[str, Any], max_steps: int | None) -> float:
     import torch
+    from torch.utils.data import DataLoader
     from torch.optim import AdamW
     from transformers import get_linear_schedule_with_warmup
 
