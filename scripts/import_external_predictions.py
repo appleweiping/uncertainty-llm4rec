@@ -28,6 +28,7 @@ def main() -> int:
     parser.add_argument("--source-project", default="external")
     parser.add_argument("--model-name")
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--split", help="optional split filter, e.g. test")
     args = parser.parse_args()
     if args.config is not None:
         result = _import_from_config(args.config)
@@ -43,6 +44,7 @@ def main() -> int:
         source_project=args.source_project,
         model_name=args.model_name,
         seed=args.seed,
+        split=args.split,
     )
     print(json.dumps(result, indent=2))
     return 0

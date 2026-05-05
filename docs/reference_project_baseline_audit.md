@@ -194,6 +194,15 @@ metrics:
    tests whether TRUCE is complementary to strong recommenders rather than only
    a replacement for weak fallback.
 
+## Server Diagnostic Result
+
+Amazon Beauty has a completed TALLRec-style diagnostic run using the server
+packet and Qwen3-8B zero-shot likelihood scoring. The output was imported into
+the TRUCE schema and evaluated by the TRUCE evaluator on the test split:
+Recall@10 0.031111, NDCG@10 0.011949, and MRR@10 0.006321. This is not an
+official trained TALLRec result, because LoRA training was not run. Keep it in
+appendix/diagnostic tables only.
+
 ## Recommended Sequence
 
 1. Prepare server run packets for OpenP5 and TALLRec. Completed locally as

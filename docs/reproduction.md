@@ -69,6 +69,13 @@ py -3 scripts\run_external_baseline.py --config configs\experiments\baseline_lig
 py -3 scripts\import_external_predictions.py --config configs\experiments\baseline_lightgcn_amazon_beauty.yaml
 ```
 
+External project candidate scores can be imported with a split filter:
+
+```powershell
+py -3 scripts\import_external_predictions.py --scores <candidate_scores.csv> --examples <packet>\truce_examples.jsonl --output <run_dir>\predictions.jsonl --method <method> --source-project <project> --model-name <model> --seed 13 --split test
+py -3 scripts\evaluate_predictions.py --predictions <run_dir>\predictions.jsonl --output-dir <run_dir>
+```
+
 BERT4Rec adapter readiness was checked before training:
 
 ```powershell

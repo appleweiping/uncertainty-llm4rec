@@ -72,7 +72,7 @@ def import_scored_candidates(
 
 def _read_scores(path: Path) -> dict[tuple[str, str], float]:
     scores: dict[tuple[str, str], float] = {}
-    with path.open("r", encoding="utf-8", newline="") as handle:
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
         reader = csv.DictReader(handle)
         for row in reader:
             example_id = str(row.get("example_id") or row.get("user_id") or "")
@@ -85,7 +85,7 @@ def _read_scores(path: Path) -> dict[tuple[str, str], float]:
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows = []
-    with path.open("r", encoding="utf-8") as handle:
+    with path.open("r", encoding="utf-8-sig") as handle:
         for line in handle:
             if line.strip():
                 rows.append(json.loads(line))

@@ -48,7 +48,23 @@ py -3 scripts/import_external_predictions.py --scores <candidate_scores.csv> --e
 py -3 scripts/evaluate_predictions.py --predictions <run_dir>/predictions.jsonl --output-dir <run_dir>
 ```
 
+Use `--split test` on `scripts/import_external_predictions.py` when importing
+from a full `truce_examples.jsonl` packet. This preserves the final evaluation
+split and avoids importing train/valid examples into diagnostic runs.
+
 Do not use OpenP5/TALLRec evaluator metrics as paper metrics.
+
+## Current Diagnostic Result
+
+Amazon Beauty has one server-side diagnostic row:
+
+- method: TALLRec-style Qwen3 zero-shot scorer;
+- run directory: `outputs/runs/tallrec_qwen_zeroshot_amazon_beauty_seed13`;
+- Recall@10 0.031111, NDCG@10 0.011949, MRR@10 0.006321;
+- final metrics computed by TRUCE evaluator on 225 test examples.
+
+This row is an appendix/diagnostic result only. It is not an official trained
+TALLRec baseline because TALLRec LoRA training was not run.
 
 ## OpenP5 Adapter Contract
 
