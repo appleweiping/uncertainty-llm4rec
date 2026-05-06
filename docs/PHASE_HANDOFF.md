@@ -76,3 +76,27 @@ Server handoff:
 - Prepare the suite with `python scripts/prepare_controlled_baseline_suite.py`,
   then run the generated server smoke queue before removing limits for the full
   long-running experiments.
+
+Latest server status as of 2026-05-06:
+
+- Main4 smoke is complete for all four controlled baselines:
+  `TALLRec-Qwen3-LoRA`, `OpenP5-style-Qwen3-LoRA`,
+  `DEALRec-Qwen3-LoRA`, and `LC-Rec-Qwen3-LoRA`.
+- Completed smoke artifact directories:
+  `outputs/server_training/controlled_baselines/tallrec_qwen3_lora_amazon_beauty`,
+  `outputs/server_training/controlled_baselines/openp5_style_qwen3_lora_amazon_beauty`,
+  `outputs/server_training/controlled_baselines/dealrec_qwen3_lora_amazon_beauty`,
+  and
+  `outputs/server_training/controlled_baselines/lc_rec_qwen3_lora_amazon_beauty`.
+- TALLRec/DEALRec/LC-Rec smoke scoring is fast after switching generic
+  baselines to pairwise `Yes.` likelihood. OpenP5-style smoke works but is too
+  slow for full scoring in the current runner: two score rows took about 763
+  seconds. Do not start a full OpenP5-style run until scoring is batched or
+  otherwise optimized.
+- Next recommended server action: full-run the fast three controlled baselines
+  first: TALLRec, DEALRec, and LC-Rec. Use `~/projects/TALLRec/.venv_tallrec`
+  for Qwen/torch/peft execution, not `.venv_truce`.
+- After each full run, import with
+  `scripts/import_external_predictions.py --split test` and evaluate with
+  `scripts/evaluate_predictions.py`. Final paper metrics must come from TRUCE
+  evaluator outputs only.

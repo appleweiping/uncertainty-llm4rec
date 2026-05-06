@@ -94,10 +94,10 @@ adaptation needed for a fair framework comparison.
 - Packet:
   `outputs/server_packets/dealrec_amazon_beauty`
 - Training input:
-  data-efficient project-style prompts from the generic candidate-ranking
-  packet.
+  pairwise data-efficient project-style prompts from the generic packet, with
+  the target plus fixed sampled negatives.
 - Scoring:
-  compute candidate item-id likelihood for every TRUCE candidate.
+  compute `Yes.` likelihood for every TRUCE candidate prompt.
 - Paper label after completion:
   `DEALRec-Qwen3-LoRA (controlled)`.
 
@@ -108,9 +108,10 @@ adaptation needed for a fair framework comparison.
 - Packet:
   `outputs/server_packets/lc_rec_amazon_beauty`
 - Training input:
-  collaborative-signal prompts using user history and candidate item text.
+  pairwise collaborative-signal prompts using user history and candidate item
+  text, with the target plus fixed sampled negatives.
 - Scoring:
-  compute candidate item-id likelihood for every TRUCE candidate.
+  compute `Yes.` likelihood for every TRUCE candidate prompt.
 - Paper label after completion:
   `LC-Rec-Qwen3-LoRA (controlled)`.
 
@@ -198,6 +199,27 @@ Initial budget:
 
 If memory fails, change the budget consistently across controlled baselines and
 record the reason in each manifest. Do not silently lower one baseline only.
+
+## Current Execution Status
+
+As of 2026-05-06, all four Main4 controlled baselines have completed server
+smoke runs with `--max-train-examples 128`, `--max-steps 5`, and
+`--max-score-rows 2`.
+
+- TALLRec-Qwen3-LoRA: smoke completed.
+- OpenP5-style-Qwen3-LoRA: smoke completed but scoring is currently too slow
+  for full run without optimization.
+- DEALRec-Qwen3-LoRA: smoke completed after changing generic prompts to
+  pairwise `Yes.` likelihood.
+- LC-Rec-Qwen3-LoRA: smoke completed after changing generic prompts to pairwise
+  `Yes.` likelihood.
+
+Next full-run order:
+
+1. TALLRec-Qwen3-LoRA.
+2. DEALRec-Qwen3-LoRA.
+3. LC-Rec-Qwen3-LoRA.
+4. OpenP5-style-Qwen3-LoRA only after scoring optimization.
 
 ## Evidence Boundary
 
