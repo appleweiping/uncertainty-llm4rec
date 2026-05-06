@@ -70,6 +70,10 @@ Server handoff:
 - Current Amazon Beauty data is acceptable for pipeline and early controlled
   comparison, but final top-conference-strength experiments should rerun the
   same suite on the larger dataset being generated on the same server.
+- Large-scale target data is being produced in
+  `~/projects/pony-rec-rescue-shadow-v6/outputs/baselines/external_tasks/` for
+  books/electronics/movies with same-candidate 10k-user, 1-positive+100-negative
+  protocol. See `docs/week8_large_same_candidate_protocol.md`.
 - First controlled main-table suite:
   `TALLRec-Qwen3-LoRA`, `OpenP5-style-Qwen3-LoRA`,
   `DEALRec-Qwen3-LoRA`, and `LC-Rec-Qwen3-LoRA`.

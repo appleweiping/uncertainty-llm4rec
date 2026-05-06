@@ -55,6 +55,8 @@ The current Amazon Beauty processed set is useful for pipeline and early
 comparison, but it may still be too small for final top-conference claims. When
 the larger same-server dataset from the parallel data project is ready, rerun
 the same controlled suite without changing the evaluator or candidate protocol.
+The large protocol is documented in
+`docs/week8_large_same_candidate_protocol.md`.
 
 ### TALLRec-Qwen3-LoRA
 
