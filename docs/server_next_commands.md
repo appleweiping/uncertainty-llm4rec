@@ -84,3 +84,40 @@ packet paths:
 
 Only imported `predictions.jsonl` and TRUCE `metrics.json`/`metrics.csv` are
 paper-eligible. Smoke metrics and raw project-side logs are not paper results.
+
+## Status Summary
+
+Summarize current controlled baseline status:
+
+```bash
+cd ~/projects/TRUCE-Rec
+source .venv_truce/bin/activate
+
+python scripts/summarize_controlled_baseline_suite.py
+```
+
+This writes:
+
+```text
+outputs/summary/controlled_baselines/controlled_baseline_status.json
+outputs/summary/controlled_baselines/controlled_baseline_status.csv
+```
+
+## Week8 Data Conversion
+
+When the large same-candidate tasks are ready, convert one split/domain into a
+TRUCE processed directory without resampling:
+
+```bash
+cd ~/projects/TRUCE-Rec
+source .venv_truce/bin/activate
+
+python scripts/convert_week8_same_candidate_to_truce.py \
+  --task-dir ~/projects/pony-rec-rescue-shadow-v6/outputs/baselines/external_tasks/books_large10000_100neg_test_same_candidate \
+  --output-dir data/processed/week8_same_candidate/books_large10000_100neg/test \
+  --domain books \
+  --split test
+```
+
+Repeat for `books`, `electronics`, and `movies`, and preserve the original
+candidate/event alignment.
