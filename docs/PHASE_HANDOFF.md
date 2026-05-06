@@ -61,6 +61,15 @@ Server handoff:
 - Main external-framework comparison should now use controlled Qwen3-8B LoRA
   baselines rather than mixing different upstream backbones. See
   `docs/qwen3_lora_controlled_baselines.md`.
+- These baselines are selected from the recommended/reference LLM4Rec project
+  families. The main claim should be framework-vs-framework under the same
+  Qwen3-8B LoRA budget, not copied official metrics with mismatched backbones.
+- Do observation analysis on controlled baselines too: check whether the
+  motivating TRUCE/CU-GR observation phenomena appear in TALLRec/OpenP5/
+  DEALRec/LC-Rec outputs, not only in weak/base-model outputs.
+- Current Amazon Beauty data is acceptable for pipeline and early controlled
+  comparison, but final top-conference-strength experiments should rerun the
+  same suite on the larger dataset being generated on the same server.
 - First controlled main-table suite:
   `TALLRec-Qwen3-LoRA`, `OpenP5-style-Qwen3-LoRA`,
   `DEALRec-Qwen3-LoRA`, and `LC-Rec-Qwen3-LoRA`.

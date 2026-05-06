@@ -98,6 +98,28 @@ For baseline observation runs, the registry explicitly writes
 `source_kind=baseline_observation` and
 `confidence_semantics=non_calibrated_baseline_proxy`.
 
+## Controlled Baseline Observation Requirement
+
+The Qwen3-8B LoRA controlled baseline suite should also feed the observation
+analysis layer where its outputs expose enough per-example candidate scores or
+ranked predictions. The purpose is to test whether the observation phenomena
+behind TRUCE/CU-GR also occur in strong reference-project baselines, not only in
+weak base-model or mock outputs.
+
+Required controlled baseline scope:
+
+- TALLRec-Qwen3-LoRA;
+- OpenP5-style-Qwen3-LoRA;
+- DEALRec-Qwen3-LoRA;
+- LC-Rec-Qwen3-LoRA.
+
+For these runs, preserve raw `candidate_scores.csv`, imported
+`predictions.jsonl`, `metrics.json`, runtime summaries, and the controlled
+baseline manifest. These artifacts are enough to compute rank/target-position
+diagnostics, long-tail slices, score concentration, and candidate adherence. If
+a baseline does not produce calibrated confidence, record
+`confidence_semantics=non_calibrated_baseline_proxy`.
+
 ## Compare Prompt/Grounding Gates
 
 When multiple runs use the same input slice, compare their completed analysis

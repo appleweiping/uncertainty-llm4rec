@@ -9,6 +9,12 @@ The main framework comparison should control the small LLM backbone and LoRA
 budget. Otherwise, a result can reflect different base models, checkpoints,
 tokenizers, or prompt vocabularies rather than the project framework.
 
+This suite is specifically for comparing TRUCE/CU-GR against reference-paper
+LLM4Rec project families recommended for the paper baseline set. The goal is
+not merely to reproduce their original checkpoints; it is to test whether our
+framework remains stronger when each project is adapted to the same Qwen3-8B
+LoRA backbone and the same TRUCE data/evaluator contract.
+
 Controlled main-table candidates must use:
 
 - base model: `/home/ajifang/models/Qwen/Qwen3-8B`;
@@ -18,6 +24,12 @@ Controlled main-table candidates must use:
 - evaluator: TRUCE evaluator only;
 - import: `candidate_scores.csv -> predictions.jsonl -> metrics.json`;
 - split filter: `scripts/import_external_predictions.py --split test`.
+
+In addition to ranking metrics, each controlled baseline should be fed into the
+observation analysis layer when possible. We need to check whether the
+observation phenomena motivating TRUCE/CU-GR also appear in TALLRec/OpenP5/
+DEALRec/LC-Rec style baselines, instead of only showing the phenomenon on a
+weak base model.
 
 Official upstream reproductions can still be useful, but they belong in a
 separate reference/appendix table if they use T5, LLaMA, Vicuna, or a project
@@ -38,6 +50,11 @@ These four cover the core external-framework families without spreading the
 first experiment phase too thin. CoLLM/LLaRA should follow as additional
 collaborative-signal baselines. LLM-ESR/SLMRec should follow as long-tail or
 sequential-specialist robustness baselines.
+
+The current Amazon Beauty processed set is useful for pipeline and early
+comparison, but it may still be too small for final top-conference claims. When
+the larger same-server dataset from the parallel data project is ready, rerun
+the same controlled suite without changing the evaluator or candidate protocol.
 
 ### TALLRec-Qwen3-LoRA
 
@@ -151,6 +168,16 @@ The server training runner must create:
 - environment and git info;
 - imported TRUCE `predictions.jsonl`;
 - TRUCE `metrics.json` and `metrics.csv`.
+
+For a paper-eligible controlled baseline, also preserve enough raw artifacts to
+run observation diagnostics:
+
+- candidate score distributions;
+- selected top candidates and target positions;
+- prompt/source template metadata;
+- latency/runtime summary;
+- enough per-example metadata to slice long-tail, validity, and observation
+  phenomena by bucket.
 
 ## Shared LoRA Budget
 
