@@ -122,8 +122,8 @@ The current recommended official baseline families are:
 | Main | OpenP5 | controlled adapter pilot; scoring optimization and official-native audit required |
 | Main | DEALRec | controlled adapter pilot; official-native audit required |
 | Main | LC-Rec | controlled adapter pilot; official-native audit required |
-| Added official candidate | LLaRA | packet/config added; official-native implementation required |
-| Added robustness candidate | LLM-ESR | packet/config added; official-native implementation required |
+| Main | LLaRA | packet/config added; official-native implementation required |
+| Main | LLM-ESR | packet/config added; official-native implementation required |
 
 CoLLM and SLMRec remain useful follow-up candidates, especially for
 collaborative-signal and efficiency appendices.

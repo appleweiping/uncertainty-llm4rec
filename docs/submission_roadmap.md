@@ -117,6 +117,10 @@ Baseline tiers:
   - LLaRA;
   - LLM-ESR.
 
+All six official LLM4Rec families are part of the main baseline pool. They can
+have different analysis slices, such as long-tail/sequential slices for
+LLM-ESR, while keeping equal baseline status.
+
 Official baseline contract:
 
 ```text

@@ -39,5 +39,5 @@ provenance:
   official_algorithm_reused: false
   official_native_upgrade_required: true
   upstream_personal_repo: https://github.com/liuqidong07/LLM-ESR
-  recommended_role: long_tail_sequential_robustness
+  recommended_role: main_official_baseline
   notes: LLM-ESR should reuse official long-tail sequential modules and prerequisite embedding artifacts before paper use.

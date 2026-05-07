@@ -38,5 +38,5 @@ paper_policy:
 provenance:
   official_algorithm_reused: false
   official_native_upgrade_required: true
-  recommended_role: main_or_secondary_official_baseline
+  recommended_role: main_official_baseline
   notes: LLaRA should reuse official recommendation-signal alignment modules before main-table use.

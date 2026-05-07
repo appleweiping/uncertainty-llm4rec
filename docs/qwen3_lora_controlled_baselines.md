@@ -67,13 +67,17 @@ The current official baseline pool has six families:
 | OpenP5-style-Qwen3-LoRA | P5-style generative/sequential recommendation | adapter pilot configured; official-native audit required |
 | DEALRec-Qwen3-LoRA | data-efficient LLM4Rec | adapter pilot configured; official-native audit required |
 | LC-Rec-Qwen3-LoRA | LLM plus collaborative signal | adapter pilot configured; official-native audit required |
-| LLaRA-Qwen3-adapter | LLM plus recommendation-signal alignment | packet/config added; official-native implementation required |
-| LLM-ESR-Qwen3-adapter | long-tail sequential LLM4Rec | packet/config added; official-native implementation required |
+| LLaRA-Qwen3-adapter | LLM plus recommendation-signal alignment | main family; packet/config added; official-native implementation required |
+| LLM-ESR-Qwen3-adapter | long-tail sequential LLM4Rec | main family; packet/config added; official-native implementation required |
 
 The first four cover the core external-framework families without spreading the
 first experiment phase too thin. LLaRA is added as a stronger behavioral-signal
 alignment baseline, and LLM-ESR is added for long-tail/sequential robustness.
 CoLLM and SLMRec remain useful follow-up candidates.
+
+All six families are treated as main official baseline families. Their analysis
+emphasis can differ, for example LLM-ESR should receive long-tail/sequential
+slices, but it should not be treated as a weaker or optional baseline tier.
 
 Source check for the two added families:
 

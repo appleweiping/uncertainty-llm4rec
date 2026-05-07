@@ -83,7 +83,7 @@ For the current Beauty packet lane:
 python scripts/prepare_controlled_baseline_suite.py
 ```
 
-For the added official candidates:
+For the full six-family official baseline pool:
 
 ```bash
 python scripts/prepare_controlled_baseline_suite.py \
