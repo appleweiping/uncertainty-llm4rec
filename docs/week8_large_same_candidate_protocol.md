@@ -26,6 +26,7 @@ Large same-candidate task directories:
 
 Target domains:
 
+- `beauty` if the Week8 producer exports matching directories;
 - `books`
 - `electronics`
 - `movies`
@@ -95,12 +96,15 @@ Migration steps:
    `examples.jsonl`, `candidate_sets.jsonl`, `items.csv`, and
    `preprocess_manifest.json` without changing candidates or negatives.
 2. Preserve `event_id/source_event_id` in example metadata.
-3. Generate project packets for the Main4 controlled baselines:
-   TALLRec, OpenP5-style, DEALRec, and LC-Rec.
-4. Run the same Qwen3-8B LoRA controlled suite for books/electronics/movies.
-5. Import every method with TRUCE `import_external_predictions.py --split test`.
-6. Evaluate with TRUCE evaluator only.
-7. Run observation analysis and paired/statistical comparison across Ours and
+3. Validate converted artifacts with
+   `scripts/validate_week8_same_candidate_processed.py`.
+4. Generate project packets for official baseline families:
+   TALLRec, OpenP5, DEALRec, LC-Rec, LLaRA, and LLM-ESR where feasible.
+5. Run official-native Qwen3-8B base-model controlled baselines for
+   beauty/books/electronics/movies.
+6. Import every method with TRUCE `import_external_predictions.py --split test`.
+7. Evaluate with TRUCE evaluator only.
+8. Run observation analysis and paired/statistical comparison across Ours and
    the controlled baselines.
 
 ## Paper Position
@@ -108,3 +112,31 @@ Migration steps:
 Amazon Beauty can support pipeline validation and early controlled comparison.
 The Week8 books/electronics/movies large same-candidate tasks should become the
 main paper-scale benchmark once their metadata and summaries are finalized.
+
+## Strict Validation
+
+Formal Week8 conversion should use:
+
+```bash
+python scripts/convert_week8_same_candidate_to_truce.py \
+  --task-dir <task_dir> \
+  --output-dir <output_dir> \
+  --domain <domain> \
+  --split test \
+  --strict-target-in-candidates
+```
+
+Then validate:
+
+```bash
+python scripts/validate_week8_same_candidate_processed.py \
+  --root data/processed/week8_same_candidate \
+  --domains beauty books electronics movies \
+  --splits valid test \
+  --expected-users 10000 \
+  --expected-candidates 101 \
+  --expected-negatives 100
+```
+
+If Beauty Week8 directories are absent, do not mark the four-domain suite
+complete; use the existing Beauty pipeline only as the early-domain lane.

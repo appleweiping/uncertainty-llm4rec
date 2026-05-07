@@ -1,0 +1,16 @@
+from scripts.plan_four_domain_server_runs import build_commands
+
+
+def test_four_domain_plan_preserves_week8_paths() -> None:
+    commands = build_commands(
+        source_root="SRC",
+        output_root="OUT",
+        domains=["beauty", "books"],
+        splits=["valid", "test"],
+    )
+    assert len(commands) == 4
+    assert "SRC/beauty_large10000_100neg_valid_same_candidate" in commands[0]
+    assert "--output-dir OUT/beauty_large10000_100neg/valid" in commands[0]
+    assert "--strict-target-in-candidates" in commands[0]
+    assert "SRC/books_large10000_100neg_test_same_candidate" in commands[-1]
+    assert "--domain books" in commands[-1]

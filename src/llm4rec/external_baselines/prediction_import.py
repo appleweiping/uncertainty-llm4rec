@@ -49,6 +49,8 @@ def import_scored_candidates(
                 "raw_output": None,
                 "metadata": {
                     "example_id": example_id,
+                    "event_id": _metadata_value(ex, "event_id", example_id),
+                    "source_event_id": _metadata_value(ex, "source_event_id", example_id),
                     "split": ex.get("split"),
                     "external_baseline": True,
                     "library": source_project,
@@ -95,6 +97,11 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 def _example_id(row: dict[str, Any]) -> str:
     meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
     return str(row.get("example_id") or meta.get("example_id") or row.get("user_id") or "")
+
+
+def _metadata_value(row: dict[str, Any], key: str, default: Any = "") -> str:
+    meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+    return str(row.get(key) or meta.get(key) or default or "")
 
 
 def _normalize_split(value: Any) -> str:

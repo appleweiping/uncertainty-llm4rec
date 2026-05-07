@@ -51,3 +51,13 @@ protocol promotes them with complete artifacts.
 | Long-tail under-confidence | `configs/experiments/real_observation_template.yaml` | Amazon TBD | analysis | shared | tail confidence gaps | long-tail CSVs | high | analysis only after runs | no | no |
 | High-confidence hallucination | `configs/experiments/real_observation_template.yaml` | TBD | analysis | shared | high-conf wrong/hallucination | failure cases | high | analysis only after runs | no | no |
 | Confidence-weighted diversity/novelty | `configs/experiments/real_observation_template.yaml` | TBD | analysis | shared | diversity/novelty | table/plot data | medium | analysis only after runs | no | no |
+
+## Group E: Four-domain Week8 same-candidate suite
+
+| Experiment | Config path | Dataset | Method | Candidate protocol | Metrics | Output artifacts | Priority | Estimated compute cost | API key | GPU |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Week8 conversion | generated server commands | beauty/books/electronics/movies | converter | fixed 1+100 candidates | validation only | processed artifacts + manifest | critical | low | no | no |
+| Traditional/retrieval baselines | TBD Week8 configs | four domains | popularity/BM25/MF/Markov | same-candidate | shared evaluator | run dirs + metrics | critical | low-medium | no | optional |
+| Official-native LLM4Rec baselines | official repo adapters | four domains | TALLRec/OpenP5/DEALRec/LC-Rec/LLaRA/LLM-ESR | same-candidate | shared + long-tail/validity | scores + predictions + metrics + audit | critical | high | no | yes |
+| Ours full | TBD Week8 Ours configs | four domains | CURE/TRUCE / CU-GR v2 | same-candidate | all shared + observation | run dirs + analysis | critical | provider/model dependent | maybe | maybe |
+| Ours ablations | TBD Week8 ablation configs | four domains | component ablations | same-candidate | all shared + paired deltas | run dirs + analysis | critical | provider/model dependent | maybe | maybe |

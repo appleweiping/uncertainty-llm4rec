@@ -63,6 +63,9 @@ Implemented and smoke-tested:
   `controlled_adapter_pilot` until official-native fidelity is audited.
 - External baseline packets exist for TALLRec, OpenP5, BIGRec/DEALRec,
   LC-Rec, LLaRA, CoLLM, LLM-ESR, and SLMRec.
+- The current project route is now organized as:
+  `observation -> CURE/TRUCE framework -> official baselines -> four-domain
+  same-candidate recommendation system`.
 
 Not yet completed:
 
@@ -73,6 +76,22 @@ Not yet completed:
 - no final official-native controlled baseline table;
 - no completed official-native fidelity audit for the external baselines;
 - no final paper conclusions.
+
+## Method Lineage
+
+The active research line is:
+
+```text
+RESEARCH_IDEA
+  -> title-generation observation and grounding
+  -> CU-GR / CURE-TRUCE uncertainty features
+  -> CU-GR v2 candidate-normalized preference fusion
+  -> full TRUCE recommendation system with official baselines
+```
+
+The active package is `src/llm4rec/`. Historical `src/storyflow/` references
+are legacy scaffolding and should be treated as background unless a current
+document explicitly maps them to `llm4rec` modules.
 
 ## Official Baseline Contract
 
@@ -172,6 +191,11 @@ List required artifacts for a planned run:
 - `docs/ablation_protocol.md`: OursMethod ablation protocol.
 - `docs/leakage_fairness_checklist.md`: leakage/fairness safeguards.
 - `docs/server_runbook.md`: API/HF/server/LoRA safety runbook.
+- `docs/submission_roadmap.md`: milestone roadmap from observation to
+  four-domain submission system.
+- `docs/server_execution_matrix.md`: server-first command and artifact matrix.
+- `docs/top_conference_review_plan.md`: internal reviewer/literature-agent
+  checklist before paper writing.
 - `docs/qwen3_lora_controlled_baselines.md`: controlled external baseline
   protocol and status.
 - `docs/controlled_baseline_fidelity_audit.md`: official-native fidelity rule

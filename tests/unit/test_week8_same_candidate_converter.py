@@ -44,6 +44,7 @@ def test_week8_converter_preserves_event_alignment(tmp_path: Path) -> None:
     assert ex["example_id"] == "e1"
     assert ex["metadata"]["source_event_id"] == "src1"
     assert ex["candidates"] == ["i2", "i3"]
+    assert ex["metadata"]["target_inserted_by_converter"] is False
     assert ex["target"] == "i2"
     candidate_rows = [json.loads(line) for line in (out / "candidate_sets.jsonl").read_text(encoding="utf-8").splitlines()]
     assert [row["label"] for row in candidate_rows] == [1, 0]

@@ -18,6 +18,15 @@ That is why the feature schema keeps preference evidence, verbal confidence,
 generation evidence, title grounding uncertainty, popularity pressure, novelty,
 and observation labels separate.
 
+## Implementation Lineage
+
+This is a storyflow-era scaffold document. The active TRUCE-Rec package is now
+`src/llm4rec/`, especially `src/llm4rec/methods/`,
+`src/llm4rec/analysis/`, `src/llm4rec/evaluation/`, and
+`src/llm4rec/external_baselines/`. Historical `src/storyflow/` paths below are
+kept to document the original CURE/TRUCE object, not to supersede active
+`llm4rec` code.
+
 ## Implemented Code
 
 The scaffold lives in:

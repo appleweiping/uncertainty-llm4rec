@@ -16,13 +16,31 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--domain", required=True)
     parser.add_argument("--split", choices=["valid", "test"], required=True)
+    parser.add_argument(
+        "--strict-target-in-candidates",
+        action="store_true",
+        help="Fail if the original same-candidate row omits the positive target.",
+    )
     args = parser.parse_args()
-    manifest = convert(task_dir=args.task_dir, output_dir=args.output_dir, domain=args.domain, split=args.split)
+    manifest = convert(
+        task_dir=args.task_dir,
+        output_dir=args.output_dir,
+        domain=args.domain,
+        split=args.split,
+        strict_target_in_candidates=args.strict_target_in_candidates,
+    )
     print(json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True))
     return 0
 
 
-def convert(*, task_dir: Path, output_dir: Path, domain: str, split: str) -> dict[str, Any]:
+def convert(
+    *,
+    task_dir: Path,
+    output_dir: Path,
+    domain: str,
+    split: str,
+    strict_target_in_candidates: bool = False,
+) -> dict[str, Any]:
     if not task_dir.exists():
         raise SystemExit(f"task_dir not found: {task_dir}")
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -41,8 +59,15 @@ def convert(*, task_dir: Path, output_dir: Path, domain: str, split: str) -> dic
         user_id = str(_first(row, ["user_id", "uid"], ""))
         target = str(_first(row, ["target_item", "target_item_id", "positive_item_id", "item_id", "pos_item"], ""))
         candidates = _candidate_items(row)
+        original_candidate_count = len(candidates)
+        if len(set(candidates)) != len(candidates):
+            raise SystemExit(f"duplicate candidates in event {event_id}")
+        if strict_target_in_candidates and target and target not in candidates:
+            raise SystemExit(f"target missing from candidates in event {event_id}: {target}")
+        target_inserted = False
         if target and target not in candidates:
             candidates = [target] + candidates
+            target_inserted = True
         history = _history(row) or interactions.get(user_id, [])
         example = {
             "example_id": str(event_id),
@@ -59,6 +84,9 @@ def convert(*, task_dir: Path, output_dir: Path, domain: str, split: str) -> dic
                 "same_candidate_protocol": True,
                 "negative_sampling": "popularity",
                 "test_history_mode": "train_plus_valid",
+                "target_inserted_by_converter": target_inserted,
+                "original_candidate_count": original_candidate_count,
+                "candidate_count": len(candidates),
             },
         }
         examples.append(example)
@@ -90,6 +118,8 @@ def convert(*, task_dir: Path, output_dir: Path, domain: str, split: str) -> dic
         "item_count": len(item_ids),
         "preserve_event_alignment": True,
         "do_not_resample": True,
+        "strict_target_in_candidates": strict_target_in_candidates,
+        "target_insertions": sum(1 for ex in examples if ex["metadata"].get("target_inserted_by_converter")),
     }
     (output_dir / "preprocess_manifest.json").write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False, sort_keys=True),

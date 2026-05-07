@@ -21,7 +21,14 @@ Completed local phases:
 
 Current gate:
 
-- Gate R0: pre-experiment reviewer gate.
+- Gate R1: server-first four-domain controlled experiment buildout.
+
+Current roadmap:
+
+- `docs/submission_roadmap.md` is the primary milestone document.
+- `docs/server_execution_matrix.md` is the server command and artifact gate.
+- `docs/top_conference_review_plan.md` is the top-conference reviewer defense
+  checklist.
 
 Evidence boundaries:
 
@@ -80,8 +87,9 @@ Server handoff:
   same suite on the larger dataset being generated on the same server.
 - Large-scale target data is being produced in
   `~/projects/pony-rec-rescue-shadow-v6/outputs/baselines/external_tasks/` for
-  books/electronics/movies with same-candidate 10k-user, 1-positive+100-negative
-  protocol. See `docs/week8_large_same_candidate_protocol.md`.
+  beauty/books/electronics/movies when available, with same-candidate
+  10k-user, 1-positive+100-negative protocol. See
+  `docs/week8_large_same_candidate_protocol.md`.
 - First controlled adapter-pilot suite:
   `TALLRec-Qwen3-LoRA`, `OpenP5-style-Qwen3-LoRA`,
   `DEALRec-Qwen3-LoRA`, and `LC-Rec-Qwen3-LoRA`.
@@ -115,3 +123,13 @@ Latest server status as of 2026-05-06:
   `scripts/import_external_predictions.py --split test` and evaluate with
   `scripts/evaluate_predictions.py`. Final paper metrics must come from TRUCE
   evaluator outputs only.
+
+Next non-toy buildout:
+
+- Convert and validate Week8 same-candidate tasks with strict target-in-candidate
+  checks.
+- Add Week8 packet configs per domain; do not reuse Beauty early-pipeline
+  configs for books/electronics/movies.
+- Upgrade official baselines from controlled-adapter pilots to
+  official-native controlled runs before using them in main tables.
+- Run Ours and ablations on the same candidate rows.

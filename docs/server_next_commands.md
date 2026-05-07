@@ -123,8 +123,31 @@ python scripts/convert_week8_same_candidate_to_truce.py \
   --task-dir ~/projects/pony-rec-rescue-shadow-v6/outputs/baselines/external_tasks/books_large10000_100neg_test_same_candidate \
   --output-dir data/processed/week8_same_candidate/books_large10000_100neg/test \
   --domain books \
-  --split test
+  --split test \
+  --strict-target-in-candidates
 ```
 
 Repeat for `books`, `electronics`, and `movies`, and preserve the original
 candidate/event alignment.
+
+Generate all four-domain conversion commands:
+
+```bash
+python scripts/plan_four_domain_server_runs.py \
+  --source-root ~/projects/pony-rec-rescue-shadow-v6/outputs/baselines/external_tasks \
+  --output-root data/processed/week8_same_candidate \
+  --domains beauty books electronics movies \
+  --splits valid test
+```
+
+Validate converted artifacts:
+
+```bash
+python scripts/validate_week8_same_candidate_processed.py \
+  --root data/processed/week8_same_candidate \
+  --domains beauty books electronics movies \
+  --splits valid test \
+  --expected-users 10000 \
+  --expected-candidates 101 \
+  --expected-negatives 100
+```
