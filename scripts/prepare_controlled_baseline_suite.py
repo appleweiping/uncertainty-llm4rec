@@ -27,22 +27,40 @@ DEFAULT_CONTROL_CONFIGS = [
     "configs/server/controlled_baselines/lc_rec_qwen3_lora_amazon_beauty.yaml",
 ]
 
+ADDED_OFFICIAL_CANDIDATE_PACKET_CONFIGS = [
+    "configs/server/project_baselines/llara_amazon_beauty_packet.yaml",
+    "configs/server/project_baselines/llmesr_amazon_beauty_packet.yaml",
+]
+
+ADDED_OFFICIAL_CANDIDATE_CONTROL_CONFIGS = [
+    "configs/server/controlled_baselines/llara_qwen3_adapter_amazon_beauty.yaml",
+    "configs/server/controlled_baselines/llmesr_qwen3_adapter_amazon_beauty.yaml",
+]
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--suite-name", default="qwen3_lora_main4_amazon_beauty")
+    parser.add_argument("--suite-name", default="qwen3_base_adapter_main4_amazon_beauty")
+    parser.add_argument("--include-added-official-candidates", action="store_true")
     args = parser.parse_args()
     manifests = []
-    for config in DEFAULT_PACKET_CONFIGS:
+    packet_configs = list(DEFAULT_PACKET_CONFIGS)
+    control_configs = list(DEFAULT_CONTROL_CONFIGS)
+    if args.include_added_official_candidates:
+        packet_configs.extend(ADDED_OFFICIAL_CANDIDATE_PACKET_CONFIGS)
+        control_configs.extend(ADDED_OFFICIAL_CANDIDATE_CONTROL_CONFIGS)
+    for config in packet_configs:
         _run(["python", "scripts/prepare_project_baseline_packet.py", "--config", config])
-    for config in DEFAULT_CONTROL_CONFIGS:
+    for config in control_configs:
         payload = _run(["python", "scripts/prepare_qwen_lora_controlled_baseline.py", "--config", config])
         manifests.append(json.loads(payload))
     suite_dir = ROOT / "outputs" / "server_training" / "controlled_baselines" / args.suite_name
     suite_dir.mkdir(parents=True, exist_ok=True)
     suite_manifest = {
         "suite_name": args.suite_name,
-        "purpose": "Main controlled comparison suite with shared Qwen3-8B LoRA backbone.",
+        "purpose": "Controlled comparison suite with shared Qwen3-8B base model; LoRA/adapters follow each baseline's official algorithm when promoted beyond adapter-pilot status.",
+        "base_model_policy": "shared_qwen3_8b_base_model",
+        "adapter_training_policy": "baseline_official_algorithm_specific_adapter",
         "baseline_count": len(manifests),
         "baselines": manifests,
         "is_experiment_result": False,

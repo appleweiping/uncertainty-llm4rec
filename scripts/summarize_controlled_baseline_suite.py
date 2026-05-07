@@ -17,7 +17,18 @@ DEFAULT_NAMES = [
     "openp5_style_qwen3_lora_amazon_beauty",
     "dealrec_qwen3_lora_amazon_beauty",
     "lc_rec_qwen3_lora_amazon_beauty",
+    "llara_qwen3_adapter_amazon_beauty",
+    "llmesr_qwen3_adapter_amazon_beauty",
 ]
+
+CONFIG_BY_NAME = {
+    "tallrec_qwen3_lora_amazon_beauty": ROOT / "configs/server/controlled_baselines/tallrec_qwen3_lora_amazon_beauty.yaml",
+    "openp5_style_qwen3_lora_amazon_beauty": ROOT / "configs/server/controlled_baselines/openp5_style_qwen3_lora_amazon_beauty.yaml",
+    "dealrec_qwen3_lora_amazon_beauty": ROOT / "configs/server/controlled_baselines/dealrec_qwen3_lora_amazon_beauty.yaml",
+    "lc_rec_qwen3_lora_amazon_beauty": ROOT / "configs/server/controlled_baselines/lc_rec_qwen3_lora_amazon_beauty.yaml",
+    "llara_qwen3_adapter_amazon_beauty": ROOT / "configs/server/controlled_baselines/llara_qwen3_adapter_amazon_beauty.yaml",
+    "llmesr_qwen3_adapter_amazon_beauty": ROOT / "configs/server/controlled_baselines/llmesr_qwen3_adapter_amazon_beauty.yaml",
+}
 
 
 def main() -> int:
@@ -35,6 +46,14 @@ def main() -> int:
         fieldnames = [
             "name",
             "project",
+            "implementation_fidelity",
+            "official_native_controlled",
+            "official_fidelity_audit_required",
+            "base_model_policy",
+            "adapter_training_policy",
+            "official_repo",
+            "official_algorithm_reused",
+            "adapter_dir",
             "training_status",
             "score_rows",
             "candidate_score_lines",
@@ -58,14 +77,32 @@ def summarize_name(name: str) -> dict[str, Any]:
     base = ROOT / "outputs" / "server_training" / "controlled_baselines" / name
     run = ROOT / "outputs" / "runs" / f"{name}_seed13"
     manifest = _read_json(base / "controlled_baseline_manifest.json")
+    if not manifest:
+        manifest = _read_yaml(CONFIG_BY_NAME.get(name, Path("")))
     summary = _read_json(base / "training_scoring_summary.json")
     metrics = _read_json(run / "metrics.json")
     score_path = base / "candidate_scores.csv"
     prediction_path = run / "predictions.jsonl"
     metric_agg = metrics.get("aggregate", {}) if isinstance(metrics, dict) else {}
+    provenance = manifest.get("provenance", {}) if isinstance(manifest.get("provenance"), dict) else {}
     row = {
         "name": name,
         "project": manifest.get("project", ""),
+        "implementation_fidelity": _fidelity(manifest, summary),
+        "official_native_controlled": bool(
+            manifest.get("official_native_controlled", summary.get("official_native_controlled", False))
+        ),
+        "official_fidelity_audit_required": bool(
+            manifest.get("official_fidelity_audit_required", summary.get("official_fidelity_audit_required", True))
+        ),
+        "base_model_policy": manifest.get("base_model_policy", summary.get("base_model_policy", "shared_qwen3_8b_base_model")),
+        "adapter_training_policy": manifest.get(
+            "adapter_training_policy",
+            summary.get("adapter_training_policy", "baseline_official_algorithm_specific_adapter"),
+        ),
+        "official_repo": provenance.get("official_repo", manifest.get("official_repo", "")),
+        "official_algorithm_reused": provenance.get("official_algorithm_reused", ""),
+        "adapter_dir": summary.get("adapter_dir", str(base / "adapter")),
         "training_status": summary.get("status", "missing"),
         "score_rows": summary.get("score_rows", 0),
         "candidate_score_lines": _line_count(score_path),
@@ -91,10 +128,26 @@ def _next_action(name: str, *, summary: dict[str, Any], metrics: dict[str, Any])
     return "complete_or_ready_for_analysis"
 
 
+def _fidelity(manifest: dict[str, Any], summary: dict[str, Any]) -> str:
+    value = manifest.get("implementation_fidelity") or summary.get("implementation_fidelity")
+    return str(value or "controlled_adapter_pilot")
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _read_yaml(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {}
+    try:
+        import yaml
+    except Exception:
+        return {}
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return data if isinstance(data, dict) else {}
 
 
 def _line_count(path: Path) -> int:

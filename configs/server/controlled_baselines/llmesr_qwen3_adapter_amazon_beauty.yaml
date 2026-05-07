@@ -1,13 +1,13 @@
-project: dealrec
-controlled_baseline_name: dealrec_qwen3_lora_amazon_beauty
+project: llmesr
+controlled_baseline_name: llmesr_qwen3_adapter_amazon_beauty
 seed: 13
 base_model: /home/ajifang/models/Qwen/Qwen3-8B
 base_model_policy: shared_qwen3_8b_base_model
 adapter_training_policy: baseline_official_algorithm_specific_adapter
 implementation_fidelity: controlled_adapter_pilot
-official_repo: https://github.com/Linxyhaha/DEALRec
-packet_dir: outputs/server_packets/dealrec_amazon_beauty
-output_dir: outputs/server_training/controlled_baselines/dealrec_qwen3_lora_amazon_beauty
+official_repo: https://github.com/Applied-Machine-Learning-Lab/LLM-ESR
+packet_dir: outputs/server_packets/llmesr_amazon_beauty
+output_dir: outputs/server_training/controlled_baselines/llmesr_qwen3_adapter_amazon_beauty
 max_train_examples: null
 max_valid_examples: null
 negatives_per_train_example: 15
@@ -27,19 +27,17 @@ lora:
   dropout: 0.05
   target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
 scoring:
-  type: pairwise_yes_likelihood
+  type: official_native_candidate_scoring_required
   output: candidate_scores.csv
 paper_policy:
   shared_base_model: Qwen3-8B
   adapter_policy: baseline_official_algorithm_specific_adapter
-  current_claim_label: controlled_adapter_pilot
+  current_claim_label: official_native_required_before_main_table
   official_project_checkpoint: false
   main_table_after_real_training_only: true
 provenance:
   official_algorithm_reused: false
   official_native_upgrade_required: true
-  backbone_control: shared_across_controlled_baselines
-  adapter_scope: per_baseline_independent
-  adapter_retention_required: true
-  score_schema: candidate_scores_csv_v1
-  notes: Current TRUCE-side adapter pilot must be replaced or audited against official DEALRec objective/code before main-table use.
+  upstream_personal_repo: https://github.com/liuqidong07/LLM-ESR
+  recommended_role: long_tail_sequential_robustness
+  notes: LLM-ESR should reuse official long-tail sequential modules and prerequisite embedding artifacts before paper use.

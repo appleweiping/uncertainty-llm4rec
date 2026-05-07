@@ -1,6 +1,7 @@
 import csv
 import json
 from pathlib import Path
+import pytest
 
 from scripts.prepare_qwen_lora_controlled_baseline import prepare_controlled_baseline
 
@@ -90,7 +91,12 @@ def test_tallrec_qwen_lora_controlled_contract(tmp_path: Path) -> None:
     score = json.loads(Path(manifest["files"]["test_score_plan"]).read_text(encoding="utf-8").splitlines()[0])
     assert score["prompt"].startswith("Answer Yes. or No.")
     assert score["candidate_outputs"] == ["Yes."]
-    assert manifest["paper_table_policy"].startswith("Eligible for controlled")
+    assert manifest["implementation_fidelity"] == "controlled_adapter_pilot"
+    assert manifest["official_fidelity_audit_required"] is True
+    assert manifest["base_model_policy"] == "shared_qwen3_8b_base_model"
+    assert manifest["adapter_training_policy"] == "baseline_official_algorithm_specific_adapter"
+    assert manifest["provenance"]["claim_label"] == "controlled_adapter_pilot"
+    assert "pilot" in manifest["paper_table_policy"]
 
 
 def test_openp5_qwen_lora_controlled_contract(tmp_path: Path) -> None:
@@ -114,6 +120,7 @@ def test_openp5_qwen_lora_controlled_contract(tmp_path: Path) -> None:
     score = json.loads(Path(manifest["files"]["test_score_plan"]).read_text(encoding="utf-8").splitlines()[0])
     assert score["candidate_outputs"] == ["<item_2>", "<item_3>"]
     assert "candidate_scores.csv" in Path(tmp_path / "out" / "server_command_plan.md").read_text(encoding="utf-8")
+    assert manifest["implementation_fidelity"] == "controlled_adapter_pilot"
 
 
 def test_dealrec_qwen_lora_controlled_contract(tmp_path: Path) -> None:
@@ -151,3 +158,19 @@ def test_dealrec_qwen_lora_controlled_contract(tmp_path: Path) -> None:
     score = json.loads(Path(manifest["files"]["test_score_plan"]).read_text(encoding="utf-8").splitlines()[0])
     assert score["candidate_outputs"] == ["Yes."]
     assert len(Path(manifest["files"]["test_score_plan"]).read_text(encoding="utf-8").splitlines()) == 2
+
+
+def test_official_native_requires_fidelity_provenance(tmp_path: Path) -> None:
+    packet = _openp5_packet(tmp_path)
+    config = {
+        "project": "openp5",
+        "controlled_baseline_name": "openp5_official_native_tiny",
+        "base_model": "/models/qwen",
+        "packet_dir": str(packet),
+        "output_dir": str(tmp_path / "out"),
+        "implementation_fidelity": "official_native_controlled",
+        "official_repo": "https://github.com/agiresearch/OpenP5",
+        "provenance": {"official_algorithm_reused": False},
+    }
+    with pytest.raises(SystemExit):
+        prepare_controlled_baseline(config=config, config_path=tmp_path / "cfg.yaml")

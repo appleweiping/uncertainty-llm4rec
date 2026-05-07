@@ -2,6 +2,10 @@ project: tallrec
 controlled_baseline_name: tallrec_qwen3_lora_amazon_beauty
 seed: 13
 base_model: /home/ajifang/models/Qwen/Qwen3-8B
+base_model_policy: shared_qwen3_8b_base_model
+adapter_training_policy: baseline_official_algorithm_specific_adapter
+implementation_fidelity: controlled_adapter_pilot
+official_repo: https://github.com/SAI990323/TALLRec
 packet_dir: outputs/server_packets/tallrec_amazon_beauty
 output_dir: outputs/server_training/controlled_baselines/tallrec_qwen3_lora_amazon_beauty
 max_train_examples: null
@@ -27,6 +31,16 @@ scoring:
   no_token: No.
   output: candidate_scores.csv
 paper_policy:
-  controlled_backbone: true
+  shared_base_model: Qwen3-8B
+  adapter_policy: baseline_official_algorithm_specific_adapter
+  current_claim_label: controlled_adapter_pilot
   official_project_checkpoint: false
   main_table_after_real_training_only: true
+provenance:
+  official_algorithm_reused: false
+  official_native_upgrade_required: true
+  backbone_control: shared_across_controlled_baselines
+  adapter_scope: per_baseline_independent
+  adapter_retention_required: true
+  score_schema: candidate_scores_csv_v1
+  notes: Current TRUCE-side adapter pilot is close to TALLRec-style instruction tuning but still requires official-code fidelity audit before main-table use.

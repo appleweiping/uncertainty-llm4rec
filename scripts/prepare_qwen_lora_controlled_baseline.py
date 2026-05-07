@@ -23,7 +23,9 @@ if str(SRC) not in sys.path:
 from llm4rec.experiments.config import load_config  # noqa: E402
 
 
-SUPPORTED_PROJECTS = {"tallrec", "openp5", "dealrec", "lc_rec"}
+SUPPORTED_PROJECTS = {"tallrec", "openp5", "dealrec", "lc_rec", "llara", "llmesr"}
+DEFAULT_IMPLEMENTATION_FIDELITY = "controlled_adapter_pilot"
+FINAL_FIDELITY = "official_native_controlled"
 
 
 def main() -> int:
@@ -303,11 +305,21 @@ def _manifest(
     files: dict[str, str],
 ) -> dict[str, Any]:
     project = _normalize_project(config.get("project"))
+    implementation_fidelity = str(config.get("implementation_fidelity") or DEFAULT_IMPLEMENTATION_FIDELITY)
+    provenance = _provenance(config, implementation_fidelity=implementation_fidelity)
+    _validate_fidelity(config=config, implementation_fidelity=implementation_fidelity, provenance=provenance)
+    official_native = implementation_fidelity == FINAL_FIDELITY
     return {
         "schema_version": "truce_qwen_lora_controlled_baseline_v1",
         "project": project,
         "controlled_baseline_name": str(config.get("controlled_baseline_name") or f"{project}_qwen3_lora"),
-        "definition": "Controlled-backbone project adaptation; not an official upstream checkpoint result unless explicitly marked after training.",
+        "definition": "Controlled-backbone project adaptation. Paper-grade main baselines require official-native fidelity unless explicitly labeled otherwise.",
+        "implementation_fidelity": implementation_fidelity,
+        "official_native_controlled": official_native,
+        "official_fidelity_audit_required": not official_native,
+        "base_model_policy": str(config.get("base_model_policy") or "shared_qwen3_8b_base_model"),
+        "adapter_training_policy": str(config.get("adapter_training_policy") or "baseline_official_algorithm_specific_adapter"),
+        "provenance": provenance,
         "base_model": str(config.get("base_model") or "/home/ajifang/models/Qwen/Qwen3-8B"),
         "packet_dir": str(config.get("packet_dir") or ""),
         "output_dir": str(output_dir),
@@ -319,7 +331,7 @@ def _manifest(
         "files": files,
         "is_experiment_result": False,
         "is_paper_result": False,
-        "paper_table_policy": "Eligible for controlled main comparison only after real Qwen3-8B LoRA training, scoring, TRUCE import, and evaluator metrics are complete.",
+        "paper_table_policy": _paper_table_policy(implementation_fidelity),
         "required_return_artifacts": [
             "adapter checkpoint or checkpoint reference",
             "candidate_scores.csv",
@@ -328,6 +340,56 @@ def _manifest(
             "environment.json, git_info.json, stdout/stderr logs",
         ],
     }
+
+
+def _paper_table_policy(implementation_fidelity: str) -> str:
+    if implementation_fidelity == FINAL_FIDELITY:
+        return (
+            "Eligible for controlled main comparison only after real Qwen3-8B LoRA training, scoring, "
+            "TRUCE import, evaluator metrics, and recorded official-fidelity audit are complete."
+        )
+    return (
+        "Controlled adapter pilot only: useful for pipeline validation and diagnostics, but not eligible "
+        "as a final main-table official baseline until promoted by an official-fidelity audit."
+    )
+
+
+def _provenance(config: dict[str, Any], *, implementation_fidelity: str) -> dict[str, Any]:
+    raw = config.get("provenance")
+    provenance = raw.copy() if isinstance(raw, dict) else {}
+    provenance.setdefault("official_repo", str(config.get("official_repo") or ""))
+    provenance.setdefault("official_algorithm_reused", implementation_fidelity == FINAL_FIDELITY)
+    provenance.setdefault("adapter_scope", "per_baseline_independent")
+    provenance.setdefault("adapter_retention_required", True)
+    provenance.setdefault("backbone_control", "shared_across_controlled_baselines")
+    provenance.setdefault("truce_adapter_scope", [
+        "dataset_split_candidate_ingestion",
+        "qwen3_8b_base_model_substitution",
+        "score_schema_export",
+        "truce_import_and_evaluation",
+    ])
+    provenance.setdefault("score_schema", "candidate_scores_csv_v1")
+    provenance.setdefault("claim_label", implementation_fidelity)
+    return provenance
+
+
+def _validate_fidelity(
+    *,
+    config: dict[str, Any],
+    implementation_fidelity: str,
+    provenance: dict[str, Any],
+) -> None:
+    if implementation_fidelity != FINAL_FIDELITY:
+        return
+    official_repo = str(config.get("official_repo") or provenance.get("official_repo") or "").strip()
+    if not official_repo:
+        raise SystemExit("official_native_controlled requires official_repo")
+    if provenance.get("official_algorithm_reused") is not True:
+        raise SystemExit("official_native_controlled requires provenance.official_algorithm_reused=true")
+    required = ["official_training_entrypoint", "official_scoring_contract"]
+    missing = [key for key in required if not str(provenance.get(key) or "").strip()]
+    if missing:
+        raise SystemExit(f"official_native_controlled requires provenance fields: {', '.join(missing)}")
 
 
 def _write_command_plan(path: Path, *, manifest: dict[str, Any]) -> None:

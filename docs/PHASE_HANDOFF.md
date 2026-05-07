@@ -58,12 +58,20 @@ Server handoff:
   OpenP5/T5 candidate scorer or training/evaluation run, then import with
   `scripts/import_external_predictions.py --split test` and evaluate with
   TRUCE only.
-- Main external-framework comparison should now use controlled Qwen3-8B LoRA
-  baselines rather than mixing different upstream backbones. See
+- Main external-framework comparison should now use controlled Qwen3-8B base
+  model baselines rather than mixing different upstream backbones. See
   `docs/qwen3_lora_controlled_baselines.md`.
+- Stricter baseline fidelity rule: after fairness controls are fixed, final
+  main-table baselines must reuse official project implementation as much as
+  possible. Current TRUCE-side Qwen3 adapters are controlled-adapter
+  pilots unless a fidelity audit promotes them to official-native controlled
+  baselines. See `docs/controlled_baseline_fidelity_audit.md`.
 - These baselines are selected from the recommended/reference LLM4Rec project
   families. The main claim should be framework-vs-framework under the same
-  Qwen3-8B LoRA budget, not copied official metrics with mismatched backbones.
+  Qwen3-8B base model and TRUCE protocol, not copied official metrics with
+  mismatched backbones and not generic prompt baselines mislabeled as official
+  methods. LoRA/adapter training should follow each baseline's official
+  algorithm.
 - Do observation analysis on controlled baselines too: check whether the
   motivating TRUCE/CU-GR observation phenomena appear in TALLRec/OpenP5/
   DEALRec/LC-Rec outputs, not only in weak/base-model outputs.
@@ -74,9 +82,12 @@ Server handoff:
   `~/projects/pony-rec-rescue-shadow-v6/outputs/baselines/external_tasks/` for
   books/electronics/movies with same-candidate 10k-user, 1-positive+100-negative
   protocol. See `docs/week8_large_same_candidate_protocol.md`.
-- First controlled main-table suite:
+- First controlled adapter-pilot suite:
   `TALLRec-Qwen3-LoRA`, `OpenP5-style-Qwen3-LoRA`,
   `DEALRec-Qwen3-LoRA`, and `LC-Rec-Qwen3-LoRA`.
+- Two additional official baseline families are now selected for follow-up:
+  `LLaRA` for recommendation-signal alignment and `LLM-ESR` for long-tail
+  sequential robustness.
 - Prepare the suite with `python scripts/prepare_controlled_baseline_suite.py`,
   then run the generated server smoke queue before removing limits for the full
   long-running experiments.

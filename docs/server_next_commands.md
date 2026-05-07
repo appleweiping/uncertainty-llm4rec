@@ -1,7 +1,7 @@
 # Server Next Commands
 
 This is the short handoff command sheet for continuing after the 2026-05-06
-Main4 smoke completion.
+Main4 controlled-adapter smoke completion.
 
 ## Pull Latest
 
@@ -84,6 +84,13 @@ packet paths:
 
 Only imported `predictions.jsonl` and TRUCE `metrics.json`/`metrics.csv` are
 paper-eligible. Smoke metrics and raw project-side logs are not paper results.
+
+The current TRUCE-side Qwen3 adapter runs are controlled-adapter pilots unless
+their fidelity to the official baseline repository has been audited. Final
+main-table baselines should be official-native controlled runs: official
+project implementation with only the shared TRUCE split/candidates/evaluator
+and Qwen3-8B base-model substitutions. LoRA/adapter training should follow the
+baseline's official algorithm, not a single shared LoRA recipe.
 
 ## Status Summary
 

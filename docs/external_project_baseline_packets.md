@@ -3,9 +3,11 @@
 This document tracks official external LLM4Rec project integrations. It is a
 packet and execution-status matrix, not a paper result table.
 
-For the main fair-comparison lane that controls the small LLM backbone and LoRA
-budget, see `docs/qwen3_lora_controlled_baselines.md`. The first main-table
-suite is TALLRec, OpenP5-style, DEALRec, and LC-Rec with Qwen3-8B LoRA.
+For the main fair-comparison lane that controls the small LLM base model and
+TRUCE protocol, see `docs/qwen3_lora_controlled_baselines.md`. The first
+adapter-pilot suite is TALLRec, OpenP5-style, DEALRec, and LC-Rec with Qwen3-8B.
+Final official-native baselines should keep each project's official
+LoRA/adapter/training logic where feasible.
 
 ## Status Matrix
 
@@ -16,10 +18,18 @@ suite is TALLRec, OpenP5-style, DEALRec, and LC-Rec with Qwen3-8B LoRA.
 | BIGRec | Data-efficient LLM4Rec | <https://github.com/Linxyhaha/DEALRec> | MovieLens, Amazon Beauty | Generic packet ready; upstream clone/env/run pending | Main table only after upstream run and TRUCE import |
 | DEALRec | Data-efficient LLM4Rec | <https://github.com/Linxyhaha/DEALRec> | MovieLens, Amazon Beauty | Generic packet ready; upstream clone/env/run pending | Main table only after upstream run and TRUCE import |
 | LC-Rec | LLM plus collaborative signal | <https://github.com/RUCAIBox/LC-Rec/> | MovieLens, Amazon Beauty | Generic packet ready; upstream clone/env/run pending | Main table only after upstream run and TRUCE import |
-| LLaRA | LLM plus collaborative signal | <https://github.com/ljy0ustc/LLaRA> | MovieLens, Amazon Beauty | Generic packet ready; upstream clone/env/run pending | Main table only after upstream run and TRUCE import |
+| LLaRA | LLM plus recommendation-signal alignment | <https://github.com/ljy0ustc/LLaRA> | MovieLens, Amazon Beauty | Generic packet ready; selected as added official baseline candidate; upstream clone/env/run pending | Main/secondary table only after official-native controlled run and TRUCE import |
 | CoLLM | LLM plus collaborative signal | <https://github.com/zyang1580/CoLLM> | MovieLens, Amazon Beauty | Generic packet ready; upstream clone/env/run pending | Main table only after upstream run and TRUCE import |
-| LLM-ESR | Long-tail/sequential LLM4Rec | <https://github.com/liuqidong07/LLM-ESR> | MovieLens, Amazon Beauty | Generic packet ready; upstream clone/env/run pending | Long-tail/sequential appendix or main robustness table after run |
+| LLM-ESR | Long-tail/sequential LLM4Rec | <https://github.com/Applied-Machine-Learning-Lab/LLM-ESR> | MovieLens, Amazon Beauty | Generic packet ready; selected as added official robustness baseline; upstream clone/env/run pending | Long-tail/sequential robustness table after official-native controlled run and TRUCE import |
 | SLMRec | Small sequential LLM4Rec | <https://github.com/WujiangXu/SLMRec> | MovieLens, Amazon Beauty | Generic packet ready; upstream clone/env/run pending | Sequential/efficiency table after run |
+
+The added official baseline candidates are LLaRA and LLM-ESR. LLaRA is chosen
+because the SIGIR 2024 project/paper page points to the official
+`ljy0ustc/LLaRA` repository and its recommendation-signal alignment is
+methodologically distinct from TALLRec/OpenP5/DEALRec/LC-Rec. LLM-ESR is
+chosen because the Applied-Machine-Learning-Lab repository and NeurIPS 2024
+page identify it as a long-tail sequential recommendation method, making it a
+strong robustness baseline rather than another generic reranker.
 
 ## Packet Generation
 

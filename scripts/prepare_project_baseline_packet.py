@@ -329,6 +329,13 @@ def _manifest(
         "item_count": len(items),
         "candidate_protocol": _as_dict(config.get("candidate")),
         "metric_contract": "External project trains/generates/scores only; final Recall/NDCG/MRR must be computed by TRUCE evaluator.",
+        "score_schema": "candidate_scores_csv_v1",
+        "score_schema_columns": ["example_id", "user_id", "item_id", "score"],
+        "protocol_controls": {
+            "split": "truce_canonical",
+            "candidate_set": "truce_fixed_with_target_inclusion_unchanged",
+            "evaluator": "truce_only",
+        },
         "forbidden": [
             "Do not train on test rows.",
             "Do not copy official project evaluator metrics into paper tables.",

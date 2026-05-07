@@ -102,6 +102,12 @@ def run(manifest: dict[str, Any], *, args: argparse.Namespace) -> dict[str, Any]
     summary = {
         "status": "completed",
         "controlled_baseline_name": manifest["controlled_baseline_name"],
+        "implementation_fidelity": manifest.get("implementation_fidelity", "controlled_adapter_pilot"),
+        "official_native_controlled": bool(manifest.get("official_native_controlled", False)),
+        "official_fidelity_audit_required": bool(manifest.get("official_fidelity_audit_required", True)),
+        "base_model_policy": manifest.get("base_model_policy", "shared_qwen3_8b_base_model"),
+        "adapter_training_policy": manifest.get("adapter_training_policy", "baseline_official_algorithm_specific_adapter"),
+        "provenance": manifest.get("provenance", {}),
         "train_seconds": train_seconds,
         "scoring_seconds": scoring_seconds,
         "score_rows": len(score_rows),
@@ -109,6 +115,10 @@ def run(manifest: dict[str, Any], *, args: argparse.Namespace) -> dict[str, Any]
         "adapter_dir": str(adapter_dir),
         "is_experiment_result": True,
         "is_paper_result": False,
+        "paper_table_policy": manifest.get(
+            "paper_table_policy",
+            "Controlled adapter pilot unless an official-fidelity audit promotes it.",
+        ),
         "next_step": "Import candidate_scores.csv with TRUCE import_external_predictions.py --split test and evaluate_predictions.py.",
     }
     (output_dir / "training_scoring_summary.json").write_text(json.dumps(summary, indent=2, sort_keys=True), encoding="utf-8")
