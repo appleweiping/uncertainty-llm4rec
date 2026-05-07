@@ -14,3 +14,15 @@ def test_four_domain_plan_preserves_week8_paths() -> None:
     assert "--strict-target-in-candidates" in commands[0]
     assert "SRC/books_large10000_100neg_test_same_candidate" in commands[-1]
     assert "--domain books" in commands[-1]
+
+
+def test_four_domain_plan_can_emit_ours_adapter_prep() -> None:
+    commands = build_commands(
+        source_root="SRC",
+        output_root="OUT",
+        domains=["beauty"],
+        splits=["test"],
+        include_ours_adapter_prep=True,
+    )
+    assert any("prepare_ours_qwen_adapter_training.py" in command for command in commands)
+    assert any("--processed-root OUT/beauty_large10000_100neg" in command for command in commands)

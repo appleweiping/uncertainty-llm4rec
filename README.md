@@ -66,6 +66,9 @@ Implemented and smoke-tested:
 - The current project route is now organized as:
   `observation -> CURE/TRUCE framework -> official baselines -> four-domain
   same-candidate recommendation system`.
+- Ours/TRUCE Qwen adapter preparation and import/evaluation scaffolds exist for
+  server-side training: `scripts/prepare_ours_qwen_adapter_training.py` and
+  `scripts/import_evaluate_ours_adapter.py`.
 
 Not yet completed:
 

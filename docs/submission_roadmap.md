@@ -68,7 +68,8 @@ Exit criteria:
 
 ### M2. Original CURE/TRUCE Framework
 
-Status: scaffold exists; needs paper-grade training/inference integration.
+Status: scaffold exists; TRUCE-native Qwen adapter data preparation now exists;
+paper-grade training/inference still needs server execution.
 
 Required components:
 
@@ -77,7 +78,20 @@ Required components:
 - popularity residual/deconfounded confidence;
 - echo/history-inertia risk;
 - exposure-aware candidate routing/reranking;
+- TRUCE-native Qwen adapter data that combines pairwise acceptance and listwise
+  target-first supervision while preserving uncertainty/risk metadata;
 - ablation switches for each component.
+
+Current implementation anchors:
+
+- `src/llm4rec/methods/ours_framework.py`: builds Ours pairwise/listwise
+  training and scoring prompts with grounding, popularity bucket, and
+  history-risk evidence.
+- `scripts/prepare_ours_qwen_adapter_training.py`: writes
+  `train_sft.jsonl`, `valid_sft.jsonl`, `test_score_plan.jsonl`, and
+  `ours_adapter_manifest.json`.
+- `scripts/import_evaluate_ours_adapter.py`: imports Ours `candidate_scores.csv`
+  through the same TRUCE evaluator path as official baselines.
 
 Required ablations:
 
@@ -96,6 +110,8 @@ Exit criteria:
 - Ours emits the same prediction schema as every baseline.
 - Every component has an ablation and a matching observation motivation.
 - No policy decision uses target correctness.
+- Ours adapter scores import through `candidate_scores.csv` with event/source
+  IDs preserved for paired comparison.
 
 ### M3. Baseline System
 

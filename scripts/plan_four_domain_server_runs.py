@@ -27,6 +27,7 @@ def main() -> int:
     parser.add_argument("--domains", nargs="+", default=DEFAULT_DOMAINS)
     parser.add_argument("--splits", nargs="+", default=DEFAULT_SPLITS)
     parser.add_argument("--allow-target-insertion", action="store_true")
+    parser.add_argument("--include-ours-adapter-prep", action="store_true")
     parser.add_argument("--emit-json", action="store_true")
     args = parser.parse_args()
 
@@ -36,6 +37,7 @@ def main() -> int:
         domains=args.domains,
         splits=args.splits,
         strict_target_in_candidates=not args.allow_target_insertion,
+        include_ours_adapter_prep=args.include_ours_adapter_prep,
     )
     if args.emit_json:
         print(json.dumps(commands, indent=2, sort_keys=True))
@@ -53,6 +55,7 @@ def build_commands(
     domains: list[str],
     splits: list[str],
     strict_target_in_candidates: bool = True,
+    include_ours_adapter_prep: bool = False,
 ) -> list[str]:
     commands = []
     for domain in domains:
@@ -66,6 +69,16 @@ def build_commands(
                 f"--domain {domain} "
                 f"--split {split}"
                 + (" --strict-target-in-candidates" if strict_target_in_candidates else "")
+            )
+        if include_ours_adapter_prep and "test" in splits:
+            processed_root = str(Path(output_root) / f"{domain}_large10000_100neg").replace("\\", "/")
+            output_dir = f"outputs/server_training/ours_qwen_adapters/{domain}_large10000_100neg"
+            commands.append(
+                "python scripts/prepare_ours_qwen_adapter_training.py "
+                f"--processed-root {processed_root} "
+                f"--output-dir {output_dir} "
+                f"--domain {domain} "
+                "--seed 13"
             )
     return commands
 

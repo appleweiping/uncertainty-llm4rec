@@ -52,7 +52,8 @@ python scripts/plan_four_domain_server_runs.py \
   --source-root ~/projects/pony-rec-rescue-shadow-v6/outputs/baselines/external_tasks \
   --output-root data/processed/week8_same_candidate \
   --domains beauty books electronics movies \
-  --splits valid test
+  --splits valid test \
+  --include-ours-adapter-prep
 ```
 
 Then run the printed commands when the corresponding task directories exist.
@@ -109,6 +110,37 @@ Every method must end with:
 ```text
 candidate_scores.csv -> predictions.jsonl -> metrics.json + metrics.csv
 ```
+
+## Prepare Ours Qwen Adapter Data
+
+After converting a domain, prepare Ours/TRUCE adapter data:
+
+```bash
+python scripts/prepare_ours_qwen_adapter_training.py \
+  --processed-dir data/processed/week8_same_candidate/books_large10000_100neg/test \
+  --output-dir outputs/server_training/ours_qwen_adapters/books_large10000_100neg \
+  --domain books \
+  --seed 13
+```
+
+This writes `train_sft.jsonl`, `valid_sft.jsonl`, `test_score_plan.jsonl`,
+`ours_adapter_manifest.json`, and a server command plan. The score schema stays
+`example_id,user_id,item_id,score` so Ours can be imported and evaluated by the
+same TRUCE evaluator as official baselines.
+
+After server-side Qwen scoring writes `candidate_scores.csv`, import/evaluate:
+
+```bash
+python scripts/import_evaluate_ours_adapter.py \
+  --manifest outputs/server_training/ours_qwen_adapters/books_large10000_100neg/ours_adapter_manifest.json \
+  --split test
+```
+
+Ours adapter training data is not a generic prompt baseline. The training rows
+encode pairwise acceptance, listwise target-first supervision, train-popularity
+buckets, grounding-oriented evidence, and history repetition risk. Ablations
+must later disable these components rather than comparing only against a single
+monolithic Ours score.
 
 ## Import And Evaluate
 
