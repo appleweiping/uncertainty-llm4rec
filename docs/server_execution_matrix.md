@@ -147,6 +147,81 @@ By default the full queue runs TALLRec, DEALRec, and LC-Rec. OpenP5 remains out
 of the full queue until scoring is optimized. These are still
 `controlled_adapter_pilot` unless an official-fidelity audit promotes them.
 
+## Build Week8 Observation Inputs
+
+After Week8 conversion, build Qwen3 observation inputs for each domain/split.
+This creates an observation-compatible catalog with train-popularity buckets
+and a prompt JSONL accepted by `scripts/server/run_qwen3_observation.py`.
+
+```bash
+cd ~/projects/TRUCE-Rec
+source .venv_truce/bin/activate
+
+for DOMAIN in beauty books electronics movies; do
+  for SPLIT in valid test; do
+    python scripts/build_week8_observation_inputs.py \
+      --processed-dir data/processed/week8_same_candidate/${DOMAIN}_large10000_100neg/${SPLIT} \
+      --dataset ${DOMAIN}_large10000_100neg \
+      --domain ${DOMAIN} \
+      --split ${SPLIT} \
+      --prompt-template forced_json
+  done
+done
+```
+
+For a small server check, add `--max-examples 20`. Do not use small checks as
+paper evidence.
+
+## Run Base Qwen3 Observation Sweep
+
+Run base Qwen3-8B observation on the generated inputs. Use `nohup` or keep the
+terminal open if `tmux` is unavailable.
+
+```bash
+cd ~/projects/TRUCE-Rec
+source ~/projects/TALLRec/.venv_tallrec/bin/activate
+mkdir -p outputs/logs
+
+for DOMAIN in beauty books electronics movies; do
+  INPUT=outputs/observation_inputs/week8_same_candidate/${DOMAIN}_large10000_100neg/test_forced_json.jsonl
+  OUT=outputs/server_observations/qwen3_8b/week8_same_candidate/${DOMAIN}_large10000_100neg/test_forced_json
+  nohup python scripts/server/run_qwen3_observation.py \
+    --input-jsonl "$INPUT" \
+    --output-dir "$OUT" \
+    --run-label qwen3_base_${DOMAIN}_week8_test \
+    --run-stage observation \
+    --execute-server \
+    > outputs/logs/qwen3_base_observation_${DOMAIN}.log 2>&1 &
+done
+```
+
+Then analyze completed runs:
+
+```bash
+cd ~/projects/TRUCE-Rec
+source .venv_truce/bin/activate
+
+for DOMAIN in beauty books electronics movies; do
+  python scripts/analyze_observation.py \
+    --run-dir outputs/server_observations/qwen3_8b/week8_same_candidate/${DOMAIN}_large10000_100neg/test_forced_json \
+    --input-jsonl outputs/observation_inputs/week8_same_candidate/${DOMAIN}_large10000_100neg/test_forced_json.jsonl \
+    --source-label qwen3_base_${DOMAIN}_week8_test
+done
+```
+
+## Observation Gate Across Four Senior Baselines
+
+Observation claims are incomplete until the same phenomenon checks are run for
+base Qwen3-8B and at least the four senior-recommended Qwen3-8B-LoRA baselines:
+TALLRec, OpenP5, DEALRec, and LC-Rec. Use their formal/pilot ranking outputs
+only with the correct evidence label, then convert/import through the shared
+observation report path. The required question is:
+
+```text
+Does the uncertainty/grounding/popularity/echo phenomenon persist under
+stronger baseline systems, or was it only a base-Qwen3 behavior?
+```
+
 ## Prepare Ours Qwen Adapter Data
 
 After converting a domain, prepare Ours/TRUCE adapter data:
@@ -178,6 +253,12 @@ buckets, deterministic grounding-risk targets, popularity-bias risk,
 history-repetition/echo risk, and contrast roles for head/tail/history-probe
 negatives. Ablations must later disable these components rather than comparing
 only against a single monolithic Ours score.
+
+Formal Ours must go beyond this scaffold before paper claims. The server suite
+needs structured observation-derived targets, a learned improve/harm/abstain
+or calibrated preference policy, conservative fallback fusion, and ablations
+for uncertainty, grounding, candidate normalization, popularity residuals, and
+echo/history guard.
 
 ## Import And Evaluate
 

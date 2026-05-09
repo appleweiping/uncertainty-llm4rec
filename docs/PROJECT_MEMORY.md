@@ -63,6 +63,20 @@ If subagents are unavailable in a future environment, simulate the same checks
 explicitly as separate audit passes. Do not skip the review/audit layer just
 because the task feels familiar.
 
+For method-building tasks, the expected loop is:
+
+```text
+implementation proposal
+  -> top-conference reviewer critique
+  -> fairness/protocol audit
+  -> implementation revision
+  -> runnable server command/update
+```
+
+Record the reviewer verdict honestly. If the current Ours design is still a
+heuristic scaffold, say so and improve it rather than writing paper-ready
+claims.
+
 ## Non-Toy Standard
 
 Never add toy demos, pseudo-results, mock-only claims, or notebook-only paths
@@ -89,8 +103,10 @@ The project must stay on this spine:
 
 ```text
 LLM generative recommendation observation
+  -> Beauty full-domain and books/electronics/movies 10k-user observations
+  -> base Qwen3-8B plus four senior-recommended Qwen3-8B-LoRA baseline observations
   -> catalog grounding and uncertainty/popularity/long-tail/echo diagnostics
-  -> original CURE/TRUCE framework
+  -> original non-stitched CURE/TRUCE framework
   -> Qwen3-8B-LoRA Ours adapter and ablations
   -> official Qwen3-8B-LoRA baseline families
   -> shared same-candidate evaluator
@@ -103,6 +119,13 @@ contribution is recommendation-specific uncertainty: generated title grounding,
 catalog validity, hallucination, popularity-confounded confidence, long-tail
 under-confidence, history/echo risk, and uncertainty-aware routing/reranking or
 training.
+
+When reference papers or official repos are needed, future agents may carefully
+read senior-recommended or top-conference projects to understand task
+formulation, official training flow, and fair reproduction details. Those works
+are inspiration and fidelity guidance only. The actual TRUCE/CURE method must
+not be stitched, copied, or renamed from their objectives, prompts, or system
+pipelines.
 
 ## Ours Framework Memory
 
@@ -133,6 +156,28 @@ structured uncertainty targets, ablations, and observation-motivated design.
 
 Ours may tune hyperparameters only with a declared validation protocol. Never
 tune on test.
+
+Reviewer audit as of 2026-05-09: the current Ours scaffold is promising but not
+yet enough for a strong submission. Its weak point is that pairwise/listwise SFT
+prompts and conservative gates can look like hand-written heuristics. The next
+method upgrade must add a learned observation-to-target layer, candidate-
+normalized uncertainty, popularity residual/deconfounding, echo/history guard,
+learned improve/harm/abstain policy, fallback-preserving fusion, and ablations
+tied directly to the observation findings.
+
+Core method milestones:
+
+- M2a: derive structured train/valid targets from observation rows without
+  using test correctness.
+- M2b: train a TRUCE adapter/policy that predicts improve/harm/abstain or
+  calibrated candidate preference from diagnostic evidence.
+- M2c: combine the learned policy with conservative fallback ranking so bad
+  LLM generations can be blocked rather than blindly promoted.
+- M2d: run ablations for grounding, uncertainty, candidate normalization,
+  popularity residuals, echo/history guard, and fallback-only routing.
+- M2e: pass a reviewer novelty check confirming the method is not a generic
+  LLM reranker, prompt-engineering baseline, RAG wrapper, or stitched clone of
+  the reference projects.
 
 ## Senior Baseline Advice To Preserve
 
@@ -220,6 +265,14 @@ Server source root expected from the parallel data project:
 
 Do not resample users, negatives, or candidates inside TRUCE. If candidate rows
 change, all comparable methods must be regenerated.
+
+Observation scale must match the formal training/evaluation scale whenever
+budget allows. The intended observation set is Beauty full-domain plus
+books/electronics/movies 10k-user same-candidate tasks. Observation is not only
+for base Qwen3-8B: at minimum, run the same observation analysis for base
+Qwen3-8B and the four senior-recommended Qwen3-8B-LoRA baselines
+TALLRec/OpenP5/DEALRec/LC-Rec, then check whether the base-model phenomena
+also appear under stronger baseline systems.
 
 ## Server Operating Model
 

@@ -8,6 +8,12 @@ AGENTS.md defines engineering rules, reproducibility requirements, interfaces, b
 
 This document locks the research direction so that future implementation phases do not accidentally turn the project into a generic LLM reranker, generic RAG recommender, or prompt-engineering baseline.
 
+Reference projects can be studied deeply, especially senior-recommended
+LLM4Rec papers and official top-conference implementations. They are allowed
+as inspiration for experimental fidelity, task framing, and reproduction
+discipline only. The final TRUCE/CURE method must not be a stitched, copied,
+or renamed blend of those papers' objectives, prompts, modules, or pipelines.
+
 ## 2. Core Research Direction
 
 The project studies:

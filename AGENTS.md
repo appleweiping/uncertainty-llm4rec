@@ -14,6 +14,11 @@ This repository is a research-grade LLM4Rec codebase. Codex must treat it as a p
 - Do not implement only our method; strong baselines must be supported with the same evaluator.
 - Do not overwrite existing user work without first identifying the files and explaining the intended change.
 - Do not perform large refactors before producing an implementation plan.
+- When consulting senior-recommended papers/projects or other top-conference
+  implementations, study them carefully as inspiration and fidelity guidance
+  only. The TRUCE/CURE method must not become a stitched-together clone,
+  copied objective, copied pipeline, or renamed combination of existing
+  baselines.
 
 ## 1. Research Goal
 
@@ -56,8 +61,10 @@ The current strategic spine is:
 
 ```text
 generative recommendation observation
+  -> Beauty full-domain plus books/electronics/movies 10k-user observation
+  -> base Qwen3-8B and senior-recommended Qwen3-8B-LoRA baseline observation
   -> catalog grounding and uncertainty/popularity/long-tail/echo diagnostics
-  -> original CURE/TRUCE framework
+  -> original, non-stitched CURE/TRUCE framework
   -> Qwen3-8B-LoRA Ours adapter and ablations
   -> official Qwen3-8B-LoRA baseline families
   -> shared same-candidate evaluator

@@ -43,6 +43,9 @@ Strict rules:
   paper evidence unless explicitly promoted by a later approved protocol.
 - Formal paper results must come from approved real experiment configs, tracked
   code, saved configs, logs, raw outputs, predictions, and metrics.
+- Reference papers and official projects may be read carefully for
+  reproduction fidelity and inspiration, but the TRUCE/CURE method must not be
+  a stitched, copied, or renamed version of those systems.
 
 ## Current Status
 
@@ -80,6 +83,10 @@ Not yet completed:
 - no final official-native controlled baseline table;
 - no completed official-native fidelity audit for the external baselines;
 - no final paper conclusions.
+- no completed four-domain observation sweep that checks base Qwen3-8B and the
+  four senior-recommended Qwen3-8B-LoRA baselines side by side;
+- no final learned TRUCE policy/adapter ablation suite proving that Ours is
+  deeper than heuristic prompting or conservative rules.
 
 ## Method Lineage
 
@@ -219,6 +226,8 @@ List required artifacts for a planned run:
 - `docs/server_execution_matrix.md`: server-first command and artifact matrix.
 - `docs/top_conference_review_plan.md`: internal reviewer/literature-agent
   checklist before paper writing.
+- `docs/server_execution_matrix.md`: includes the base/baseline observation
+  gate and formal Ours/baseline server command ladder.
 - `docs/qwen3_lora_controlled_baselines.md`: controlled external baseline
   protocol and status.
 - `docs/controlled_baseline_fidelity_audit.md`: official-native fidelity rule

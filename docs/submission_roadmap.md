@@ -11,8 +11,10 @@ experimental system:
 
 ```text
 LLM generative recommendation observation
+  -> Beauty full-domain plus books/electronics/movies 10k-user observation
+  -> base Qwen3-8B plus senior-recommended Qwen3-8B-LoRA baseline observation
   -> grounded uncertainty and popularity/long-tail diagnostics
-  -> original CURE/TRUCE framework
+  -> original non-stitched CURE/TRUCE framework
   -> official-native controlled baselines
   -> unified same-candidate evaluator
   -> four-domain paper-scale results
@@ -46,16 +48,28 @@ Exit criteria:
 - README, AGENTS, and phase handoff point to `docs/PROJECT_MEMORY.md`.
 - Any generated result is machine-labeled with its evidence scope.
 
-### M1. Observation Layer
+### M1. Observation Validation Across Base Qwen3 And Four Baselines
 
 Status: implemented as schema/scaffold plus prior pilots; needs four-domain
-reruns.
+reruns and baseline-side observation.
 
 Purpose:
 
 - Show the phenomenon, not just method performance.
 - Quantify confidence vs correctness, grounding, hallucination, popularity,
   long-tail, history similarity, diversity, and candidate adherence.
+- Verify whether the phenomena first seen under base Qwen3-8B also appear
+  under stronger Qwen3-8B-LoRA baseline systems.
+
+Required scope:
+
+- Beauty full-domain observation.
+- Week8 books/electronics/movies 10k-user same-candidate observation.
+- Base Qwen3-8B forced-JSON/generative observation.
+- At minimum, four senior-recommended Qwen3-8B-LoRA baselines in the
+  observation analysis: TALLRec, OpenP5, DEALRec, and LC-Rec.
+- Observation size should match the later formal train/eval size whenever
+  compute allows.
 
 Required outputs:
 
@@ -68,12 +82,17 @@ Required outputs:
 Exit criteria:
 
 - Observation analysis runs on Beauty plus Week8 books/electronics/movies.
+- Base Qwen3-8B and the four senior-recommended baselines are analyzed through
+  the same observation report schema.
+- The report separates "base-only phenomenon" from "phenomenon also visible
+  under stronger baseline systems."
 - Claims are limited to completed runs and paired source artifacts.
 
 ### M2. Original CURE/TRUCE Framework
 
 Status: scaffold exists; TRUCE-native Qwen adapter data preparation now exists;
-paper-grade training/inference still needs server execution.
+paper-grade learned policy/adapter training, inference, and ablation still
+need server execution and reviewer-loop refinement.
 
 Required components:
 
@@ -82,6 +101,9 @@ Required components:
 - popularity residual/deconfounded confidence;
 - echo/history-inertia risk;
 - exposure-aware candidate routing/reranking;
+- learned observation-to-target or improve/harm/abstain policy rather than
+  only hand-written prompt/rule supervision;
+- conservative fallback-preserving fusion that blocks risky LLM promotions;
 - TRUCE-native Qwen adapter data that combines pairwise acceptance and listwise
   target-first supervision while preserving uncertainty/risk metadata;
 - ablation switches for each component.
@@ -109,6 +131,19 @@ Required ablations:
 - LLM generative only;
 - LLM rerank only.
 
+Submilestones:
+
+- M2a: build structured observation-derived train/valid targets without using
+  test correctness.
+- M2b: train a TRUCE adapter/policy for calibrated candidate preference or
+  improve/harm/abstain decisions.
+- M2c: fuse learned policy with fallback ranking under conservative promotion
+  gates.
+- M2d: run component ablations across the four-domain same-candidate protocol.
+- M2e: pass top-conference reviewer and implementation-agent critique that the
+  method is not generic LLM reranking, prompt engineering, RAG, or a stitched
+  clone of the reference projects.
+
 Exit criteria:
 
 - Ours emits the same prediction schema as every baseline.
@@ -116,6 +151,32 @@ Exit criteria:
 - No policy decision uses target correctness.
 - Ours adapter scores import through `candidate_scores.csv` with event/source
   IDs preserved for paired comparison.
+- Reviewer verdict and remaining risks are recorded before paper writing.
+
+### M2.5. Formal Ours And Fair Baseline Training/Evaluation
+
+Status: planned; current Beauty controlled adapters are pilots.
+
+Purpose:
+
+- Convert observation-stage insights into formal train/valid/test experiments.
+- Retrain/evaluate Ours and baselines under the declared shared protocol,
+  instead of using observation calls or smoke pilots as final results.
+
+Required policy:
+
+- Official source implementation where a baseline is called official-native.
+- Qwen3-8B shared backbone and LoRA for the main LLM comparison lane.
+- Baseline official/default or reported-optimal hyperparameters.
+- Ours tuned only through validation.
+- Same candidates, same splits, same score schema, same evaluator.
+
+Exit criteria:
+
+- Each method has `candidate_scores.csv`, `predictions.jsonl`, `metrics.json`,
+  `metrics.csv`, manifest, environment/git info, and logs.
+- Formal tables exclude smoke/mock and controlled-adapter-pilot artifacts.
+- Any deviation from the main protocol is moved to a separated appendix lane.
 
 ### M3. Baseline System
 

@@ -171,3 +171,44 @@ python scripts/validate_week8_same_candidate_processed.py \
   --expected-candidates 101 \
   --expected-negatives 100
 ```
+
+## Build And Run Week8 Observation Inputs
+
+After conversion, build Qwen3 observation inputs. These are required for the
+large-scale observation milestone: Beauty full-domain plus
+books/electronics/movies 10k users, ideally matching the later formal training
+and evaluation size.
+
+```bash
+cd ~/projects/TRUCE-Rec
+source .venv_truce/bin/activate
+
+for DOMAIN in beauty books electronics movies; do
+  python scripts/build_week8_observation_inputs.py \
+    --processed-dir data/processed/week8_same_candidate/${DOMAIN}_large10000_100neg/test \
+    --dataset ${DOMAIN}_large10000_100neg \
+    --domain ${DOMAIN} \
+    --split test \
+    --prompt-template forced_json
+done
+```
+
+Base Qwen3-8B observation on one domain:
+
+```bash
+source ~/projects/TALLRec/.venv_tallrec/bin/activate
+
+DOMAIN=books
+nohup python scripts/server/run_qwen3_observation.py \
+  --input-jsonl outputs/observation_inputs/week8_same_candidate/${DOMAIN}_large10000_100neg/test_forced_json.jsonl \
+  --output-dir outputs/server_observations/qwen3_8b/week8_same_candidate/${DOMAIN}_large10000_100neg/test_forced_json \
+  --run-label qwen3_base_${DOMAIN}_week8_test \
+  --run-stage observation \
+  --execute-server \
+  > outputs/logs/qwen3_base_observation_${DOMAIN}.log 2>&1 &
+```
+
+Observation is not complete until the same phenomenon analysis covers base
+Qwen3-8B and the four senior-recommended Qwen3-8B-LoRA baselines:
+TALLRec/OpenP5/DEALRec/LC-Rec. Treat current controlled-adapter outputs as
+pilots unless the official-fidelity audit promotes them.
