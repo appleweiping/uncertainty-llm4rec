@@ -31,6 +31,17 @@ class CandidateEvidence:
     uncertainty_reason: str
 
 
+@dataclass(frozen=True)
+class CandidatePolicyTarget:
+    calibrated_utility: float
+    candidate_normalized_utility: float
+    popularity_residual_utility: float
+    harm_risk: float
+    abstain_risk: float
+    policy_action: str
+    policy_reason: str
+
+
 def item_text(item_id: str, item_lookup: dict[str, dict[str, Any]]) -> str:
     row = item_lookup.get(str(item_id), {})
     title = str(row.get("title") or row.get("raw_text") or item_id)
@@ -83,16 +94,24 @@ def build_pairwise_prompt(
         "TRUCE uncertainty-aware recommendation task.\n"
         "Estimate whether the candidate should be accepted for the user's next interaction.\n"
         "Use user preference evidence, catalog grounding, popularity/long-tail risk, and history repetition risk.\n"
+        "Also infer a policy action: promote, suppress, or defer_to_fallback.\n"
         f"User history: {history_text(example, item_lookup, max_history=max_history)}\n"
         f"Candidate item: {candidate}\n"
         f"Candidate item id: {candidate_item_id}\n"
         f"Train-popularity bucket: {bucket}\n"
         "Answer exactly in JSON with keys: accept, confidence, preference_evidence, "
-        "grounding_risk, popularity_bias_risk, history_repetition_risk, uncertainty_reason."
+        "grounding_risk, popularity_bias_risk, history_repetition_risk, "
+        "candidate_normalized_utility, popularity_residual_utility, harm_risk, "
+        "abstain_risk, policy_action, uncertainty_reason."
     )
 
 
-def build_pairwise_answer(*, is_positive: bool, evidence: CandidateEvidence) -> str:
+def build_pairwise_answer(
+    *,
+    is_positive: bool,
+    evidence: CandidateEvidence,
+    policy_target: CandidatePolicyTarget,
+) -> str:
     import json
 
     accept = "true" if is_positive else "false"
@@ -103,6 +122,11 @@ def build_pairwise_answer(*, is_positive: bool, evidence: CandidateEvidence) -> 
         "grounding_risk": evidence.grounding_risk,
         "popularity_bias_risk": evidence.popularity_bias_risk,
         "history_repetition_risk": evidence.history_repetition_risk,
+        "candidate_normalized_utility": policy_target.candidate_normalized_utility,
+        "popularity_residual_utility": policy_target.popularity_residual_utility,
+        "harm_risk": policy_target.harm_risk,
+        "abstain_risk": policy_target.abstain_risk,
+        "policy_action": policy_target.policy_action,
         "uncertainty_reason": evidence.uncertainty_reason,
     }
     return json.dumps(payload, ensure_ascii=False, sort_keys=True)
@@ -142,6 +166,7 @@ def build_listwise_answer(
     ranked = [target_item_id] + [item for item in candidate_item_ids if item != target_item_id]
     confidence: dict[str, float] = {}
     risk_notes: dict[str, str] = {}
+    policy_actions: dict[str, str] = {}
     for item in ranked:
         evidence = candidate_evidence(
             example or {},
@@ -150,13 +175,24 @@ def build_listwise_answer(
             item_lookup=item_lookup or {},
             train_popularity=train_popularity or {},
         )
+        policy = candidate_policy_target(
+            example or {},
+            candidate_item_id=item,
+            target_item_id=target_item_id,
+            candidate_item_ids=candidate_item_ids,
+            item_lookup=item_lookup or {},
+            train_popularity=train_popularity or {},
+        )
         confidence[item] = evidence.confidence
         risk_notes[item] = evidence.contrast_role
+        policy_actions[item] = policy.policy_action
     return (
         '{"ranked_item_ids": '
         + _json_list(ranked)
         + ', "confidence_by_item": '
         + _json_float_map(confidence)
+        + ', "policy_action_by_item": '
+        + _json_string_map(policy_actions)
         + ', "risk_notes": '
         + _json_string_map(risk_notes)
         + "}"
@@ -193,6 +229,14 @@ def build_training_rows(
             item_lookup=item_lookup,
             train_popularity=train_popularity,
         )
+        policy_target = candidate_policy_target(
+            example,
+            candidate_item_id=item_id,
+            target_item_id=target,
+            candidate_item_ids=candidates,
+            item_lookup=item_lookup,
+            train_popularity=train_popularity,
+        )
         rows.append(
             OursTrainingRow(
                 messages=[
@@ -211,6 +255,7 @@ def build_training_rows(
                         "content": build_pairwise_answer(
                             is_positive=is_positive,
                             evidence=evidence,
+                            policy_target=policy_target,
                         ),
                     },
                 ],
@@ -228,6 +273,15 @@ def build_training_rows(
                         "grounding_risk": evidence.grounding_risk,
                         "popularity_bias_risk": evidence.popularity_bias_risk,
                         "history_repetition_risk": evidence.history_repetition_risk,
+                        "candidate_normalized_utility": policy_target.candidate_normalized_utility,
+                        "popularity_residual_utility": policy_target.popularity_residual_utility,
+                        "harm_risk": policy_target.harm_risk,
+                        "abstain_risk": policy_target.abstain_risk,
+                        "calibrated_utility": policy_target.calibrated_utility,
+                    },
+                    "policy_target": {
+                        "policy_action": policy_target.policy_action,
+                        "policy_reason": policy_target.policy_reason,
                     },
                 },
             )
@@ -288,13 +342,17 @@ def build_score_row(
             max_history=max_history,
         ),
         "candidate_item_ids": [str(candidate_item_id)],
-        "candidate_outputs": ['{"accept": true'],
+        "candidate_outputs": ['{"policy_action": "promote"'],
         "metadata": {
             "event_id": _metadata_value(example, "event_id", str(example.get("example_id") or "")),
             "source_event_id": _metadata_value(example, "source_event_id", str(example.get("example_id") or "")),
             "supervision_type": "pairwise_acceptance_score",
+            "score_schema": "acceptance_and_policy_action_likelihood",
         },
-        "scoring_contract": "Score the likelihood that the adapter accepts this candidate under the TRUCE uncertainty-aware prompt.",
+        "scoring_contract": (
+            "Score the likelihood that the adapter accepts and promotes this "
+            "candidate under the TRUCE uncertainty-aware policy prompt."
+        ),
     }
 
 
@@ -334,6 +392,88 @@ def candidate_evidence(
         popularity_bucket=bucket,
         contrast_role=role,
         uncertainty_reason=reason,
+    )
+
+
+def candidate_policy_target(
+    example: dict[str, Any],
+    *,
+    candidate_item_id: str,
+    target_item_id: str,
+    candidate_item_ids: list[str],
+    item_lookup: dict[str, dict[str, Any]],
+    train_popularity: dict[str, int],
+) -> CandidatePolicyTarget:
+    """Build observation-derived policy supervision for train/valid rows.
+
+    The target separates correctness supervision from risk routing. It is
+    intended for fitting data only; scoring prompts must not include these
+    fields as metadata.
+    """
+
+    evidence = candidate_evidence(
+        example,
+        candidate_item_id=candidate_item_id,
+        target_item_id=target_item_id,
+        item_lookup=item_lookup,
+        train_popularity=train_popularity,
+    )
+    panel = [str(item) for item in candidate_item_ids if str(item)]
+    panel_evidence = [
+        candidate_evidence(
+            example,
+            candidate_item_id=item,
+            target_item_id=target_item_id,
+            item_lookup=item_lookup,
+            train_popularity=train_popularity,
+        )
+        for item in panel
+    ]
+    panel_mean = (
+        sum(row.preference_evidence for row in panel_evidence) / len(panel_evidence)
+        if panel_evidence
+        else evidence.preference_evidence
+    )
+    normalized = _clip(0.5 + 0.7 * (evidence.preference_evidence - panel_mean))
+    popularity_prior = {"head": 0.58, "mid": 0.42, "tail": 0.28, "unknown": 0.36}.get(
+        evidence.popularity_bucket,
+        0.36,
+    )
+    residual = _clip(evidence.preference_evidence - 0.35 * popularity_prior + 0.20)
+    calibrated = _clip(
+        0.45 * evidence.preference_evidence
+        + 0.25 * normalized
+        + 0.20 * residual
+        + 0.10 * (1.0 - evidence.grounding_risk)
+    )
+    harm_risk = _clip(
+        0.40 * evidence.popularity_bias_risk
+        + 0.30 * evidence.history_repetition_risk
+        + 0.30 * evidence.grounding_risk
+        - (0.25 if str(candidate_item_id) == str(target_item_id) else 0.0)
+    )
+    abstain_risk = _clip(
+        0.45 * evidence.grounding_risk
+        + 0.35 * abs(evidence.preference_evidence - panel_mean)
+        + 0.20 * (1.0 - normalized)
+    )
+    if str(candidate_item_id) == str(target_item_id) and calibrated >= 0.55 and harm_risk < 0.55:
+        action = "promote"
+        reason = "positive candidate has sufficient calibrated utility and bounded risk"
+    elif harm_risk >= 0.62 or (evidence.contrast_role in {"head_bias_probe", "history_echo_probe"} and calibrated < 0.62):
+        action = "suppress"
+        reason = f"{evidence.contrast_role} has high harm risk under TRUCE diagnostics"
+    else:
+        action = "defer_to_fallback"
+        reason = "candidate is ambiguous after normalization and popularity residualization"
+    return CandidatePolicyTarget(
+        calibrated_utility=round(calibrated, 4),
+        candidate_normalized_utility=round(normalized, 4),
+        popularity_residual_utility=round(residual, 4),
+        harm_risk=round(harm_risk, 4),
+        abstain_risk=round(abstain_risk, 4),
+        policy_action=action,
+        policy_reason=reason,
     )
 
 

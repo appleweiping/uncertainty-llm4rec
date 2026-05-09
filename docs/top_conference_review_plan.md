@@ -82,6 +82,22 @@ comparison should ask:
 Any claim that the experiment phase is "basically done" must cite the current
 artifact gates, not intuition.
 
+## Current Method Review Note
+
+As of 2026-05-09, a reviewer/implementation pass judged that Ours should not
+stop at deterministic pairwise/listwise SFT prompts. The implemented upgrade is
+`truce_observation_residual_policy_sft_v2`: an observation-to-policy target
+layer with candidate-normalized utility, popularity-residual utility, harm
+risk, abstain risk, and conservative `promote/suppress/defer_to_fallback`
+actions. This improves technical depth relative to a prompt-only reranker, but
+it is still only a training objective scaffold until server runs and ablations
+prove utility.
+
+Reviewer risk that remains: the policy targets are deterministic scaffolds. A
+stronger final method should incorporate real observation diagnostics and
+validation-fitted calibration/residualization before claiming learned
+uncertainty behavior.
+
 ## Writing-Ready Gate
 
 The experiment phase can move to paper writing only when a reviewer-style pass

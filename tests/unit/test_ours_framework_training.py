@@ -68,11 +68,20 @@ def test_prepare_ours_adapter_training_contract(tmp_path: Path) -> None:
     assert "grounding_risk" in answer
     assert "popularity_bias_risk" in answer
     assert "history_repetition_risk" in answer
+    assert "candidate_normalized_utility" in answer
+    assert "popularity_residual_utility" in answer
+    assert "harm_risk" in answer
+    assert "abstain_risk" in answer
+    assert answer["policy_action"] in {"promote", "suppress", "defer_to_fallback"}
     assert "feature_targets" in train_first["metadata"]
+    assert "policy_target" in train_first["metadata"]
+    assert train_first["metadata"]["feature_targets"]["calibrated_utility"] >= 0.0
     score_first = json.loads((out / "test_score_plan.jsonl").read_text(encoding="utf-8").splitlines()[0])
     assert score_first["metadata"]["source_event_id"] == "s_test"
+    assert score_first["candidate_outputs"] == ['{"policy_action": "promote"']
+    assert score_first["metadata"]["score_schema"] == "acceptance_and_policy_action_likelihood"
     assert (out / "ours_adapter_manifest.json").exists()
-    assert manifest["objective_family"] == "truce_uncertainty_structured_sft"
+    assert manifest["objective_family"] == "truce_observation_residual_policy_sft_v2"
     assert manifest["negative_sampling_policy"] == "stratified_head_tail_echo_stable_negatives"
 
 

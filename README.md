@@ -73,6 +73,11 @@ Implemented and smoke-tested:
 - Ours/TRUCE Qwen adapter preparation and import/evaluation scaffolds exist for
   server-side training: `scripts/prepare_ours_qwen_adapter_training.py` and
   `scripts/import_evaluate_ours_adapter.py`.
+- Ours adapter supervision has been upgraded to
+  `truce_observation_residual_policy_sft_v2`: train/valid rows include
+  candidate-normalized utility, popularity-residual utility, harm/abstain risk,
+  and conservative promote/suppress/fallback policy targets; test scoring keeps
+  the same `candidate_scores.csv` schema by scoring promote-action likelihood.
 
 Not yet completed:
 

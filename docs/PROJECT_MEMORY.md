@@ -197,12 +197,23 @@ normalized uncertainty, popularity residual/deconfounding, echo/history guard,
 learned improve/harm/abstain policy, fallback-preserving fusion, and ablations
 tied directly to the observation findings.
 
+Implementation update as of 2026-05-09: `src/llm4rec/methods/ours_framework.py`
+now adds an observation-residual policy target layer. Ours adapter supervision
+includes candidate-normalized utility, popularity-residual utility, harm risk,
+abstain risk, and conservative `promote/suppress/defer_to_fallback` policy
+actions. Server scoring now estimates the likelihood of
+`{"policy_action": "promote"}` for each candidate, while preserving the same
+`candidate_scores.csv` schema. This is still not a paper result; it is a
+stronger trainable objective for the next server runs and ablations.
+
 Core method milestones:
 
 - M2a: derive structured train/valid targets from observation rows without
-  using test correctness.
+  using test correctness. Current v2 scaffold derives deterministic
+  observation-residual policy targets from train/catalog evidence.
 - M2b: train a TRUCE adapter/policy that predicts improve/harm/abstain or
-  calibrated candidate preference from diagnostic evidence.
+  calibrated candidate preference from diagnostic evidence. Current v2 scoring
+  target is promote-action likelihood.
 - M2c: combine the learned policy with conservative fallback ranking so bad
   LLM generations can be blocked rather than blindly promoted.
 - M2d: run ablations for grounding, uncertainty, candidate normalization,

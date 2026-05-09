@@ -112,7 +112,9 @@ Current implementation anchors:
 
 - `src/llm4rec/methods/ours_framework.py`: builds Ours pairwise/listwise
   training and scoring prompts with grounding, popularity bucket, and
-  history-risk evidence.
+  history-risk evidence. Current v2 supervision also includes
+  candidate-normalized utility, popularity-residual utility, harm/abstain risk,
+  and conservative promote/suppress/fallback policy actions.
 - `scripts/prepare_ours_qwen_adapter_training.py`: writes
   `train_sft.jsonl`, `valid_sft.jsonl`, `test_score_plan.jsonl`, and
   `ours_adapter_manifest.json`.
@@ -134,9 +136,11 @@ Required ablations:
 Submilestones:
 
 - M2a: build structured observation-derived train/valid targets without using
-  test correctness.
+  test correctness. Initial v2 policy targets are implemented from
+  train/catalog evidence.
 - M2b: train a TRUCE adapter/policy for calibrated candidate preference or
-  improve/harm/abstain decisions.
+  improve/harm/abstain decisions. The current score prefix is
+  `{"policy_action": "promote"}`.
 - M2c: fuse learned policy with fallback ranking under conservative promotion
   gates.
 - M2d: run component ablations across the four-domain same-candidate protocol.

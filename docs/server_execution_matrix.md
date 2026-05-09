@@ -254,11 +254,15 @@ history-repetition/echo risk, and contrast roles for head/tail/history-probe
 negatives. Ablations must later disable these components rather than comparing
 only against a single monolithic Ours score.
 
-Formal Ours must go beyond this scaffold before paper claims. The server suite
-needs structured observation-derived targets, a learned improve/harm/abstain
-or calibrated preference policy, conservative fallback fusion, and ablations
-for uncertainty, grounding, candidate normalization, popularity residuals, and
-echo/history guard.
+The current Ours v2 adapter objective is
+`truce_observation_residual_policy_sft_v2`. It adds candidate-normalized
+utility, popularity-residual utility, harm risk, abstain risk, and conservative
+`promote/suppress/defer_to_fallback` policy actions to train/valid
+supervision. Test scoring estimates the likelihood of
+`{"policy_action": "promote"}` for each candidate while keeping the score
+schema unchanged. Formal paper claims still require four-domain training,
+import/evaluation, and ablations for uncertainty, grounding, candidate
+normalization, popularity residuals, and echo/history guard.
 
 ## Import And Evaluate
 

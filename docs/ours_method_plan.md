@@ -89,7 +89,7 @@ prompt hash.
 
 ## 8. Uncertainty signals used
 
-Phase 6 uses a minimal subset:
+Phase 6 used a minimal subset:
 
 - Parsed generative confidence.
 - Grounding success and grounding score.
@@ -98,6 +98,23 @@ Phase 6 uses a minimal subset:
 - History similarity and echo-risk flag when enabled.
 
 These are infrastructure signals, not evidence of empirical effectiveness.
+
+The current Ours adapter path has been upgraded to
+`truce_observation_residual_policy_sft_v2`. It still starts from the same
+observation object, but it now supervises a policy target rather than only an
+acceptance target:
+
+- candidate-normalized utility within the fixed candidate panel;
+- popularity-residual utility to reduce head-item familiarity bias;
+- harm risk from popularity bias, grounding risk, and echo/history repetition;
+- abstain risk for ambiguous or poorly grounded candidates;
+- conservative `promote`, `suppress`, or `defer_to_fallback` action labels.
+
+At score time the server estimates each candidate's
+`{"policy_action": "promote"}` likelihood and writes the usual
+`candidate_scores.csv`. This preserves the evaluator contract while making the
+method closer to an observation-driven policy learner than a prompt-only
+reranker.
 
 ## 9. Grounding strategy
 
@@ -113,7 +130,7 @@ abstention according to config.
 
 ## 10. Confidence calibration strategy
 
-Phase 6 implements config-driven decision calibration rather than learned
+Phase 6 implemented config-driven decision calibration rather than learned
 calibration:
 
 - absolute confidence threshold for accepting a grounded item;
@@ -124,6 +141,11 @@ calibration:
 
 Thresholds are provisional and smoke-only. No calibrated-performance claim is
 allowed until real experiments produce metrics.
+
+For the Qwen3 adapter lane, the v2 objective introduces learned calibration
+targets through the adapter data. These are still deterministic train/valid
+targets until real observation diagnostics and validation tuning are available;
+they are not evidence of effectiveness by themselves.
 
 ## 11. Popularity-bias handling
 

@@ -137,10 +137,15 @@ def prepare(
         "base_model": base_model,
         "base_model_policy": "shared_qwen3_8b_base_model",
         "adapter_training_policy": "ours_uncertainty_aware_pairwise_and_listwise_adapter",
-        "objective_family": "truce_uncertainty_structured_sft",
+        "objective_family": "truce_observation_residual_policy_sft_v2",
+        "policy_target_version": "observation_residual_policy_v2",
         "uses_grounding_risk_targets": True,
         "uses_popularity_residual_targets": True,
         "uses_echo_risk_targets": True,
+        "uses_candidate_normalized_panel_targets": True,
+        "uses_harm_abstain_policy_targets": True,
+        "uses_conservative_promote_suppress_fallback_actions": True,
+        "forbidden_target_use_at_score_time": True,
         "negative_sampling_policy": "stratified_head_tail_echo_stable_negatives",
         "target_label_policy": "deterministic_train_evidence_targets_no_test_outcome_tuning",
         "feature_sources": [
@@ -176,8 +181,9 @@ def prepare(
             "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         },
         "scoring": {
-            "type": "ours_pairwise_acceptance_likelihood",
+            "type": "ours_policy_promote_likelihood",
             "output": "candidate_scores.csv",
+            "candidate_output_prefix": "{\"policy_action\": \"promote\"",
         },
         "counts": {
             "examples": len(examples),
@@ -190,14 +196,18 @@ def prepare(
             "item_count": len(item_lookup),
         },
         "required_next_steps": [
-            "train Qwen3 adapter on train_sft.jsonl",
+            "train Qwen3 adapter on train_sft.jsonl with observation-residual policy targets",
             "score test_score_plan.jsonl into candidate_scores.csv",
             "import candidate_scores.csv with TRUCE import_external_predictions.py",
             "evaluate with TRUCE evaluator",
         ],
         "claim_boundary": (
-            "Prepared adapter data is not a result. Ours may tune hyperparameters on the declared validation "
-            "protocol, but paper claims require completed candidate scoring, TRUCE import/evaluation, and ablations."
+            "Prepared adapter data is not a result. The v2 objective supervises "
+            "candidate-normalized utility, popularity residual utility, harm/"
+            "abstain risk, and promote/suppress/fallback policy actions on "
+            "train/valid rows only. Ours may tune hyperparameters on the "
+            "declared validation protocol, but paper claims require completed "
+            "candidate scoring, TRUCE import/evaluation, and ablations."
         ),
         "is_experiment_result": False,
         "is_paper_result": False,
@@ -311,10 +321,12 @@ def _write_server_plan(path: Path, *, manifest: dict[str, Any]) -> None:
     text = f"""# Ours Qwen Adapter Server Plan
 
 This plan prepares Ours/TRUCE adapter data only. The objective is
-`truce_uncertainty_structured_sft`: pairwise/listwise recommendation
-supervision with deterministic grounding, popularity, and history-repetition
-targets derived from train/catalog evidence. Training and scoring must run on
-the server and then be imported through the TRUCE evaluator.
+`truce_observation_residual_policy_sft_v2`: pairwise/listwise recommendation
+supervision with deterministic grounding, candidate-normalized utility,
+popularity-residual utility, harm/abstain risk, and conservative
+promote/suppress/fallback policy actions derived from train/catalog evidence.
+Training and scoring must run on the server and then be imported through the
+TRUCE evaluator.
 
 ```bash
 cd ~/projects/TRUCE-Rec
