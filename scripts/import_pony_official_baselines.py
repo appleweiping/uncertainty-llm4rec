@@ -23,6 +23,17 @@ DEFAULT_METHODS = {
     "promax": "promax_official_qwen3base_profile",
 }
 
+DISPLAY_LABELS = {
+    "llm2rec_official_qwen3base_sasrec": "LLM2Rec official Qwen3-8B + SASRec",
+    "llmesr_official_qwen3base_sasrec": "LLM-ESR official Qwen3-8B + LLMESR-SASRec",
+    "llmemb_official_qwen3base": "LLMEmb official Qwen3-8B",
+    "rlmrec_official_qwen3base_graphcl": "RLMRec official Qwen3-8B GraphCL",
+    "irllrec_official_qwen3base_intent": "IRLLRec official Qwen3-8B IntentRep",
+    "elmrec_official_qwen3base_graph": "ELMRec official Qwen3-8B Graph Bridge",
+    "proex_official_qwen3base_profile": "ProEx official Qwen3-8B Profile",
+    "promax_official_qwen3base_profile": "ProMax official Qwen3-8B Profile",
+}
+
 DOMAINS = ("beauty", "books", "electronics", "movies")
 METRIC_FIELDS = (
     "HR@5",
@@ -265,7 +276,7 @@ def build_manifest(
             entry = {
                 "method_key": method_key,
                 "method": method_name,
-                "display_method": (row or {}).get("display_method", method_name),
+                "display_method": (row or {}).get("display_method") or DISPLAY_LABELS.get(method_name, method_name),
                 "domain": domain,
                 "sample_count": int(float((row or {}).get("sample_count", "0") or 0)) if row else None,
                 "completion_label": _completion_label(row, package),

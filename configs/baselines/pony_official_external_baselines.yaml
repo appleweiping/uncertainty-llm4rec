@@ -1,5 +1,5 @@
 schema_version: "pony_official_external_baselines_v1"
-generated_at_utc: "2026-05-16T20:46:07.654117+00:00"
+generated_at_utc: "2026-05-16T21:17:53.286932+00:00"
 pony_root: "D:\\Research\\Uncertainty"
 truce_output_root: "outputs\\pony_official_baselines"
 evidence_package_dir: "outputs\\pony_official_baselines\\evidence_packages"
@@ -31,20 +31,20 @@ entries:
     display_method: "LLM2Rec official Qwen3-8B + SASRec"
     domain: "beauty"
     sample_count: 973
-    completion_label: "pending_import"
+    completion_label: "completed_result"
     status_label: "same_schema_external_baseline"
     artifact_class: "completed_result"
     implementation_status: "official_completed"
     score_schema: "source_event_id,user_id,item_id,score"
-    score_coverage_rate: null
-    source_summary_file: "outputs/beauty_supplementary_smallerN_100neg_llm2rec_official_qwen3base_sasrec_same_candidate/tables/same_candidate_external_baseline_summary.csv"
-    source_evidence_tar: null
-    truce_evidence_tar: null
-    evidence_present: false
-    evidence_sha256: null
-    evidence_size_bytes: null
-    evidence_mtime_utc: null
-    evidence_tar_readable: false
+    score_coverage_rate: "1.0"
+    source_summary_file: null
+    source_evidence_tar: "D:\\Research\\Uncertainty\\llm2rec_beauty_official_qwen3base_evidence_2026-05-17_045803.tar.gz"
+    truce_evidence_tar: "outputs\\pony_official_baselines\\evidence_packages\\llm2rec_beauty_official_qwen3base_evidence_2026-05-17_045803.tar.gz"
+    evidence_present: true
+    evidence_sha256: "d4ccd4715292dac62707e8bcc742b37cf3caeaac7e634000925171e1dc0afdda"
+    evidence_size_bytes: 14149364
+    evidence_mtime_utc: "2026-05-16T21:00:25.093763+00:00"
+    evidence_tar_readable: true
     HR@5: "0.06166495375128469"
     NDCG@5: "0.03800056719708648"
     HR@10: "0.10380267214799589"
@@ -57,7 +57,7 @@ entries:
     coverage@20: "0.78125"
     head_exposure_ratio@10: "0.49362795477903393"
     longtail_coverage@10: "0.4704641350210971"
-    main_table_eligible: false
+    main_table_eligible: true
   -
     method_key: "llm2rec"
     method: "llm2rec_official_qwen3base_sasrec"
@@ -160,7 +160,7 @@ entries:
   -
     method_key: "llmesr"
     method: "llmesr_official_qwen3base_sasrec"
-    display_method: "llmesr_official_qwen3base_sasrec"
+    display_method: "LLM-ESR official Qwen3-8B + LLMESR-SASRec"
     domain: "beauty"
     sample_count: 973
     completion_label: "completed_result"
@@ -193,7 +193,7 @@ entries:
   -
     method_key: "llmesr"
     method: "llmesr_official_qwen3base_sasrec"
-    display_method: "llmesr_official_qwen3base_sasrec"
+    display_method: "LLM-ESR official Qwen3-8B + LLMESR-SASRec"
     domain: "books"
     sample_count: 10000
     completion_label: "completed_result"
@@ -226,7 +226,7 @@ entries:
   -
     method_key: "llmesr"
     method: "llmesr_official_qwen3base_sasrec"
-    display_method: "llmesr_official_qwen3base_sasrec"
+    display_method: "LLM-ESR official Qwen3-8B + LLMESR-SASRec"
     domain: "electronics"
     sample_count: 10000
     completion_label: "completed_result"
@@ -259,7 +259,7 @@ entries:
   -
     method_key: "llmesr"
     method: "llmesr_official_qwen3base_sasrec"
-    display_method: "llmesr_official_qwen3base_sasrec"
+    display_method: "LLM-ESR official Qwen3-8B + LLMESR-SASRec"
     domain: "movies"
     sample_count: 10000
     completion_label: "completed_result"
@@ -292,7 +292,7 @@ entries:
   -
     method_key: "llmemb"
     method: "llmemb_official_qwen3base"
-    display_method: "llmemb_official_qwen3base"
+    display_method: "LLMEmb official Qwen3-8B"
     domain: "beauty"
     sample_count: 973
     completion_label: "completed_result"
@@ -325,7 +325,7 @@ entries:
   -
     method_key: "llmemb"
     method: "llmemb_official_qwen3base"
-    display_method: "llmemb_official_qwen3base"
+    display_method: "LLMEmb official Qwen3-8B"
     domain: "books"
     sample_count: 10000
     completion_label: "completed_result"
@@ -358,7 +358,7 @@ entries:
   -
     method_key: "llmemb"
     method: "llmemb_official_qwen3base"
-    display_method: "llmemb_official_qwen3base"
+    display_method: "LLMEmb official Qwen3-8B"
     domain: "electronics"
     sample_count: 10000
     completion_label: "completed_result"
@@ -391,7 +391,7 @@ entries:
   -
     method_key: "llmemb"
     method: "llmemb_official_qwen3base"
-    display_method: "llmemb_official_qwen3base"
+    display_method: "LLMEmb official Qwen3-8B"
     domain: "movies"
     sample_count: 10000
     completion_label: "completed_result"
@@ -424,7 +424,7 @@ entries:
   -
     method_key: "rlmrec"
     method: "rlmrec_official_qwen3base_graphcl"
-    display_method: "rlmrec_official_qwen3base_graphcl"
+    display_method: "RLMRec official Qwen3-8B GraphCL"
     domain: "beauty"
     sample_count: 973
     completion_label: "completed_result"
@@ -457,7 +457,7 @@ entries:
   -
     method_key: "rlmrec"
     method: "rlmrec_official_qwen3base_graphcl"
-    display_method: "rlmrec_official_qwen3base_graphcl"
+    display_method: "RLMRec official Qwen3-8B GraphCL"
     domain: "books"
     sample_count: 10000
     completion_label: "completed_result"
@@ -490,7 +490,7 @@ entries:
   -
     method_key: "rlmrec"
     method: "rlmrec_official_qwen3base_graphcl"
-    display_method: "rlmrec_official_qwen3base_graphcl"
+    display_method: "RLMRec official Qwen3-8B GraphCL"
     domain: "electronics"
     sample_count: 10000
     completion_label: "completed_result"
@@ -523,7 +523,7 @@ entries:
   -
     method_key: "rlmrec"
     method: "rlmrec_official_qwen3base_graphcl"
-    display_method: "rlmrec_official_qwen3base_graphcl"
+    display_method: "RLMRec official Qwen3-8B GraphCL"
     domain: "movies"
     sample_count: 10000
     completion_label: "completed_result"
@@ -556,7 +556,7 @@ entries:
   -
     method_key: "irllrec"
     method: "irllrec_official_qwen3base_intent"
-    display_method: "irllrec_official_qwen3base_intent"
+    display_method: "IRLLRec official Qwen3-8B IntentRep"
     domain: "beauty"
     sample_count: 973
     completion_label: "completed_result"
@@ -589,7 +589,7 @@ entries:
   -
     method_key: "irllrec"
     method: "irllrec_official_qwen3base_intent"
-    display_method: "irllrec_official_qwen3base_intent"
+    display_method: "IRLLRec official Qwen3-8B IntentRep"
     domain: "books"
     sample_count: 10000
     completion_label: "completed_result"
@@ -622,7 +622,7 @@ entries:
   -
     method_key: "irllrec"
     method: "irllrec_official_qwen3base_intent"
-    display_method: "irllrec_official_qwen3base_intent"
+    display_method: "IRLLRec official Qwen3-8B IntentRep"
     domain: "electronics"
     sample_count: 10000
     completion_label: "completed_result"
@@ -655,7 +655,7 @@ entries:
   -
     method_key: "irllrec"
     method: "irllrec_official_qwen3base_intent"
-    display_method: "irllrec_official_qwen3base_intent"
+    display_method: "IRLLRec official Qwen3-8B IntentRep"
     domain: "movies"
     sample_count: 10000
     completion_label: "completed_result"
@@ -688,7 +688,7 @@ entries:
   -
     method_key: "elmrec"
     method: "elmrec_official_qwen3base_graph"
-    display_method: "elmrec_official_qwen3base_graph"
+    display_method: "ELMRec official Qwen3-8B Graph Bridge"
     domain: "beauty"
     sample_count: 973
     completion_label: "completed_result"
@@ -721,7 +721,7 @@ entries:
   -
     method_key: "elmrec"
     method: "elmrec_official_qwen3base_graph"
-    display_method: "elmrec_official_qwen3base_graph"
+    display_method: "ELMRec official Qwen3-8B Graph Bridge"
     domain: "books"
     sample_count: 10000
     completion_label: "completed_result"
@@ -754,7 +754,7 @@ entries:
   -
     method_key: "elmrec"
     method: "elmrec_official_qwen3base_graph"
-    display_method: "elmrec_official_qwen3base_graph"
+    display_method: "ELMRec official Qwen3-8B Graph Bridge"
     domain: "electronics"
     sample_count: 10000
     completion_label: "completed_result"
@@ -787,7 +787,7 @@ entries:
   -
     method_key: "elmrec"
     method: "elmrec_official_qwen3base_graph"
-    display_method: "elmrec_official_qwen3base_graph"
+    display_method: "ELMRec official Qwen3-8B Graph Bridge"
     domain: "movies"
     sample_count: 10000
     completion_label: "completed_result"
@@ -820,7 +820,7 @@ entries:
   -
     method_key: "proex"
     method: "proex_official_qwen3base_profile"
-    display_method: "proex_official_qwen3base_profile"
+    display_method: "ProEx official Qwen3-8B Profile"
     domain: "beauty"
     sample_count: 973
     completion_label: "completed_result"
@@ -853,7 +853,7 @@ entries:
   -
     method_key: "proex"
     method: "proex_official_qwen3base_profile"
-    display_method: "proex_official_qwen3base_profile"
+    display_method: "ProEx official Qwen3-8B Profile"
     domain: "books"
     sample_count: 10000
     completion_label: "completed_result"
@@ -886,7 +886,7 @@ entries:
   -
     method_key: "proex"
     method: "proex_official_qwen3base_profile"
-    display_method: "proex_official_qwen3base_profile"
+    display_method: "ProEx official Qwen3-8B Profile"
     domain: "electronics"
     sample_count: 10000
     completion_label: "completed_result"
@@ -919,7 +919,7 @@ entries:
   -
     method_key: "proex"
     method: "proex_official_qwen3base_profile"
-    display_method: "proex_official_qwen3base_profile"
+    display_method: "ProEx official Qwen3-8B Profile"
     domain: "movies"
     sample_count: 10000
     completion_label: "completed_result"
@@ -952,7 +952,7 @@ entries:
   -
     method_key: "promax"
     method: "promax_official_qwen3base_profile"
-    display_method: "promax_official_qwen3base_profile"
+    display_method: "ProMax official Qwen3-8B Profile"
     domain: "beauty"
     sample_count: 973
     completion_label: "completed_result"
@@ -985,7 +985,7 @@ entries:
   -
     method_key: "promax"
     method: "promax_official_qwen3base_profile"
-    display_method: "promax_official_qwen3base_profile"
+    display_method: "ProMax official Qwen3-8B Profile"
     domain: "books"
     sample_count: null
     completion_label: "pending_running"
@@ -1018,7 +1018,7 @@ entries:
   -
     method_key: "promax"
     method: "promax_official_qwen3base_profile"
-    display_method: "promax_official_qwen3base_profile"
+    display_method: "ProMax official Qwen3-8B Profile"
     domain: "electronics"
     sample_count: null
     completion_label: "pending_running"
@@ -1051,7 +1051,7 @@ entries:
   -
     method_key: "promax"
     method: "promax_official_qwen3base_profile"
-    display_method: "promax_official_qwen3base_profile"
+    display_method: "ProMax official Qwen3-8B Profile"
     domain: "movies"
     sample_count: null
     completion_label: "pending_running"

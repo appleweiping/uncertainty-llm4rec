@@ -89,14 +89,14 @@ py -3 scripts\build_pony_baseline_comparison.py `
   --output-name pony_official_baseline_comparison
 ```
 
-Current local import status after the first TRUCE import:
+Current local import status after syncing the Beauty LLM2Rec evidence package:
 
-- 28 evidence packages copied and eligible.
-- 28 rows enter the TRUCE Pony main-baseline comparison table.
-- `llm2rec_official_qwen3base_sasrec` on Beauty is `pending_import` because the
-  metrics row exists but no matching local evidence tarball was found.
-- ProMax on books/electronics/movies is `pending_running`; ProMax Beauty is
-  copied and eligible.
+- 29 evidence packages copied and eligible.
+- 29 rows enter the TRUCE Pony main-baseline comparison table.
+- `llm2rec_official_qwen3base_sasrec` on Beauty is now `completed_result` and
+  `main_table_eligible=true`.
+- ProMax on books/electronics/movies remains `pending_running`; ProMax Beauty
+  is copied and eligible.
 
 ## Evidence Boundary
 

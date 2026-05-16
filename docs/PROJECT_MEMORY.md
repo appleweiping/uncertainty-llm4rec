@@ -271,9 +271,9 @@ Current reused pool:
 LLM2Rec, LLM-ESR, LLMEmb, RLMRec, IRLLRec, ELMRec, ProEx, ProMax
 ```
 
-Current local import status: 28 evidence packages copied and eligible. LLM2Rec
-Beauty is `pending_import` because the Pony metrics row exists but a matching
-local evidence tarball was not found. ProMax books/electronics/movies are
+Current local import status: 29 evidence packages copied and eligible. LLM2Rec
+Beauty is now `completed_result` and `main_table_eligible=true` after syncing
+the server evidence package. ProMax books/electronics/movies are
 `pending_running`. Pending rows must not enter main tables.
 
 The old TRUCE-side qwen3 controlled-baseline docs/configs/scripts remain
