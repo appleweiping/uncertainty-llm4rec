@@ -124,14 +124,13 @@ Migration steps:
 2. Preserve `event_id/source_event_id` in example metadata.
 3. Validate converted artifacts with
    `scripts/validate_week8_same_candidate_processed.py`.
-4. Generate project packets for official baseline families:
-   TALLRec, OpenP5, DEALRec, LC-Rec, LLaRA, and LLM-ESR where feasible.
-5. Run official-native Qwen3-8B base-model controlled baselines for
-   beauty/books/electronics/movies.
-6. Import every method with TRUCE `import_external_predictions.py --split test`.
-7. Evaluate with TRUCE evaluator only.
-8. Run observation analysis and paired/statistical comparison across Ours and
-   the controlled baselines.
+4. Import/copy Pony/Uncertainty official-qwen3base same-candidate baseline
+   evidence into TRUCE and rebuild the tracked manifest/status tables.
+5. Run Ours full and ablations for beauty/books/electronics/movies.
+6. Import/evaluate Ours through the TRUCE evaluator and compare against the
+   reused Pony baseline manifest.
+7. Run observation analysis and paired/statistical comparison across Ours and
+   the reused strong baselines.
 
 ## Paper Position
 

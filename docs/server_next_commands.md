@@ -1,7 +1,8 @@
 # Server Next Commands
 
-This is the short handoff command sheet for continuing after the 2026-05-06
-Main4 controlled-adapter smoke completion.
+This is the short handoff command sheet after switching TRUCE paper-facing
+external baselines to reused Pony/Uncertainty official-qwen3base same-candidate
+evidence.
 
 ## Pull Latest
 
@@ -19,42 +20,31 @@ cd ~/projects/TRUCE-Rec
 bash scripts/server/run_week8_four_domain_pipeline.sh
 ```
 
-For current Beauty controlled-adapter pilots with logs:
+Import/copy Pony official baseline evidence locally:
 
-```bash
-cd ~/projects/TRUCE-Rec
-bash scripts/server/run_controlled_baseline_queue.sh smoke
-bash scripts/server/run_controlled_baseline_queue.sh full
+```powershell
+py -3 scripts\import_pony_official_baselines.py `
+  --pony-root D:\Research\Uncertainty `
+  --output-root outputs\pony_official_baselines `
+  --manifest configs\baselines\pony_official_external_baselines.yaml
 ```
 
-The full queue intentionally excludes slow OpenP5 for now.
+Then build the TRUCE-side comparison/status tables:
 
-## Full Run Fast Controlled Baselines
-
-Use the Qwen/torch/peft environment:
-
-```bash
-cd ~/projects/TRUCE-Rec
-source ~/projects/TALLRec/.venv_tallrec/bin/activate
-
-for NAME in \
-  tallrec_qwen3_lora_amazon_beauty \
-  dealrec_qwen3_lora_amazon_beauty \
-  lc_rec_qwen3_lora_amazon_beauty
-do
-  echo "===== FULL $NAME ====="
-  python scripts/run_qwen_lora_controlled_baseline.py \
-    --manifest outputs/server_training/controlled_baselines/$NAME/controlled_baseline_manifest.json \
-    --trust-remote-code
-done
+```powershell
+py -3 scripts\build_pony_baseline_comparison.py `
+  --manifest-json outputs\pony_official_baselines\manifest.json `
+  --output-root outputs\pony_official_baselines\tables `
+  --output-name pony_official_baseline_comparison
 ```
 
-Do not full-run `openp5_style_qwen3_lora_amazon_beauty` yet. Its smoke passed,
-but current scoring is too slow for full evaluation.
+The old `scripts/server/run_controlled_baseline_queue.sh` lane is legacy/pilot
+only. Do not run it as the default paper-baseline path.
 
 ## Import And Evaluate
 
-After a full run completes:
+For legacy controlled-adapter pilot diagnostics only, after a full run
+completes:
 
 ```bash
 cd ~/projects/TRUCE-Rec
@@ -101,34 +91,18 @@ packet paths:
 
 ## Evidence Rule
 
-Only imported `predictions.jsonl` and TRUCE `metrics.json`/`metrics.csv` are
-paper-eligible. Smoke metrics and raw project-side logs are not paper results.
-
-The current TRUCE-side Qwen3-LoRA adapter runs are controlled-adapter pilots
-unless their fidelity to the official baseline repository has been audited.
-Final main-table baselines should be official-native controlled runs: official
-project implementation with shared TRUCE split/candidates/evaluator, Qwen3-8B
-base-model substitution, LoRA adaptation, and official default or reported
-optimal baseline hyperparameters. Ours may tune hyperparameters only on the
-declared validation protocol.
+Pony official baseline rows are paper-facing only when the manifest marks them
+`completed_result`, `same_schema_external_baseline`, `official_completed`, and
+the local copied evidence tarball is present. Smoke metrics and legacy
+controlled-adapter outputs are not paper results. Ours may tune hyperparameters
+only on the declared validation protocol.
 
 ## Status Summary
 
-Summarize current controlled baseline status:
-
-```bash
-cd ~/projects/TRUCE-Rec
-source .venv_truce/bin/activate
-
-python scripts/summarize_controlled_baseline_suite.py
-```
-
-This writes:
-
-```text
-outputs/summary/controlled_baselines/controlled_baseline_status.json
-outputs/summary/controlled_baselines/controlled_baseline_status.csv
-```
+Use `outputs/pony_official_baselines/manifest.json` and
+`configs/baselines/pony_official_external_baselines.yaml` as the current
+baseline status sources. Legacy controlled-baseline status summaries are
+diagnostic only.
 
 ## Week8 Data Conversion
 
@@ -226,9 +200,9 @@ nohup python scripts/server/run_qwen3_observation.py \
 ```
 
 Observation is not complete until the same phenomenon analysis covers base
-Qwen3-8B and the four senior-recommended Qwen3-8B-LoRA baselines:
-TALLRec/OpenP5/DEALRec/LC-Rec. Treat current controlled-adapter outputs as
-pilots unless the official-fidelity audit promotes them.
+Qwen3-8B, Ours, and the reused strong baselines wherever the required
+prediction/score artifacts are available. Legacy controlled-adapter outputs
+remain pilots.
 
 For the cross-project same-candidate artifact lane, every method must export
 scores as:

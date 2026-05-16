@@ -1,4 +1,11 @@
-# Controlled Baseline Fidelity Audit
+# Legacy: Controlled Baseline Fidelity Audit
+
+> Legacy reference. TRUCE-Rec no longer treats promotion of the local
+> TALLRec/OpenP5/DEALRec/LC-Rec/LLaRA/LLM-ESR controlled-adapter lane as the
+> current paper-facing baseline path. The active policy is to reuse
+> Pony/Uncertainty official-qwen3base same-candidate baseline evidence; see
+> `docs/pony_official_baseline_reuse.md`. Keep this document for historical
+> audit criteria and pilot diagnostics.
 
 This document records the stricter baseline rule for paper-grade experiments:
 under the shared Qwen3-8B base-model, LoRA adaptation, and TRUCE fairness

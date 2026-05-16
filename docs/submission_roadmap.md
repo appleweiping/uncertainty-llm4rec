@@ -15,7 +15,7 @@ LLM generative recommendation observation
   -> base Qwen3-8B plus senior-recommended Qwen3-8B-LoRA baseline observation
   -> grounded uncertainty and popularity/long-tail diagnostics
   -> original non-stitched CURE/TRUCE framework
-  -> official-native controlled baselines
+  -> reused Pony/Uncertainty official-qwen3base baselines
   -> unified same-candidate evaluator
   -> four-domain paper-scale results
 ```
@@ -157,21 +157,23 @@ Exit criteria:
   IDs preserved for paired comparison.
 - Reviewer verdict and remaining risks are recorded before paper writing.
 
-### M2.5. Formal Ours And Fair Baseline Training/Evaluation
+### M2.5. Formal Ours And Reused Fair Baseline Evaluation
 
-Status: planned; current Beauty controlled adapters are pilots.
+Status: planned for Ours; external baseline source switched to reused
+Pony/Uncertainty official-qwen3base evidence.
 
 Purpose:
 
 - Convert observation-stage insights into formal train/valid/test experiments.
-- Retrain/evaluate Ours and baselines under the declared shared protocol,
-  instead of using observation calls or smoke pilots as final results.
+- Train/evaluate Ours under the declared shared protocol, then compare against
+  reused Pony official baseline rows instead of rerunning the same external
+  baseline suite inside TRUCE.
 
 Required policy:
 
-- Official source implementation where a baseline is called official-native.
-- Qwen3-8B shared backbone and LoRA for the main LLM comparison lane.
-- Baseline official/default or reported-optimal hyperparameters.
+- External baselines come from Pony/Uncertainty official-qwen3base
+  same-candidate evidence, with local TRUCE evidence packages copied and
+  tracked by `configs/baselines/pony_official_external_baselines.yaml`.
 - Ours tuned only through validation.
 - Same candidates, same splits, same score schema, same evaluator.
 
@@ -184,8 +186,9 @@ Exit criteria:
 
 ### M3. Baseline System
 
-Status: traditional/text/sequential interfaces exist; external official-native
-baseline lane is now explicit but not complete.
+Status: traditional/text/sequential interfaces exist for smoke/control. The
+paper-facing external baseline lane now reuses Pony/Uncertainty
+official-qwen3base same-candidate evidence.
 
 Baseline tiers:
 
@@ -194,37 +197,35 @@ Baseline tiers:
   wrappers.
 - LLM task baselines: zero-shot/few-shot generative, candidate rerank,
   constrained candidate rerank.
-- Official LLM4Rec families:
-  - TALLRec;
-  - OpenP5;
-  - DEALRec;
-  - LC-Rec;
-  - LLaRA;
-  - LLM-ESR.
+- Reused Pony official LLM4Rec families:
+  - LLM2Rec;
+  - LLM-ESR;
+  - LLMEmb;
+  - RLMRec;
+  - IRLLRec;
+  - ELMRec;
+  - ProEx;
+  - ProMax.
 
-All six official LLM4Rec families are part of the main baseline pool. They can
-have different analysis slices, such as long-tail/sequential slices for
-LLM-ESR, while keeping equal baseline status.
-
-Official baseline contract:
+Active baseline evidence contract:
 
 ```text
-official project algorithm
-  + shared TRUCE split/candidates/evaluator
-  + shared Qwen3-8B base model
-  + LoRA adaptation under baseline-specific official training logic
-  + official default or reported-optimal baseline hyperparameters
-  + candidate_scores.csv -> predictions.jsonl -> metrics.json
+Pony/Uncertainty official-qwen3base run
+  + shared four-domain same-candidate protocol
+  + copied evidence package under TRUCE outputs
+  + source_event_id,user_id,item_id,score
+  + TRUCE manifest/table eligibility gates
 ```
 
 Exit criteria:
 
-- Each official baseline has an official-fidelity audit.
-- Each official baseline records official commit, official hyperparameter
-  source, and any Qwen3-8B-LoRA compatibility changes.
-- Controlled adapter pilots are not mixed into final official baseline tables.
-- All baselines preserve the score schema:
-  `example_id,user_id,item_id,score`.
+- Reused baseline rows have copied evidence tarballs, sha256, size, status, and
+  source paths in `configs/baselines/pony_official_external_baselines.yaml`.
+- Pending rows are excluded from the main comparison table.
+- Legacy TRUCE controlled-adapter pilots are not mixed into final official
+  baseline tables.
+- All paper-facing external baselines preserve the score schema:
+  `source_event_id,user_id,item_id,score`.
 
 ### M4. Data Ladder
 
@@ -264,9 +265,9 @@ Status: planned.
 For each domain:
 
 1. Convert Week8 task directories into TRUCE processed artifacts.
-2. Generate project packets.
-3. Run traditional/retrieval/sequential baselines.
-4. Run official-native controlled LLM4Rec baselines.
+2. Import/validate reused Pony official baseline evidence for eligible rows.
+3. Run traditional/retrieval/sequential baselines only as controls if needed.
+4. Rebuild Pony baseline comparison/status tables.
 5. Run Ours full and ablations.
 6. Import all scores through TRUCE.
 7. Evaluate ranking, validity, coverage, diversity, novelty, long-tail,
@@ -302,15 +303,16 @@ Exit criteria:
 
 ## Server-First Execution Order
 
-1. Finish any running adapter-pilot process and import/evaluate it only as
-   `controlled_adapter_pilot`.
+1. Do not launch new TRUCE controlled-adapter baseline reruns by default; keep
+   that lane legacy/pilot-only unless the user explicitly reopens it.
 2. Pull latest TRUCE-Rec on the server.
 3. Verify Week8 task availability for beauty/books/electronics/movies.
 4. Convert Week8 valid/test splits into TRUCE processed artifacts.
-5. Generate packets for all selected official baselines.
-6. Run cheap traditional/retrieval/sequential baselines first.
-7. Upgrade official-native LLM4Rec baselines one at a time, starting with the
-   easiest official code path.
+5. Import/copy Pony official baseline evidence packages and rebuild the TRUCE
+   Pony comparison/status tables.
+6. Run cheap traditional/retrieval/sequential baselines only as controls when
+   needed.
+7. Keep the Pony manifest current as missing/pending baseline evidence arrives.
 8. Run Ours and ablations.
 9. Run import/evaluation/analysis/export.
 10. Freeze artifacts for paper tables.

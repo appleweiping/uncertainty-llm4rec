@@ -50,8 +50,9 @@ Next allowed Gate R1 actions:
 
 - Pull latest on the server and inspect Week8 task availability.
 - Convert/validate Week8 same-candidate tasks when available.
-- Continue Beauty controlled-adapter pilots only as diagnostics.
-- Upgrade official baselines toward official-native Qwen3-8B-LoRA runs.
+- Keep Beauty controlled-adapter pilots as legacy diagnostics only.
+- Reuse Pony/Uncertainty official-qwen3base same-candidate baseline evidence
+  through `docs/pony_official_baseline_reuse.md`.
 - Run Ours and ablations on the same candidate rows after data conversion.
 
 Server handoff:
@@ -68,30 +69,19 @@ Server handoff:
   official OpenP5 checkpoint.
 - Smoke metrics from TRUCE evaluator on 225 test examples:
   Recall@10 0.017778, NDCG@10 0.005872, MRR@10 0.002519.
-- OpenP5 upstream/T5 reproduction is an appendix/reference path unless clearly
-  separated from the main controlled Qwen3-8B-LoRA lane. The main OpenP5-style
-  controlled path must use Qwen3-8B-LoRA and official/default baseline
-  hyperparameters where feasible.
-- Main external-framework comparison should now use controlled Qwen3-8B base
-  model baselines rather than mixing different upstream backbones. See
-  `docs/qwen3_lora_controlled_baselines.md`.
-- Stricter baseline fidelity rule: after fairness controls are fixed, final
-  main-table baselines must reuse official project implementation as much as
-  possible. Current TRUCE-side Qwen3 adapters are controlled-adapter
-  pilots unless a fidelity audit promotes them to official-native controlled
-  baselines. See `docs/controlled_baseline_fidelity_audit.md`.
-- These baselines are selected from the recommended/reference LLM4Rec project
-  families. The main claim should be framework-vs-framework under the same
-  Qwen3-8B base model, LoRA adaptation, and TRUCE protocol, not copied
-  official metrics with mismatched backbones and not generic prompt baselines
-  mislabeled as official methods. LoRA training should follow each baseline's
-  official algorithm and official/default hyperparameters where feasible.
-- Do observation analysis on controlled baselines too: check whether the
-  motivating TRUCE/CU-GR observation phenomena appear in TALLRec/OpenP5/
-  DEALRec/LC-Rec outputs, not only in weak/base-model outputs.
-- Current Amazon Beauty data is acceptable for pipeline and early controlled
-  comparison, but final top-conference-strength experiments should rerun the
-  same suite on the larger dataset being generated on the same server.
+- OpenP5 upstream/T5 and the old TRUCE Qwen3-LoRA controlled paths are
+  appendix/reference or legacy diagnostics unless explicitly reopened.
+- Main external-framework comparison now reuses Pony/Uncertainty
+  official-qwen3base same-candidate evidence. See
+  `docs/pony_official_baseline_reuse.md`.
+- Reused Pony baselines must keep their copied evidence package, sha256,
+  status label, and score schema provenance. Pending rows stay out of main
+  tables.
+- Do observation analysis on Ours and reused strong baselines where the needed
+  score/prediction artifacts are available.
+- Current Amazon Beauty data is acceptable for pipeline and early diagnostics,
+  but final top-conference-strength TRUCE claims should use the four-domain
+  same-candidate artifacts.
 - Large-scale target data is being produced in
   `~/projects/pony-rec-rescue-shadow-v6/outputs/baselines/external_tasks/` for
   beauty/books/electronics/movies when available, with same-candidate
@@ -99,17 +89,12 @@ Server handoff:
   `docs/week8_large_same_candidate_protocol.md`.
 - First controlled adapter-pilot suite:
   `TALLRec-Qwen3-LoRA`, `OpenP5-style-Qwen3-LoRA`,
-  `DEALRec-Qwen3-LoRA`, and `LC-Rec-Qwen3-LoRA`.
-- Two additional official baseline families are now selected for follow-up:
-  `LLaRA` for recommendation-signal alignment and `LLM-ESR` for long-tail
-  sequential robustness.
-- Prepare the suite with `python scripts/prepare_controlled_baseline_suite.py`,
-  then run the generated server smoke queue before removing limits for the full
-  long-running experiments.
+  `DEALRec-Qwen3-LoRA`, and `LC-Rec-Qwen3-LoRA`. This suite is legacy/pilot
+  only and should not be run as the default paper-baseline route.
 
 Latest server status as of 2026-05-06:
 
-- Main4 smoke is complete for all four controlled baselines:
+- Legacy Main4 smoke is complete for all four controlled baselines:
   `TALLRec-Qwen3-LoRA`, `OpenP5-style-Qwen3-LoRA`,
   `DEALRec-Qwen3-LoRA`, and `LC-Rec-Qwen3-LoRA`.
 - Completed smoke artifact directories:
@@ -121,24 +106,17 @@ Latest server status as of 2026-05-06:
 - TALLRec/DEALRec/LC-Rec smoke scoring is fast after switching generic
   baselines to pairwise `Yes.` likelihood. OpenP5-style smoke works but is too
   slow for full scoring in the current runner: two score rows took about 763
-  seconds. Do not start a full OpenP5-style run until scoring is batched or
-  otherwise optimized.
-- Next recommended server action: full-run the fast three controlled baselines
-  first: TALLRec, DEALRec, and LC-Rec. Use `~/projects/TALLRec/.venv_tallrec`
-  for Qwen/torch/peft execution, not `.venv_truce`.
-- After each full run, import with
-  `scripts/import_external_predictions.py --split test` and evaluate with
-  `scripts/evaluate_predictions.py`. Final paper metrics must come from TRUCE
-  evaluator outputs only.
+  seconds. Do not start full runs unless the user explicitly reopens the
+  legacy controlled-adapter lane.
+- Next recommended baseline action: import/copy Pony official baseline evidence
+  with `scripts/import_pony_official_baselines.py`, then build TRUCE status
+  tables with `scripts/build_pony_baseline_comparison.py`.
 
 Next non-toy buildout:
 
 - Convert and validate Week8 same-candidate tasks with strict target-in-candidate
   checks.
-- Add Week8 packet configs per domain; do not reuse Beauty early-pipeline
-  configs for books/electronics/movies.
-- Upgrade official baselines from controlled-adapter pilots to
-  official-native controlled runs before using them in main tables.
+- Keep the Pony baseline manifest current as missing/pending evidence arrives.
 - Run Ours and ablations on the same candidate rows.
 
 Future-agent update rule:

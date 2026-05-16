@@ -11,9 +11,10 @@ Current repository identity:
 - Historical remote alias in this checkout: `https://github.com/appleweiping/uncertainty-llm4rec.git`
 - Local path: `D:\Research\TRUCE-Rec`
 - Active branch: `main`
-- Current stage: Gate R1 server-first four-domain controlled experiment
-  buildout. No paper-result claim is allowed until full official baseline/Ours
-  runs are imported and evaluated by TRUCE.
+- Current stage: Gate R1 server-first four-domain buildout with reused
+  Pony/Uncertainty official-qwen3base baseline evidence. No paper-result claim
+  is allowed until TRUCE Ours runs, ablations, and remaining audits are
+  imported and evaluated under the same protocol.
 
 ## Evidence Labels
 
@@ -62,11 +63,13 @@ Implemented and smoke-tested:
   `Calibrated Uncertainty-Guided Generative Recommendation`;
 - Phase 7 paper support, real experiment templates, reproduction docs, and
   safe preflight helpers.
-- Main4 controlled-adapter server suite is prepared for TALLRec, OpenP5-style,
-  DEALRec, and LC-Rec. These runs validate the protocol, but they remain
-  `controlled_adapter_pilot` until official-native fidelity is audited.
-- External baseline packets exist for TALLRec, OpenP5, BIGRec/DEALRec,
-  LC-Rec, LLaRA, CoLLM, LLM-ESR, and SLMRec.
+- Pony/Uncertainty official-qwen3base same-candidate baseline evidence is now
+  the paper-facing external baseline source. TRUCE imports/copies the evidence
+  packages and tracks eligibility in
+  `configs/baselines/pony_official_external_baselines.yaml`.
+- The old TRUCE-side controlled-adapter server suite for TALLRec/OpenP5-style/
+  DEALRec/LC-Rec remains legacy pilot infrastructure, not the current main
+  baseline route.
 - The current project route is now organized as:
   `observation -> CURE/TRUCE framework -> official baselines -> four-domain
   same-candidate recommendation system`.
@@ -84,9 +87,10 @@ Not yet completed:
 - no approved paper-result experiment suite;
 - no claim that OursMethod is effective;
 - no HF model download;
-- no completed Gate R1 four-domain paper-scale run;
-- no final official-native controlled baseline table;
-- no completed official-native fidelity audit for the external baselines;
+- no completed Gate R1 TRUCE Ours/ablation paper-scale run;
+- no final TRUCE Ours/ablation table under the reused Pony candidate protocol;
+- no completed TRUCE-side observation sweep over Ours plus reused strong
+  baselines;
 - no final paper conclusions.
 - no completed four-domain observation sweep that checks base Qwen3-8B and the
   four senior-recommended Qwen3-8B-LoRA baselines side by side;
@@ -125,47 +129,41 @@ review.
 
 ## Official Baseline Contract
 
-The paper-grade external baseline lane is:
+The paper-facing external baseline lane now reuses Pony/Uncertainty completed
+official-qwen3base same-candidate evidence:
 
 ```text
-official project algorithm
-  + shared TRUCE split/candidates/evaluator
-  + shared Qwen3-8B base model
-  + LoRA adaptation under the baseline's official training logic
-  + official default or reported-optimal baseline hyperparameters
-  + candidate_scores.csv -> predictions.jsonl -> metrics.json
+Pony official or official-code-level baseline run
+  + shared four-domain same-candidate task
+  + shared Qwen3-8B text/LLM backbone policy where applicable
+  + source_event_id,user_id,item_id,score
+  + copied TRUCE evidence package and tracked manifest
 ```
 
-This is the main academic comparison protocol recommended for the project:
-every compared LLM baseline uses Qwen3-8B and LoRA, while official source code,
-project modules, prompts/objectives, and default or reported-optimal
-hyperparameters are retained as much as possible. Baseline hyperparameters are
-not tuned on TRUCE test outcomes. Compatibility changes, official commits, and
-hyperparameter sources must be recorded in provenance. Ours may tune
-hyperparameters only through the declared validation protocol.
-
-Runs that keep an original non-Qwen backbone, use full fine-tuning instead of
-LoRA, or rely on an official checkpoint belong in a separate reference/appendix
-protocol unless the table explicitly separates that comparison. All methods in
-the main lane must export the same score schema:
+Rows enter TRUCE main baseline tables only when
+`artifact_class=completed_result`, `status_label=same_schema_external_baseline`,
+`implementation_status=official_completed`, and a local copied evidence package
+is present. Ours may tune hyperparameters only through the declared validation
+protocol. The score schema is:
 
 ```text
-example_id,user_id,item_id,score
+source_event_id,user_id,item_id,score
 ```
 
-The current recommended official baseline families are:
+The current reused official baseline families are:
 
-| Role | Family | Current repository status |
+| Role | Family | Current TRUCE status |
 | --- | --- | --- |
-| Main | TALLRec | controlled adapter pilot; official-native audit required |
-| Main | OpenP5 | controlled adapter pilot; scoring optimization and official-native audit required |
-| Main | DEALRec | controlled adapter pilot; official-native audit required |
-| Main | LC-Rec | controlled adapter pilot; official-native audit required |
-| Main | LLaRA | packet/config added as Qwen3-LoRA; official-native implementation required |
-| Main | LLM-ESR | packet/config added as Qwen3-LoRA; official-native implementation required |
+| Main | LLM2Rec | Pony completed rows reused where evidence package is present |
+| Main | LLM-ESR | Pony completed rows reused |
+| Main | LLMEmb | Pony completed rows reused |
+| Main | RLMRec | Pony completed rows reused |
+| Main | IRLLRec | Pony completed rows reused |
+| Main | ELMRec | Pony completed rows reused |
+| Main | ProEx | Pony completed rows reused |
+| Main | ProMax | Beauty reused; remaining domains pending |
 
-CoLLM and SLMRec remain useful follow-up candidates, especially for
-collaborative-signal and efficiency appendices.
+See `docs/pony_official_baseline_reuse.md`.
 
 ## Key Commands
 
@@ -187,20 +185,22 @@ Run all tests:
 .\.venv\bin\python.exe -m pytest
 ```
 
-Prepare the server controlled-adapter suite:
+Import Pony/Uncertainty official baseline evidence:
 
-```bash
-cd ~/projects/TRUCE-Rec
-source .venv_truce/bin/activate
-python scripts/prepare_controlled_baseline_suite.py
+```powershell
+py -3 scripts\import_pony_official_baselines.py `
+  --pony-root D:\Research\Uncertainty `
+  --output-root outputs\pony_official_baselines `
+  --manifest configs\baselines\pony_official_external_baselines.yaml
 ```
 
-Summarize controlled baseline status:
+Build the Pony baseline comparison/status tables:
 
-```bash
-cd ~/projects/TRUCE-Rec
-source .venv_truce/bin/activate
-python scripts/summarize_controlled_baseline_suite.py
+```powershell
+py -3 scripts\build_pony_baseline_comparison.py `
+  --manifest-json outputs\pony_official_baselines\manifest.json `
+  --output-root outputs\pony_official_baselines\tables `
+  --output-name pony_official_baseline_comparison
 ```
 
 Validate a real experiment template without running it:
@@ -228,6 +228,8 @@ List required artifacts for a planned run:
 - `docs/pre_experiment_checklist.md`: real-run readiness checklist.
 - `docs/result_artifact_checklist.md`: artifact contract.
 - `docs/baselines.md`: baseline readiness and limitations.
+- `docs/pony_official_baseline_reuse.md`: current paper-facing reused Pony
+  official baseline policy and commands.
 - `docs/ours_method_plan.md`: Phase 6 method plan and boundaries.
 - `docs/ablation_protocol.md`: OursMethod ablation protocol.
 - `docs/leakage_fairness_checklist.md`: leakage/fairness safeguards.
@@ -239,10 +241,9 @@ List required artifacts for a planned run:
   checklist before paper writing.
 - `docs/server_execution_matrix.md`: includes the base/baseline observation
   gate and formal Ours/baseline server command ladder.
-- `docs/qwen3_lora_controlled_baselines.md`: controlled external baseline
-  protocol and status.
-- `docs/controlled_baseline_fidelity_audit.md`: official-native fidelity rule
-  and promotion checklist.
+- `docs/qwen3_lora_controlled_baselines.md`: legacy controlled-adapter pilot
+  protocol.
+- `docs/controlled_baseline_fidelity_audit.md`: legacy fidelity checklist.
 - `docs/server_next_commands.md`: current server continuation commands.
 - `docs/external_project_baseline_packets.md`: external project packet matrix.
 - `docs/week8_large_same_candidate_protocol.md`: larger same-candidate

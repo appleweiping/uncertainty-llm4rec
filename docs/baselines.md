@@ -114,32 +114,43 @@ py -3 -m pip install colorlog==4.7.2 colorama==0.4.4 tensorboard thop tabulate p
 - OursMethod is a method under test, not a baseline.
 - Fallback-only is an ablation/control for OursMethod routing.
 
-## Paper-Grade LLM Baseline Lane
+## Paper-Facing Reused Official Baseline Lane
 
-The main compared LLM baseline protocol follows the current research decision:
+The main compared external LLM/recommender baseline protocol now reuses
+Pony/Uncertainty official-qwen3base same-candidate evidence instead of
+rerunning the same official baseline suite inside TRUCE:
 
 ```text
-official source implementation
-  + Qwen3-8B base model
-  + LoRA adaptation
-  + official default or reported-optimal baseline hyperparameters
-  + shared TRUCE split/candidates/evaluator
-  + example_id,user_id,item_id,score
+Pony official or official-code-level run
+  + same four-domain same-candidate protocol
+  + Qwen3-8B text/LLM backbone policy where applicable
+  + source_event_id,user_id,item_id,score
+  + copied TRUCE evidence tarball
+  + tracked TRUCE manifest
 ```
 
-Selected official baseline families:
+Selected reused baseline families:
 
-- TALLRec;
-- OpenP5;
-- DEALRec;
-- LC-Rec;
-- LLaRA;
+- LLM2Rec;
 - LLM-ESR.
+- LLMEmb;
+- RLMRec;
+- IRLLRec;
+- ELMRec;
+- ProEx;
+- ProMax.
 
-Baseline hyperparameters are not tuned on TRUCE test outcomes. Ours may tune
-hyperparameters only through the declared validation protocol. API-model or
-MockLLM LLM rows remain diagnostics unless they are explicitly separated from
-the Qwen3-8B-LoRA controlled main table.
+Rows enter main baseline tables only if
+`artifact_class=completed_result`, `status_label=same_schema_external_baseline`,
+`implementation_status=official_completed`, and a copied evidence package is
+present under `outputs/pony_official_baselines/evidence_packages/`. See
+`docs/pony_official_baseline_reuse.md` and
+`configs/baselines/pony_official_external_baselines.yaml`.
+
+The older TRUCE-side TALLRec/OpenP5/DEALRec/LC-Rec/LLaRA/LLM-ESR
+controlled-adapter lane is legacy/pilot infrastructure. Do not present it as
+the current paper-facing baseline source unless the user explicitly reopens
+that route.
 
 ## Limitations
 

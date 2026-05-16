@@ -19,9 +19,9 @@ paper is ready.
    objective, prompt format, or pipeline.
 
 3. **Baselines are not official or are too weak.**
-   Defense: use official-native controlled baselines for TALLRec, OpenP5,
-   DEALRec, LC-Rec, LLaRA, and LLM-ESR where feasible; keep adapter pilots out
-   of final main tables.
+   Defense: reuse Pony/Uncertainty official-qwen3base same-candidate evidence
+   for LLM2Rec, LLM-ESR, LLMEmb, RLMRec, IRLLRec, ELMRec, ProEx, and ProMax;
+   keep legacy TRUCE controlled-adapter pilots out of final main tables.
 
 4. **Data is too toy.**
    Defense: move from tiny/MovieLens/Beauty debugging to four-domain Week8

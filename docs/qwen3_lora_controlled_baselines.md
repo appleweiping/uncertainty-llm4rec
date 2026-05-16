@@ -1,4 +1,10 @@
-# Qwen3-8B Controlled Baselines
+# Legacy: Qwen3-8B Controlled Baselines
+
+> Legacy reference. The current TRUCE-Rec paper-facing external baseline policy
+> reuses Pony/Uncertainty official-qwen3base same-candidate evidence instead of
+> rerunning this TRUCE-side controlled-adapter lane. See
+> `docs/pony_official_baseline_reuse.md`. The scripts/configs described here
+> remain useful for historical reproduction and pilot diagnostics only.
 
 This protocol defines the main fair-comparison lane for external LLM4Rec
 projects. It is separate from official upstream reproduction.

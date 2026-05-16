@@ -58,6 +58,6 @@ protocol promotes them with complete artifacts.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Week8 conversion | generated server commands | beauty/books/electronics/movies | converter | fixed 1+100 candidates | validation only | processed artifacts + manifest | critical | low | no | no |
 | Traditional/retrieval baselines | TBD Week8 configs | four domains | popularity/BM25/MF/Markov | same-candidate | shared evaluator | run dirs + metrics | critical | low-medium | no | optional |
-| Official-native LLM4Rec baselines | official repo adapters | four domains | TALLRec/OpenP5/DEALRec/LC-Rec/LLaRA/LLM-ESR | same-candidate | shared + long-tail/validity | scores + predictions + metrics + audit | critical | high | no | yes |
+| Reused Pony official baselines | `docs/pony_official_baseline_reuse.md` | four domains | LLM2Rec/LLM-ESR/LLMEmb/RLMRec/IRLLRec/ELMRec/ProEx/ProMax | same-candidate | shared + long-tail/validity | copied evidence packages + manifest + status tables | critical | low local import | no | no |
 | Ours full | TBD Week8 Ours configs | four domains | CURE/TRUCE / CU-GR v2 | same-candidate | all shared + observation | run dirs + analysis | critical | provider/model dependent | maybe | maybe |
 | Ours ablations | TBD Week8 ablation configs | four domains | component ablations | same-candidate | all shared + paired deltas | run dirs + analysis | critical | provider/model dependent | maybe | maybe |

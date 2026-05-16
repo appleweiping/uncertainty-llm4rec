@@ -10,9 +10,9 @@ Last major update: 2026-05-13.
 
 TRUCE-Rec is a publishable LLM4Rec research system, not a toy demo: it starts
 from recommendation-specific uncertainty observations, builds an original
-CURE/TRUCE method, compares against official Qwen3-8B-LoRA baseline families
-under one same-candidate evaluator, and scales to Beauty/Books/Electronics/
-Movies with 10k-user, 1-positive+100-negative protocols.
+CURE/TRUCE method, reuses Pony/Uncertainty official-qwen3base same-candidate
+baseline evidence under one shared score contract, and scales to Beauty/Books/
+Electronics/Movies with 10k-user, 1-positive+100-negative protocols.
 
 ## Required Startup Reading
 
@@ -145,7 +145,7 @@ LLM generative recommendation observation
   -> catalog grounding and uncertainty/popularity/long-tail/echo diagnostics
   -> original non-stitched CURE/TRUCE framework
   -> Qwen3-8B-LoRA Ours adapter and ablations
-  -> official Qwen3-8B-LoRA baseline families
+  -> reused Pony official-qwen3base baseline evidence
   -> shared same-candidate evaluator
   -> four-domain paper-scale experiments
   -> top-conference review and artifact export
@@ -227,6 +227,59 @@ Core method milestones:
   LLM reranker, prompt-engineering baseline, RAG wrapper, or stitched clone of
   the reference projects.
 
+## External Baseline Reuse Policy
+
+As of 2026-05-16, TRUCE's paper-facing external baseline lane is no longer to
+rerun the local TALLRec/OpenP5/DEALRec/LC-Rec/LLaRA/LLM-ESR controlled-adapter
+suite. Instead, reuse the sibling Pony/Uncertainty project's official-qwen3base
+same-candidate evidence because it uses the same author-controlled data
+selection and essentially the same recommendation evaluation flow.
+
+Tracked TRUCE manifest:
+
+```text
+configs/baselines/pony_official_external_baselines.yaml
+```
+
+Ignored copied evidence packages:
+
+```text
+outputs/pony_official_baselines/evidence_packages/
+```
+
+Active docs/scripts:
+
+```text
+docs/pony_official_baseline_reuse.md
+scripts/import_pony_official_baselines.py
+scripts/build_pony_baseline_comparison.py
+```
+
+Rows enter the TRUCE main baseline table only if they satisfy:
+
+```text
+artifact_class=completed_result
+status_label=same_schema_external_baseline
+implementation_status=official_completed
+local TRUCE evidence tarball present
+score schema = source_event_id,user_id,item_id,score
+```
+
+Current reused pool:
+
+```text
+LLM2Rec, LLM-ESR, LLMEmb, RLMRec, IRLLRec, ELMRec, ProEx, ProMax
+```
+
+Current local import status: 28 evidence packages copied and eligible. LLM2Rec
+Beauty is `pending_import` because the Pony metrics row exists but a matching
+local evidence tarball was not found. ProMax books/electronics/movies are
+`pending_running`. Pending rows must not enter main tables.
+
+The old TRUCE-side qwen3 controlled-baseline docs/configs/scripts remain
+legacy/pilot infrastructure only. Do not direct the user to rerun that suite as
+the default paper-baseline path unless the user explicitly reopens it.
+
 ## Senior Baseline Advice To Preserve
 
 The user's senior colleague gave the following practical academic advice:
@@ -253,12 +306,14 @@ The user's senior colleague gave the following practical academic advice:
 5. Reviewers may still challenge fairness, but this Qwen3-8B-LoRA controlled
    setup is a common academic compromise.
 
-This advice is now the main LLM baseline policy unless the user explicitly
-changes it.
+This advice explains why the Pony/Uncertainty reused official-qwen3base lane is
+acceptable. It is no longer an instruction to rerun the local TRUCE controlled
+adapter suite; the active implementation policy is the Pony evidence reuse
+policy above.
 
-## Baseline Contract
+## Legacy Baseline Contract
 
-Main compared LLM baselines:
+Historical TRUCE-side compared LLM baselines:
 
 ```text
 official project implementation
@@ -269,7 +324,7 @@ official project implementation
   + example_id,user_id,item_id,score
 ```
 
-Main official baseline families:
+Legacy official baseline families:
 
 - TALLRec
 - OpenP5
@@ -278,11 +333,14 @@ Main official baseline families:
 - LLaRA
 - LLM-ESR
 
-Current TRUCE-side controlled adapters are pilots unless promoted by an
-official-fidelity audit. Do not call them final official baselines. CoLLM,
-SLMRec, BIGRec, and other methods may be follow-up or appendix candidates.
+Current TRUCE-side controlled adapters are legacy pilots. Do not call them the
+current paper-facing baseline source. The active source is Pony/Uncertainty
+official-qwen3base evidence described above. CoLLM, SLMRec, BIGRec, and other
+methods may be follow-up or appendix candidates only if the user explicitly
+reopens that lane.
 
-Every official baseline must record:
+If the legacy lane is explicitly reopened, every local official baseline must
+record:
 
 - official repo and commit;
 - official config/hyperparameter source;
@@ -340,10 +398,9 @@ embeddings required long-term artifacts.
 Observation scale must match the formal training/evaluation scale whenever
 budget allows. The intended observation set is Beauty full-domain plus
 books/electronics/movies 10k-user same-candidate tasks. Observation is not only
-for base Qwen3-8B: at minimum, run the same observation analysis for base
-Qwen3-8B and the four senior-recommended Qwen3-8B-LoRA baselines
-TALLRec/OpenP5/DEALRec/LC-Rec, then check whether the base-model phenomena
-also appear under stronger baseline systems.
+for base Qwen3-8B: run the same phenomenon analysis for base Qwen3-8B, Ours,
+and reused Pony strong baselines wherever prediction/score artifacts expose the
+needed diagnostics.
 
 ## Server Operating Model
 
@@ -365,14 +422,22 @@ git pull --ff-only
 bash scripts/server/run_week8_four_domain_pipeline.sh
 ```
 
-For current Beauty controlled-adapter pilots:
+For reused Pony official baselines, run locally after copying or refreshing the
+Pony evidence source:
 
-```bash
-cd ~/projects/TRUCE-Rec
-git pull --ff-only
-bash scripts/server/run_controlled_baseline_queue.sh smoke
-bash scripts/server/run_controlled_baseline_queue.sh full
+```powershell
+py -3 scripts\import_pony_official_baselines.py `
+  --pony-root D:\Research\Uncertainty `
+  --output-root outputs\pony_official_baselines `
+  --manifest configs\baselines\pony_official_external_baselines.yaml
+
+py -3 scripts\build_pony_baseline_comparison.py `
+  --manifest-json outputs\pony_official_baselines\manifest.json `
+  --output-root outputs\pony_official_baselines\tables `
+  --output-name pony_official_baseline_comparison
 ```
+
+The old `run_controlled_baseline_queue.sh` path is legacy/pilot-only.
 
 If long GPU jobs are run without `tmux`, use logging scripts or `nohup` with
 explicit log files and PID/status checks. Do not assume a job survived a
@@ -434,7 +499,8 @@ Future agents should perform real maintenance:
 3. Run `scripts/server/run_week8_four_domain_pipeline.sh` when ready.
 4. Import/evaluate any completed Beauty controlled-adapter pilot only as
    `controlled_adapter_pilot`.
-5. Continue official-native baseline audits for all six main families.
+5. Keep the Pony official baseline manifest current as pending evidence arrives
+   or missing packages are copied.
 6. Train/score/evaluate Ours Qwen3-LoRA adapter and ablations on the same
    candidate rows.
 7. Run observation diagnostics on Ours and strong baselines, not only base or

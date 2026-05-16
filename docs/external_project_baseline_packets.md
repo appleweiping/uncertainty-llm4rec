@@ -3,12 +3,10 @@
 This document tracks official external LLM4Rec project integrations. It is a
 packet and execution-status matrix, not a paper result table.
 
-For the main fair-comparison lane that controls the small LLM base model and
-TRUCE protocol, see `docs/qwen3_lora_controlled_baselines.md`. The main lane
-uses Qwen3-8B plus LoRA for every compared LLM baseline, official source/default
-or reported-optimal hyperparameters where feasible, and the shared TRUCE score
-schema. The first adapter-pilot suite is TALLRec, OpenP5-style, DEALRec, and
-LC-Rec with Qwen3-8B-LoRA.
+Legacy reference. For the current paper-facing external baseline lane, see
+`docs/pony_official_baseline_reuse.md`. TRUCE now reuses Pony/Uncertainty
+official-qwen3base same-candidate evidence. The packet lane below remains
+useful for historical reproduction and diagnostics only.
 
 ## Status Matrix
 
@@ -34,7 +32,7 @@ strong robustness baseline rather than another generic reranker.
 
 ## Packet Generation
 
-OpenP5 should be run first. Generate its packets with:
+Legacy packet smoke example. Do not run this as the default paper-baseline path:
 
 ```powershell
 py -3 scripts/prepare_project_baseline_packet.py --config configs/server/project_baselines/openp5_movielens_packet.yaml

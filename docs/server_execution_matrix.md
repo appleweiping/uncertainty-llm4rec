@@ -35,9 +35,10 @@ legacy packets only.
 cd ~/projects/TRUCE-Rec
 git pull --ff-only
 source .venv_truce/bin/activate
-
-python scripts/summarize_controlled_baseline_suite.py
 ```
+
+The default paper-baseline action is now Pony/Uncertainty evidence import, not
+TRUCE controlled-adapter reruns.
 
 ## One-Command Week8 Preflight And Conversion
 
@@ -124,32 +125,35 @@ Acceptance:
 - `candidate_row_count` equals the sum of all candidate rows;
 - event/source IDs are preserved in example metadata.
 
-## Generate External Packets
+## Import Reused Pony Official Baselines
 
-For the current Beauty packet lane:
+TRUCE now reuses Pony/Uncertainty official-qwen3base same-candidate evidence
+for paper-facing external baselines. Import/copy evidence packages locally and
+rebuild status tables:
 
-```bash
-python scripts/prepare_controlled_baseline_suite.py
+```powershell
+py -3 scripts\import_pony_official_baselines.py `
+  --pony-root D:\Research\Uncertainty `
+  --output-root outputs\pony_official_baselines `
+  --manifest configs\baselines\pony_official_external_baselines.yaml
+
+py -3 scripts\build_pony_baseline_comparison.py `
+  --manifest-json outputs\pony_official_baselines\manifest.json `
+  --output-root outputs\pony_official_baselines\tables `
+  --output-name pony_official_baseline_comparison
 ```
 
-For the full six-family official baseline pool:
-
-```bash
-python scripts/prepare_controlled_baseline_suite.py \
-  --suite-name qwen3_base_adapter_main6_amazon_beauty \
-  --include-added-official-candidates
-```
-
-For Week8 domains, add domain-specific packet configs before running official
-baselines. Do not reuse Beauty packet configs for books/electronics/movies.
+Legacy external packets and controlled-adapter scripts remain available for
+historical reproduction and diagnostics, but they are not the default
+paper-facing baseline path.
 
 ## Run Baselines
 
 Priority order:
 
 1. Cheap traditional/retrieval/sequential baselines.
-2. Current controlled-adapter pilots only as pipeline diagnostics.
-3. Official-native controlled baselines after fidelity audit.
+2. Reused Pony official baseline evidence import/validation.
+3. Current controlled-adapter pilots only as legacy pipeline diagnostics.
 4. Ours full.
 5. Ours ablations.
 
@@ -159,17 +163,9 @@ Every method must end with:
 candidate_scores.csv -> predictions.jsonl -> metrics.json + metrics.csv
 ```
 
-For current Beauty controlled-adapter pilots, use the logging queue:
-
-```bash
-cd ~/projects/TRUCE-Rec
-bash scripts/server/run_controlled_baseline_queue.sh smoke
-bash scripts/server/run_controlled_baseline_queue.sh full
-```
-
-By default the full queue runs TALLRec, DEALRec, and LC-Rec. OpenP5 remains out
-of the full queue until scoring is optimized. These are still
-`controlled_adapter_pilot` unless an official-fidelity audit promotes them.
+Do not run `scripts/server/run_controlled_baseline_queue.sh` as the default
+paper-baseline action. It is legacy/pilot-only unless the user explicitly
+reopens that route.
 
 ## Build Week8 Observation Inputs
 
@@ -322,7 +318,7 @@ Then:
 python scripts/summarize_controlled_baseline_suite.py
 ```
 
-Paper eligibility requires:
+Legacy controlled-adapter paper eligibility would require:
 
 - `implementation_fidelity=official_native_controlled` for official main
   baselines;
