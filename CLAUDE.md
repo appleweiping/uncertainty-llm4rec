@@ -41,6 +41,18 @@ Uncertainty-aware generative recommendation:
 - Four-domain experiments: NOT YET RUN at paper scale
 - Paper sections: DRAFT (intro, method, notation, related)
 
+## Server Access
+
+Remote GPU server `pony-rec-gpu` is now directly accessible via SSH (key-based auth configured):
+- **SSH command**: `ssh pony-rec-gpu`
+- **Host**: `125.71.97.70`, Port `15302`, User `ajifang`
+- **GPU**: NVIDIA RTX 4090 (49GB VRAM)
+- **Server project path**: `~/projects/pony-rec-rescue-shadow-v6`
+- **Local project path**: `D:\Research\TRUCE-Rec`
+- **SSH config**: `C:\Users\admin\.ssh\config` (Host `pony-rec-gpu`)
+
+Agents can execute server commands directly via `ssh pony-rec-gpu "<command>"`.
+
 ## Agent Roles
 - **Codex**: Primary execution engine, server commands, parallel experiment runs
 - **Claude/Opus**: Architecture review, paper writing, complex reasoning, claim verification

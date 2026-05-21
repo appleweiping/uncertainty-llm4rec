@@ -115,10 +115,11 @@ permits it. At minimum, separate implementation from protocol/fairness review
 and top-conference-style critique. If subagents are unavailable, perform those
 passes explicitly yourself.
 
-Codex usually cannot see the server directly. Provide exact server commands,
-wait for the user to paste logs/errors/artifacts, then diagnose. Do not claim
-server completion without evidence. After substantial local work, commit and
-push to `origin/main` unless the user explicitly asks not to.
+Server `pony-rec-gpu` is now directly accessible via SSH: `ssh pony-rec-gpu "<command>"`.
+Host: `125.71.97.70:15302`, User: `ajifang`, GPU: RTX 4090 (49GB).
+Server project path: `~/projects/pony-rec-rescue-shadow-v6`.
+Do not guess server state — run a command to verify. After substantial local
+work, commit and push to `origin/main` unless the user explicitly asks not to.
 
 Do not let docs become stale. After a completed stage, update the artifact
 truth, narrative truth, and comparability truth: manifests/metrics/logs,

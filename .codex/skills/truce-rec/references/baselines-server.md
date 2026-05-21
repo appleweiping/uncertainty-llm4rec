@@ -62,28 +62,29 @@ existing TRUCE importer expects it.
 
 ## Server Operating Model
 
-Local Codex usually cannot see server state. Use command-and-log discipline:
+Server `pony-rec-gpu` is now directly accessible via SSH (key-based auth):
 
-1. Update local repo and push if needed.
-2. Give exact server commands.
-3. Wait for the user to paste logs, status, errors, or artifact listings.
-4. Diagnose and patch based on evidence.
-5. Do not claim completion without artifacts.
+```bash
+ssh pony-rec-gpu "<command>"
+```
+
+- Host: `125.71.97.70:15302`, User: `ajifang`
+- GPU: NVIDIA RTX 4090 (49GB VRAM)
+- Server project path: `~/projects/pony-rec-rescue-shadow-v6`
+
+Agents can run commands directly. Do not guess server state — verify with a command.
 
 Preferred Week8 entrypoint:
 
 ```bash
-cd ~/projects/TRUCE-Rec
-git pull --ff-only
-bash scripts/server/run_week8_four_domain_pipeline.sh
+ssh pony-rec-gpu "cd ~/projects/TRUCE-Rec && git pull --ff-only && bash scripts/server/run_week8_four_domain_pipeline.sh"
 ```
 
 Current Beauty controlled-adapter pilot queue:
 
 ```bash
-cd ~/projects/TRUCE-Rec
-bash scripts/server/run_controlled_baseline_queue.sh smoke
-bash scripts/server/run_controlled_baseline_queue.sh full
+ssh pony-rec-gpu "cd ~/projects/TRUCE-Rec && bash scripts/server/run_controlled_baseline_queue.sh smoke"
+ssh pony-rec-gpu "cd ~/projects/TRUCE-Rec && bash scripts/server/run_controlled_baseline_queue.sh full"
 ```
 
 Do not full-run slow OpenP5 unless docs or the user indicate scoring has been

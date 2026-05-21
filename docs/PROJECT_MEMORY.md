@@ -4,15 +4,33 @@ This document is the durable memory for future Codex/agent sessions. Read it
 before planning nontrivial work. Keep it current after each completed stage so
 new agents do not have to reconstruct the project from stale fragments.
 
-Last major update: 2026-05-13.
+Last major update: 2026-05-21.
 
 ## One-Sentence Direction
 
-TRUCE-Rec is a publishable LLM4Rec research system, not a toy demo: it starts
+TRUCE-Rec is a fully independent publishable LLM4Rec research system: it starts
 from recommendation-specific uncertainty observations, builds an original
-CURE/TRUCE method, reuses Pony/Uncertainty official-qwen3base same-candidate
-baseline evidence under one shared score contract, and scales to Beauty/Books/
-Electronics/Movies with 10k-user, 1-positive+100-negative protocols.
+CURE/TRUCE method with its own data pipeline, baselines, and evaluation, and
+scales to multiple Amazon domains with same-candidate protocols.
+
+## CRITICAL: Project Independence
+
+TRUCE-Rec 和 Pony/TGL-Rec 的关系：
+- 共同点：都是推荐系统论文，共享 8 个外部 baseline（LLM2Rec, LLM-ESR,
+  LLMEmb, RLMRec, IRLLRec, ELMRec, ProEx, ProMax），数据 setting 一样
+  （Amazon 四域、same-candidate 协议）
+- 不同点：方法/framework 完全不同。TRUCE 做 uncertainty-aware generative
+  recommendation（title grounding + confidence decomposition + exposure-aware
+  calibration），Pony 做 task-grounded uncertainty，TGL-Rec 做 temporal graph
+
+因为 baseline 和数据 setting 相同，baseline 分数可以复用（同一个 baseline 在
+同一个数据上跑出来的分数是一样的）。但 TRUCE 的方法代码、framework、实验
+pipeline 必须完全独立。
+
+TRUCE-Rec 在服务器上应该有自己的独立部署，不依赖 Pony 的目录结构来生成数据。
+数据可以从 Amazon Reviews 2023 原始数据独立准备，或者如果 Pony 已经生成了
+相同 setting 的 same-candidate tasks，可以直接复制使用（因为数据 setting 完全
+相同，不是"依赖"而是"共享公共资源"）。
 
 ## Required Startup Reading
 
@@ -227,58 +245,24 @@ Core method milestones:
   LLM reranker, prompt-engineering baseline, RAG wrapper, or stitched clone of
   the reference projects.
 
-## External Baseline Reuse Policy
+## Baseline Policy
 
-As of 2026-05-16, TRUCE's paper-facing external baseline lane is no longer to
-rerun the local TALLRec/OpenP5/DEALRec/LC-Rec/LLaRA/LLM-ESR controlled-adapter
-suite. Instead, reuse the sibling Pony/Uncertainty project's official-qwen3base
-same-candidate evidence because it uses the same author-controlled data
-selection and essentially the same recommendation evaluation flow.
+TRUCE-Rec 和 Pony 共享相同的 8 个外部 baseline 和数据 setting。因此：
+- Baseline 分数可以复用（同 baseline + 同数据 = 同分数）
+- 如果 Pony 已经跑完了某个 baseline 在某个域的分数，TRUCE 可以直接引用
+- 但 TRUCE 的 Ours method 必须独立实现和训练，不能混用 Pony 的方法代码
 
-Tracked TRUCE manifest:
-
-```text
-configs/baselines/pony_official_external_baselines.yaml
-```
-
-Ignored copied evidence packages:
-
-```text
-outputs/pony_official_baselines/evidence_packages/
-```
-
-Active docs/scripts:
-
-```text
-docs/pony_official_baseline_reuse.md
-scripts/import_pony_official_baselines.py
-scripts/build_pony_baseline_comparison.py
-```
-
-Rows enter the TRUCE main baseline table only if they satisfy:
-
-```text
-artifact_class=completed_result
-status_label=same_schema_external_baseline
-implementation_status=official_completed
-local TRUCE evidence tarball present
-score schema = source_event_id,user_id,item_id,score
-```
-
-Current reused pool:
-
-```text
+8 个共享外部 baseline：
 LLM2Rec, LLM-ESR, LLMEmb, RLMRec, IRLLRec, ELMRec, ProEx, ProMax
-```
 
-Current local import status: 29 evidence packages copied and eligible. LLM2Rec
-Beauty is now `completed_result` and `main_table_eligible=true` after syncing
-the server evidence package. ProMax books/electronics/movies are
-`pending_running`. Pending rows must not enter main tables.
+数据 setting（四域 same-candidate）：
+- Beauty, Books, Electronics, Movies (Amazon Reviews 2023)
+- 1 positive + 100 popularity-sampled negatives per event
+- Same-candidate evaluation for all methods
+- Qwen3-8B + LoRA as shared backbone
 
-The old TRUCE-side qwen3 controlled-baseline docs/configs/scripts remain
-legacy/pilot infrastructure only. Do not direct the user to rerun that suite as
-the default paper-baseline path unless the user explicitly reopens it.
+TRUCE 自己的 controlled baselines（TALLRec, OpenP5, DEALRec, LC-Rec with
+Qwen3-8B-LoRA）已有 smoke 完成，可作为补充对比。
 
 ## Senior Baseline Advice To Preserve
 
@@ -352,97 +336,52 @@ record:
 
 ## Data And Experiment Scale
 
-Small fixture data is for tests only. Amazon Beauty can debug the pipeline, but
-the intended paper-scale evaluation is the four-domain same-candidate protocol:
+TRUCE-Rec 使用与 Pony 相同的数据 setting（因为是同一个研究组的论文）。
 
-- domains: `beauty`, `books`, `electronics`, `movies`;
-- Beauty supplementary smaller-N plus up to 10,000 users for books,
-  electronics, and movies;
-- each event has 1 positive + 100 popularity-sampled negatives;
-- same-candidate setting for every method;
-- negative sampling: popularity;
-- test history mode: train_plus_valid;
-- preserve `event_id`, `source_event_id`, `user_id`, `item_id`, and `split`.
+Already prepared datasets (local):
+- MovieLens 1M (sanity, pilot, full)
+- Amazon Reviews 2023: Beauty (sample_5k, full, cu_gr_v2), Digital Music,
+  Handmade, Health, Video Games
 
-Server source root expected from the parallel data project:
+Target paper-scale evaluation (四域 same-candidate):
+- Domains: Beauty, Books, Electronics, Movies
+- Protocol: same-candidate, 1 positive + 100 popularity-sampled negatives
+- Scale: up to 10,000 users per domain
+- Test history mode: train_plus_valid
 
-```text
-~/projects/pony-rec-rescue-shadow-v6/outputs/baselines/external_tasks/
-```
+数据来源：如果 Pony 项目已经生成了四域 same-candidate tasks（因为 setting
+完全相同），可以直接复制使用。否则 TRUCE 用自己的 preprocess 脚本从 Amazon
+Reviews 2023 原始数据生成。
 
-Current reusable artifact slugs:
-
-- `beauty_supplementary_smallerN_100neg`
-- `books_large10000_100neg`
-- `electronics_large10000_100neg`
-- `movies_large10000_100neg`
-
-Do not resample users, negatives, or candidates inside TRUCE. If candidate rows
-change, all comparable methods must be regenerated.
-
-Do not modify `candidate_items.csv` or `ranking_valid/test.jsonl` in the
-producer artifact directories. For the cross-project same-candidate lane, all
-methods must export:
-
+Score export schema for all methods:
 ```text
 source_event_id,user_id,item_id,score
 ```
 
-and must be imported/evaluated with `main_import_same_candidate_baseline_scores.py`.
-TRUCE internal `example_id` imports may be used for local scaffolding, but the
-source-event schema is the authoritative four-domain artifact contract. Never
-use `test` for hyperparameter selection. If reusing LLM2Rec official results,
-reuse only scores/provenance/audit; do not make intermediate checkpoints or
-embeddings required long-term artifacts.
-
-Observation scale must match the formal training/evaluation scale whenever
-budget allows. The intended observation set is Beauty full-domain plus
-books/electronics/movies 10k-user same-candidate tasks. Observation is not only
-for base Qwen3-8B: run the same phenomenon analysis for base Qwen3-8B, Ours,
-and reused Pony strong baselines wherever prediction/score artifacts expose the
-needed diagnostics.
+Never use `test` split for hyperparameter selection.
 
 ## Server Operating Model
 
+Server: pony-rec-gpu (125.71.97.70:15302), user ajifang, GPU RTX 4090.
+Server repo path: `~/projects/TRUCE-Rec` (to be deployed).
+
+TRUCE-Rec deploys independently on the server. It does NOT share environments,
+data directories, or scripts with any other project.
+
+Deployment steps:
+1. `git clone git@github.com:appleweiping/TRUCE-Rec.git ~/projects/TRUCE-Rec`
+2. Create venv: `python3 -m venv .venv_truce && source .venv_truce/bin/activate`
+3. Install: `pip install -e .`
+4. For GPU work (observation, LoRA training): use TALLRec's venv which has
+   torch/transformers/peft, or install them into .venv_truce
+
 Local Codex does not automatically see server state. Treat server work as a
 command-and-log loop:
-
 1. Update/push repo locally.
 2. Give user exact server commands.
 3. User runs commands on `~/projects/TRUCE-Rec`.
 4. User pastes logs/status/errors.
 5. Agent diagnoses and updates code/docs if needed.
-6. Commit/push fixes.
-
-Preferred server entrypoints:
-
-```bash
-cd ~/projects/TRUCE-Rec
-git pull --ff-only
-bash scripts/server/run_week8_four_domain_pipeline.sh
-```
-
-For reused Pony official baselines, run locally after copying or refreshing the
-Pony evidence source:
-
-```powershell
-py -3 scripts\import_pony_official_baselines.py `
-  --pony-root D:\Research\Uncertainty `
-  --output-root outputs\pony_official_baselines `
-  --manifest configs\baselines\pony_official_external_baselines.yaml
-
-py -3 scripts\build_pony_baseline_comparison.py `
-  --manifest-json outputs\pony_official_baselines\manifest.json `
-  --output-root outputs\pony_official_baselines\tables `
-  --output-name pony_official_baseline_comparison
-```
-
-The old `run_controlled_baseline_queue.sh` path is legacy/pilot-only.
-
-If long GPU jobs are run without `tmux`, use logging scripts or `nohup` with
-explicit log files and PID/status checks. Do not assume a job survived a
-disconnect; verify with `ps`, `nvidia-smi`, summaries, candidate scores, and
-metrics artifacts.
 
 ## Evidence Boundaries
 
@@ -494,18 +433,33 @@ Future agents should perform real maintenance:
 
 ## Current Next Moves
 
-1. On the server, pull latest `main`.
-2. Check whether Week8 `beauty/books/electronics/movies` task directories exist.
-3. Run `scripts/server/run_week8_four_domain_pipeline.sh` when ready.
-4. Import/evaluate any completed Beauty controlled-adapter pilot only as
-   `controlled_adapter_pilot`.
-5. Keep the Pony official baseline manifest current as pending evidence arrives
-   or missing packages are copied.
-6. Train/score/evaluate Ours Qwen3-LoRA adapter and ablations on the same
-   candidate rows.
-7. Run observation diagnostics on Ours and strong baselines, not only base or
-   weak models.
-8. Use top-conference reviewer/literature checks before paper claims.
+1. Deploy TRUCE-Rec to server (git clone, venv setup).
+2. Prepare four-domain same-candidate data using TRUCE's own preprocessing
+   (Amazon Beauty/Books/Electronics/Movies from raw Amazon Reviews 2023 data).
+3. Run base Qwen3-8B observation on prepared data.
+4. Train and run TRUCE's own baselines (TALLRec, OpenP5, DEALRec, LC-Rec with
+   Qwen3-8B + LoRA) independently.
+5. Train/score/evaluate Ours Qwen3-LoRA adapter and ablations.
+6. Run observation diagnostics on Ours and baselines.
+7. Use top-conference reviewer/literature checks before paper claims.
+
+## Literature Status (updated 2026-05-21)
+
+Novelty confirmed safe. Key competitors and differentiation:
+- UGR (2602.11719): uncertainty-weighted reward for Semantic-ID GenRec. TRUCE
+  does title grounding + confidence decomposition + exposure-aware calibration.
+- Echoes in the Loop (2602.07442): diagnoses feedback-loop risks in LLM RecSys.
+  Pure diagnostic, no method. TRUCE provides the solution.
+- Uncertainty & Fairness (2602.02582): entropy-based uncertainty + fairness for
+  zero-shot LLM rec. Small scale, no title grounding.
+- ConfTuner (NeurIPS 2025): tokenized Brier score for LLM verbal confidence.
+  Generic QA, not recommendation. TRUCE adapts this idea as RecBrier.
+
+TRUCE's unique position remains:
+1. Title-level generative recommendation + catalog grounding
+2. Confidence-popularity causal disentanglement
+3. Exposure-counterfactual confidence target
+4. Uncertainty-guided data triage (not naive pruning)
 
 ## Endgame And Stop Rule
 
