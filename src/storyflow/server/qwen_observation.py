@@ -109,6 +109,7 @@ def _model_config(config: dict[str, Any]) -> dict[str, Any]:
         "device_map": str(model.get("device_map") or "auto"),
         "trust_remote_code": bool(model.get("trust_remote_code", True)),
         "cache_dir": model.get("cache_dir"),
+        "local_files_only": bool(model.get("local_files_only", False)),
     }
 
 
@@ -374,6 +375,8 @@ def _model_kwargs(config: dict[str, Any]) -> dict[str, Any]:
     }
     if model["cache_dir"]:
         kwargs["cache_dir"] = str(model["cache_dir"])
+    if model.get("local_files_only"):
+        kwargs["local_files_only"] = True
     dtype_name = str(model["torch_dtype"]).lower()
     try:
         import torch
@@ -397,6 +400,8 @@ def _tokenizer_kwargs(config: dict[str, Any]) -> dict[str, Any]:
     }
     if model["cache_dir"]:
         kwargs["cache_dir"] = str(model["cache_dir"])
+    if model.get("local_files_only"):
+        kwargs["local_files_only"] = True
     return kwargs
 
 

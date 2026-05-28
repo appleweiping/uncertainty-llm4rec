@@ -8,12 +8,13 @@ model_name: Qwen/Qwen3-8B
 run_family: title_level_generative_observation
 
 model:
-  source: Qwen/Qwen3-8B
+  source: /home/ajifang/models/Qwen/Qwen3-8B
   revision: main
   torch_dtype: bfloat16
   device_map: auto
   trust_remote_code: true
   cache_dir: data/cache/hf/qwen3_8b
+  local_files_only: true
 
 generation:
   max_new_tokens: 256
